@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Index</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="header">
+    <div class="title">Index</div>
+    <div class="spacer"></div>
+    <input id="search" class="search" placeholder="Filter files…" style="max-width:320px"/>
+    <button id="expand" class="btn">Expand All</button>
+    <button id="collapse" class="btn">Collapse All</button>
+    <button id="export-html" class="btn">Export HTML</button>
+    <button id="export-report" class="btn">Export AI Report</button>
+    <button id="btn-export-codebase-log" class="btn">Export Project Codebase Log</button>
+    <button id="btn-export-ast-log" class="btn">Export AST Tree Log</button>
+  </div>
+  <div class="main">
+    <aside class="sidebar"><div class="tree"></div></aside>
+    <section class="content"></section>
+  </div>
+  <script id="meta-json" type="application/json"></script>
+  <script id="files-json" type="application/json"></script>
+  <script src="index.js"></script>
+</body>
+</html>
