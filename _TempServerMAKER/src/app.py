@@ -366,16 +366,29 @@ class App:
         return files
 
     def _load_template(self) -> str:
-        if self.template_path.exists():
-            return self.template_path.read_text(encoding="utf-8")
-        # Fallback to built-in
-        self._log("index.html not found in root — serving built-in template.")
-        if self.keep_index:
-            try:
-                self.template_path.write_text(DEFAULT_INDEX_HTML, encoding="utf-8")
-                self._log("Wrote built-in template to disk because --keep-index is set.")
-            except Exception as e:
-                self._log(f"[warn] Failed to write built-in template: {e}")
+        # Look for assets relative to this script (app.py)
+        assets_dir = Path(__file__).parent / "assets"
+        index_path = assets_dir / "index.html"
+        
+        if index_path.exists():
+            html = index_path.read_text(encoding="utf-8")
+            
+            # Inline CSS
+            css_path = assets_dir / "style.css"
+            if css_path.exists():
+                css_content = css_path.read_text(encoding="utf-8")
+                html = html.replace('<link rel="stylesheet" href="style.css">', f'<style>{css_content}</style>')
+            
+            # Inline JS
+            js_path = assets_dir / "index.js"
+            if js_path.exists():
+                js_content = js_path.read_text(encoding="utf-8")
+                html = html.replace('<script src="index.js"></script>', f'<script>{js_content}</script>')
+                
+            return html
+
+        # Fallback to built-in if src/assets/index.html is missing
+        self._log("assets/index.html not found — serving built-in template.")
         return DEFAULT_INDEX_HTML
 
     def generate_populated_html(self) -> str:
@@ -404,22 +417,16 @@ class App:
 
     # --------------------------- Server ----------------------------- #
     def _make_server(self) -> tuple[QuietTCPServer, str]:
-        # Change to root_dir for SimpleHTTPRequestHandler to find files
-        try:
-            os.chdir(self.root_dir)
-        except Exception as e:
-            self._log(f"[error] Failed to change directory to {self.root_dir}: {e}")
-            # Don't crash, but log the error.
-        
+        # NOTE:
+        # Do NOT os.chdir() here.
+        # - It changes process-global CWD (can break other tools running in the same process)
+        # - It's unnecessary because the handler is already configured with directory=...
         port = self.port if self.port != 0 else pick_free_port(self.host)
+        # If we auto-picked a port (self.port was 0), lock in the actual bound port.
+        self.port = port
         app_ref = self
 
         class Handler(http.server.SimpleHTTPRequestHandler):
-            # Use the 'directory' attribute for SimpleHTTPRequestHandler
-            def __init__(self, *args, **kwargs):
-                kwargs['directory'] = str(app_ref.root_dir)
-                super().__init__(*args, **kwargs)
-
             def _set_cors(self):
                 self.send_header('Access-Control-Allow-Origin', '*')
                 self.send_header('Access-Control-Allow-Methods', 'GET,POST,OPTIONS')
@@ -587,10 +594,14 @@ class App:
 
     def _log(self, msg: str) -> None:
         line = f"[{now_iso()}] {msg}\n"
-        sys.stdout.write(line)
-        sys.stdout.flush()
-        with open(self.log_path, "a", encoding="utf-8") as f:
-            f.write(line)
+        if sys.stdout:
+            sys.stdout.write(line)
+            sys.stdout.flush()
+        try:
+            with open(self.log_path, "a", encoding="utf-8") as f:
+                f.write(line)
+        except Exception:
+            pass
 
     def run_headless(self) -> int:
         try:
@@ -745,3 +756,5 @@ def main(argv: list[str] | None = None) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+
+
