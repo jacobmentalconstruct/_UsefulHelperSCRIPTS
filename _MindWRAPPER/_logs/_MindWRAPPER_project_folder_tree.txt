@@ -1,8 +1,13 @@
 Project Tree: C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_MindWRAPPER
-Generated: 2025-12-14 12:25:56.468486
+Generated: 2025-12-14 13:11:11.290143
 
 ├── 📁 src/
 │   ├── 📁 microservices/
+│   │   ├── 📄 base_service.py.txt
+│   │   ├── 📄 cartridge_service.py.txt
+│   │   ├── 📄 intake_service.py
+│   │   ├── 📄 neural_service.py.txt
+│   │   └── 📄 refinery_service.py
 │   ├── 📄 __init__.py
 │   └── 📄 app.py
 ├── 📄 LICENSE.md

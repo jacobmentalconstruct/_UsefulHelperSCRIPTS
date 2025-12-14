@@ -2,193 +2,209 @@
 # -*- coding: utf-8 -*-
 
 """
-== Generic Python Module/CLI Boilerplate ==
-
-This is a generic template for a Python file that can be:
-1.  Imported as a module by other scripts (e.g., `import generic_module`).
-2.  Run as a standalone command-line script (e.g., `$ python generic_module.py --input data.txt`).
-
-How to use this template:
-1.  Rename this file to match your new tool (e.g., `my_data_processor.py`).
-2.  Update this docstring to describe what your tool does.
-3.  Fill in the "CORE FUNCTIONALITY" section with your app's logic.
-4.  Go to the `main()` function to define your CLI arguments.
-5.  In `main()`, add the code to call your core functions using the parsed arguments.
+== _MindWRAPPER Core ==
+The Central Nervous System.
+Mounts the Microservices (Intake, Refinery, Neural, Cartridge) and 
+exposes them via both a GUI (Workbench) and a CLI (Headless).
 """
 
-# 1. IMPORTS
-# Standard library imports
 import sys
-import os
-import argparse  # For parsing command-line arguments
-from tkinter import ttk  # Required for the Dropdown/Combobox
+import argparse
+import time
+import tkinter as tk
+from tkinter import ttk, messagebox, scrolledtext
+from pathlib import Path
+import threading
 
-# Third-party imports (if any)
-# e.g., import requests
+# --- MICROSERVICE IMPORTS ---
+sys.path.append(str(Path(__file__).parent))
 
-# Local/application imports (if any)
-# e.g., from . import my_other_module
+from microservices.base_service import BaseService
+from microservices.neural_service import NeuralService
+from microservices.cartridge_service import CartridgeService
+from microservices.intake_service import IntakeService
+from microservices.refinery_service import RefineryService
 
+# --- CONFIGURATION ---
+DEFAULT_DB_PATH = "./cortex_dbs/mindwrapper.db"
 
-# 2. CONSTANTS
-# TODO: Define any constants your application needs.
-SOME_DEFAULT_SETTING = "default_value"
-
-
-# 3. CORE FUNCTIONALITY (The "Importable" Module)
-#
-# These functions make up the "core logic" of your application.
-# They can be imported and used by other Python scripts.
-# They should be self-contained and not rely on command-line arguments.
-
-def core_logic_function(data: any, setting: str = SOME_DEFAULT_SETTING) -> any:
+# ==============================================================================
+#  THE ENGINE ROOM (Controller)
+# ==============================================================================
+class MindWrapperController(BaseService):
     """
-    TODO: Replace this with your main logic function.
-    
-    This function should perform the primary task of your module.
-    
-    Args:
-        data (any): The input data to process.
-        setting (str, optional): An example of an optional setting.
-                                 Defaults to SOME_DEFAULT_SETTING.
-
-    Returns:
-        any: The processed data.
+    The 'Backend' Controller. 
+    It owns the services so the GUI doesn't have to manage them directly.
     """
-    print(f"[Core Logic] Processing data with setting: {setting}")
-    
-    # --- TODO: Your actual logic goes here ---
-    # Example:
-    try:
-        processed_data = f"Processed data: {str(data).upper()}"
-        print("[Core Logic] Processing complete.")
-        return processed_data
-    except Exception as e:
-        print(f"[Core Logic] Error during processing: {e}", file=sys.stderr)
-        # Re-raise the exception to be handled by the caller
-        raise
+    def __init__(self, db_path: str = DEFAULT_DB_PATH):
+        super().__init__("MindController")
+        
+        self.log_info(f"Mounting Services at {db_path}...")
+        
+        # 1. Mount Services
+        self.neural = NeuralService(max_workers=8) 
+        self.cartridge = CartridgeService(db_path)
+        self.intake = IntakeService(self.cartridge)
+        self.refinery = RefineryService(self.cartridge, self.neural)
+        
+        self.neural_online = self.neural.check_connection()
+        if not self.neural_online:
+            self.log_error("Ollama is OFFLINE. AI features disabled.")
 
+# ==============================================================================
+#  THE WORKBENCH (GUI)
+# ==============================================================================
+class WorkbenchApp(tk.Tk):
+    def __init__(self, controller: MindWrapperController):
+        super().__init__()
+        self.ctrl = controller
+        self.title("_MindWRAPPER Workbench v2.0")
+        self.geometry("1000x700")
+        self.configure(bg="#1e1e2f")
+        
+        self._setup_ui()
+        
+    def _setup_ui(self):
+        # --- HEADER ---
+        header = tk.Frame(self, bg="#101018", pady=10)
+        header.pack(fill="x")
+        
+        status_color = "#4caf50" if self.ctrl.neural_online else "#f44336"
+        tk.Label(header, text="MindWRAPPER", bg="#101018", fg="white", font=("Consolas", 16, "bold")).pack(side="left", padx=20)
+        tk.Label(header, text=f"Neural Link: {'ONLINE' if self.ctrl.neural_online else 'OFFLINE'}", bg="#101018", fg=status_color).pack(side="right", padx=20)
 
-def helper_function(value: int) -> str:
-    """
-    TODO: Add any helper functions your core logic needs.
-    
-    This is an example of a helper that might be called by
-    core_logic_function or also be importable.
-    
-    Args:
-        value (int): An input value.
+        # --- TABS ---
+        style = ttk.Style()
+        style.theme_use('clam')
+        style.configure("TNotebook", background="#1e1e2f", borderwidth=0)
+        style.configure("TNotebook.Tab", background="#2d2d44", foreground="white", padding=[15, 5])
+        style.map("TNotebook.Tab", background=[("selected", "#007ACC")])
 
-    Returns:
-        str: A formatted string.
-    """
-    return f"Helper processed value: {value * 2}"
+        self.notebook = ttk.Notebook(self)
+        self.notebook.pack(fill="both", expand=True, padx=10, pady=10)
+        
+        self._init_intake_tab()
+        self._init_refinery_tab()
+        self._init_inspector_tab()
 
+    def _init_intake_tab(self):
+        tab = tk.Frame(self.notebook, bg="#1e1e2f")
+        self.notebook.add(tab, text="  INTAKE (Vacuum)  ")
+        
+        # Path Entry
+        row1 = tk.Frame(tab, bg="#1e1e2f", pady=20)
+        row1.pack(fill="x")
+        tk.Label(row1, text="TARGET PATH:", bg="#1e1e2f", fg="gray").pack(side="left", padx=10)
+        self.ent_path = tk.Entry(row1, bg="#2d2d44", fg="white", width=50)
+        self.ent_path.insert(0, "./src") # Default
+        self.ent_path.pack(side="left", fill="x", expand=True, padx=10)
+        
+        # Buttons
+        btn_scan = tk.Button(row1, text="RUN VACUUM", bg="#007ACC", fg="white", relief="flat", padx=15, command=self._run_vacuum)
+        btn_scan.pack(side="left", padx=10)
+        
+        # Log Output
+        self.log_intake = scrolledtext.ScrolledText(tab, bg="#101018", fg="#00ff00", font=("Consolas", 9))
+        self.log_intake.pack(fill="both", expand=True, padx=10, pady=10)
 
-# 4. CLI (Command-Line Interface) LOGIC
-#
-# This code only runs when the script is executed directly.
-# It should handle parsing arguments and calling the core functions.
+    def _init_refinery_tab(self):
+        tab = tk.Frame(self.notebook, bg="#1e1e2f")
+        self.notebook.add(tab, text="  REFINERY (Enrich)  ")
+        
+        ctrl_panel = tk.Frame(tab, bg="#1e1e2f", pady=20)
+        ctrl_panel.pack(fill="x")
+        
+        self.lbl_pending = tk.Label(ctrl_panel, text="Pending Files: ?", bg="#1e1e2f", fg="yellow", font=("Arial", 12))
+        self.lbl_pending.pack(side="left", padx=20)
+        
+        btn_refresh = tk.Button(ctrl_panel, text="↻ Refresh", bg="#444", fg="white", relief="flat", command=self._refresh_stats)
+        btn_refresh.pack(side="left", padx=5)
+        
+        btn_process = tk.Button(ctrl_panel, text="RUN NIGHT SHIFT", bg="#E02080", fg="white", relief="flat", padx=15, command=self._run_refinery)
+        btn_process.pack(side="right", padx=20)
+        
+        self.log_refinery = scrolledtext.ScrolledText(tab, bg="#101018", fg="#00ccff", font=("Consolas", 9))
+        self.log_refinery.pack(fill="both", expand=True, padx=10, pady=10)
+        
+        # Initial Load
+        self.after(500, self._refresh_stats)
 
+    def _init_inspector_tab(self):
+        tab = tk.Frame(self.notebook, bg="#1e1e2f")
+        self.notebook.add(tab, text="  CARTRIDGE INSPECTOR  ")
+        tk.Label(tab, text="[Placeholder for Database Viewer]", bg="#1e1e2f", fg="gray").pack(pady=50)
+
+    # --- ACTIONS ---
+
+    def _log(self, widget, msg):
+        widget.insert(tk.END, msg + "\n")
+        widget.see(tk.END)
+
+    def _run_vacuum(self):
+        path = self.ent_path.get()
+        self._log(self.log_intake, f"--- Starting Scan: {path} ---")
+        
+        def worker():
+            stats = self.ctrl.intake.scan_directory(path)
+            self._log(self.log_intake, f"Scan Complete.\n{stats}")
+            self.after(0, self._refresh_stats) # Refresh stats on main thread
+            
+        threading.Thread(target=worker, daemon=True).start()
+
+    def _refresh_stats(self):
+        try:
+            pending = self.ctrl.cartridge.get_pending_files(limit=9999)
+            count = len(pending)
+            self.lbl_pending.config(text=f"Pending Files: {count}")
+        except:
+            self.lbl_pending.config(text="Pending Files: Error")
+
+    def _run_refinery(self):
+        self._log(self.log_refinery, "--- Starting Refinery ---")
+        
+        def worker():
+            total = 0
+            while True:
+                # Process in small batches to keep UI updating
+                count = self.ctrl.refinery.process_pending_files(batch_size=5)
+                if count == 0:
+                    break
+                total += count
+                self._log(self.log_refinery, f"Enriched {count} files...")
+                self.after(0, self._refresh_stats)
+            
+            self._log(self.log_refinery, f"--- Refinery Finished. Total: {total} ---")
+
+        threading.Thread(target=worker, daemon=True).start()
+
+# ==============================================================================
+#  ENTRY POINT
+# ==============================================================================
 def main():
-    """
-    Main function to run the script from the command line.
-    
-    It parses arguments, calls core functions, and handles CLI-specific
-    input/output and error handling.
-    """
-    
-    # --- Argument Parsing ---
-    # Set up the argument parser
-    # TODO: Update the description to match your tool.
-    parser = argparse.ArgumentParser(
-        description="A generic CLI tool. TODO: Describe your tool here.",
-        epilog="Example: python generic_module.py my_input.txt -o my_output.txt -v"
-    )
-    
-    # --- TODO: Define your arguments ---
-    
-    # Example of a required positional argument
-    parser.add_argument(
-        "input_path",  # The name of the argument
-        type=str,
-        help="TODO: Describe this required input (e.g., path to an input file)."
-    )
-    
-    # Example of an optional argument (e.g., -o or --output)
-    parser.add_argument(
-        "-o", "--output",
-        type=str,
-        default=None,  # Default to None if not provided
-        help="TODO: Describe this optional argument (e.g., path to an output file)."
-    )
-    
-    # Example of a "flag" argument (stores True if present)
-    parser.add_argument(
-        "-v", "--verbose",
-        action="store_true",  # This makes it a boolean flag
-        help="Enable verbose output."
-    )
-    
-    # Parse the arguments from the command line (e.g., sys.argv)
+    parser = argparse.ArgumentParser(description="_MindWRAPPER")
+    parser.add_argument("--headless", action="store_true", help="Run in CLI mode")
+    parser.add_argument("command", nargs="?", help="ingest/refine (only for headless)")
+    parser.add_argument("path", nargs="?", help="Path for ingest")
     args = parser.parse_args()
 
-    # --- Main Application Flow ---
-    
-    # Use the 'verbose' flag to control print statements
-    if args.verbose:
-        print("Verbose mode enabled.", file=sys.stderr)
-        print(f"Arguments received: {args}", file=sys.stderr)
+    # Initialize Backend
+    controller = MindWrapperController(DEFAULT_DB_PATH)
 
-    try:
-        # 1. Load data (CLI-specific task)
-        #    TODO: Replace this with your actual data loading
-        if args.verbose:
-            print(f"Loading data from {args.input_path}...", file=sys.stderr)
-        # This is just an example. You'd likely load a file here.
-        input_data = f"Content of {args.input_path}" 
-
-        # 2. Call core logic (the "importable" part)
-        if args.verbose:
-            print("Calling core logic...", file=sys.stderr)
-        
-        # Here we pass the CLI arguments to the core function
-        processed_data = core_logic_function(input_data)
-        
-        # 3. Handle output (CLI-specific task)
-        if args.output:
-            # Save to a file
-            if args.verbose:
-                print(f"Saving processed data to {args.output}...", file=sys.stderr)
-            # TODO: Add file-saving logic here
-            # with open(args.output, 'w') as f:
-            #     f.write(processed_data)
-            print(f"Success: Output saved to {args.output}")
+    if args.headless:
+        # --- CLI MODE ---
+        print("running in HEADLESS mode...")
+        if args.command == "ingest" and args.path:
+            controller.intake.scan_directory(args.path)
+        elif args.command == "refine":
+            # Simple loop
+            while controller.refinery.process_pending_files(10) > 0:
+                print("Processing batch...")
         else:
-            # Print to standard output
-            if args.verbose:
-                print("Printing processed data to stdout:", file=sys.stderr)
-            print(processed_data)
-        
-        # Exit with a success code
-        sys.exit(0)
+            print("Invalid Headless Arguments. Use: --headless ingest <path> OR --headless refine")
+    else:
+        # --- GUI MODE ---
+        app = WorkbenchApp(controller)
+        app.mainloop()
 
-    except FileNotFoundError as e:
-        print(f"\nError: Input file not found.", file=sys.stderr)
-        print(f"Details: {e}", file=sys.stderr)
-        sys.exit(1) # Exit with a non-zero error code
-    except Exception as e:
-        print(f"\nAn unexpected error occurred: {e}", file=sys.stderr)
-        sys.exit(1)
-
-
-# This "magic" line is the key to the whole pattern:
-#
-# - If you run `python generic_module.py ...`, Python sets
-#   __name__ = "__main__", and the main() function is called.
-#
-# - If you `import generic_module` in another script, __name__
-#   is "generic_module", so this block is SKIPPED.
-#
 if __name__ == "__main__":
     main()

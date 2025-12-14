@@ -78,195 +78,654 @@ FILE: src\app.py
 # -*- coding: utf-8 -*-
 
 """
-== Generic Python Module/CLI Boilerplate ==
-
-This is a generic template for a Python file that can be:
-1.  Imported as a module by other scripts (e.g., `import generic_module`).
-2.  Run as a standalone command-line script (e.g., `$ python generic_module.py --input data.txt`).
-
-How to use this template:
-1.  Rename this file to match your new tool (e.g., `my_data_processor.py`).
-2.  Update this docstring to describe what your tool does.
-3.  Fill in the "CORE FUNCTIONALITY" section with your app's logic.
-4.  Go to the `main()` function to define your CLI arguments.
-5.  In `main()`, add the code to call your core functions using the parsed arguments.
+== _MindWRAPPER Core ==
+The Central Nervous System.
+Mounts the Microservices (Intake, Refinery, Neural, Cartridge) and 
+exposes them via both a GUI (Workbench) and a CLI (Headless).
 """
 
-# 1. IMPORTS
-# Standard library imports
 import sys
-import os
-import argparse  # For parsing command-line arguments
+import argparse
+import time
+import tkinter as tk
+from tkinter import ttk, messagebox, scrolledtext
+from pathlib import Path
+import threading
 
-# Third-party imports (if any)
-# e.g., import requests
+# --- MICROSERVICE IMPORTS ---
+sys.path.append(str(Path(__file__).parent))
 
-# Local/application imports (if any)
-# e.g., from . import my_other_module
+from microservices.base_service import BaseService
+from microservices.neural_service import NeuralService
+from microservices.cartridge_service import CartridgeService
+from microservices.intake_service import IntakeService
+from microservices.refinery_service import RefineryService
 
+# --- CONFIGURATION ---
+DEFAULT_DB_PATH = "./cortex_dbs/mindwrapper.db"
 
-# 2. CONSTANTS
-# TODO: Define any constants your application needs.
-SOME_DEFAULT_SETTING = "default_value"
-
-
-# 3. CORE FUNCTIONALITY (The "Importable" Module)
-#
-# These functions make up the "core logic" of your application.
-# They can be imported and used by other Python scripts.
-# They should be self-contained and not rely on command-line arguments.
-
-def core_logic_function(data: any, setting: str = SOME_DEFAULT_SETTING) -> any:
+# ==============================================================================
+#  THE ENGINE ROOM (Controller)
+# ==============================================================================
+class MindWrapperController(BaseService):
     """
-    TODO: Replace this with your main logic function.
-    
-    This function should perform the primary task of your module.
-    
-    Args:
-        data (any): The input data to process.
-        setting (str, optional): An example of an optional setting.
-                                 Defaults to SOME_DEFAULT_SETTING.
-
-    Returns:
-        any: The processed data.
+    The 'Backend' Controller. 
+    It owns the services so the GUI doesn't have to manage them directly.
     """
-    print(f"[Core Logic] Processing data with setting: {setting}")
-    
-    # --- TODO: Your actual logic goes here ---
-    # Example:
-    try:
-        processed_data = f"Processed data: {str(data).upper()}"
-        print("[Core Logic] Processing complete.")
-        return processed_data
-    except Exception as e:
-        print(f"[Core Logic] Error during processing: {e}", file=sys.stderr)
-        # Re-raise the exception to be handled by the caller
-        raise
+    def __init__(self, db_path: str = DEFAULT_DB_PATH):
+        super().__init__("MindController")
+        
+        self.log_info(f"Mounting Services at {db_path}...")
+        
+        # 1. Mount Services
+        self.neural = NeuralService(max_workers=8) 
+        self.cartridge = CartridgeService(db_path)
+        self.intake = IntakeService(self.cartridge)
+        self.refinery = RefineryService(self.cartridge, self.neural)
+        
+        self.neural_online = self.neural.check_connection()
+        if not self.neural_online:
+            self.log_error("Ollama is OFFLINE. AI features disabled.")
 
+# ==============================================================================
+#  THE WORKBENCH (GUI)
+# ==============================================================================
+class WorkbenchApp(tk.Tk):
+    def __init__(self, controller: MindWrapperController):
+        super().__init__()
+        self.ctrl = controller
+        self.title("_MindWRAPPER Workbench v2.0")
+        self.geometry("1000x700")
+        self.configure(bg="#1e1e2f")
+        
+        self._setup_ui()
+        
+    def _setup_ui(self):
+        # --- HEADER ---
+        header = tk.Frame(self, bg="#101018", pady=10)
+        header.pack(fill="x")
+        
+        status_color = "#4caf50" if self.ctrl.neural_online else "#f44336"
+        tk.Label(header, text="MindWRAPPER", bg="#101018", fg="white", font=("Consolas", 16, "bold")).pack(side="left", padx=20)
+        tk.Label(header, text=f"Neural Link: {'ONLINE' if self.ctrl.neural_online else 'OFFLINE'}", bg="#101018", fg=status_color).pack(side="right", padx=20)
 
-def helper_function(value: int) -> str:
-    """
-    TODO: Add any helper functions your core logic needs.
-    
-    This is an example of a helper that might be called by
-    core_logic_function or also be importable.
-    
-    Args:
-        value (int): An input value.
+        # --- TABS ---
+        style = ttk.Style()
+        style.theme_use('clam')
+        style.configure("TNotebook", background="#1e1e2f", borderwidth=0)
+        style.configure("TNotebook.Tab", background="#2d2d44", foreground="white", padding=[15, 5])
+        style.map("TNotebook.Tab", background=[("selected", "#007ACC")])
 
-    Returns:
-        str: A formatted string.
-    """
-    return f"Helper processed value: {value * 2}"
+        self.notebook = ttk.Notebook(self)
+        self.notebook.pack(fill="both", expand=True, padx=10, pady=10)
+        
+        self._init_intake_tab()
+        self._init_refinery_tab()
+        self._init_inspector_tab()
 
+    def _init_intake_tab(self):
+        tab = tk.Frame(self.notebook, bg="#1e1e2f")
+        self.notebook.add(tab, text="  INTAKE (Vacuum)  ")
+        
+        # Path Entry
+        row1 = tk.Frame(tab, bg="#1e1e2f", pady=20)
+        row1.pack(fill="x")
+        tk.Label(row1, text="TARGET PATH:", bg="#1e1e2f", fg="gray").pack(side="left", padx=10)
+        self.ent_path = tk.Entry(row1, bg="#2d2d44", fg="white", width=50)
+        self.ent_path.insert(0, "./src") # Default
+        self.ent_path.pack(side="left", fill="x", expand=True, padx=10)
+        
+        # Buttons
+        btn_scan = tk.Button(row1, text="RUN VACUUM", bg="#007ACC", fg="white", relief="flat", padx=15, command=self._run_vacuum)
+        btn_scan.pack(side="left", padx=10)
+        
+        # Log Output
+        self.log_intake = scrolledtext.ScrolledText(tab, bg="#101018", fg="#00ff00", font=("Consolas", 9))
+        self.log_intake.pack(fill="both", expand=True, padx=10, pady=10)
 
-# 4. CLI (Command-Line Interface) LOGIC
-#
-# This code only runs when the script is executed directly.
-# It should handle parsing arguments and calling the core functions.
+    def _init_refinery_tab(self):
+        tab = tk.Frame(self.notebook, bg="#1e1e2f")
+        self.notebook.add(tab, text="  REFINERY (Enrich)  ")
+        
+        ctrl_panel = tk.Frame(tab, bg="#1e1e2f", pady=20)
+        ctrl_panel.pack(fill="x")
+        
+        self.lbl_pending = tk.Label(ctrl_panel, text="Pending Files: ?", bg="#1e1e2f", fg="yellow", font=("Arial", 12))
+        self.lbl_pending.pack(side="left", padx=20)
+        
+        btn_refresh = tk.Button(ctrl_panel, text="↻ Refresh", bg="#444", fg="white", relief="flat", command=self._refresh_stats)
+        btn_refresh.pack(side="left", padx=5)
+        
+        btn_process = tk.Button(ctrl_panel, text="RUN NIGHT SHIFT", bg="#E02080", fg="white", relief="flat", padx=15, command=self._run_refinery)
+        btn_process.pack(side="right", padx=20)
+        
+        self.log_refinery = scrolledtext.ScrolledText(tab, bg="#101018", fg="#00ccff", font=("Consolas", 9))
+        self.log_refinery.pack(fill="both", expand=True, padx=10, pady=10)
+        
+        # Initial Load
+        self.after(500, self._refresh_stats)
 
+    def _init_inspector_tab(self):
+        tab = tk.Frame(self.notebook, bg="#1e1e2f")
+        self.notebook.add(tab, text="  CARTRIDGE INSPECTOR  ")
+        tk.Label(tab, text="[Placeholder for Database Viewer]", bg="#1e1e2f", fg="gray").pack(pady=50)
+
+    # --- ACTIONS ---
+
+    def _log(self, widget, msg):
+        widget.insert(tk.END, msg + "\n")
+        widget.see(tk.END)
+
+    def _run_vacuum(self):
+        path = self.ent_path.get()
+        self._log(self.log_intake, f"--- Starting Scan: {path} ---")
+        
+        def worker():
+            stats = self.ctrl.intake.scan_directory(path)
+            self._log(self.log_intake, f"Scan Complete.\n{stats}")
+            self.after(0, self._refresh_stats) # Refresh stats on main thread
+            
+        threading.Thread(target=worker, daemon=True).start()
+
+    def _refresh_stats(self):
+        try:
+            pending = self.ctrl.cartridge.get_pending_files(limit=9999)
+            count = len(pending)
+            self.lbl_pending.config(text=f"Pending Files: {count}")
+        except:
+            self.lbl_pending.config(text="Pending Files: Error")
+
+    def _run_refinery(self):
+        self._log(self.log_refinery, "--- Starting Refinery ---")
+        
+        def worker():
+            total = 0
+            while True:
+                # Process in small batches to keep UI updating
+                count = self.ctrl.refinery.process_pending_files(batch_size=5)
+                if count == 0:
+                    break
+                total += count
+                self._log(self.log_refinery, f"Enriched {count} files...")
+                self.after(0, self._refresh_stats)
+            
+            self._log(self.log_refinery, f"--- Refinery Finished. Total: {total} ---")
+
+        threading.Thread(target=worker, daemon=True).start()
+
+# ==============================================================================
+#  ENTRY POINT
+# ==============================================================================
 def main():
-    """
-    Main function to run the script from the command line.
-    
-    It parses arguments, calls core functions, and handles CLI-specific
-    input/output and error handling.
-    """
-    
-    # --- Argument Parsing ---
-    # Set up the argument parser
-    # TODO: Update the description to match your tool.
-    parser = argparse.ArgumentParser(
-        description="A generic CLI tool. TODO: Describe your tool here.",
-        epilog="Example: python generic_module.py my_input.txt -o my_output.txt -v"
-    )
-    
-    # --- TODO: Define your arguments ---
-    
-    # Example of a required positional argument
-    parser.add_argument(
-        "input_path",  # The name of the argument
-        type=str,
-        help="TODO: Describe this required input (e.g., path to an input file)."
-    )
-    
-    # Example of an optional argument (e.g., -o or --output)
-    parser.add_argument(
-        "-o", "--output",
-        type=str,
-        default=None,  # Default to None if not provided
-        help="TODO: Describe this optional argument (e.g., path to an output file)."
-    )
-    
-    # Example of a "flag" argument (stores True if present)
-    parser.add_argument(
-        "-v", "--verbose",
-        action="store_true",  # This makes it a boolean flag
-        help="Enable verbose output."
-    )
-    
-    # Parse the arguments from the command line (e.g., sys.argv)
+    parser = argparse.ArgumentParser(description="_MindWRAPPER")
+    parser.add_argument("--headless", action="store_true", help="Run in CLI mode")
+    parser.add_argument("command", nargs="?", help="ingest/refine (only for headless)")
+    parser.add_argument("path", nargs="?", help="Path for ingest")
     args = parser.parse_args()
 
-    # --- Main Application Flow ---
-    
-    # Use the 'verbose' flag to control print statements
-    if args.verbose:
-        print("Verbose mode enabled.", file=sys.stderr)
-        print(f"Arguments received: {args}", file=sys.stderr)
+    # Initialize Backend
+    controller = MindWrapperController(DEFAULT_DB_PATH)
 
-    try:
-        # 1. Load data (CLI-specific task)
-        #    TODO: Replace this with your actual data loading
-        if args.verbose:
-            print(f"Loading data from {args.input_path}...", file=sys.stderr)
-        # This is just an example. You'd likely load a file here.
-        input_data = f"Content of {args.input_path}" 
-
-        # 2. Call core logic (the "importable" part)
-        if args.verbose:
-            print("Calling core logic...", file=sys.stderr)
-        
-        # Here we pass the CLI arguments to the core function
-        processed_data = core_logic_function(input_data)
-        
-        # 3. Handle output (CLI-specific task)
-        if args.output:
-            # Save to a file
-            if args.verbose:
-                print(f"Saving processed data to {args.output}...", file=sys.stderr)
-            # TODO: Add file-saving logic here
-            # with open(args.output, 'w') as f:
-            #     f.write(processed_data)
-            print(f"Success: Output saved to {args.output}")
+    if args.headless:
+        # --- CLI MODE ---
+        print("running in HEADLESS mode...")
+        if args.command == "ingest" and args.path:
+            controller.intake.scan_directory(args.path)
+        elif args.command == "refine":
+            # Simple loop
+            while controller.refinery.process_pending_files(10) > 0:
+                print("Processing batch...")
         else:
-            # Print to standard output
-            if args.verbose:
-                print("Printing processed data to stdout:", file=sys.stderr)
-            print(processed_data)
-        
-        # Exit with a success code
-        sys.exit(0)
+            print("Invalid Headless Arguments. Use: --headless ingest <path> OR --headless refine")
+    else:
+        # --- GUI MODE ---
+        app = WorkbenchApp(controller)
+        app.mainloop()
 
-    except FileNotFoundError as e:
-        print(f"\nError: Input file not found.", file=sys.stderr)
-        print(f"Details: {e}", file=sys.stderr)
-        sys.exit(1) # Exit with a non-zero error code
-    except Exception as e:
-        print(f"\nAn unexpected error occurred: {e}", file=sys.stderr)
-        sys.exit(1)
-
-
-# This "magic" line is the key to the whole pattern:
-#
-# - If you run `python generic_module.py ...`, Python sets
-#   __name__ = "__main__", and the main() function is called.
-#
-# - If you `import generic_module` in another script, __name__
-#   is "generic_module", so this block is SKIPPED.
-#
 if __name__ == "__main__":
     main()
 --------------------------------------------------------------------------------
 FILE: src\__init__.py
 --------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+FILE: src\microservices\base_service.py.txt
+--------------------------------------------------------------------------------
+import logging
+import sys
+
+class BaseService:
+    """
+    Standard base class for all _NeoCORTEX microservices.
+    Provides unified logging and error handling.
+    """
+    def __init__(self, service_name: str):
+        self.service_name = service_name
+        self.log = logging.getLogger(service_name)
+        
+        # Configure logging if not already set up
+        if not self.log.handlers:
+            handler = logging.StreamHandler(sys.stdout)
+            formatter = logging.Formatter('%(asctime)s [%(name)s] %(levelname)s: %(message)s', datefmt='%H:%M:%S')
+            handler.setFormatter(formatter)
+            self.log.addHandler(handler)
+            self.log.setLevel(logging.INFO)
+
+    def log_info(self, msg: str):
+        self.log.info(msg)
+
+    def log_error(self, msg: str):
+        self.log.error(msg)
+
+--------------------------------------------------------------------------------
+FILE: src\microservices\cartridge_service.py.txt
+--------------------------------------------------------------------------------
+import sqlite3
+import json
+import time
+import os
+from pathlib import Path
+from typing import Dict, Any, Optional, List
+from .base_service import BaseService
+
+class CartridgeService(BaseService):
+    """
+    The Storage Manager.
+    Manages the SQLite Cartridge format, including BLOB storage and ELT Status tracking.
+    """
+    
+    def __init__(self, db_path: str):
+        super().__init__("CartridgeService")
+        self.db_path = Path(db_path)
+        self._init_db()
+
+    def _init_db(self):
+        """Initializes the ELT Schema (Extract, Load, Transform)."""
+        # Ensure parent folder exists
+        self.db_path.parent.mkdir(parents=True, exist_ok=True)
+        
+        conn = self._get_conn()
+        cursor = conn.cursor()
+        
+        # 1. Manifest (Metadata about the Cartridge itself)
+        cursor.execute("CREATE TABLE IF NOT EXISTS manifest (key TEXT PRIMARY KEY, value TEXT)")
+        
+        # 2. Files (The Core Artifacts)
+        # Note the 'blob_data' for binaries and 'status' for the workflow
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS files (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                path TEXT UNIQUE NOT NULL,      -- Virtual path (e.g. src/app.py)
+                content TEXT,                   -- Text content (if applicable)
+                blob_data BLOB,                 -- Binary content (PDFs, Images)
+                
+                status TEXT DEFAULT 'RAW',      -- RAW, PENDING_TRIAGE, ENRICHED, ERROR
+                mime_type TEXT,                 -- text/plain, application/pdf
+                
+                metadata TEXT DEFAULT '{}',     -- JSON Tags from the Neural Service
+                last_updated TIMESTAMP
+            )
+        """)
+
+        # 3. Chunks (Vectors)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS chunks (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                file_id INTEGER,
+                chunk_index INTEGER,
+                content TEXT,
+                embedding BLOB,
+                FOREIGN KEY(file_id) REFERENCES files(id)
+            )
+        """)
+        
+        conn.commit()
+        conn.close()
+
+    def _get_conn(self):
+        return sqlite3.connect(self.db_path)
+
+    def store_raw_file(self, path: str, content: str = None, blob: bytes = None, mime_type: str = "text/plain"):
+        """
+        The 'Vacuum' method. Dumps raw data into the DB.
+        """
+        conn = self._get_conn()
+        cursor = conn.cursor()
+        try:
+            cursor.execute("""
+                INSERT OR REPLACE INTO files (path, content, blob_data, mime_type, status, last_updated)
+                VALUES (?, ?, ?, ?, 'RAW', ?)
+            """, (path, content, blob, mime_type, time.time()))
+            conn.commit()
+            return True
+        except Exception as e:
+            self.log_error(f"Failed to store {path}: {e}")
+            return False
+        finally:
+            conn.close()
+
+    def get_pending_files(self, limit: int = 100) -> List[Dict]:
+        """Fetches files waiting for the Refinery."""
+        conn = self._get_conn()
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        
+        rows = cursor.execute(
+            "SELECT id, path, content, mime_type FROM files WHERE status = 'RAW' LIMIT ?", 
+            (limit,)
+        ).fetchall()
+        
+        conn.close()
+        return [dict(row) for row in rows]
+
+    def update_file_status(self, file_id: int, status: str, metadata: Dict = None):
+        """Promotes a file's status (e.g., RAW -> ENRICHED)."""
+        conn = self._get_conn()
+        cursor = conn.cursor()
+        
+        if metadata:
+            meta_json = json.dumps(metadata)
+            cursor.execute("UPDATE files SET status = ?, metadata = ? WHERE id = ?", (status, meta_json, file_id))
+        else:
+            cursor.execute("UPDATE files SET status = ? WHERE id = ?", (status, file_id))
+            
+        conn.commit()
+        conn.close()
+
+--------------------------------------------------------------------------------
+FILE: src\microservices\intake_service.py
+--------------------------------------------------------------------------------
+import os
+import mimetypes
+from pathlib import Path
+from typing import List, Dict
+from .base_service import BaseService
+from .cartridge_service import CartridgeService
+
+class IntakeService(BaseService):
+    """
+    The Vacuum.
+    Crawls local directories and ingests raw files into the Cartridge.
+    Performs NO analysis, only storage.
+    """
+
+    # Files to absolutely ignore
+    IGNORE_DIRS = {'.git', '__pycache__', 'node_modules', '.venv', 'dist', 'build', '.idea', '.vscode'}
+    IGNORE_EXTS = {'.pyc', '.pyd', '.db', '.sqlite', '.sqlite3'}
+
+    def __init__(self, cartridge_service: CartridgeService):
+        super().__init__("IntakeService")
+        self.cartridge = cartridge_service
+
+    def scan_directory(self, root_path: str) -> Dict[str, int]:
+        """
+        Recursively walks the directory and stores everything in the DB.
+        Returns a report of what it did.
+        """
+        root = Path(root_path).resolve()
+        stats = {"text": 0, "binary": 0, "skipped": 0, "total": 0}
+
+        self.log_info(f"Starting scan of {root}...")
+
+        for current_dir, dirs, files in os.walk(root):
+            # In-place modification of dirs to prune IGNORED directories
+            dirs[:] = [d for d in dirs if d not in self.IGNORE_DIRS]
+
+            for filename in files:
+                file_path = Path(current_dir) / filename
+                
+                # Check extension blacklist
+                if file_path.suffix.lower() in self.IGNORE_EXTS:
+                    stats["skipped"] += 1
+                    continue
+
+                # Calculate the "Virtual Path" (relative to project root)
+                try:
+                    vfs_path = file_path.relative_to(root).as_posix()
+                except ValueError:
+                    vfs_path = filename
+
+                # Attempt Ingestion
+                if self._ingest_file(file_path, vfs_path, stats):
+                    stats["total"] += 1
+                else:
+                    stats["skipped"] += 1
+
+        self.log_info(f"Scan Complete. {stats}")
+        return stats
+
+    def _ingest_file(self, real_path: Path, vfs_path: str, stats: Dict) -> bool:
+        """Reads the file and pushes to CartridgeService."""
+        mime_type, _ = mimetypes.guess_type(real_path)
+        if not mime_type:
+            mime_type = "application/octet-stream"
+
+        # Strategy: Try to read as Text first. If that fails, treat as Binary.
+        content = None
+        blob = None
+        
+        try:
+            # Try Text
+            with open(real_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+            stats["text"] += 1
+        except UnicodeDecodeError:
+            # Fallback to Binary
+            try:
+                with open(real_path, 'rb') as f:
+                    blob = f.read()
+                stats["binary"] += 1
+                # Ensure mime reflects binary if we guessed wrong
+                if mime_type.startswith("text"): 
+                    mime_type = "application/octet-stream"
+            except Exception as e:
+                self.log_error(f"Access denied or read error {vfs_path}: {e}")
+                return False
+
+        # Store in DB
+        return self.cartridge.store_raw_file(
+            path=vfs_path,
+            content=content,
+            blob=blob,
+            mime_type=mime_type
+        )
+
+--------------------------------------------------------------------------------
+FILE: src\microservices\neural_service.py.txt
+--------------------------------------------------------------------------------
+import requests
+import json
+import concurrent.futures
+from typing import Optional, Dict, Any, List
+from .base_service import BaseService
+
+# Configuration constants
+OLLAMA_API_URL = "http://localhost:11434/api"
+
+class NeuralService(BaseService):
+    """
+    Manages connections to the Neural Backend (Ollama).
+    Handles Tiering (CPU vs GPU) and Parallelism.
+    """
+    
+    # Define our tiers based on the 'Bake' script we ran earlier
+    MODELS = {
+        "fast": "qwen2.5-coder:1.5b-cpu",     # The Roughneck (CPU)
+        "smart": "qwen2.5:3b-cpu",            # The Supervisor (CPU)
+        "architect": "qwen2.5:7b",            # The Big Brain (GPU)
+        "embed": "mxbai-embed-large:latest-cpu" # The Embedder (CPU)
+    }
+
+    def __init__(self, max_workers: int = 4):
+        super().__init__("NeuralService")
+        self.max_workers = max_workers
+        self.log_info(f"Neural Link Active. CPU Workers: {max_workers}")
+
+    def check_connection(self) -> bool:
+        """Pings Ollama to see if it's alive."""
+        try:
+            requests.get(f"{OLLAMA_API_URL}/tags", timeout=2)
+            return True
+        except requests.RequestException:
+            self.log_error("Ollama connection failed. Is 'ollama serve' running?")
+            return False
+
+    def get_embedding(self, text: str) -> Optional[List[float]]:
+        """Generates a vector using the CPU embedder."""
+        try:
+            res = requests.post(
+                f"{OLLAMA_API_URL}/embeddings",
+                json={"model": self.MODELS["embed"], "prompt": text},
+                timeout=30
+            )
+            if res.status_code == 200:
+                return res.json().get("embedding")
+        except Exception as e:
+            self.log_error(f"Embedding failed: {e}")
+        return None
+
+    def request_inference(self, prompt: str, tier: str = "fast", format_json: bool = False) -> str:
+        """
+        Synchronous inference request.
+        tier: 'fast' (1.5b-cpu), 'smart' (3b-cpu), or 'architect' (7b-gpu)
+        """
+        model = self.MODELS.get(tier, self.MODELS["fast"])
+        payload = {
+            "model": model,
+            "prompt": prompt,
+            "stream": False
+        }
+        if format_json:
+            payload["format"] = "json"
+
+        try:
+            res = requests.post(f"{OLLAMA_API_URL}/generate", json=payload, timeout=60)
+            if res.status_code == 200:
+                return res.json().get("response", "").strip()
+        except Exception as e:
+            self.log_error(f"Inference ({tier}) failed: {e}")
+        return ""
+
+    def process_parallel(self, items: List[Any], worker_func) -> List[Any]:
+        """
+        Helper to run a function across many items using the ThreadPool.
+        Useful for batch ingestion.
+        """
+        results = []
+        with concurrent.futures.ThreadPoolExecutor(max_workers=self.max_workers) as executor:
+            # worker_func should take a single item and return a result
+            futures = {executor.submit(worker_func, item): item for item in items}
+            for future in concurrent.futures.as_completed(futures):
+                try:
+                    results.append(future.result())
+                except Exception as e:
+                    self.log_error(f"Worker task failed: {e}")
+        return results
+
+--------------------------------------------------------------------------------
+FILE: src\microservices\refinery_service.py
+--------------------------------------------------------------------------------
+import json
+from typing import Dict, Any, Optional
+from .base_service import BaseService
+from .cartridge_service import CartridgeService
+from .neural_service import NeuralService
+
+class RefineryService(BaseService):
+    """
+    The Night Shift.
+    Processes 'RAW' files from the Cartridge, extracts metadata,
+    and promotes them to 'ENRICHED'.
+    """
+
+    def __init__(self, cartridge: CartridgeService, neural: NeuralService):
+        super().__init__("RefineryService")
+        self.cartridge = cartridge
+        self.neural = neural
+        self.is_running = False
+
+    def process_pending_files(self, batch_size: int = 10) -> int:
+        """
+        Fetches a batch of RAW files and runs the appropriate handler.
+        Returns number of files processed.
+        """
+        pending = self.cartridge.get_pending_files(limit=batch_size)
+        if not pending:
+            return 0
+
+        self.log_info(f"Refinery spinning up for {len(pending)} files...")
+        
+        # We can parallelize this using NeuralService's helper
+        results = self.neural.process_parallel(pending, self._process_single_file)
+        
+        return len(results)
+
+    def _process_single_file(self, file_row: Dict) -> bool:
+        """
+        Worker function. Determines type and enriches.
+        """
+        file_id = file_row["id"]
+        path = file_row["path"]
+        mime = file_row["mime_type"]
+        content = file_row["content"]
+
+        meta = {}
+        status = "ENRICHED"
+
+        try:
+            # --- PLUGIN DISPATCHER ---
+            if path.endswith(".py"):
+                meta = self._handle_python(content)
+            elif path.endswith(".md") or path.endswith(".txt"):
+                meta = self._handle_generic_text(content)
+            elif not content:
+                # It's a binary blob we don't have a handler for yet
+                meta = {"type": "binary", "info": "No handler loaded"}
+                status = "SKIPPED_BINARY"
+            else:
+                meta = self._handle_generic_text(content)
+
+            # Update DB
+            self.cartridge.update_file_status(file_id, status, metadata=meta)
+            return True
+
+        except Exception as e:
+            self.log_error(f"Failed to refine {path}: {e}")
+            self.cartridge.update_file_status(file_id, "ERROR", metadata={"error": str(e)})
+            return False
+
+    # --- HANDLERS (The "Plugins") ---
+
+    def _handle_python(self, content: str) -> Dict:
+        """Uses 1.5b-coder to extract structure."""
+        prompt = f"""
+        Analyze this Python code. Return a JSON object with:
+        - "classes": [list of class names]
+        - "functions": [list of function names]
+        - "imports": [list of imports]
+        - "complexity": (Low/Medium/High)
+        - "summary": "One sentence description"
+        
+        Code:
+        {content[:3000]}
+        """
+        # Tier='fast' uses the CPU-bound 1.5b-coder
+        response = self.neural.request_inference(prompt, tier="fast", format_json=True)
+        try:
+            return json.loads(response)
+        except:
+            return {"summary": "Analysis failed", "raw_inference": response[:100]}
+
+    def _handle_generic_text(self, content: str) -> Dict:
+        """Uses 3b-cpu for general summaries."""
+        prompt = f"""
+        Summarize this text in one sentence. Return JSON with key 'summary'.
+        Text:
+        {content[:2000]}
+        """
+        # Tier='smart' uses the 3b-cpu model
+        response = self.neural.request_inference(prompt, tier="smart", format_json=True)
+        try:
+            return json.loads(response)
+        except:
+            return {"summary": response.strip()}
