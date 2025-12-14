@@ -1,0 +1,11 @@
+{
+  "folder_states": {
+    ".": "checked",
+    "_logs": "unchecked",
+    "src": "checked",
+    "src\\_BoilerPlatePythonTEMPLATE": "checked",
+    "src\\_BoilerPlatePythonTEMPLATE\\_logs": "unchecked",
+    "src\\_BoilerPlatePythonTEMPLATE\\src": "checked"
+  },
+  "dynamic_exclusions": []
+}

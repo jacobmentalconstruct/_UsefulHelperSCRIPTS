@@ -1,0 +1,217 @@
+File Dump from Project: C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_BoilerPlatePythonTEMPLATE
+Generated: 2025-12-07 09:01:50
+
+-------------------- FILE: AI_AGENT_BOILERPLATE_INSTRUCTIONS.md ------------------------
+I am refactoring a collection of legacy Python scripts into a unified "Systems Thinker" ecosystem managed by a central launcher. I need you to act as a Refactoring Engine.
+
+Here is the Architecture Contract you must follow for this session:
+
+1. THE GOAL:
+Convert the raw code I provide into a standardized package structure compatible with a `scripts_menu.py` launcher that executes via `python -m src.app`.
+
+2. THE TARGET STRUCTURE:
+/Project_Name/
+│
+├── requirements.txt      (Minimal dependencies)
+└── src/
+    ├── __init__.py       (Empty)
+    └── app.py            (The Hybrid Entry Point)
+
+3. THE CODE PATTERN (Hybrid Entry Point):
+The `src/app.py` must use the following pattern to support both CLI utility and a GUI Showcase mode:
+
+    import sys
+    import argparse
+    import tkinter as tk
+
+    # --- CORE LOGIC (Importable) ---
+    def core_logic(...):
+        pass
+
+    # --- GUI MODE (Default / Showcase) ---
+    def run_gui():
+        # A simple Tkinter window to demonstrate the tool works
+        # Must not crash if launched with no args
+        pass
+
+    # --- CLI MODE (Utility) ---
+    def run_cli():
+        # Uses argparse
+        # Only runs if sys.argv has arguments
+        pass
+
+    def main():
+        if len(sys.argv) > 1:
+            run_cli()
+        else:
+            run_gui()
+
+    if __name__ == "__main__":
+        main()
+
+INSTRUCTIONS:
+1. I will paste the code for a specific project.
+2. You will analyze it and refactor it into the `src/app.py` template above.
+3. You will provide the content for `requirements.txt`.
+4. Do not remove core functionality, but wrap it cleanly.
+
+Are you ready for the source code?
+--------------------------------------------------------------------------------
+
+-------------------- FILE: LICENSE.md --------------------------------------------------
+MIT License
+
+Copyright (c) 2025 Jacob Lambert
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+--------------------------------------------------------------------------------
+
+-------------------- FILE: README.md ---------------------------------------------------
+
+--------------------------------------------------------------------------------
+
+-------------------- FILE: requirements.txt --------------------------------------------
+
+--------------------------------------------------------------------------------
+
+-------------------- FILE: setup_env.bat -----------------------------------------------
+@echo off
+echo [SYSTEM] Initializing new project environment...
+
+:: 1. Create the venv if it doesn't exist
+if not exist .venv (
+    echo [SYSTEM] Creating .venv...
+    py -m venv .venv
+)
+
+:: 2. Upgrade pip and install requirements
+echo [SYSTEM] Installing dependencies...
+.venv\Scripts\python.exe -m pip install --upgrade pip
+if exist requirements.txt (
+    .venv\Scripts\pip install -r requirements.txt
+)
+
+echo.
+echo [SUCCESS] Environment ready!
+echo You can now open this folder in VS Code or launch via scripts_menu.py
+pause
+--------------------------------------------------------------------------------
+
+-------------------- FILE: src\app.py --------------------------------------------------
+import sys
+import argparse
+import tkinter as tk
+from datetime import datetime
+
+# ---------- 1. Core Logic (The "Business" Layer) ----------
+# Pure python. No UI dependencies. Importable.
+
+def core_process(data: str) -> str:
+    """The actual work this app does."""
+    timestamp = datetime.now().strftime("%H:%M:%S")
+    return f"[{timestamp}] Processed: {data.upper()}"
+
+
+# ---------- 2. GUI Mode (The "Showcase" Layer) ----------
+# Runs when launched via scripts_menu.py or double-clicked
+
+def run_gui():
+    root = tk.Tk()
+    root.title("App Boilerplate (GUI Mode)")
+    root.geometry("400x300")
+
+    # A simple UI to prove the app is alive
+    lbl_status = tk.Label(root, text="System Ready", fg="green", pady=10)
+    lbl_status.pack()
+
+    # Input/Output demo
+    entry = tk.Entry(root, width=40)
+    entry.pack(pady=5)
+    entry.insert(0, "Type here and hit Enter...")
+
+    txt_output = tk.Text(root, height=10, width=45)
+    txt_output.pack(pady=10)
+
+    def on_process(event=None):
+        raw = entry.get()
+        result = core_process(raw)
+        txt_output.insert(tk.END, result + "\n")
+        txt_output.see(tk.END)
+        entry.delete(0, tk.END)
+
+    entry.bind("<Return>", on_process)
+    
+    btn = tk.Button(root, text="Run Core Process", command=on_process)
+    btn.pack()
+
+    root.mainloop()
+
+
+# ---------- 3. CLI Mode (The "Utility" Layer) ----------
+# Runs when you use command line args: python -m src.app -i "foo"
+
+def run_cli():
+    parser = argparse.ArgumentParser(description="Boilerplate CLI Tool")
+    
+    # Arguments
+    parser.add_argument("-i", "--input", type=str, help="Input string to process")
+    parser.add_argument("-v", "--verbose", action="store_true", help="Verbose output")
+    
+    args = parser.parse_args()
+
+    # If CLI was called but no args given, print help instead of crashing
+    if not args.input:
+        parser.print_help()
+        sys.exit(1)
+
+    if args.verbose:
+        print(f"[DEBUG] Input received: {args.input}")
+
+    try:
+        result = core_process(args.input)
+        print(result)
+    except Exception as e:
+        print(f"Error: {e}", file=sys.stderr)
+        sys.exit(1)
+
+
+# ---------- 4. The Selector (Entry Point) ----------
+
+def main():
+    """
+    Intelligent dispatch:
+    - If arguments are present (len > 1), assume CLI mode.
+    - If no arguments (len == 1), assume GUI/Launcher mode.
+    """
+    if len(sys.argv) > 1:
+        run_cli()
+    else:
+        # If your app is PURELY CLI and has no GUI, replace this with:
+        # print("This tool requires CLI arguments. Run with --help.")
+        # input("Press Enter to close...")
+        run_gui()
+
+if __name__ == "__main__":
+    main()
+--------------------------------------------------------------------------------
+
+-------------------- FILE: src\__init__.py ---------------------------------------------
+
+--------------------------------------------------------------------------------

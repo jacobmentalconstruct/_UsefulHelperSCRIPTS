@@ -1,0 +1,708 @@
+Dump: C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_UsefulHelperScriptsMENU
+
+
+--------------------------------------------------------------------------------
+FILE: requirements.txt
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+FILE: setup_env.bat
+--------------------------------------------------------------------------------
+@echo off
+echo [SYSTEM] Initializing new project environment...
+
+:: 1. Create the venv if it doesn't exist
+if not exist .venv (
+    echo [SYSTEM] Creating .venv...
+    py -m venv .venv
+)
+
+:: 2. Upgrade pip and install requirements
+echo [SYSTEM] Installing dependencies...
+.venv\Scripts\python.exe -m pip install --upgrade pip
+if exist requirements.txt (
+    .venv\Scripts\pip install -r requirements.txt
+)
+
+echo.
+echo [SUCCESS] Environment ready!
+echo You can now open this folder in VS Code or launch via scripts_menu.py
+pause
+--------------------------------------------------------------------------------
+FILE: src\app.pyw
+--------------------------------------------------------------------------------
+import json
+import os
+import shutil
+import subprocess
+import sys
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Dict, List, Optional
+
+import tkinter as tk
+from tkinter import ttk, messagebox, simpledialog
+
+
+# ---------- Data model ----------
+
+@dataclass
+class AppConfig:
+    name: str
+    folder: Path              # absolute
+    python_cmd: Optional[str] = None  # interpreter or "py"
+    env: Dict[str, str] = field(default_factory=dict)
+
+    @property
+    def has_src_app(self) -> bool:
+        return (self.folder / "src" / "app.py").is_file()
+
+    def resolve_python(self) -> List[str]:
+        """
+        Determine the Python command list to run for this app.
+        Priority:
+        1. Explicit python_cmd (absolute or relative to folder, or just 'py').
+        2. .venv inside app folder.
+        3. 'py' (on Windows) or sys.executable elsewhere.
+        """
+        # 1. Explicit config
+        if self.python_cmd:
+            cmd = self.python_cmd
+            # If relative path, resolve to inside app folder
+            if os.path.sep in cmd or "/" in cmd:
+                python_path = (self.folder / cmd).resolve()
+                return [str(python_path)]
+            else:
+                # e.g., "py" or "python"
+                return [cmd]
+
+        # 2. Local venv
+        win_candidate = self.folder / ".venv" / "Scripts" / "pythonw.exe"
+        win_fallback = self.folder / ".venv" / "Scripts" / "python.exe"
+        nix_candidate = self.folder / ".venv" / "bin" / "python"
+
+        if win_candidate.is_file():
+            return [str(win_candidate.resolve())]
+        if win_fallback.is_file():
+            return [str(win_fallback.resolve())]
+        if nix_candidate.is_file():
+            return [str(nix_candidate.resolve())]
+
+        # 3. Fallback to system
+        if os.name == "nt":
+            return ["pyw"]
+        return [sys.executable]
+
+
+# ---------- Config discovery ----------
+
+# Go up 3 levels: src -> _UsefulHelperScriptsMENU -> _UsefulHelperSCRIPTS (Root)
+ROOT_DIR = Path(__file__).resolve().parent.parent.parent
+CONFIG_FILE = ROOT_DIR / "helper_apps.json"
+
+
+def load_config_file() -> Dict[str, AppConfig]:
+    """
+    Load helper_apps.json if it exists.
+    Returns a mapping of folder (resolved) -> AppConfig
+    """
+    configs: Dict[str, AppConfig] = {}
+
+    if not CONFIG_FILE.is_file():
+        return configs
+
+    try:
+        raw = json.load(CONFIG_FILE.open("r", encoding="utf-8"))
+    except Exception as e:
+        print(f"[WARN] Failed to load {CONFIG_FILE}: {e}")
+        return configs
+
+    for entry in raw:
+        folder = ROOT_DIR / entry["folder"]
+        name = entry.get("name", folder.name)
+        python_cmd = entry.get("python")
+        env = entry.get("env", {})
+
+        cfg = AppConfig(
+            name=name,
+            folder=folder,
+            python_cmd=python_cmd,
+            env=env,
+        )
+        configs[str(folder.resolve())] = cfg
+
+    return configs
+
+
+def discover_apps() -> List[AppConfig]:
+    """
+    Discover app folders that contain src/app.py.
+    Merge with config entries when present.
+    """
+    configs_by_folder = load_config_file()
+    apps: Dict[str, AppConfig] = {}
+
+    # 1. From config (even if src/app.py missing, we keep but mark missing)
+    for folder_key, cfg in configs_by_folder.items():
+        apps[folder_key] = cfg
+
+    # 2. Auto-discover any dir with src/app.py (one level deep by default)
+    for child in ROOT_DIR.iterdir():
+        if not child.is_dir():
+            continue
+        candidate = child / "src" / "app.py"
+        if candidate.is_file():
+            key = str(child.resolve())
+            if key not in apps:
+                apps[key] = AppConfig(name=child.name, folder=child)
+
+    # Filter out ones that truly have no src/app.py AND weren’t meant to be virtual
+    # (We keep them though, but you can choose to hide them instead).
+    return list(apps.values())
+
+
+# ---------- Launcher logic ----------
+
+def launch_app(app_cfg: AppConfig):
+    if not app_cfg.has_src_app:
+        messagebox.showerror(
+            "Missing app.py",
+            f"Could not find src/app.py in:\n{app_cfg.folder}",
+        )
+        return
+
+    python_cmd = app_cfg.resolve_python()
+
+    cmd = python_cmd + ["-m", "src.app"]
+
+    env = os.environ.copy()
+    env.update(app_cfg.env)
+
+    try:
+        if os.name == "nt":
+            # Spawn in a new console on Windows
+            subprocess.Popen(
+                cmd,
+                cwd=str(app_cfg.folder),
+                env=env,
+                # creationflags=subprocess.CREATE_NEW_CONSOLE,
+            )
+        else:
+            # On Linux/macOS, normal Popen is usually fine
+            subprocess.Popen(
+                cmd,
+                cwd=str(app_cfg.folder),
+                env=env,
+            )
+    except Exception as e:
+        messagebox.showerror(
+            "Launch failed",
+            f"Failed to launch {app_cfg.name}:\n\n{e}",
+        )
+
+
+# ---------- Tkinter UI ----------
+
+class AppLauncherUI:
+    def __init__(self, root: tk.Tk, apps: List[AppConfig]):
+        self.root = root
+        # Fix: Ensure apps are sorted safely even if empty
+        self.apps = sorted(apps, key=lambda a: a.name.lower())
+        self.app_by_name = {a.name: a for a in self.apps}
+
+        self.root.title("Useful Helper Apps Launcher")
+        self.root.geometry("600x400")
+
+        self._build_widgets()
+
+    def _build_widgets(self):
+        # FIX: Added proper indentation here
+        main_frame = ttk.Frame(self.root, padding=10)
+        main_frame.pack(fill=tk.BOTH, expand=True)
+
+        # Left: app list
+        left_frame = ttk.Frame(main_frame)
+        left_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=False)
+
+        ttk.Label(left_frame, text="Available Apps").pack(anchor="w")
+
+        self.app_listbox = tk.Listbox(left_frame, height=20)
+        self.app_listbox.pack(fill=tk.BOTH, expand=True)
+        self.app_listbox.bind("<Double-1>", self._on_double_click)
+
+        for app in self.apps:
+            suffix = "" if app.has_src_app else " (missing src/app.py)"
+            self.app_listbox.insert(tk.END, f"{app.name}{suffix}")
+
+        # Right: details + launch
+        right_frame = ttk.Frame(main_frame, padding=(10, 0))
+        right_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+        self.details_text = tk.Text(
+            right_frame, height=10, wrap="word", state="disabled"
+        )
+        self.details_text.pack(fill=tk.BOTH, expand=True)
+
+        btn_frame = ttk.Frame(right_frame)
+        btn_frame.pack(fill=tk.X, pady=(10, 0))
+
+        self.launch_button = ttk.Button(
+            btn_frame, text="Launch Selected App", command=self._on_launch_clicked
+        )
+        self.launch_button.pack(side=tk.LEFT)
+
+        self.create_button = ttk.Button(
+            btn_frame, text="Create New", command=self._on_create_clicked
+        )
+        self.create_button.pack(side=tk.LEFT, padx=(5, 0))
+
+        self.refresh_button = ttk.Button(
+            btn_frame, text="Refresh Apps", command=self._on_refresh_clicked
+        )
+        self.refresh_button.pack(side=tk.LEFT, padx=(5, 0))
+
+        # --- New Tools (Right Aligned) ---
+        self.btn_ps = ttk.Button(
+            btn_frame, text="PS", width=3, command=self._on_open_powershell
+        )
+        self.btn_ps.pack(side=tk.RIGHT, padx=(5, 0))
+
+        self.btn_cmd = ttk.Button(
+            btn_frame, text="CMD", width=4, command=self._on_open_cmd
+        )
+        self.btn_cmd.pack(side=tk.RIGHT, padx=(5, 0))
+
+        self.btn_explore = ttk.Button(
+            btn_frame, text="Folder", command=self._on_open_folder
+        )
+        self.btn_explore.pack(side=tk.RIGHT, padx=(5, 0))
+
+        self.app_listbox.bind("<<ListboxSelect>>", self._on_select)
+
+    def _on_create_clicked(self):
+        name = simpledialog.askstring("New App", "Enter name for new app (Folder Name):")
+        if not name:
+            return
+        
+        # Basic sanitization
+        safe_name = "".join(c for c in name if c.isalnum() or c in ('_', '-')).strip()
+        if not safe_name:
+            messagebox.showerror("Error", "Invalid name.")
+            return
+
+        target_dir = ROOT_DIR / safe_name
+        if target_dir.exists():
+            messagebox.showerror("Error", f"Folder '{safe_name}' already exists.")
+            return
+
+        try:
+            self._write_boilerplate(target_dir)
+            self._on_refresh_clicked()
+            messagebox.showinfo("Success", f"Created {safe_name}")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to create app: {e}")
+
+    def _write_boilerplate(self, root_path: Path):
+        # Define the master template path
+        template_source = ROOT_DIR / "_BoilerPlatePythonTEMPLATE"
+
+        if template_source.is_dir():
+            # OPTION A: Copy from your existing template folder
+            # shutil.copytree requires the destination to NOT exist, but we created 
+            # root_path logic earlier. So we copy contents manually or use dirs_exist_ok.
+            try:
+                shutil.copytree(template_source, root_path, dirs_exist_ok=True)
+                print(f"[Info] Cloned template from {template_source}")
+                return
+            except Exception as e:
+                messagebox.showerror("Template Error", f"Failed to copy template:\n{e}")
+                return
+        
+        # OPTION B: Fallback (If template folder is missing)
+        # This ensures the launcher still works even if you move the template folder.
+        messagebox.showwarning("Template Missing", 
+            f"Could not find '{template_source.name}'.\nUsing minimal fallback.")
+        
+        root_path.mkdir(parents=True, exist_ok=True)
+        (root_path / "src").mkdir(exist_ok=True)
+        (root_path / "requirements.txt").touch()
+        (root_path / "src" / "__init__.py").touch()
+        
+        # Minimal app.py so it runs
+        with (root_path / "src" / "app.py").open("w", encoding="utf-8") as f:
+            f.write("def main():\n    print('Template folder missing! This is a fallback.')\n\nif __name__ == '__main__':\n    main()")
+
+    def _on_refresh_clicked(self):
+        """Re-discover apps and refresh the listbox/details without restarting the launcher."""
+        # FIX: Added proper indentation here
+        self.apps = sorted(discover_apps(), key=lambda a: a.name.lower())
+        self.app_by_name = {a.name: a for a in self.apps}
+
+        # Repopulate listbox
+        self.app_listbox.delete(0, tk.END)
+        for app in self.apps:
+            suffix = "" if app.has_src_app else " (missing src/app.py)"
+            self.app_listbox.insert(tk.END, f"{app.name}{suffix}")
+
+        # Reset details panel
+        self.details_text.config(state="normal")
+        self.details_text.delete("1.0", tk.END)
+        self.details_text.insert(
+            "1.0",
+            "Refreshed app list.\n\nSelect an app to see details.",
+        )
+        self.details_text.config(state="disabled")
+
+    def _on_open_folder(self):
+        app = self._get_selected_app()
+        if app and app.folder.is_dir():
+            if os.name == "nt":
+                os.startfile(app.folder)
+            else:
+                # Linux/Mac fallback
+                subprocess.Popen(["xdg-open", str(app.folder)])
+
+    def _on_open_cmd(self):
+        app = self._get_selected_app()
+        if app and app.folder.is_dir():
+            if os.name == "nt":
+                subprocess.Popen(["start", "cmd"], shell=True, cwd=app.folder)
+
+    def _on_open_powershell(self):
+        app = self._get_selected_app()
+        if app and app.folder.is_dir():
+            if os.name == "nt":
+                subprocess.Popen(["start", "powershell"], shell=True, cwd=app.folder)
+
+    def _get_selected_app(self) -> Optional[AppConfig]:
+        selection = self.app_listbox.curselection()
+        if not selection:
+            return None
+        idx = selection[0]
+        name_with_suffix = self.app_listbox.get(idx)
+        name = name_with_suffix.split(" (missing")[0]
+        return self.app_by_name.get(name)
+
+    def _on_select(self, event=None):
+        app = self._get_selected_app()
+        if not app:
+            return
+        self._update_details(app)
+
+    def _update_details(self, app: AppConfig):
+        folder_display = str(app.folder)
+        python_cmd = " ".join(app.resolve_python())
+        has_app = "Yes" if app.has_src_app else "No"
+
+        env_lines = "\n".join(
+            [f"  {k}={v}" for k, v in app.env.items()]
+        ) or "  (none)"
+
+        text = (
+            f"Name: {app.name}\n"
+            f"Folder: {folder_display}\n"
+            f"Has src/app.py: {has_app}\n"
+            f"Python command: {python_cmd}\n"
+            f"Extra env vars:\n{env_lines}\n"
+        )
+
+        self.details_text.config(state="normal")
+        self.details_text.delete("1.0", tk.END)
+        self.details_text.insert("1.0", text)
+        self.details_text.config(state="disabled")
+
+    def _on_launch_clicked(self):
+        app = self._get_selected_app()
+        if not app:
+            messagebox.showinfo("No selection", "Please select an app to launch.")
+            return
+        launch_app(app)
+
+    def _on_double_click(self, event=None):
+        self._on_launch_clicked()
+
+
+def main():
+    apps = discover_apps()
+    
+    # FIX: Initialize root immediately
+    root = tk.Tk()
+    
+    # FIX: If no apps, just show a message or launch empty. 
+    # Do NOT return silently.
+    if not apps:
+        # Option A: Show error then open empty UI
+        messagebox.showinfo(
+            "No Apps Found", 
+            "No apps were found in subfolders.\n\nThe launcher will open empty. "
+            "Add folders with 'src/app.py' and click Refresh."
+        )
+        # Or Option B: Just pass empty list to UI (which is what we do below)
+
+    AppLauncherUI(root, apps)
+    root.mainloop()
+
+
+if __name__ == "__main__":
+    main()
+
+
+
+
+
+
+--------------------------------------------------------------------------------
+FILE: src\_BoilerPlatePythonTEMPLATE\LICENSE.md
+--------------------------------------------------------------------------------
+MIT License
+
+Copyright (c) 2025 Jacob Lambert
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+--------------------------------------------------------------------------------
+FILE: src\_BoilerPlatePythonTEMPLATE\README.md
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+FILE: src\_BoilerPlatePythonTEMPLATE\requirements.txt
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+FILE: src\_BoilerPlatePythonTEMPLATE\setup_env.bat
+--------------------------------------------------------------------------------
+@echo off
+echo [SYSTEM] Initializing new project environment...
+
+:: 1. Create the venv if it doesn't exist
+if not exist .venv (
+    echo [SYSTEM] Creating .venv...
+    py -m venv .venv
+)
+
+:: 2. Upgrade pip and install requirements
+echo [SYSTEM] Installing dependencies...
+.venv\Scripts\python.exe -m pip install --upgrade pip
+if exist requirements.txt (
+    .venv\Scripts\pip install -r requirements.txt
+)
+
+echo.
+echo [SUCCESS] Environment ready!
+echo You can now open this folder in VS Code or launch via scripts_menu.py
+pause
+--------------------------------------------------------------------------------
+FILE: src\_BoilerPlatePythonTEMPLATE\src\app.py
+--------------------------------------------------------------------------------
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+"""
+== Generic Python Module/CLI Boilerplate ==
+
+This is a generic template for a Python file that can be:
+1.  Imported as a module by other scripts (e.g., `import generic_module`).
+2.  Run as a standalone command-line script (e.g., `$ python generic_module.py --input data.txt`).
+
+How to use this template:
+1.  Rename this file to match your new tool (e.g., `my_data_processor.py`).
+2.  Update this docstring to describe what your tool does.
+3.  Fill in the "CORE FUNCTIONALITY" section with your app's logic.
+4.  Go to the `main()` function to define your CLI arguments.
+5.  In `main()`, add the code to call your core functions using the parsed arguments.
+"""
+
+# 1. IMPORTS
+# Standard library imports
+import sys
+import os
+import argparse  # For parsing command-line arguments
+
+# Third-party imports (if any)
+# e.g., import requests
+
+# Local/application imports (if any)
+# e.g., from . import my_other_module
+
+
+# 2. CONSTANTS
+# TODO: Define any constants your application needs.
+SOME_DEFAULT_SETTING = "default_value"
+
+
+# 3. CORE FUNCTIONALITY (The "Importable" Module)
+#
+# These functions make up the "core logic" of your application.
+# They can be imported and used by other Python scripts.
+# They should be self-contained and not rely on command-line arguments.
+
+def core_logic_function(data: any, setting: str = SOME_DEFAULT_SETTING) -> any:
+    """
+    TODO: Replace this with your main logic function.
+    
+    This function should perform the primary task of your module.
+    
+    Args:
+        data (any): The input data to process.
+        setting (str, optional): An example of an optional setting.
+                                 Defaults to SOME_DEFAULT_SETTING.
+
+    Returns:
+        any: The processed data.
+    """
+    print(f"[Core Logic] Processing data with setting: {setting}")
+    
+    # --- TODO: Your actual logic goes here ---
+    # Example:
+    try:
+        processed_data = f"Processed data: {str(data).upper()}"
+        print("[Core Logic] Processing complete.")
+        return processed_data
+    except Exception as e:
+        print(f"[Core Logic] Error during processing: {e}", file=sys.stderr)
+        # Re-raise the exception to be handled by the caller
+        raise
+
+
+def helper_function(value: int) -> str:
+    """
+    TODO: Add any helper functions your core logic needs.
+    
+    This is an example of a helper that might be called by
+    core_logic_function or also be importable.
+    
+    Args:
+        value (int): An input value.
+
+    Returns:
+        str: A formatted string.
+    """
+    return f"Helper processed value: {value * 2}"
+
+
+# 4. CLI (Command-Line Interface) LOGIC
+#
+# This code only runs when the script is executed directly.
+# It should handle parsing arguments and calling the core functions.
+
+def main():
+    """
+    Main function to run the script from the command line.
+    
+    It parses arguments, calls core functions, and handles CLI-specific
+    input/output and error handling.
+    """
+    
+    # --- Argument Parsing ---
+    # Set up the argument parser
+    # TODO: Update the description to match your tool.
+    parser = argparse.ArgumentParser(
+        description="A generic CLI tool. TODO: Describe your tool here.",
+        epilog="Example: python generic_module.py my_input.txt -o my_output.txt -v"
+    )
+    
+    # --- TODO: Define your arguments ---
+    
+    # Example of a required positional argument
+    parser.add_argument(
+        "input_path",  # The name of the argument
+        type=str,
+        help="TODO: Describe this required input (e.g., path to an input file)."
+    )
+    
+    # Example of an optional argument (e.g., -o or --output)
+    parser.add_argument(
+        "-o", "--output",
+        type=str,
+        default=None,  # Default to None if not provided
+        help="TODO: Describe this optional argument (e.g., path to an output file)."
+    )
+    
+    # Example of a "flag" argument (stores True if present)
+    parser.add_argument(
+        "-v", "--verbose",
+        action="store_true",  # This makes it a boolean flag
+        help="Enable verbose output."
+    )
+    
+    # Parse the arguments from the command line (e.g., sys.argv)
+    args = parser.parse_args()
+
+    # --- Main Application Flow ---
+    
+    # Use the 'verbose' flag to control print statements
+    if args.verbose:
+        print("Verbose mode enabled.", file=sys.stderr)
+        print(f"Arguments received: {args}", file=sys.stderr)
+
+    try:
+        # 1. Load data (CLI-specific task)
+        #    TODO: Replace this with your actual data loading
+        if args.verbose:
+            print(f"Loading data from {args.input_path}...", file=sys.stderr)
+        # This is just an example. You'd likely load a file here.
+        input_data = f"Content of {args.input_path}" 
+
+        # 2. Call core logic (the "importable" part)
+        if args.verbose:
+            print("Calling core logic...", file=sys.stderr)
+        
+        # Here we pass the CLI arguments to the core function
+        processed_data = core_logic_function(input_data)
+        
+        # 3. Handle output (CLI-specific task)
+        if args.output:
+            # Save to a file
+            if args.verbose:
+                print(f"Saving processed data to {args.output}...", file=sys.stderr)
+            # TODO: Add file-saving logic here
+            # with open(args.output, 'w') as f:
+            #     f.write(processed_data)
+            print(f"Success: Output saved to {args.output}")
+        else:
+            # Print to standard output
+            if args.verbose:
+                print("Printing processed data to stdout:", file=sys.stderr)
+            print(processed_data)
+        
+        # Exit with a success code
+        sys.exit(0)
+
+    except FileNotFoundError as e:
+        print(f"\nError: Input file not found.", file=sys.stderr)
+        print(f"Details: {e}", file=sys.stderr)
+        sys.exit(1) # Exit with a non-zero error code
+    except Exception as e:
+        print(f"\nAn unexpected error occurred: {e}", file=sys.stderr)
+        sys.exit(1)
+
+
+# This "magic" line is the key to the whole pattern:
+#
+# - If you run `python generic_module.py ...`, Python sets
+#   __name__ = "__main__", and the main() function is called.
+#
+# - If you `import generic_module` in another script, __name__
+#   is "generic_module", so this block is SKIPPED.
+#
+if __name__ == "__main__":
+    main()
+--------------------------------------------------------------------------------
+FILE: src\_BoilerPlatePythonTEMPLATE\src\__init__.py
+--------------------------------------------------------------------------------
