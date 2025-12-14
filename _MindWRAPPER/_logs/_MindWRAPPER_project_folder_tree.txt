@@ -1,0 +1,11 @@
+Project Tree: C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_MindWRAPPER
+Generated: 2025-12-14 12:25:56.468486
+
+├── 📁 src/
+│   ├── 📁 microservices/
+│   ├── 📄 __init__.py
+│   └── 📄 app.py
+├── 📄 LICENSE.md
+├── 📄 README.md
+├── 📄 requirements.txt
+└── 📄 setup_env.bat

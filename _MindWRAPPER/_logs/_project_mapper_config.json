@@ -1,0 +1,9 @@
+{
+  "folder_states": {
+    ".": "checked",
+    "_logs": "unchecked",
+    "src": "checked",
+    "src\\microservices": "checked"
+  },
+  "dynamic_exclusions": []
+}
