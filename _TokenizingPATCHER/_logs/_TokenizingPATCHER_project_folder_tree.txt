@@ -1,0 +1,13 @@
+Project Tree: C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_TokenizingPATCHER
+Generated: 2025-12-13 21:23:00.540703
+
+├── 📁 assets/
+│   └── 📁 icons/
+│       └── 📄 tokenizing-patcher.png
+├── 📁 src/
+│   ├── 📄 __init__.py
+│   └── 📄 app.py
+├── 📄 LICENSE.md
+├── 📄 README.md
+├── 📄 requirements.txt
+└── 📄 setup_env.bat
