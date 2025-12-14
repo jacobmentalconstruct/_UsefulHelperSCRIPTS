@@ -74,8 +74,9 @@ class TaskStepWidget(tk.Frame):
         self.txt_prompt.pack(fill="x", pady=(0, 5))
         self.txt_prompt.insert("1.0", self.data["prompt"])
         
-        # Bindings for "Save on Type" / "Auto-size" could go here
+        # Bindings for "Save on Type" / "Auto-size"
         self.txt_prompt.bind("<KeyRelease>", self._on_text_change)
+        self.txt_prompt.bind("<FocusOut>", self._sync_data)
 
         # 3. Context Toggle
         self.var_ctx = tk.BooleanVar(value=self.data["use_context"])
@@ -106,14 +107,14 @@ class TaskStepWidget(tk.Frame):
         self.expanded = False
         self._refresh_summary()
 
-    def _sync_data(self):
+    def _sync_data(self, event=None):
         """Update internal data dict from widgets."""
         self.data["system"] = self.ent_sys.get()
         self.data["prompt"] = self.txt_prompt.get("1.0", "end-1c")
         self.data["use_context"] = self.var_ctx.get()
 
     def _on_text_change(self, event=None):
-        # Simple auto-grow logic (capped at height 15)
+        # Auto-grow logic
         lines = int(self.txt_prompt.index('end-1c').split('.')[0])
         new_height = min(max(4, lines + 1), 15)
         if int(self.txt_prompt.cget("height")) != new_height:
@@ -140,7 +141,7 @@ class TaskStepWidget(tk.Frame):
 class PromptChainerApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("_PromptCHAINER v3 [IDE Mode]")
+        self.root.title("_PromptCHAINER v3.1 [IDE Mode]")
         self.root.geometry("1600x900")
         self.root.configure(bg="#0f172a")
 
@@ -182,21 +183,26 @@ class PromptChainerApp:
         f_center = tk.Frame(self.paned, bg="#1e293b")
         self.paned.add(f_center, minsize=450, stretch="always")
 
-        # Header
+        # 1. Header (Top)
         c_head = tk.Frame(f_center, bg="#1e293b", pady=10, padx=10)
-        c_head.pack(fill="x")
+        c_head.pack(side="top", fill="x")
         tk.Label(c_head, text="Task Chain", font=("Segoe UI", 14, "bold"), bg="#1e293b", fg="white").pack(side="left")
         
-        # Model Selector
         tk.Label(c_head, text="Model:", bg="#1e293b", fg="#94a3b8").pack(side="left", padx=(20, 5))
         self.cb_model = ttk.Combobox(c_head, textvariable=self.selected_model, state="readonly", width=18)
         self.cb_model.pack(side="left")
         
-        # Toolbar
         tk.Button(c_head, text="📂", command=self.load_chain, bg="#334155", fg="white", width=3, relief="flat").pack(side="right")
         tk.Button(c_head, text="💾", command=self.save_chain, bg="#334155", fg="white", width=3, relief="flat").pack(side="right", padx=5)
 
-        # Scrollable Task Area
+        # 2. Footer Buttons (Bottom - PACK FIRST TO ENSURE VISIBILITY)
+        f_ctrl = tk.Frame(f_center, bg="#1e293b", pady=10, padx=10)
+        f_ctrl.pack(side="bottom", fill="x")
+        
+        # "+ Add Step"
+        tk.Button(f_ctrl, text="+ Add Step", command=self.add_step, bg="#334155", fg="white", relief="flat", font=("Segoe UI", 10)).pack(fill="x")
+
+        # 3. Scrollable Task Area (Fills remaining space)
         self.canvas = tk.Canvas(f_center, bg="#1e293b", highlightthickness=0)
         self.scrollbar = ttk.Scrollbar(f_center, orient="vertical", command=self.canvas.yview)
         self.frame_tasks = tk.Frame(self.canvas, bg="#1e293b")
@@ -208,8 +214,6 @@ class PromptChainerApp:
         self.scrollbar.pack(side="right", fill="y")
         self.frame_tasks.bind("<Configure>", lambda e: self.canvas.configure(scrollregion=self.canvas.bbox("all")))
 
-        # "Add Step" Bar (Bottom of Center)
-        tk.Button(f_center, text="+ Add Step", command=self.add_step, bg="#334155", fg="white", relief="flat", font=("Segoe UI", 10)).pack(fill="x", padx=10, pady=10)
 
         # --- COL 3: ANALYSIS & OUTPUT (Right) ---
         f_right = tk.Frame(self.paned, bg="#0f172a")
@@ -234,7 +238,7 @@ class PromptChainerApp:
         self.txt_thoughts.pack(fill="both", expand=True, padx=5)
         paned_right.add(f_thoughts, minsize=200, stretch="always")
 
-        # Staging Pane
+        # Staging Pane (Bottom Right)
         f_stage = tk.Frame(paned_right, bg="#0f172a")
         
         tk.Label(f_stage, text="FINAL OUTPUT / STAGING (Edit before continuing)", bg="#0f172a", fg="#facc15", font=("Segoe UI", 10, "bold")).pack(anchor="w", padx=5, pady=(10, 5))
@@ -246,7 +250,8 @@ class PromptChainerApp:
         f_action = tk.Frame(f_stage, bg="#0f172a", pady=10)
         f_action.pack(fill="x", padx=5)
         
-        self.btn_action = tk.Button(f_action, text="START CHAIN ➡", command=self.on_action_click, bg="#2563eb", fg="white", font=("Segoe UI", 11, "bold"), relief="flat", height=2)
+        # This is the Master Action Button
+        self.btn_action = tk.Button(f_action, text="START CHAIN ➡", command=self.on_action_click, bg="#2563eb", fg="white", font=("Segoe UI", 12, "bold"), relief="flat", height=2)
         self.btn_action.pack(fill="x")
         
         tk.Checkbutton(f_action, text="Auto-Commit (No Pause)", variable=self.auto_run, bg="#0f172a", fg="#94a3b8", selectcolor="#0f172a", activebackground="#0f172a").pack(anchor="e")
@@ -255,8 +260,8 @@ class PromptChainerApp:
 
         # --- BOTTOM: SYSTEM LOG ---
         self.txt_log = tk.Text(self.root, height=8, bg="#020617", fg="#475569", font=("Consolas", 9), borderwidth=0, state="disabled")
-        self.txt_log.place(relx=0, rely=1, anchor="sw", relwidth=1.0, height=150) # Overlay or pack? Let's pack.
-        self.txt_log.pack(side="bottom", fill="x") # Actually pack it below the paned window
+        self.txt_log.place(relx=0, rely=1, anchor="sw", relwidth=1.0, height=150) # Use place to anchor firmly to bottom
+        self.txt_log.pack(side="bottom", fill="x")
 
     # --- LOGIC ---
 
@@ -382,7 +387,7 @@ class PromptChainerApp:
             helper_model = self.helper_model.get()
             thought = "..."
             if helper_model:
-                thought = self.client.generate(helper_model, "Summarize this AI interaction in 1 brief sentence.", f"Q: {user_prompt}\nA: {resp}")
+                thought = self.client.generate(helper_model, "Summarize this interaction and suggest the next logical thought.", f"Q: {user_prompt}\nA: {resp}")
 
             self.root.after(0, lambda: self._on_step_complete(resp, thought))
         except Exception as e:
@@ -395,7 +400,7 @@ class PromptChainerApp:
         self.txt_staging.insert("1.0", response)
         
         # 2. Populate Thoughts
-        self.txt_thoughts.insert("end", f"Step {self.current_step_idx+1}: {thought.strip()}\n")
+        self.txt_thoughts.insert("end", f"Step {self.current_step_idx+1}: {thought.strip()}\n\n")
         self.txt_thoughts.see("end")
 
         # 3. Enable 'Next' Button
