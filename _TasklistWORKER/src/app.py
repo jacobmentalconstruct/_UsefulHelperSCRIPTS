@@ -1,151 +1,271 @@
 import tkinter as tk
-from tkinter import ttk, scrolledtext, filedialog, messagebox
+from tkinter import ttk, scrolledtext, messagebox
 import threading
 import json
 import os
+import datetime
 
-# --- MICROSERVICES INTEGRATION ---
-# Ensure we can import from the subfolder
+# --- MICROSERVICES CHECK ---
 try:
     from src._microservices.ollama_client import OllamaClient
     from src._microservices.template_engine import resolve_template
 except ImportError:
-    # Fallback for flat structure testing
     try:
         from _microservices.ollama_client import OllamaClient
         from _microservices.template_engine import resolve_template
     except ImportError:
-        print("CRITICAL: Microservices not found. Ensure src/_microservices exists.")
-        raise
+        raise ImportError("Microservices missing. Ensure src/_microservices exists.")
 
+# ==============================================================================
+# CUSTOM WIDGET: Smart Task Step (Expander)
+# ==============================================================================
+class TaskStepWidget(tk.Frame):
+    def __init__(self, parent, index, app_ref, initial_data=None):
+        super().__init__(parent, bg="#334155", bd=1, relief="flat")
+        self.app = app_ref
+        self.index = index
+        self.expanded = False
+        
+        # Data Model
+        self.data = initial_data or {
+            "system": "You are a helpful AI assistant.",
+            "prompt": "",
+            "use_context": True
+        }
+
+        self._build_ui()
+        self._refresh_summary()
+
+    def _build_ui(self):
+        # --- HEADER (Always Visible) ---
+        self.header = tk.Frame(self, bg="#334155", height=30)
+        self.header.pack(fill="x", padx=2, pady=2)
+        
+        # Click header to toggle
+        self.header.bind("<Button-1>", self.toggle)
+        
+        # Step Number / Status Indicator
+        self.lbl_idx = tk.Label(self.header, text=f"#{self.index+1}", bg="#334155", fg="#94a3b8", font=("Segoe UI", 10, "bold"), width=4)
+        self.lbl_idx.pack(side="left")
+        self.lbl_idx.bind("<Button-1>", self.toggle)
+
+        # Summary Text (Read-only representation)
+        self.lbl_summary = tk.Label(self.header, text="(New Step)", bg="#334155", fg="white", anchor="w", font=("Segoe UI", 10))
+        self.lbl_summary.pack(side="left", fill="x", expand=True, padx=5)
+        self.lbl_summary.bind("<Button-1>", self.toggle)
+
+        # Delete Button (Small 'x')
+        lbl_del = tk.Label(self.header, text="×", bg="#334155", fg="#ef4444", font=("Arial", 12, "bold"), cursor="hand2")
+        lbl_del.pack(side="right", padx=5)
+        lbl_del.bind("<Button-1>", lambda e: self.app.delete_step(self.index))
+
+        # --- BODY (Hidden by default) ---
+        self.body = tk.Frame(self, bg="#1e293b", padx=5, pady=5)
+        
+        # 1. System Prompt
+        tk.Label(self.body, text="System Prompt:", bg="#1e293b", fg="#64748b", font=("Segoe UI", 8)).pack(anchor="w")
+        self.ent_sys = tk.Entry(self.body, bg="#0f172a", fg="#94a3b8", borderwidth=0, insertbackground="white")
+        self.ent_sys.pack(fill="x", pady=(0, 5))
+        self.ent_sys.insert(0, self.data["system"])
+
+        # 2. User Prompt (Auto-growing Text)
+        tk.Label(self.body, text="User Prompt:", bg="#1e293b", fg="#cbd5e1", font=("Segoe UI", 9, "bold")).pack(anchor="w")
+        self.txt_prompt = tk.Text(self.body, height=4, bg="#0f172a", fg="white", borderwidth=0, insertbackground="white", font=("Segoe UI", 10), wrap="word")
+        self.txt_prompt.pack(fill="x", pady=(0, 5))
+        self.txt_prompt.insert("1.0", self.data["prompt"])
+        
+        # Bindings for "Save on Type" / "Auto-size" could go here
+        self.txt_prompt.bind("<KeyRelease>", self._on_text_change)
+
+        # 3. Context Toggle
+        self.var_ctx = tk.BooleanVar(value=self.data["use_context"])
+        chk = tk.Checkbutton(self.body, text="Include Previous Response", variable=self.var_ctx, bg="#1e293b", fg="#94a3b8", selectcolor="#0f172a", activebackground="#1e293b", activeforeground="white")
+        chk.pack(anchor="w")
+
+    def toggle(self, event=None):
+        if self.expanded:
+            self.collapse()
+        else:
+            self.expand()
+
+    def expand(self):
+        self.app.collapse_all_steps() # Singleton expansion (optional, feels cleaner)
+        self.body.pack(fill="x", expand=True)
+        self.header.config(bg="#475569")
+        self.lbl_idx.config(bg="#475569", fg="white")
+        self.lbl_summary.config(bg="#475569")
+        self.expanded = True
+        self.txt_prompt.focus_set()
+
+    def collapse(self):
+        self._sync_data()
+        self.body.pack_forget()
+        self.header.config(bg="#334155")
+        self.lbl_idx.config(bg="#334155", fg="#94a3b8")
+        self.lbl_summary.config(bg="#334155")
+        self.expanded = False
+        self._refresh_summary()
+
+    def _sync_data(self):
+        """Update internal data dict from widgets."""
+        self.data["system"] = self.ent_sys.get()
+        self.data["prompt"] = self.txt_prompt.get("1.0", "end-1c")
+        self.data["use_context"] = self.var_ctx.get()
+
+    def _on_text_change(self, event=None):
+        # Simple auto-grow logic (capped at height 15)
+        lines = int(self.txt_prompt.index('end-1c').split('.')[0])
+        new_height = min(max(4, lines + 1), 15)
+        if int(self.txt_prompt.cget("height")) != new_height:
+            self.txt_prompt.config(height=new_height)
+
+    def _refresh_summary(self):
+        """Update the collapsed header text."""
+        raw = self.data["prompt"].replace("\n", " ").strip()
+        if not raw: raw = "(Empty Step)"
+        if len(raw) > 50: raw = raw[:47] + "..."
+        self.lbl_summary.config(text=raw)
+
+    def set_active(self, active: bool):
+        color = "#2563eb" if active else ("#475569" if self.expanded else "#334155")
+        self.config(bg=color)
+        if not self.expanded:
+            self.header.config(bg=color)
+            self.lbl_idx.config(bg=color)
+            self.lbl_summary.config(bg=color)
+
+# ==============================================================================
+# MAIN APPLICATION
+# ==============================================================================
 class PromptChainerApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("_PromptCHAINER v2 [Staging Mode]")
-        self.root.geometry("1400x900")
+        self.root.title("_PromptCHAINER v3 [IDE Mode]")
+        self.root.geometry("1600x900")
         self.root.configure(bg="#0f172a")
 
-        # --- CLIENTS ---
         self.client = OllamaClient()
-
-        # --- STATE ---
+        
+        # State
         self.state = {
             "chat": {"history": [], "last_response": ""},
             "working": {"step_outputs": {}, "thoughts": []},
             "outputs": {}
         }
-        self.task_steps = []  # List of dicts: {id, text_widget, ...}
-        self.current_step_index = 0
+        self.steps = [] # List of TaskStepWidget
+        self.current_step_idx = 0
         self.is_running = False
         
-        # UI Variables
+        # UI Vars
         self.selected_model = tk.StringVar()
         self.helper_model = tk.StringVar()
         self.auto_run = tk.BooleanVar(value=False)
-        self.status_msg = tk.StringVar(value="Ready")
 
-        self._setup_ui()
+        self._build_layout()
         self._refresh_models()
+        self.log_system("System Initialized.")
 
-    def _setup_ui(self):
-        style = ttk.Style()
-        style.theme_use('clam')
-        style.configure("TFrame", background="#0f172a")
-        style.configure("TLabel", background="#0f172a", foreground="white")
-        style.configure("TButton", background="#334155", foreground="white", borderwidth=0)
-        style.map("TButton", background=[('active', '#475569')])
+    def _build_layout(self):
+        # Main container (3 Columns)
+        self.paned = tk.PanedWindow(self.root, orient=tk.HORIZONTAL, bg="#0f172a", sashwidth=4, sashrelief="flat")
+        self.paned.pack(fill="both", expand=True, pady=(0, 30)) # Leave room for bottom log
 
-        # === MAIN LAYOUT (3 PANELS) ===
-        main_pane = tk.PanedWindow(self.root, orient=tk.HORIZONTAL, bg="#0f172a", sashwidth=4, sashrelief="raised")
-        main_pane.pack(fill="both", expand=True, padx=5, pady=5)
-
-        # --- PANEL 1: CONTEXT & STAGING (Left) ---
-        p1 = tk.Frame(main_pane, bg="#0f172a")
-        main_pane.add(p1, minsize=400, stretch="always")
-
-        # Header P1
-        f_head1 = tk.Frame(p1, bg="#1e293b", padx=10, pady=5)
-        f_head1.pack(fill="x")
-        tk.Label(f_head1, text="Main Model:", bg="#1e293b", fg="#94a3b8").pack(side="left")
-        self.cb_model = ttk.Combobox(f_head1, textvariable=self.selected_model, state="readonly", width=25)
-        self.cb_model.pack(side="left", padx=5)
-        tk.Button(f_head1, text="↻", command=self._refresh_models, bg="#334155", fg="white", width=3).pack(side="left")
-
-        # Staging Area
-        tk.Label(p1, text="STAGING AREA (Edit AI Output Here)", bg="#0f172a", fg="#facc15", font=("Segoe UI", 10, "bold"), pady=5).pack(anchor="w")
-        self.txt_staging = scrolledtext.ScrolledText(p1, bg="#1e293b", fg="#e2e8f0", insertbackground="white", font=("Consolas", 10), height=15)
-        self.txt_staging.pack(fill="x", padx=5)
-
-        # Commit Controls
-        f_commit = tk.Frame(p1, bg="#0f172a", pady=5)
-        f_commit.pack(fill="x", padx=5)
-        self.btn_commit = tk.Button(f_commit, text="✅ Confirm & Next Step", command=self.commit_and_continue, bg="#059669", fg="white", font=("Segoe UI", 10, "bold"), state="disabled")
-        self.btn_commit.pack(fill="x")
-
-        # Chat History
-        tk.Label(p1, text="Conversation Log", bg="#0f172a", fg="#94a3b8", pady=5).pack(anchor="w")
-        self.txt_chat = scrolledtext.ScrolledText(p1, bg="#020617", fg="#94a3b8", insertbackground="white", font=("Consolas", 9))
-        self.txt_chat.pack(fill="both", expand=True, padx=5, pady=(0, 5))
-
-
-        # --- PANEL 2: TASK CHAIN (Center) ---
-        p2 = tk.Frame(main_pane, bg="#1e293b")
-        main_pane.add(p2, minsize=350, stretch="always")
-
-        # Header P2
-        f_head2 = tk.Frame(p2, bg="#334155", padx=10, pady=5)
-        f_head2.pack(fill="x")
-        tk.Label(f_head2, text="Recipe Chain", font=("Segoe UI", 11, "bold"), bg="#334155", fg="white").pack(side="left")
-        tk.Button(f_head2, text="💾", command=self.save_chain, bg="#475569", fg="white", width=3).pack(side="right", padx=2)
-        tk.Button(f_head2, text="📂", command=self.load_chain, bg="#475569", fg="white", width=3).pack(side="right")
-
-        # Task List Container
-        self.canvas_tasks = tk.Canvas(p2, bg="#1e293b", highlightthickness=0)
-        self.scrollbar_tasks = ttk.Scrollbar(p2, orient="vertical", command=self.canvas_tasks.yview)
-        self.frame_tasks = tk.Frame(self.canvas_tasks, bg="#1e293b")
-
-        self.canvas_tasks.create_window((0, 0), window=self.frame_tasks, anchor="nw")
-        self.canvas_tasks.configure(yscrollcommand=self.scrollbar_tasks.set)
-
-        self.canvas_tasks.pack(side="top", fill="both", expand=True, padx=5, pady=5)
-        self.scrollbar_tasks.pack(side="right", fill="y")
-        self.frame_tasks.bind("<Configure>", lambda e: self.canvas_tasks.configure(scrollregion=self.canvas_tasks.bbox("all")))
-
-        # Controls
-        f_ctrl = tk.Frame(p2, bg="#1e293b", pady=10)
-        f_ctrl.pack(fill="x", padx=10)
-        tk.Button(f_ctrl, text="+ Add Step", command=self.add_task_step, bg="#334155", fg="white").pack(fill="x")
+        # --- COL 1: HISTORY (Left) ---
+        f_left = tk.Frame(self.paned, bg="#0f172a")
+        self.paned.add(f_left, minsize=350, stretch="always")
         
-        self.btn_run = tk.Button(f_ctrl, text="▶ START CHAIN", command=self.start_chain, bg="#2563eb", fg="white", font=("Segoe UI", 12, "bold"), pady=5)
-        self.btn_run.pack(fill="x", pady=10)
+        tk.Label(f_left, text="Conversation History", bg="#0f172a", fg="#64748b", font=("Segoe UI", 9, "bold")).pack(anchor="w", padx=5, pady=5)
+        self.txt_chat = scrolledtext.ScrolledText(f_left, bg="#020617", fg="#94a3b8", borderwidth=0, font=("Consolas", 10))
+        self.txt_chat.pack(fill="both", expand=True, padx=5)
+
+        # --- COL 2: CHAIN EDITOR (Center) ---
+        f_center = tk.Frame(self.paned, bg="#1e293b")
+        self.paned.add(f_center, minsize=450, stretch="always")
+
+        # Header
+        c_head = tk.Frame(f_center, bg="#1e293b", pady=10, padx=10)
+        c_head.pack(fill="x")
+        tk.Label(c_head, text="Task Chain", font=("Segoe UI", 14, "bold"), bg="#1e293b", fg="white").pack(side="left")
         
-        tk.Checkbutton(f_ctrl, text="Auto-Commit (No Pause)", variable=self.auto_run, bg="#1e293b", fg="white", selectcolor="#0f172a").pack(anchor="c")
-
-
-        # --- PANEL 3: THOUGHTS & HELPERS (Right) ---
-        p3 = tk.Frame(main_pane, bg="#0f172a")
-        main_pane.add(p3, minsize=300, stretch="always")
-
-        # Header P3
-        f_head3 = tk.Frame(p3, bg="#1e293b", padx=10, pady=5)
-        f_head3.pack(fill="x")
-        tk.Label(f_head3, text="Helper Model:", bg="#1e293b", fg="#94a3b8").pack(side="left")
-        self.cb_helper = ttk.Combobox(f_head3, textvariable=self.helper_model, state="readonly", width=20)
-        self.cb_helper.pack(side="left", padx=5)
-
-        tk.Label(p3, text="💭 Thought Stream", bg="#0f172a", fg="#a78bfa", font=("Segoe UI", 10, "bold"), pady=5).pack(anchor="w", padx=5)
+        # Model Selector
+        tk.Label(c_head, text="Model:", bg="#1e293b", fg="#94a3b8").pack(side="left", padx=(20, 5))
+        self.cb_model = ttk.Combobox(c_head, textvariable=self.selected_model, state="readonly", width=18)
+        self.cb_model.pack(side="left")
         
-        self.txt_thoughts = scrolledtext.ScrolledText(p3, bg="#1e1e1e", fg="#a78bfa", insertbackground="white", font=("Segoe UI", 9))
-        self.txt_thoughts.pack(fill="both", expand=True, padx=5, pady=(0, 5))
+        # Toolbar
+        tk.Button(c_head, text="📂", command=self.load_chain, bg="#334155", fg="white", width=3, relief="flat").pack(side="right")
+        tk.Button(c_head, text="💾", command=self.save_chain, bg="#334155", fg="white", width=3, relief="flat").pack(side="right", padx=5)
 
-        # Status Bar
-        self.lbl_status = tk.Label(self.root, textvariable=self.status_msg, bg="#2563eb", fg="white", anchor="w", padx=10)
-        self.lbl_status.pack(fill="x", side="bottom")
+        # Scrollable Task Area
+        self.canvas = tk.Canvas(f_center, bg="#1e293b", highlightthickness=0)
+        self.scrollbar = ttk.Scrollbar(f_center, orient="vertical", command=self.canvas.yview)
+        self.frame_tasks = tk.Frame(self.canvas, bg="#1e293b")
+        
+        self.canvas.create_window((0, 0), window=self.frame_tasks, anchor="nw")
+        self.canvas.configure(yscrollcommand=self.scrollbar.set)
+        
+        self.canvas.pack(side="top", fill="both", expand=True, padx=5)
+        self.scrollbar.pack(side="right", fill="y")
+        self.frame_tasks.bind("<Configure>", lambda e: self.canvas.configure(scrollregion=self.canvas.bbox("all")))
 
-        # Init
-        self.add_task_step()
+        # "Add Step" Bar (Bottom of Center)
+        tk.Button(f_center, text="+ Add Step", command=self.add_step, bg="#334155", fg="white", relief="flat", font=("Segoe UI", 10)).pack(fill="x", padx=10, pady=10)
+
+        # --- COL 3: ANALYSIS & OUTPUT (Right) ---
+        f_right = tk.Frame(self.paned, bg="#0f172a")
+        self.paned.add(f_right, minsize=400, stretch="always")
+
+        # Split Right Col into Thoughts (Top) and Staging (Bottom)
+        paned_right = tk.PanedWindow(f_right, orient=tk.VERTICAL, bg="#0f172a", sashwidth=4)
+        paned_right.pack(fill="both", expand=True)
+
+        # Thoughts Pane
+        f_thoughts = tk.Frame(paned_right, bg="#0f172a")
+        h_thoughts = tk.Frame(f_thoughts, bg="#0f172a")
+        h_thoughts.pack(fill="x", pady=5)
+        tk.Label(h_thoughts, text="Thought Stream", bg="#0f172a", fg="#a78bfa", font=("Segoe UI", 10, "bold")).pack(side="left", padx=5)
+        
+        # Helper Model Select
+        self.cb_helper = ttk.Combobox(h_thoughts, textvariable=self.helper_model, state="readonly", width=15)
+        self.cb_helper.pack(side="right", padx=5)
+        tk.Label(h_thoughts, text="Helper:", bg="#0f172a", fg="#64748b", font=("Segoe UI", 8)).pack(side="right")
+
+        self.txt_thoughts = scrolledtext.ScrolledText(f_thoughts, bg="#1e1e1e", fg="#a78bfa", borderwidth=0, font=("Segoe UI", 9))
+        self.txt_thoughts.pack(fill="both", expand=True, padx=5)
+        paned_right.add(f_thoughts, minsize=200, stretch="always")
+
+        # Staging Pane
+        f_stage = tk.Frame(paned_right, bg="#0f172a")
+        
+        tk.Label(f_stage, text="FINAL OUTPUT / STAGING (Edit before continuing)", bg="#0f172a", fg="#facc15", font=("Segoe UI", 10, "bold")).pack(anchor="w", padx=5, pady=(10, 5))
+        
+        self.txt_staging = scrolledtext.ScrolledText(f_stage, bg="#1e293b", fg="#e2e8f0", borderwidth=0, font=("Consolas", 11), insertbackground="white")
+        self.txt_staging.pack(fill="both", expand=True, padx=5)
+        
+        # ACTION BAR (The Green Arrow)
+        f_action = tk.Frame(f_stage, bg="#0f172a", pady=10)
+        f_action.pack(fill="x", padx=5)
+        
+        self.btn_action = tk.Button(f_action, text="START CHAIN ➡", command=self.on_action_click, bg="#2563eb", fg="white", font=("Segoe UI", 11, "bold"), relief="flat", height=2)
+        self.btn_action.pack(fill="x")
+        
+        tk.Checkbutton(f_action, text="Auto-Commit (No Pause)", variable=self.auto_run, bg="#0f172a", fg="#94a3b8", selectcolor="#0f172a", activebackground="#0f172a").pack(anchor="e")
+
+        paned_right.add(f_stage, minsize=300, stretch="always")
+
+        # --- BOTTOM: SYSTEM LOG ---
+        self.txt_log = tk.Text(self.root, height=8, bg="#020617", fg="#475569", font=("Consolas", 9), borderwidth=0, state="disabled")
+        self.txt_log.place(relx=0, rely=1, anchor="sw", relwidth=1.0, height=150) # Overlay or pack? Let's pack.
+        self.txt_log.pack(side="bottom", fill="x") # Actually pack it below the paned window
 
     # --- LOGIC ---
+
+    def log_system(self, msg):
+        timestamp = datetime.datetime.now().strftime("%H:%M:%S")
+        self.txt_log.config(state="normal")
+        self.txt_log.insert("end", f"[{timestamp}] {msg}\n")
+        self.txt_log.see("end")
+        self.txt_log.config(state="disabled")
 
     def _refresh_models(self):
         def worker():
@@ -153,8 +273,7 @@ class PromptChainerApp:
                 models = self.client.list_models()
                 self.root.after(0, lambda: self._update_combos(models))
             except Exception as e:
-                self.root.after(0, lambda: messagebox.showerror("Ollama Error", f"Could not list models: {e}"))
-
+                self.log_system(f"Error listing models: {e}")
         threading.Thread(target=worker, daemon=True).start()
 
     def _update_combos(self, models):
@@ -162,174 +281,175 @@ class PromptChainerApp:
         self.cb_helper.config(values=models)
         if models:
             self.cb_model.set(models[0])
-            # Try to find a smaller model for helper, else default
-            helpers = [m for m in models if "mini" in m or "7b" in m or "qwen" in m]
+            helpers = [m for m in models if "mini" in m or "7b" in m]
             self.cb_helper.set(helpers[0] if helpers else models[0])
+        self.log_system(f"Found {len(models)} models.")
 
-    def add_task_step(self, content=""):
-        idx = len(self.task_steps)
+    def collapse_all_steps(self):
+        for s in self.steps:
+            if s.expanded: s.collapse()
+
+    def add_step(self, data=None):
+        idx = len(self.steps)
+        # Create widget
+        w = TaskStepWidget(self.frame_tasks, idx, self, initial_data=data)
+        w.pack(fill="x", pady=2)
+        self.steps.append(w)
         
-        f = tk.Frame(self.frame_tasks, bg="#334155", pady=2, padx=2)
-        f.pack(fill="x", pady=2)
+        # If adding manually (no data), expand it for editing
+        if not data:
+            w.expand()
+
+    def delete_step(self, index):
+        if not (0 <= index < len(self.steps)): return
         
-        lbl = tk.Label(f, text=f"{idx+1}", bg="#334155", fg="#94a3b8", width=3, font=("Segoe UI", 12, "bold"))
-        lbl.pack(side="left", anchor="n")
-
-        txt = tk.Text(f, height=3, bg="#1e293b", fg="white", insertbackground="white", borderwidth=0, font=("Segoe UI", 10))
-        txt.pack(side="left", fill="x", expand=True, padx=2)
-        txt.insert("1.0", content)
-
-        self.task_steps.append({"frame": f, "text": txt, "index": idx})
-
-    def start_chain(self):
-        self.current_step_index = 0
-        self.state["chat"]["history"] = []
-        self.txt_chat.delete("1.0", "end")
-        self.txt_thoughts.delete("1.0", "end")
+        # Remove widget
+        self.steps[index].destroy()
+        self.steps.pop(index)
         
-        self.run_current_step()
+        # Re-index remaining
+        for i, s in enumerate(self.steps):
+            s.index = i
+            s.lbl_idx.config(text=f"#{i+1}")
+        
+        self.log_system(f"Deleted step #{index+1}")
 
-    def run_current_step(self):
-        if self.current_step_index >= len(self.task_steps):
-            self.status_msg.set("Chain Complete.")
-            messagebox.showinfo("Done", "Recipe completed successfully.")
+    def on_action_click(self):
+        # Determine context: Are we starting? confirming? finishing?
+        
+        # Case 1: Not running -> Start
+        if not self.is_running:
+            self.start_chain()
             return
 
-        # UI Updates
-        for step in self.task_steps:
-            bg = "#2563eb" if step["index"] == self.current_step_index else "#334155"
-            step["frame"].config(bg=bg)
+        # Case 2: Running -> Commit Staging & Move Next
+        self.commit_staging()
 
-        self.status_msg.set(f"Running Step {self.current_step_index + 1}...")
-        self.btn_run.config(state="disabled")
-        self.btn_commit.config(state="disabled")
+    def start_chain(self):
+        if not self.steps:
+            messagebox.showwarning("Empty", "Add some steps first.")
+            return
 
-        # Get Prompt
-        raw_prompt = self.task_steps[self.current_step_index]["text"].get("1.0", "end-1c")
+        self.is_running = True
+        self.current_step_idx = 0
         
-        # Resolve Template (The Microservice Logic!)
+        # Clear logs
+        self.txt_chat.delete("1.0", "end")
+        self.txt_thoughts.delete("1.0", "end")
+        self.state["chat"]["history"] = []
+        self.state["chat"]["last_response"] = ""
+        
+        self.log_system("--- STARTED NEW CHAIN ---")
+        self.run_step(0)
+
+    def run_step(self, idx):
+        if idx >= len(self.steps):
+            self.finish_chain()
+            return
+
+        self.current_step_idx = idx
+        step_widget = self.steps[idx]
+        step_widget._sync_data() # Ensure we have latest text
+        data = step_widget.data
+
+        # UI Update
+        for s in self.steps: s.set_active(False)
+        step_widget.set_active(True)
+        
+        self.btn_action.config(text="Running...", bg="#475569", state="disabled")
+        self.log_system(f"Executing Step #{idx+1}")
+
+        # Construct Prompt
+        # 1. Template Resolution
+        raw_prompt = data["prompt"]
         final_prompt = resolve_template(raw_prompt, self.state)
         
-        # Append "Last Response" context manually if not in template
-        # (Simple chaining strategy for prototype)
-        if self.current_step_index > 0 and "{{state" not in raw_prompt:
-            final_prompt += f"\n\nContext from previous step:\n{self.state['chat']['last_response']}"
+        # 2. Context Injection
+        if data["use_context"] and idx > 0:
+            final_prompt += f"\n\n[CONTEXT FROM PREVIOUS STEP]:\n{self.state['chat']['last_response']}"
 
-        self._log_chat("USER", final_prompt)
-        
-        # Run Inference Thread
-        threading.Thread(target=self._inference_worker, args=(final_prompt,), daemon=True).start()
+        self.txt_chat.insert("end", f"\n[USER - Step {idx+1}]\n{final_prompt}\n" + "-"*30 + "\n")
+        self.txt_chat.see("end")
 
-    def _inference_worker(self, prompt):
+        # Threaded Inference
+        threading.Thread(target=self._inference_worker, args=(data["system"], final_prompt), daemon=True).start()
+
+    def _inference_worker(self, sys_prompt, user_prompt):
         try:
-            # 1. Main Inference
-            model = self.selected_model.get()
-            response = self.client.generate(model, "You are a helpful assistant.", prompt)
-            
-            # 2. Helper Inference (Thought Bubble)
+            main_model = self.selected_model.get()
+            resp = self.client.generate(main_model, sys_prompt, user_prompt)
+
             helper_model = self.helper_model.get()
-            summary = "..."
+            thought = "..."
             if helper_model:
-                summary = self.client.generate(
-                    helper_model, 
-                    "Summarize the AI's response in 1 sentence. Be meta.",
-                    f"PROMPT: {prompt}\nRESPONSE: {response}"
-                )
+                thought = self.client.generate(helper_model, "Summarize this AI interaction in 1 brief sentence.", f"Q: {user_prompt}\nA: {resp}")
 
-            # Update UI
-            self.root.after(0, lambda: self._on_step_success(response, summary))
-
+            self.root.after(0, lambda: self._on_step_complete(resp, thought))
         except Exception as e:
-            self.root.after(0, lambda: messagebox.showerror("Error", str(e)))
-            self.root.after(0, lambda: self.btn_run.config(state="normal"))
+            self.root.after(0, lambda: self.log_system(f"Inference Error: {e}"))
+            self.root.after(0, lambda: self.btn_action.config(state="normal", text="Retry"))
 
-    def _on_step_success(self, response, summary):
-        # Show result in Staging Area
+    def _on_step_complete(self, response, thought):
+        # 1. Populate Staging
         self.txt_staging.delete("1.0", "end")
         self.txt_staging.insert("1.0", response)
         
-        # Log thoughts
-        self.txt_thoughts.insert("end", f"Step {self.current_step_index + 1}: {summary.strip()}\n\n")
+        # 2. Populate Thoughts
+        self.txt_thoughts.insert("end", f"Step {self.current_step_idx+1}: {thought.strip()}\n")
         self.txt_thoughts.see("end")
 
-        # Check for final step
-        is_last = (self.current_step_index >= len(self.task_steps) - 1)
+        # 3. Enable 'Next' Button
+        is_last = (self.current_step_idx == len(self.steps) - 1)
+        btn_text = "Finish & Save 🏁" if is_last else "Confirm & Next ➡"
+        btn_color = "#16a34a" if is_last else "#2563eb"
+        
+        self.btn_action.config(state="normal", text=btn_text, bg=btn_color)
+        self.log_system(f"Step #{self.current_step_idx+1} complete. Waiting for confirmation.")
 
-        if is_last:
-            self.status_msg.set("Chain Finished. Edit Final Output if needed, then Commit.")
-            self.btn_commit.config(state="normal", bg="#16a34a", text="🏁 Finish & Save Log", command=self.finish_chain)
-        else:
-            self.status_msg.set("Review Output. Edit if needed, then Confirm.")
-            self.btn_commit.config(state="normal", bg="#059669", text="✅ Confirm & Next Step", command=self.commit_and_continue)
-
-        # Auto-run check
         if self.auto_run.get():
-            if is_last:
-                self.finish_chain()
-            else:
-                self.commit_and_continue()
+            self.commit_staging()
 
-    def commit_and_continue(self):
-        # 1. Grab content from Staging (User might have edited it!)
-        final_output = self.txt_staging.get("1.0", "end-1c")
+    def commit_staging(self):
+        # User may have edited text in staging
+        final_text = self.txt_staging.get("1.0", "end-1c")
         
-        # 2. Update State
-        self.state["chat"]["last_response"] = final_output
-        self._log_chat("ASSISTANT", final_output)
+        self.state["chat"]["last_response"] = final_text
+        self.txt_chat.insert("end", f"\n[ASSISTANT]\n{final_text}\n" + "="*40 + "\n")
+        self.txt_chat.see("end")
         
-        # 3. Move index
-        self.current_step_index += 1
-        self.btn_commit.config(state="disabled", bg="#334155")
-        
-        # 4. Run next
-        self.run_current_step()
+        self.run_step(self.current_step_idx + 1)
 
     def finish_chain(self):
-        # 1. Grab Final content
-        final_output = self.txt_staging.get("1.0", "end-1c")
+        self.is_running = False
+        self.btn_action.config(text="START CHAIN ➡", bg="#2563eb")
+        self.log_system("Chain Completed.")
         
-        # 2. Update State
-        self.state["chat"]["last_response"] = final_output
-        self.state["outputs"]["final"] = final_output
-        self._log_chat("ASSISTANT (FINAL)", final_output)
-        
-        # 3. Save Session Log
-        self._save_session_log()
-
-        # 4. UI Feedback
-        self.status_msg.set("Chain Completed and Saved.")
-        self.btn_commit.config(state="disabled", text="Chain Complete", bg="#334155")
-        self.btn_run.config(state="normal")
-        messagebox.showinfo("Success", "Chain finished. Session log saved to _logs/")
-
-    def _save_session_log(self):
-        if not os.path.exists("_logs"):
-            os.makedirs("_logs")
-        
-        import datetime
-        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = f"_logs/chain_run_{timestamp}.json"
+        # Save Log
+        if not os.path.exists("_logs"): os.makedirs("_logs")
+        ts = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        fn = f"_logs/run_{ts}.json"
         
         log_data = {
-            "state": self.state,
-            "chat_history": self.txt_chat.get("1.0", "end-1c"),
-            "thoughts": self.txt_thoughts.get("1.0", "end-1c")
+            "chat": self.txt_chat.get("1.0", "end-1c"),
+            "thoughts": self.txt_thoughts.get("1.0", "end-1c"),
+            "final_output": self.state["chat"]["last_response"]
         }
-        
-        with open(filename, "w", encoding="utf-8") as f:
+        with open(fn, "w", encoding="utf-8") as f:
             json.dump(log_data, f, indent=2)
-            print(f"Log saved to {filename}")
+        
+        messagebox.showinfo("Success", f"Run saved to {fn}")
 
-    def _log_chat(self, role, text):
-        self.txt_chat.insert("end", f"\n[{role}]\n{text}\n" + "-"*30 + "\n")
-        self.txt_chat.see("end")
-
+    # --- SAVE / LOAD ---
     def save_chain(self):
-        data = [s["text"].get("1.0", "end-1c") for s in self.task_steps]
+        # Force sync of all widgets
+        for s in self.steps: s._sync_data()
+        
+        data = [s.data for s in self.steps]
         f = filedialog.asksaveasfilename(defaultextension=".json", filetypes=[("JSON", "*.json")])
         if f:
             with open(f, 'w') as file:
-                json.dump(data, file)
+                json.dump(data, file, indent=2)
+            self.log_system(f"Saved chain to {os.path.basename(f)}")
 
     def load_chain(self):
         f = filedialog.askopenfilename(filetypes=[("JSON", "*.json")])
@@ -337,9 +457,14 @@ class PromptChainerApp:
             with open(f, 'r') as file:
                 data = json.load(file)
             
-            for s in self.task_steps: s["frame"].destroy()
-            self.task_steps = []
-            for text in data: self.add_task_step(text)
+            # Clear UI
+            for s in self.steps: s.destroy()
+            self.steps = []
+            
+            # Rebuild
+            for step_data in data:
+                self.add_step(step_data)
+            self.log_system(f"Loaded chain from {os.path.basename(f)}")
 
 if __name__ == "__main__":
     root = tk.Tk()
