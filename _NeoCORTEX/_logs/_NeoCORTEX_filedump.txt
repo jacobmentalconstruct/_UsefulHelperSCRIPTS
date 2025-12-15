@@ -214,8 +214,8 @@ class IngestView(tk.Frame):
         self.current_tree = None
         self.current_engine = None # Reference to active engine for cancelling
         
-        self.selected_embed = "nomic-embed-text"
-        self.selected_helper = "qwen2.5:0.5b"
+        self.selected_embed = "mxbai-embed-large:latest-cpu"
+        self.selected_helper = "qwen2.5:3b-cpu"
         self.selected_architect = "qwen2.5:7b"
         
         self.paned = ttk.PanedWindow(self, orient="horizontal")

@@ -1,8 +1,9 @@
 Project Tree: C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_NeoCORTEX
-Generated: 2025-12-14 09:10:56.655084
+Generated: 2025-12-14 13:35:15.480154
 
 ├── 📁 cortex_dbs/
-│   └── 📄 _NeoCORTEX_KB.db
+│   ├── 📄 _NeoCORTEX_KB.db
+│   └── 📄 _NeoCORTEX_KB_v2.db
 ├── 📁 src/
 │   ├── 📁 _micro_services/
 │   │   ├── 📁 _ArchitectMS/

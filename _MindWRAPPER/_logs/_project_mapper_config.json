@@ -245,7 +245,9 @@
     ".venv\\Lib\\site-packages\\urllib3-2.6.2.dist-info": "checked",
     ".venv\\Lib\\site-packages\\urllib3-2.6.2.dist-info\\licenses": "checked",
     ".venv\\Scripts": "checked",
-    "src\\__pycache__": "unchecked"
+    "src\\__pycache__": "unchecked",
+    "cortex_dbs": "checked",
+    "src\\microservices\\__pycache__": "unchecked"
   },
   "dynamic_exclusions": []
 }

@@ -8,23 +8,32 @@ from .base_service import BaseService
 OLLAMA_API_URL = "http://localhost:11434/api"
 
 class NeuralService(BaseService):
-    """
-    Manages connections to the Neural Backend (Ollama).
-    Handles Tiering (CPU vs GPU) and Parallelism.
-    """
-    
-    # Define our tiers based on the 'Bake' script we ran earlier
-    MODELS = {
-        "fast": "qwen2.5-coder:1.5b-cpu",     # The Roughneck (CPU)
-        "smart": "qwen2.5:3b-cpu",            # The Supervisor (CPU)
-        "architect": "qwen2.5:7b",            # The Big Brain (GPU)
-        "embed": "mxbai-embed-large:latest-cpu" # The Embedder (CPU)
-    }
-
     def __init__(self, max_workers: int = 4):
         super().__init__("NeuralService")
         self.max_workers = max_workers
-        self.log_info(f"Neural Link Active. CPU Workers: {max_workers}")
+        # Default configs
+        self.config = {
+            "fast": "qwen2.5-coder:1.5b-cpu",
+            "smart": "qwen2.5:3b-cpu",
+            "embed": "mxbai-embed-large:latest-cpu"
+        }
+
+    def update_models(self, fast_model: str, smart_model: str, embed_model: str):
+        """Called by the UI Settings Modal to change models on the fly."""
+        self.config["fast"] = fast_model
+        self.config["smart"] = smart_model
+        self.config["embed"] = embed_model
+        self.log_info(f"Models Updated: Fast={fast_model}, Smart={smart_model}")
+
+    def get_available_models(self) -> List[str]:
+        """Fetches list from Ollama for the UI dropdown."""
+        try:
+            res = requests.get(f"{OLLAMA_API_URL}/tags", timeout=2)
+            if res.status_code == 200:
+                return [m['name'] for m in res.json().get('models', [])]
+        except:
+            return []
+        return []
 
     def check_connection(self) -> bool:
         """Pings Ollama to see if it's alive."""
@@ -40,7 +49,7 @@ class NeuralService(BaseService):
         try:
             res = requests.post(
                 f"{OLLAMA_API_URL}/embeddings",
-                json={"model": self.MODELS["embed"], "prompt": text},
+                json={"model": self.config["embed"], "prompt": text},
                 timeout=30
             )
             if res.status_code == 200:
@@ -54,7 +63,7 @@ class NeuralService(BaseService):
         Synchronous inference request.
         tier: 'fast' (1.5b-cpu), 'smart' (3b-cpu), or 'architect' (7b-gpu)
         """
-        model = self.MODELS.get(tier, self.MODELS["fast"])
+        model = self.config.get(tier, self.config["fast"])
         payload = {
             "model": model,
             "prompt": prompt,
@@ -86,3 +95,4 @@ class NeuralService(BaseService):
                 except Exception as e:
                     self.log_error(f"Worker task failed: {e}")
         return results
+
