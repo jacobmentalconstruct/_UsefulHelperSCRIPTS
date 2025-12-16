@@ -138,6 +138,30 @@ class GraphRenderer:
         self.zoom *= amount
         self.zoom = max(0.1, min(self.zoom, 5.0))
 
+    def highlight_nodes(self, node_ids):
+        """Highlights specific nodes by ID."""
+        for n in self.nodes:
+            # 1. Reset to defaults
+            if n.get('type') == 'file': 
+                n['_color'] = (0, 122, 204)
+                n['_radius'] = 6
+            elif n.get('type') == 'web': 
+                n['_color'] = (204, 0, 122)
+                n['_radius'] = 7
+            elif n.get('type') == 'chunk': 
+                n['_color'] = (100, 200, 100)
+                n['_radius'] = 3
+            else: 
+                n['_color'] = (160, 32, 240)
+                n['_radius'] = 6
+                
+            # 2. Apply Highlight
+            if n['id'] in node_ids:
+                n['_color'] = (255, 255, 0) # Bright Yellow
+                n['_radius'] = 12
+                
+        self.settled = False # Wake up physics
+
     # --- PHYSICS (Damped) ---
 
     def step_physics(self):
@@ -255,4 +279,5 @@ class GraphRenderer:
                 self.surface.blit(text, (sx + rad + 4, sy - 6))
 
         return pygame.image.tostring(self.surface, 'RGB')
+
 

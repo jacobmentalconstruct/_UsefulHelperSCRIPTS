@@ -259,6 +259,7 @@ class RagForgeApp(tk.Tk):
         self.sys_log.log(f"Cartridge loaded: {os.path.basename(path)}")
         
         # 3. Load Graph (Non-blocking)
+        self.graph_view.bind_services(self.active_cartridge, self.neural)
         self.graph_view.load_from_db(path)
         
         # 4. Start Background Poller (The Refinery Daemon)
@@ -374,6 +375,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 

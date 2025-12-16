@@ -134,6 +134,7 @@ class ScannerMS:
             'path': path, 
             'rel_path': rel_path,
             'type': 'folder' if is_dir else 'file', 
+            'children': [],
             'checked': False
         }
         return node
@@ -146,3 +147,4 @@ class ScannerMS:
             for child in tree_node['children']:
                 files.extend(self.flatten_tree(child))
         return files
+

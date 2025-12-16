@@ -233,10 +233,18 @@ class CartridgeService(BaseService):
                 LIMIT ?
             """, (json.dumps(query_vector), limit)).fetchall()
             
-            # Resolve back to chunks
+            # Resolve back to chunks with VFS context
             for r in rows:
                 chunk_id = r['rowid']
-                chunk = conn.execute("SELECT * FROM chunks WHERE id=?", (chunk_id,)).fetchone()
+                # Join with files to get vfs_path
+                query = """
+                    SELECT c.*, f.vfs_path 
+                    FROM chunks c 
+                    JOIN files f ON c.file_id = f.id 
+                    WHERE c.id=?
+                """
+                chunk = conn.execute(query, (chunk_id,)).fetchone()
+                
                 if chunk:
                     res = dict(chunk)
                     res['score'] = r['distance']

@@ -11,9 +11,24 @@ class GraphView(ttk.Frame):
         super().__init__(parent)
         self.pack(fill="both", expand=True)
         
+        # Search Overlay
+        self.controls = tk.Frame(self, bg="#101018")
+        self.controls.pack(fill="x", side="top", padx=5, pady=5)
+        
+        self.entry_search = tk.Entry(self.controls, bg="#252526", fg="white", insertbackground="white", font=("Consolas", 10))
+        self.entry_search.pack(side="left", fill="x", expand=True, padx=(0, 5))
+        self.entry_search.bind("<Return>", self.run_search)
+        
+        btn = tk.Button(self.controls, text="NEURAL TEST", command=self.run_search, bg="#007ACC", fg="white", relief="flat")
+        btn.pack(side="right")
+
         # UI Container
         self.canvas_lbl = tk.Label(self, bg="#101018", cursor="crosshair")
         self.canvas_lbl.pack(fill="both", expand=True)
+        
+        # Services
+        self.cartridge = None
+        self.neural = None
         
         # Engine Init
         self.engine = GraphRenderer(800, 600)
@@ -38,6 +53,34 @@ class GraphView(ttk.Frame):
         
         # Start the Heartbeat
         self.animate()
+
+    def bind_services(self, cartridge, neural):
+        self.cartridge = cartridge
+        self.neural = neural
+
+    def run_search(self, event=None):
+        if not self.cartridge or not self.neural:
+            return
+            
+        query = self.entry_search.get().strip()
+        if not query: return
+        
+        # 1. Embed
+        vec = self.neural.get_embedding(query)
+        if not vec: return
+        
+        # 2. Search
+        results = self.cartridge.search_embeddings(vec, limit=5)
+        
+        # 3. Resolve IDs for Graph
+        # Graph Node ID format: "{vfs_path}::{chunk_name}"
+        ids = set()
+        for r in results:
+            if 'vfs_path' in r and 'name' in r:
+                ids.add(f"{r['vfs_path']}::{r['name']}")
+                
+        # 4. Highlight
+        self.engine.highlight_nodes(ids)
 
     def load_from_db(self, db_path):
         """

@@ -101,6 +101,19 @@ class FileTreePanel(tk.Frame):
         self.intake = intake_service
         self.root_path = None
         self.node_map = {}
+        
+        # --- UI ASSETS: Programmatic Icons ---
+        # Create 16x16 checkboxes using empty PhotoImages and coloring pixels (or simple rectangles)
+        # 1. Unchecked (Gray outline)
+        self.img_off = tk.PhotoImage(width=16, height=16)
+        self.img_off.put(("#666",), to=(2, 2, 14, 14))   # Border
+        self.img_off.put(("#1e1e2f",), to=(4, 4, 12, 12)) # Center (BG Color)
+        
+        # 2. Checked (Green Fill)
+        self.img_on = tk.PhotoImage(width=16, height=16)
+        self.img_on.put(("#388E3C",), to=(2, 2, 14, 14)) # Green Box
+        self.img_on.put(("#ffffff",), to=(5, 7, 7, 12))  # Checkmark (simple L shape)
+        self.img_on.put(("#ffffff",), to=(7, 10, 11, 7)) 
 
         # Header
         tk.Label(self, text="HIERARCHY EXPLORER", bg=BG_COLOR, fg="#666", 
@@ -125,21 +138,38 @@ class FileTreePanel(tk.Frame):
             self._insert_node("", tree_data)
 
     def _insert_node(self, parent_id, node):
-        icon = "☑" if node['checked'] else "☐"
-        display = f"{icon}  {node['name']}"
-        item_id = self.tree.insert(parent_id, "end", text=display, open=(parent_id==""))
+        # Use the image property for the checkbox, keep text clean for the name
+        img = self.img_on if node['checked'] else self.img_off
+        
+        item_id = self.tree.insert(parent_id, "end", text=f" {node['name']}", image=img, open=(parent_id==""))
         self.node_map[item_id] = node
-        for child in node['children']:
+        
+        # Safely handle children
+        children = node.get('children', [])
+        for child in children:
             self._insert_node(item_id, child)
 
     def _on_tree_click(self, event):
-        region = self.tree.identify_region(event.x, event.y)
-        if region in ["tree", "separator"]:
-            return 
         item_id = self.tree.identify_row(event.y)
-        if item_id:
+        if not item_id: return
+        
+        # Identify what part of the item was clicked
+        element = self.tree.identify_element(event.x, event.y)
+        
+        # Case 1: Clicked the Checkbox (Image) -> Toggle Selection
+        if element == "image":
             self._toggle_check(item_id)
             return "break"
+            
+        # Case 2: Clicked the Row/Text -> Toggle Expand (if folder)
+        else:
+            # If it has children, toggle the open state
+            if self.tree.get_children(item_id) or self.node_map[item_id]['type'] in ['dir', 'folder']:
+                current_state = self.tree.item(item_id, "open")
+                self.tree.item(item_id, open=not current_state)
+                return "break"
+            # If file, do nothing (or select row standard behavior)
+            return
 
     def _toggle_check(self, item_id):
         node = self.node_map[item_id]
@@ -150,8 +180,11 @@ class FileTreePanel(tk.Frame):
     def _set_node_state(self, item_id, state):
         node = self.node_map[item_id]
         node['checked'] = state
-        icon = "☑" if state else "☐"
-        self.tree.item(item_id, text=f"{icon}  {node['name']}")
+        
+        # Update image only
+        img = self.img_on if state else self.img_off
+        self.tree.item(item_id, image=img)
+        
         for child_id in self.tree.get_children(item_id):
             self._set_node_state(child_id, state)
 
@@ -297,6 +330,7 @@ class EditorPanel(tk.Frame):
             else:
                 self.editor.insert("1.0", "(Binary content or empty)")
         except: pass
+
 
 
 
