@@ -129,58 +129,73 @@ class IntakeService(BaseService):
                 stats["errors"] += 1
         
         # --- POST-INGESTION: Update Manifest ---
-        self._update_skeleton_manifest()
+        self._rebuild_directory_index()
         
         return stats
 
-    def _update_skeleton_manifest(self):
+    def _rebuild_directory_index(self):
         """
-        Generates a lightweight JSON tree of the DB contents and saves it to manifest.
-        This allows an Agent to 'ls' the brain without querying 1000 rows.
+        Scans 'files' table and populates 'directories' table.
+        This creates the navigable VFS structure.
         """
+        self.log_info("Rebuilding VFS Directory Index...")
         conn = self.cartridge._get_conn()
         try:
-            # Fetch all paths
-            rows = conn.execute("SELECT vfs_path FROM files ORDER BY vfs_path").fetchall()
-            paths = [r[0] for r in rows]
+            rows = conn.execute("SELECT vfs_path FROM files").fetchall()
+            seen_dirs = set()
             
-            # Build Tree
-            tree = {}
-            for path in paths:
-                parts = path.split('/')
-                current = tree
-                for part in parts:
-                    current = current.setdefault(part, {})
+            for r in rows:
+                path = r[0]
+                # Walk up the path to register all parents
+                current = os.path.dirname(path).replace("\\", "/")
+                while current and current != "." and current not in seen_dirs:
+                    self.cartridge.ensure_directory(current)
+                    seen_dirs.add(current)
+                    current = os.path.dirname(current).replace("\\", "/")
             
-            # Save to Manifest
-            conn.execute("INSERT OR REPLACE INTO manifest (key, value) VALUES (?, ?)", 
-                         ("structural_skeleton", json.dumps(tree)))
-            conn.commit()
         except Exception as e:
-            self.log_error(f"Failed to update skeleton: {e}")
+            self.log_error(f"Directory Index Error: {e}")
         finally:
             conn.close()
 
     # --- HELPERS ---
 
     def _load_persistence(self, root_path: str) -> Dict[str, bool]:
-        """Loads .ragforge.json if present."""
+        """Loads config from DB Manifest (Portable) or fallback to local."""
+        # 1. Try DB Manifest
+        try:
+            conn = self.cartridge._get_conn()
+            row = conn.execute("SELECT value FROM manifest WHERE key='ingest_config'").fetchone()
+            conn.close()
+            if row:
+                return json.loads(row[0])
+        except: pass
+        
+        # 2. Fallback to local (Legacy)
         cfg_path = os.path.join(root_path, ".ragforge.json")
         if os.path.exists(cfg_path):
             try:
-                with open(cfg_path, 'r') as f:
-                    return json.load(f)
+                with open(cfg_path, 'r') as f: return json.load(f)
             except: pass
         return {}
 
     def save_persistence(self, root_path: str, checked_map: Dict[str, bool]):
-        """Saves user selections to .ragforge.json"""
+        """Saves user selections into the Cartridge Manifest (Portable)."""
+        # 1. Save to DB
+        try:
+            conn = self.cartridge._get_conn()
+            conn.execute("INSERT OR REPLACE INTO manifest (key, value) VALUES (?, ?)", 
+                         ("ingest_config", json.dumps(checked_map)))
+            conn.commit()
+            conn.close()
+        except Exception as e:
+            self.log_error(f"Failed to save persistence to DB: {e}")
+
+        # 2. Save local backup (Optional, keeps scan state if DB is deleted)
         cfg_path = os.path.join(root_path, ".ragforge.json")
         try:
-            with open(cfg_path, 'w') as f:
-                json.dump(checked_map, f, indent=2)
-        except Exception as e:
-            self.log_error(f"Failed to save persistence: {e}")
+            with open(cfg_path, 'w') as f: json.dump(checked_map, f, indent=2)
+        except: pass
 
     def _load_gitignore(self, root_path: str):
         gitignore_path = os.path.join(root_path, '.gitignore')

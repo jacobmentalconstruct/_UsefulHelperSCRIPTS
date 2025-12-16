@@ -1,14 +1,18 @@
 Project Tree: C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_RagFORGE
-Generated: 2025-12-15 18:35:48.972867
+Generated: 2025-12-16 10:14:41.176975
 
+├── 📁 cartridges/
+│   └── 📄 PYPU.db
 ├── 📁 src/
 │   ├── 📁 microservices/
+│   │   ├── 📄 __init__.py
 │   │   ├── 📄 base_service.py
 │   │   ├── 📄 cartridge_service.py
 │   │   ├── 📄 graph_engine.py
 │   │   ├── 📄 graph_view.py
 │   │   ├── 📄 intake_service.py
 │   │   ├── 📄 neural_service.py
+│   │   ├── 📄 panels.py
 │   │   ├── 📄 refinery_service.py
 │   │   ├── 📄 scanner.py
 │   │   ├── 📄 semantic_chunker.py

@@ -31,6 +31,17 @@ class CartridgeService(BaseService):
         # 1. Manifest (The Boot Sector)
         cursor.execute("CREATE TABLE IF NOT EXISTS manifest (key TEXT PRIMARY KEY, value TEXT)")
         
+        # 1.5 Directories (The VFS Index)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS directories (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                vfs_path TEXT UNIQUE NOT NULL,
+                parent_path TEXT,
+                metadata TEXT DEFAULT '{}'
+            )
+        """)
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_dir_parent ON directories(parent_path)")
+
         # 2. Files (The Content Store)
         # Supports Text AND Binary (blob_data)
         cursor.execute("""
@@ -113,6 +124,20 @@ class CartridgeService(BaseService):
             conn.execute("UPDATE files SET status = ? WHERE id = ?", (status, file_id))
         conn.commit()
         conn.close()
+
+    def ensure_directory(self, vfs_path: str):
+        """Idempotent insert for VFS directories."""
+        if not vfs_path: return
+        parent = os.path.dirname(vfs_path).replace("\\", "/")
+        if parent == vfs_path: parent = "" # Root case
+        
+        conn = self._get_conn()
+        try:
+            conn.execute("INSERT OR IGNORE INTO directories (vfs_path, parent_path) VALUES (?, ?)", (vfs_path, parent))
+            conn.commit()
+        except: pass
+        finally:
+            conn.close()
 
     # --- Graph Helpers ---
     def add_node(self, node_id: str, node_type: str, label: str, data: dict = None):

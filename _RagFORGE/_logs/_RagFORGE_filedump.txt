@@ -33,10 +33,21 @@ FILE: README.md
 --------------------------------------------------------------------------------
 FILE: requirements.txt
 --------------------------------------------------------------------------------
-# Standard Library dependencies only:
-# tkinter, argparse, json, ast, threading, os, sys
-#
-# No external pip packages required.
+# --- Critical UI/Graphing ---
+pygame-ce>=2.3.0
+Pillow>=10.0.0
+
+# --- Networking/AI ---
+requests>=2.30.0
+
+# --- Database Extensions ---
+# (Ensure your Python environment supports installing this, 
+# otherwise you may need to manually place the DLL/SO)
+sqlite-vec>=0.1.0
+
+# --- Document Processing ---
+pypdf>=3.0.0
+beautifulsoup4>=4.12.0
 --------------------------------------------------------------------------------
 FILE: setup_env.bat
 --------------------------------------------------------------------------------
@@ -67,195 +78,369 @@ FILE: src\app.py
 # -*- coding: utf-8 -*-
 
 """
-== Generic Python Module/CLI Boilerplate ==
-
-This is a generic template for a Python file that can be:
-1.  Imported as a module by other scripts (e.g., `import generic_module`).
-2.  Run as a standalone command-line script (e.g., `$ python generic_module.py --input data.txt`).
-
-How to use this template:
-1.  Rename this file to match your new tool (e.g., `my_data_processor.py`).
-2.  Update this docstring to describe what your tool does.
-3.  Fill in the "CORE FUNCTIONALITY" section with your app's logic.
-4.  Go to the `main()` function to define your CLI arguments.
-5.  In `main()`, add the code to call your core functions using the parsed arguments.
+== _RagFORGE: Neural Cartridge Factory ==
 """
 
 # 1. IMPORTS
-# Standard library imports
 import sys
 import os
-import argparse  # For parsing command-line arguments
 
-# Third-party imports (if any)
-# e.g., import requests
+# --- PATH PATCH START ---
+current_dir = os.path.dirname(os.path.abspath(__file__))
+if current_dir not in sys.path:
+    sys.path.insert(0, current_dir)
+# --- PATH PATCH END ---
 
-# Local/application imports (if any)
-# e.g., from . import my_other_module
+import argparse
+import threading
+import tkinter as tk
+from tkinter import ttk, messagebox
 
+# Microservices
+from microservices.base_service import BaseService
+from microservices.cartridge_service import CartridgeService
+from microservices.neural_service import NeuralService
+from microservices.intake_service import IntakeService
+from microservices.refinery_service import RefineryService
+
+# UI Components
+from microservices.panels import (
+    Sidebar,
+    IngestToolbar,
+    FileTreePanel,
+    EditorPanel,
+    SystemLog,
+)
+from microservices.graph_view import GraphView
+from microservices.thought_stream import ThoughtStream
 
 # 2. CONSTANTS
-# TODO: Define any constants your application needs.
-SOME_DEFAULT_SETTING = "default_value"
+APP_TITLE = "_RagFORGE v1.0"
+STORAGE_DIR = "./cartridges"
+BG_COLOR = "#1e1e2f"
 
 
-# 3. CORE FUNCTIONALITY (The "Importable" Module)
-#
-# These functions make up the "core logic" of your application.
-# They can be imported and used by other Python scripts.
-# They should be self-contained and not rely on command-line arguments.
+# 3. CORE FUNCTIONALITY (Headless Logic)
 
-def core_logic_function(data: any, setting: str = SOME_DEFAULT_SETTING) -> any:
-    """
-    TODO: Replace this with your main logic function.
-    
-    This function should perform the primary task of your module.
-    
-    Args:
-        data (any): The input data to process.
-        setting (str, optional): An example of an optional setting.
-                                 Defaults to SOME_DEFAULT_SETTING.
+def headless_forge(source_path: str, db_name: str, verbose: bool = False):
+    """CLI Entry point for automated cartridge creation."""
+    if not db_name.endswith(".db"):
+        db_name += ".db"
 
-    Returns:
-        any: The processed data.
-    """
-    print(f"[Core Logic] Processing data with setting: {setting}")
-    
-    # --- TODO: Your actual logic goes here ---
-    # Example:
-    try:
-        processed_data = f"Processed data: {str(data).upper()}"
-        print("[Core Logic] Processing complete.")
-        return processed_data
-    except Exception as e:
-        print(f"[Core Logic] Error during processing: {e}", file=sys.stderr)
-        # Re-raise the exception to be handled by the caller
-        raise
+    db_path = os.path.join(STORAGE_DIR, db_name)
 
+    print(f"[FORGE] Target Cartridge: {db_path}")
+    print(f"[FORGE] Source Material: {source_path}")
 
-def helper_function(value: int) -> str:
-    """
-    TODO: Add any helper functions your core logic needs.
-    
-    This is an example of a helper that might be called by
-    core_logic_function or also be importable.
-    
-    Args:
-        value (int): An input value.
+    cartridge = CartridgeService(db_path)
+    neural = NeuralService()
+    intake = IntakeService(cartridge)
+    refinery = RefineryService(cartridge, neural)
 
-    Returns:
-        str: A formatted string.
-    """
-    return f"Helper processed value: {value * 2}"
+    print(">>> Phase 1: Intake (Vacuuming files...)")
+    stats = intake.ingest_source(source_path)
+    print(f"    Intake Result: {stats}")
+
+    print(">>> Phase 2: Refinery (Chunking & Weaving...)")
+    while True:
+        processed = refinery.process_pending(batch_size=10)
+        if processed == 0:
+            break
+        if verbose:
+            print(f"    Refined batch of {processed}...")
+
+    print(f"[SUCCESS] Cartridge forged at {db_path}")
+    return db_path
 
 
-# 4. CLI (Command-Line Interface) LOGIC
-#
-# This code only runs when the script is executed directly.
-# It should handle parsing arguments and calling the core functions.
+# 4. GUI LOGIC (The Workstation)
+
+class RagForgeApp(tk.Tk):
+    def __init__(self):
+        super().__init__()
+        self.title(APP_TITLE)
+        self.geometry("1200x800")
+        self.configure(bg=BG_COLOR)
+
+        self.neural = NeuralService()
+        self.active_cartridge = None
+        self.active_db_path = None
+        self.refining = False
+
+        self._apply_cyberpunk_theme()
+        self._setup_ui()
+
+    def _apply_cyberpunk_theme(self):
+        """Injects the Dark/Cyberpunk visual style globally."""
+        style = ttk.Style(self)
+
+        try:
+            style.theme_use("clam")
+        except Exception:
+            pass
+
+        dark_bg = "#1e1e2f"
+        darker_bg = "#151515"
+        text_fg = "#e0e0e0"
+        accent = "#007ACC"
+        border = "#333344"
+
+        # Treeviews
+        style.configure(
+            "Treeview",
+            background=darker_bg,
+            fieldbackground=darker_bg,
+            foreground=text_fg,
+            borderwidth=0,
+            rowheight=26,
+            font=("Segoe UI", 10),
+        )
+        style.map(
+            "Treeview",
+            background=[("selected", accent)],
+            foreground=[("selected", "white")],
+        )
+
+        style.configure(
+            "Treeview.Heading",
+            background=dark_bg,
+            foreground="#888",
+            relief="flat",
+            font=("Segoe UI", 9, "bold"),
+        )
+        style.map(
+            "Treeview.Heading",
+            background=[("active", "#2d2d44")],
+        )
+
+        # Scrollbars
+        style.configure(
+            "Vertical.TScrollbar",
+            gripcount=0,
+            background="#2d2d44",
+            darkcolor=dark_bg,
+            lightcolor=dark_bg,
+            troughcolor=dark_bg,
+            bordercolor=dark_bg,
+            arrowcolor="#888",
+        )
+        style.map(
+            "Vertical.TScrollbar",
+            background=[("active", "#444"), ("disabled", dark_bg)],
+        )
+
+        # Tabs
+        style.configure(
+            "TNotebook",
+            background=dark_bg,
+            borderwidth=0,
+        )
+        style.configure(
+            "TNotebook.Tab",
+            background="#252526",
+            foreground="#888",
+            padding=[15, 8],
+            font=("Segoe UI", 10),
+        )
+        style.map(
+            "TNotebook.Tab",
+            background=[("selected", accent)],
+            foreground=[("selected", "white")],
+        )
+
+        # Panes
+        style.configure("TPanedwindow", background=dark_bg)
+        style.configure("Sash", background=border, handlecv_bg=border)
+
+    def _setup_ui(self):
+        self.sidebar = Sidebar(self, STORAGE_DIR, self.load_cartridge)
+        self.sidebar.pack(side="left", fill="y")
+
+        self.main_area = tk.Frame(self, bg=BG_COLOR)
+        self.main_area.pack(side="right", fill="both", expand=True)
+
+        self.notebook = ttk.Notebook(self.main_area)
+        self.notebook.pack(fill="both", expand=True)
+
+        self.tab_forge = tk.Frame(self.notebook, bg=BG_COLOR)
+        self.notebook.add(self.tab_forge, text="  DATA INGESTION  ")
+
+        self.ingest_toolbar = IngestToolbar(
+            self.tab_forge,
+            on_scan=self.run_scan_request,
+            on_ingest=self.run_ingest_request,
+        )
+        self.ingest_toolbar.pack(fill="x", side="top")
+
+        forge_panes = ttk.PanedWindow(self.tab_forge, orient="horizontal")
+        forge_panes.pack(fill="both", expand=True, padx=5, pady=5)
+
+        self.file_tree = FileTreePanel(forge_panes, None)
+        forge_panes.add(self.file_tree, weight=1)
+
+        right_col = ttk.PanedWindow(forge_panes, orient="vertical")
+        forge_panes.add(right_col, weight=3)
+
+        self.stream = ThoughtStream(right_col)
+        right_col.add(self.stream, weight=3)
+
+        self.sys_log = SystemLog(right_col)
+        right_col.add(self.sys_log, weight=1)
+
+        self.editor_panel = EditorPanel(self.notebook)
+        self.notebook.add(self.editor_panel, text="  KNOWLEDGE INSPECTOR  ")
+
+        self.graph_view = GraphView(self.notebook)
+        self.notebook.add(self.graph_view, text="  NEURAL TOPOLOGY  ")
+
+        status_frame = tk.Frame(
+            self.main_area,
+            bg="#101018",
+            height=25,
+            highlightbackground="#333",
+            highlightthickness=1,
+        )
+        status_frame.pack(fill="x", side="bottom")
+        status_frame.pack_propagate(False)
+
+        self.status_var = tk.StringVar(value="Ready.")
+        tk.Label(
+            status_frame,
+            textvariable=self.status_var,
+            bg="#101018",
+            fg="#888",
+            font=("Arial", 9),
+        ).pack(side="left", padx=10)
+
+    # Remaining methods unchanged …
+
+
+    def load_cartridge(self, path):
+        """Called when user clicks a DB in sidebar."""
+        self.active_db_path = path
+        self.status_var.set(f"Loaded: {os.path.basename(path)}")
+        self.title(f"{APP_TITLE} - [{os.path.basename(path)}]")
+        
+        # 1. Init Backend for this specific cartridge
+        self.active_cartridge = CartridgeService(path)
+        
+        # 2. Wire up panels
+        new_intake = IntakeService(self.active_cartridge)
+        self.file_tree.intake = new_intake
+        self.editor_panel.load_db(path)
+        self.sys_log.log(f"Cartridge loaded: {os.path.basename(path)}")
+        
+        # 3. Load Graph (Non-blocking)
+        self.graph_view.load_from_db(path)
+        
+        # 4. Start Background Poller (The Refinery Daemon)
+        if not self.refining:
+            self.refining = True
+            self.after(1000, self._refinery_loop)
+
+    def run_scan_request(self, path):
+        if not self.active_cartridge:
+            messagebox.showwarning("No Cartridge", "Select a cartridge first.")
+            return
+        
+        self.status_var.set(f"Scanning {path}...")
+        self.file_tree.load_tree(path)
+        self.sys_log.log(f"Scanned source: {path}")
+        self.status_var.set("Scan complete. Select files to ingest.")
+
+    def run_ingest_request(self):
+        if not self.active_cartridge:
+            return
+        
+        files = self.file_tree.get_selected_files()
+        root = self.file_tree.root_path
+        
+        if not files:
+            messagebox.showwarning("No Files", "No files selected for ingestion.")
+            return
+
+        def worker():
+            count = len(files)
+            msg = f"Ingesting {count} items..."
+            self.status_var.set(msg)
+            self.sys_log.log(msg)
+            try:
+                # Access intake via file_tree which now holds the reference
+                stats = self.file_tree.intake.ingest_selected(files, root)
+                done_msg = f"Ingest Result: {stats}"
+                self.status_var.set(done_msg)
+                self.sys_log.log(done_msg)
+            except Exception as e:
+                err = f"Ingest Failed: {e}"
+                self.sys_log.log(err)
+            
+            self.after(0, lambda: self.editor_panel.refresh_list())
+
+        threading.Thread(target=worker, daemon=True).start()
+
+    def _refinery_loop(self):
+        """
+        The Heartbeat. Checks for RAW files and processes them in small batches.
+        Keeps the UI responsive while chewing through data.
+        """
+        if self.active_cartridge:
+            # We create a transient refinery instance to process the batch
+            # Ideally, this should be persistent, but for now this works.
+            refinery = RefineryService(self.active_cartridge, self.neural)
+            
+            try:
+                # Process a small batch
+                processed = refinery.process_pending(batch_size=1)
+                
+                if processed > 0:
+                    self.status_var.set("Refining Knowledge... (Embedding & Weaving)")
+                    # Update visuals occasionally
+                    if processed % 5 == 0:
+                        self.graph_view.load_from_db(self.active_db_path)
+                        self.editor_panel.refresh_list()
+                else:
+                    current_status = self.status_var.get()
+                    if "Refining" in current_status:
+                        self.status_var.set("Refinery Idle. Cartridge up to date.")
+                        self.graph_view.load_from_db(self.active_db_path)
+                        self.editor_panel.refresh_list()
+            except Exception as e:
+                print(f"Refinery Loop Error: {e}")
+
+        # Loop
+        self.after(2000, self._refinery_loop)
+
+
+# 5. CLI ENTRY POINT
 
 def main():
-    """
-    Main function to run the script from the command line.
+    parser = argparse.ArgumentParser(description="_RagFORGE: Neural Cartridge Factory")
     
-    It parses arguments, calls core functions, and handles CLI-specific
-    input/output and error handling.
-    """
+    # CLI Args for Headless Mode
+    parser.add_argument("--input", "-i", type=str, help="Input source path (folder or URL)")
+    parser.add_argument("--output", "-o", type=str, help="Output .db filename (e.g. 'my_brain.db')")
+    parser.add_argument("--verbose", "-v", action="store_true", help="Enable verbose logs")
     
-    # --- Argument Parsing ---
-    # Set up the argument parser
-    # TODO: Update the description to match your tool.
-    parser = argparse.ArgumentParser(
-        description="A generic CLI tool. TODO: Describe your tool here.",
-        epilog="Example: python generic_module.py my_input.txt -o my_output.txt -v"
-    )
-    
-    # --- TODO: Define your arguments ---
-    
-    # Example of a required positional argument
-    parser.add_argument(
-        "input_path",  # The name of the argument
-        type=str,
-        help="TODO: Describe this required input (e.g., path to an input file)."
-    )
-    
-    # Example of an optional argument (e.g., -o or --output)
-    parser.add_argument(
-        "-o", "--output",
-        type=str,
-        default=None,  # Default to None if not provided
-        help="TODO: Describe this optional argument (e.g., path to an output file)."
-    )
-    
-    # Example of a "flag" argument (stores True if present)
-    parser.add_argument(
-        "-v", "--verbose",
-        action="store_true",  # This makes it a boolean flag
-        help="Enable verbose output."
-    )
-    
-    # Parse the arguments from the command line (e.g., sys.argv)
     args = parser.parse_args()
 
-    # --- Main Application Flow ---
-    
-    # Use the 'verbose' flag to control print statements
-    if args.verbose:
-        print("Verbose mode enabled.", file=sys.stderr)
-        print(f"Arguments received: {args}", file=sys.stderr)
+    if args.input and args.output:
+        # HEADLESS MODE
+        try:
+            headless_forge(args.input, args.output, args.verbose)
+        except Exception as e:
+            print(f"[FATAL] {e}")
+            sys.exit(1)
+    else:
+        # GUI MODE
+        app = RagForgeApp()
+        app.mainloop()
 
-    try:
-        # 1. Load data (CLI-specific task)
-        #    TODO: Replace this with your actual data loading
-        if args.verbose:
-            print(f"Loading data from {args.input_path}...", file=sys.stderr)
-        # This is just an example. You'd likely load a file here.
-        input_data = f"Content of {args.input_path}" 
-
-        # 2. Call core logic (the "importable" part)
-        if args.verbose:
-            print("Calling core logic...", file=sys.stderr)
-        
-        # Here we pass the CLI arguments to the core function
-        processed_data = core_logic_function(input_data)
-        
-        # 3. Handle output (CLI-specific task)
-        if args.output:
-            # Save to a file
-            if args.verbose:
-                print(f"Saving processed data to {args.output}...", file=sys.stderr)
-            # TODO: Add file-saving logic here
-            # with open(args.output, 'w') as f:
-            #     f.write(processed_data)
-            print(f"Success: Output saved to {args.output}")
-        else:
-            # Print to standard output
-            if args.verbose:
-                print("Printing processed data to stdout:", file=sys.stderr)
-            print(processed_data)
-        
-        # Exit with a success code
-        sys.exit(0)
-
-    except FileNotFoundError as e:
-        print(f"\nError: Input file not found.", file=sys.stderr)
-        print(f"Details: {e}", file=sys.stderr)
-        sys.exit(1) # Exit with a non-zero error code
-    except Exception as e:
-        print(f"\nAn unexpected error occurred: {e}", file=sys.stderr)
-        sys.exit(1)
-
-
-# This "magic" line is the key to the whole pattern:
-#
-# - If you run `python generic_module.py ...`, Python sets
-#   __name__ = "__main__", and the main() function is called.
-#
-# - If you `import generic_module` in another script, __name__
-#   is "generic_module", so this block is SKIPPED.
-#
 if __name__ == "__main__":
     main()
+
+
+
+
 --------------------------------------------------------------------------------
 FILE: src\__init__.py
 --------------------------------------------------------------------------------
@@ -301,38 +486,61 @@ from .base_service import BaseService
 
 class CartridgeService(BaseService):
     """
-    The Storage Manager (v2 - Graph Ready).
-    Manages the SQLite Cartridge format, now including Graph Nodes, Edges, and Validation Logs.
+    The Source of Truth.
+    Manages the Unified Neural Cartridge Format (UNCF v1.0).
     """
     
+    SCHEMA_VERSION = "uncf_v1.0"
+
     def __init__(self, db_path: str):
         super().__init__("CartridgeService")
         self.db_path = Path(db_path)
         self._init_db()
 
+    def _get_conn(self):
+        return sqlite3.connect(self.db_path)
+
     def _init_db(self):
-        """Initializes the ELT Schema + Graph Schema."""
+        """Initializes the standard Schema."""
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
         
         conn = self._get_conn()
         cursor = conn.cursor()
         
-        # 1. Manifest & Files (Standard ELT)
+        # 1. Manifest (The Boot Sector)
         cursor.execute("CREATE TABLE IF NOT EXISTS manifest (key TEXT PRIMARY KEY, value TEXT)")
+        
+        # 1.5 Directories (The VFS Index)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS directories (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                vfs_path TEXT UNIQUE NOT NULL,
+                parent_path TEXT,
+                metadata TEXT DEFAULT '{}'
+            )
+        """)
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_dir_parent ON directories(parent_path)")
+
+        # 2. Files (The Content Store)
+        # Supports Text AND Binary (blob_data)
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS files (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                path TEXT UNIQUE NOT NULL,
-                content TEXT,
-                blob_data BLOB,
-                status TEXT DEFAULT 'RAW',
+                vfs_path TEXT NOT NULL,       -- Portable path (e.g. "src/main.py")
+                origin_path TEXT,             -- Provenance (e.g. "C:/Users/...")
+                origin_type TEXT,             -- 'filesystem', 'web', 'github'
+                content TEXT,                 -- Text content (UTF-8)
+                blob_data BLOB,               -- Binary content (Images, PDFs)
                 mime_type TEXT,
-                metadata TEXT DEFAULT '{}',
+                status TEXT DEFAULT 'RAW',    -- RAW, REFINED, ERROR, SKIPPED
+                metadata TEXT DEFAULT '{}',   -- JSON tags, summaries
                 last_updated TIMESTAMP
             )
         """)
+        # Index for fast lookups by VFS path
+        cursor.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_vfs ON files(vfs_path)")
 
-        # 2. Chunks (Vectors)
+        # 3. Chunks (The Vector Store)
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS chunks (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -348,108 +556,83 @@ class CartridgeService(BaseService):
             )
         """)
 
-        # 3. [NEW] Graph Topology (The Neural Wiring)
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS graph_nodes (
-                id TEXT PRIMARY KEY, 
-                type TEXT, 
-                label TEXT, 
-                data_json TEXT
-            )
-        """)
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS graph_edges (
-                source TEXT, 
-                target TEXT, 
-                weight REAL,
-                relation TEXT
-            )
-        """)
+        # 4. Graph Topology (The Neural Wiring)
+        cursor.execute("CREATE TABLE IF NOT EXISTS graph_nodes (id TEXT PRIMARY KEY, type TEXT, label TEXT, data_json TEXT)")
+        cursor.execute("CREATE TABLE IF NOT EXISTS graph_edges (source TEXT, target TEXT, relation TEXT, weight REAL)")
 
-        # 4. [NEW] Validation (The "Integrity Check")
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS unresolved_imports (
-                source_file TEXT, 
-                import_name TEXT,
-                timestamp TIMESTAMP
-            )
-        """)
+        # 5. Validation Logs
+        cursor.execute("CREATE TABLE IF NOT EXISTS logs (timestamp REAL, level TEXT, message TEXT, context TEXT)")
         
         conn.commit()
         conn.close()
 
-    def _get_conn(self):
-        return sqlite3.connect(self.db_path)
-
-    # --- Existing Methods (store_raw_file, get_pending_files) remain the same ---
-
-    def store_raw_file(self, path: str, content: str = None, blob: bytes = None, mime_type: str = "text/plain"):
-        """Stores raw data. Updates timestamp if file exists."""
+    def store_file(self, vfs_path: str, origin_path: str, content: str = None, blob: bytes = None, mime_type: str = "text/plain", origin_type: str = "filesystem"):
+        """
+        The Universal Input Method. 
+        Stores raw data. If file exists, updates it and resets status to 'RAW' for re-refining.
+        """
         conn = self._get_conn()
-        cursor = conn.cursor()
         try:
-            cursor.execute("""
-                INSERT OR REPLACE INTO files (path, content, blob_data, mime_type, status, last_updated)
-                VALUES (?, ?, ?, ?, 'RAW', ?)
-            """, (path, content, blob, mime_type, time.time()))
-            
-            # Also register as a Graph Node immediately
-            node_id = path
-            cursor.execute("""
-                INSERT OR REPLACE INTO graph_nodes (id, type, label, data_json)
-                VALUES (?, ?, ?, ?)
-            """, (node_id, 'file', path, json.dumps({'mime': mime_type})))
-            
+            conn.execute("""
+                INSERT OR REPLACE INTO files 
+                (vfs_path, origin_path, origin_type, content, blob_data, mime_type, status, last_updated)
+                VALUES (?, ?, ?, ?, ?, ?, 'RAW', ?)
+            """, (vfs_path, origin_path, origin_type, content, blob, mime_type, time.time()))
             conn.commit()
             return True
         except Exception as e:
-            self.log_error(f"Failed to store {path}: {e}")
+            self.log_error(f"DB Store Error ({vfs_path}): {e}")
             return False
         finally:
             conn.close()
 
-    def update_file_status(self, file_id: int, status: str, metadata: Dict = None):
-        """Promotes a file's status."""
-        conn = self._get_conn()
-        cursor = conn.cursor()
-        if metadata:
-            meta_json = json.dumps(metadata)
-            cursor.execute("UPDATE files SET status = ?, metadata = ? WHERE id = ?", (status, meta_json, file_id))
-        else:
-            cursor.execute("UPDATE files SET status = ? WHERE id = ?", (status, file_id))
-        conn.commit()
-        conn.close()
-
-    # --- [NEW] Graph Methods ---
-
-    def add_edge(self, source: str, target: str, weight: float = 1.0, relation: str = "dependency"):
-        """Wiries two nodes together."""
-        conn = self._get_conn()
-        try:
-            conn.execute("INSERT OR IGNORE INTO graph_edges (source, target, weight, relation) VALUES (?, ?, ?, ?)",
-                         (source, target, weight, relation))
-            conn.commit()
-        except Exception as e:
-            self.log_error(f"Edge Error: {e}")
-        finally:
-            conn.close()
-
-    def log_unresolved_import(self, source_file: str, import_name: str):
-        """Logs a broken link for the Validation Report."""
-        conn = self._get_conn()
-        conn.execute("INSERT INTO unresolved_imports (source_file, import_name, timestamp) VALUES (?, ?, ?)",
-                     (source_file, import_name, time.time()))
-        conn.commit()
-        conn.close()
-    
-    def get_pending_files(self, limit: int = 100) -> List[Dict]:
+    def get_pending_files(self, limit: int = 10) -> List[Dict]:
         """Fetches files waiting for the Refinery."""
         conn = self._get_conn()
         conn.row_factory = sqlite3.Row
-        cursor = conn.cursor()
-        rows = cursor.execute("SELECT id, path, content, mime_type FROM files WHERE status = 'RAW' LIMIT ?", (limit,)).fetchall()
+        rows = conn.execute("SELECT * FROM files WHERE status = 'RAW' LIMIT ?", (limit,)).fetchall()
         conn.close()
         return [dict(row) for row in rows]
+
+    def update_status(self, file_id: int, status: str, metadata: dict = None):
+        conn = self._get_conn()
+        if metadata:
+            conn.execute("UPDATE files SET status = ?, metadata = ? WHERE id = ?", 
+                         (status, json.dumps(metadata), file_id))
+        else:
+            conn.execute("UPDATE files SET status = ? WHERE id = ?", (status, file_id))
+        conn.commit()
+        conn.close()
+
+    def ensure_directory(self, vfs_path: str):
+        """Idempotent insert for VFS directories."""
+        if not vfs_path: return
+        parent = os.path.dirname(vfs_path).replace("\\", "/")
+        if parent == vfs_path: parent = "" # Root case
+        
+        conn = self._get_conn()
+        try:
+            conn.execute("INSERT OR IGNORE INTO directories (vfs_path, parent_path) VALUES (?, ?)", (vfs_path, parent))
+            conn.commit()
+        except: pass
+        finally:
+            conn.close()
+
+    # --- Graph Helpers ---
+    def add_node(self, node_id: str, node_type: str, label: str, data: dict = None):
+        conn = self._get_conn()
+        conn.execute("INSERT OR REPLACE INTO graph_nodes (id, type, label, data_json) VALUES (?, ?, ?, ?)",
+                     (node_id, node_type, label, json.dumps(data or {})))
+        conn.commit()
+        conn.close()
+
+    def add_edge(self, source: str, target: str, relation: str = "related", weight: float = 1.0):
+        conn = self._get_conn()
+        conn.execute("INSERT OR IGNORE INTO graph_edges (source, target, relation, weight) VALUES (?, ?, ?, ?)",
+                     (source, target, relation, weight))
+        conn.commit()
+        conn.close()
+
 --------------------------------------------------------------------------------
 FILE: src\microservices\graph_engine.py
 --------------------------------------------------------------------------------
@@ -878,98 +1061,240 @@ FILE: src\microservices\intake_service.py
 --------------------------------------------------------------------------------
 import os
 import mimetypes
+import requests
+import fnmatch
+import json
 from pathlib import Path
-from typing import List, Dict
+from typing import Dict, Set, List, Any
 from .base_service import BaseService
 from .cartridge_service import CartridgeService
 
+# Optional import for Web
+try:
+    from bs4 import BeautifulSoup
+except ImportError:
+    BeautifulSoup = None
+
 class IntakeService(BaseService):
     """
-    The Vacuum.
-    Crawls local directories and ingests raw files into the Cartridge.
-    Performs NO analysis, only storage.
+    The Vacuum. 
+    Now supports two-phase ingestion:
+    1. Scan -> Build Tree (with .gitignore respect)
+    2. Ingest -> Process selected paths
     """
 
-    # Files to absolutely ignore
-    IGNORE_DIRS = {'.git', '__pycache__', 'node_modules', '.venv', 'dist', 'build', '.idea', '.vscode'}
-    IGNORE_EXTS = {'.pyc', '.pyd', '.db', '.sqlite', '.sqlite3'}
+    DEFAULT_IGNORE_DIRS = {
+        '.git', '__pycache__', 'node_modules', 'venv', '.venv', 'env', '.env', 
+        '.idea', '.vscode', 'dist', 'build', 'target', 'bin', 'obj', 
+        '__cartridge__'
+    }
+    
+    DEFAULT_IGNORE_EXTS = {
+        '.pyc', '.pyd', '.exe', '.dll', '.so', '.db', '.sqlite', '.sqlite3', 
+        '.bin', '.iso', '.img', '.zip', '.tar', '.gz', '.7z', '.pdf', '.jpg', '.png'
+    }
 
-    def __init__(self, cartridge_service: CartridgeService):
+    def __init__(self, cartridge: CartridgeService):
         super().__init__("IntakeService")
-        self.cartridge = cartridge_service
+        self.cartridge = cartridge
+        self.ignore_patterns: Set[str] = set()
 
-    def scan_directory(self, root_path: str) -> Dict[str, int]:
+    # --- PHASE 1: SCANNING ---
+
+    def scan_path(self, root_path: str) -> Dict[str, Any]:
         """
-        Recursively walks the directory and stores everything in the DB.
-        Returns a report of what it did.
+        Builds a file tree dict.
+        Returns: { 'name': 'root', 'path': '...', 'type': 'dir', 'children': [...], 'checked': bool }
         """
-        root = Path(root_path).resolve()
-        stats = {"text": 0, "binary": 0, "skipped": 0, "total": 0}
+        # 1. Web URL
+        if root_path.startswith("http://") or root_path.startswith("https://"):
+            return {
+                'name': root_path,
+                'path': root_path,
+                'rel_path': root_path,
+                'type': 'web',
+                'children': [],
+                'checked': True
+            }
 
-        self.log_info(f"Starting scan of {root}...")
+        # 2. Local Path
+        root_path = os.path.abspath(root_path)
+        
+        if os.path.isfile(root_path):
+            # Single File Mode
+            return {
+                'name': os.path.basename(root_path),
+                'path': root_path,
+                'rel_path': os.path.basename(root_path),
+                'type': 'file',
+                'children': [],
+                'checked': True
+            }
+            
+        # 3. Directory Mode
+        self._load_gitignore(root_path)
+        saved_config = self._load_persistence(root_path)
+        return self._scan_recursive(root_path, root_path, saved_config)
 
-        for current_dir, dirs, files in os.walk(root):
-            # In-place modification of dirs to prune IGNORED directories
-            dirs[:] = [d for d in dirs if d not in self.IGNORE_DIRS]
+    def _scan_recursive(self, current_path: str, root_path: str, saved_config: Dict) -> Dict:
+        name = os.path.basename(current_path)
+        is_dir = os.path.isdir(current_path)
+        rel_path = os.path.relpath(current_path, root_path).replace("\\", "/")
+        
+        node = {
+            'name': name,
+            'path': current_path,
+            'rel_path': rel_path,
+            'type': 'dir' if is_dir else 'file',
+            'children': [],
+            'checked': True
+        }
 
-            for filename in files:
-                file_path = Path(current_dir) / filename
-                
-                # Check extension blacklist
-                if file_path.suffix.lower() in self.IGNORE_EXTS:
-                    stats["skipped"] += 1
-                    continue
+        # Determine Check State
+        if saved_config and rel_path in saved_config:
+            # Respect user persistence
+            node['checked'] = saved_config[rel_path]
+        elif self._is_ignored(name) or (not is_dir and self._is_binary_ext(name)):
+            # Default to unchecked if ignored
+            node['checked'] = False
 
-                # Calculate the "Virtual Path" (relative to project root)
+        if is_dir:
+            try:
+                with os.scandir(current_path) as it:
+                    entries = sorted(it, key=lambda e: (not e.is_dir(), e.name.lower()))
+                    for entry in entries:
+                        child = self._scan_recursive(entry.path, root_path, saved_config)
+                        node['children'].append(child)
+            except PermissionError:
+                pass
+        
+        return node
+
+    # --- PHASE 2: INGESTION ---
+
+    def ingest_selected(self, file_list: List[str], root_path: str) -> Dict[str, int]:
+        """Ingests only the specific files passed in the list."""
+        stats = {"added": 0, "skipped": 0, "errors": 0}
+        
+        for file_path in file_list:
+            try:
+                # Calculate VFS Path
                 try:
-                    vfs_path = file_path.relative_to(root).as_posix()
+                    vfs_path = os.path.relpath(file_path, root_path).replace("\\", "/")
                 except ValueError:
-                    vfs_path = filename
+                    vfs_path = os.path.basename(file_path)
 
-                # Attempt Ingestion
-                if self._ingest_file(file_path, vfs_path, stats):
-                    stats["total"] += 1
-                else:
-                    stats["skipped"] += 1
-
-        self.log_info(f"Scan Complete. {stats}")
+                self._read_and_store(Path(file_path), vfs_path, "filesystem", stats)
+            except Exception as e:
+                self.log_error(f"Error ingesting {file_path}: {e}")
+                stats["errors"] += 1
+        
+        # --- POST-INGESTION: Update Manifest ---
+        self._rebuild_directory_index()
+        
         return stats
 
-    def _ingest_file(self, real_path: Path, vfs_path: str, stats: Dict) -> bool:
-        """Reads the file and pushes to CartridgeService."""
-        mime_type, _ = mimetypes.guess_type(real_path)
-        if not mime_type:
-            mime_type = "application/octet-stream"
-
-        # Strategy: Try to read as Text first. If that fails, treat as Binary.
-        content = None
-        blob = None
-        
+    def _rebuild_directory_index(self):
+        """
+        Scans 'files' table and populates 'directories' table.
+        This creates the navigable VFS structure.
+        """
+        self.log_info("Rebuilding VFS Directory Index...")
+        conn = self.cartridge._get_conn()
         try:
-            # Try Text
+            rows = conn.execute("SELECT vfs_path FROM files").fetchall()
+            seen_dirs = set()
+            
+            for r in rows:
+                path = r[0]
+                # Walk up the path to register all parents
+                current = os.path.dirname(path).replace("\\", "/")
+                while current and current != "." and current not in seen_dirs:
+                    self.cartridge.ensure_directory(current)
+                    seen_dirs.add(current)
+                    current = os.path.dirname(current).replace("\\", "/")
+            
+        except Exception as e:
+            self.log_error(f"Directory Index Error: {e}")
+        finally:
+            conn.close()
+
+    # --- HELPERS ---
+
+    def _load_persistence(self, root_path: str) -> Dict[str, bool]:
+        """Loads config from DB Manifest (Portable) or fallback to local."""
+        # 1. Try DB Manifest
+        try:
+            conn = self.cartridge._get_conn()
+            row = conn.execute("SELECT value FROM manifest WHERE key='ingest_config'").fetchone()
+            conn.close()
+            if row:
+                return json.loads(row[0])
+        except: pass
+        
+        # 2. Fallback to local (Legacy)
+        cfg_path = os.path.join(root_path, ".ragforge.json")
+        if os.path.exists(cfg_path):
+            try:
+                with open(cfg_path, 'r') as f: return json.load(f)
+            except: pass
+        return {}
+
+    def save_persistence(self, root_path: str, checked_map: Dict[str, bool]):
+        """Saves user selections into the Cartridge Manifest (Portable)."""
+        # 1. Save to DB
+        try:
+            conn = self.cartridge._get_conn()
+            conn.execute("INSERT OR REPLACE INTO manifest (key, value) VALUES (?, ?)", 
+                         ("ingest_config", json.dumps(checked_map)))
+            conn.commit()
+            conn.close()
+        except Exception as e:
+            self.log_error(f"Failed to save persistence to DB: {e}")
+
+        # 2. Save local backup (Optional, keeps scan state if DB is deleted)
+        cfg_path = os.path.join(root_path, ".ragforge.json")
+        try:
+            with open(cfg_path, 'w') as f: json.dump(checked_map, f, indent=2)
+        except: pass
+
+    def _load_gitignore(self, root_path: str):
+        gitignore_path = os.path.join(root_path, '.gitignore')
+        self.ignore_patterns = self.DEFAULT_IGNORE_DIRS.copy()
+        if os.path.exists(gitignore_path):
+            try:
+                with open(gitignore_path, 'r') as f:
+                    for line in f:
+                        line = line.strip()
+                        if line and not line.startswith('#'):
+                            if line.endswith('/'): line = line[:-1]
+                            self.ignore_patterns.add(line)
+            except: pass
+
+    def _is_ignored(self, name: str) -> bool:
+        if name in self.ignore_patterns: return True
+        for pattern in self.ignore_patterns:
+            if fnmatch.fnmatch(name, pattern): return True
+        return False
+
+    def _is_binary_ext(self, name: str) -> bool:
+        _, ext = os.path.splitext(name)
+        return ext.lower() in self.DEFAULT_IGNORE_EXTS
+
+    def _read_and_store(self, real_path: Path, vfs_path: str, origin_type: str, stats: Dict):
+        mime_type, _ = mimetypes.guess_type(real_path)
+        if not mime_type: mime_type = "application/octet-stream"
+        try:
             with open(real_path, 'r', encoding='utf-8') as f:
                 content = f.read()
-            stats["text"] += 1
+                self.cartridge.store_file(vfs_path, str(real_path), content=content, mime_type=mime_type, origin_type=origin_type)
         except UnicodeDecodeError:
-            # Fallback to Binary
             try:
                 with open(real_path, 'rb') as f:
                     blob = f.read()
-                stats["binary"] += 1
-                # Ensure mime reflects binary if we guessed wrong
-                if mime_type.startswith("text"): 
-                    mime_type = "application/octet-stream"
-            except Exception as e:
-                self.log_error(f"Access denied or read error {vfs_path}: {e}")
-                return False
-
-        # Store in DB
-        return self.cartridge.store_raw_file(
-            path=vfs_path,
-            content=content,
-            blob=blob,
-            mime_type=mime_type
-        )
+                    self.cartridge.store_file(vfs_path, str(real_path), blob=blob, mime_type=mime_type, origin_type=origin_type)
+            except: pass
+        stats["added"] += 1
 
 --------------------------------------------------------------------------------
 FILE: src\microservices\neural_service.py
@@ -1074,59 +1399,310 @@ class NeuralService(BaseService):
 
 
 --------------------------------------------------------------------------------
+FILE: src\microservices\panels.py
+--------------------------------------------------------------------------------
+import tkinter as tk
+from tkinter import ttk, filedialog, messagebox, scrolledtext, simpledialog
+import os
+import sqlite3
+import threading
+
+# --- UI CONSTANTS ---
+BG_COLOR = "#1e1e2f"
+SIDEBAR_COLOR = "#171725"
+ACCENT_COLOR = "#007ACC"
+TEXT_COLOR = "#e0e0e0"
+SUCCESS_COLOR = "#388E3C"
+
+class SystemLog(tk.Frame):
+    """A read-only scrolling log for system events."""
+    def __init__(self, parent):
+        super().__init__(parent, bg=BG_COLOR)
+        tk.Label(self, text="SYSTEM LOG", bg=BG_COLOR, fg="#666", font=("Consolas", 9, "bold")).pack(anchor="w", padx=5, pady=(5,0))
+        self.text = scrolledtext.ScrolledText(self, bg="#151515", fg="#00FF00", font=("Consolas", 9), height=8, bd=0)
+        self.text.pack(fill="both", expand=True, padx=5, pady=5)
+        self.text.config(state="disabled")
+
+    def log(self, msg):
+        self.text.config(state="normal")
+        ts = time.strftime("%H:%M:%S")
+        self.text.insert("end", f"[{ts}] {msg}\n")
+        self.text.see("end")
+        self.text.config(state="disabled")
+
+class IngestToolbar(tk.Frame):
+    """Top bar for selecting source and triggering actions."""
+    def __init__(self, parent, on_scan, on_ingest):
+        super().__init__(parent, bg=BG_COLOR, pady=5)
+        self.on_scan = on_scan
+        self.on_ingest = on_ingest
+        self.path_var = tk.StringVar()
+
+        # Label
+        tk.Label(self, text="SOURCE:", bg=BG_COLOR, fg="#888", font=("Arial", 9, "bold")).pack(side="left", padx=(10, 5))
+        
+        # Entry
+        self.entry = tk.Entry(self, textvariable=self.path_var, bg="#252526", fg="white", 
+                              insertbackground="white", relief="flat", font=("Consolas", 10))
+        self.entry.pack(side="left", fill="x", expand=True, padx=5, ipady=4)
+
+        # Buttons
+        btn_cfg = {"bg": "#444", "fg": "white", "relief": "flat", "padx": 10, "font": ("Arial", 9)}
+        
+        tk.Button(self, text="📄 File", command=self._browse_file, **btn_cfg).pack(side="left", padx=2)
+        tk.Button(self, text="📂 Folder", command=self._browse_folder, **btn_cfg).pack(side="left", padx=2)
+        
+        # Separator
+        tk.Frame(self, width=1, bg="#555").pack(side="left", fill="y", padx=10, pady=5)
+
+        tk.Button(self, text="🔍 SCAN", command=self._trigger_scan, **btn_cfg).pack(side="left", padx=2)
+        
+        # Ingest (Green)
+        ing_cfg = btn_cfg.copy()
+        ing_cfg["bg"] = SUCCESS_COLOR
+        ing_cfg["font"] = ("Arial", 9, "bold")
+        tk.Button(self, text="▶ INGEST", command=self._trigger_ingest, **ing_cfg).pack(side="left", padx=(10, 10))
+
+    def _browse_folder(self):
+        d = filedialog.askdirectory()
+        if d:
+            self.path_var.set(d)
+            self._trigger_scan()
+
+    def _browse_file(self):
+        f = filedialog.askopenfilename()
+        if f:
+            self.path_var.set(f)
+            self._trigger_scan()
+
+    def _trigger_scan(self):
+        path = self.path_var.get().strip()
+        if path: self.on_scan(path)
+
+    def _trigger_ingest(self):
+        self.on_ingest()
+
+
+class FileTreePanel(tk.Frame):
+    """Hierarchy Explorer with Checkboxes."""
+    def __init__(self, parent, intake_service):
+        super().__init__(parent, bg=BG_COLOR)
+        self.intake = intake_service
+        self.root_path = None
+        self.node_map = {}
+
+        # Header
+        tk.Label(self, text="HIERARCHY EXPLORER", bg=BG_COLOR, fg="#666", 
+                 font=("Consolas", 9, "bold")).pack(anchor="w", padx=5, pady=(5,0))
+
+        # Tree (Inherits 'Treeview' style from app.py)
+        self.tree = ttk.Treeview(self, show="tree", selectmode="none")
+        self.tree.pack(fill="both", expand=True, padx=5, pady=5)
+        self.tree.bind("<Button-1>", self._on_tree_click)
+        
+        sb = ttk.Scrollbar(self, orient="vertical", command=self.tree.yview)
+        sb.place(relx=1, rely=0, relheight=1, anchor="ne")
+        self.tree.configure(yscrollcommand=sb.set)
+
+    def load_tree(self, path):
+        self.root_path = path
+        self.tree.delete(*self.tree.get_children())
+        self.node_map = {}
+        tree_data = self.intake.scan_path(path)
+        self._insert_node("", tree_data)
+
+    def _insert_node(self, parent_id, node):
+        icon = "☑" if node['checked'] else "☐"
+        display = f"{icon}  {node['name']}"
+        item_id = self.tree.insert(parent_id, "end", text=display, open=(parent_id==""))
+        self.node_map[item_id] = node
+        for child in node['children']:
+            self._insert_node(item_id, child)
+
+    def _on_tree_click(self, event):
+        region = self.tree.identify_region(event.x, event.y)
+        if region in ["tree", "separator"]:
+            return 
+        item_id = self.tree.identify_row(event.y)
+        if item_id:
+            self._toggle_check(item_id)
+            return "break"
+
+    def _toggle_check(self, item_id):
+        node = self.node_map[item_id]
+        new_state = not node['checked']
+        self._set_node_state(item_id, new_state)
+        self._save_config()
+
+    def _set_node_state(self, item_id, state):
+        node = self.node_map[item_id]
+        node['checked'] = state
+        icon = "☑" if state else "☐"
+        self.tree.item(item_id, text=f"{icon}  {node['name']}")
+        for child_id in self.tree.get_children(item_id):
+            self._set_node_state(child_id, state)
+
+    def _save_config(self):
+        if not self.root_path or os.path.isfile(self.root_path): return
+        flat_config = {n['rel_path']: n['checked'] for n in self.node_map.values()}
+        self.intake.save_persistence(self.root_path, flat_config)
+
+    def get_selected_files(self):
+        selected = []
+        for node in self.node_map.values():
+            if node['checked'] and (node['type'] == 'file' or node['type'] == 'web'):
+                selected.append(node['path'])
+        return selected
+
+class Sidebar(tk.Frame):
+    """
+    Manages the list of available Cartridges (.db files).
+    """
+    def __init__(self, parent, storage_dir, on_select_callback):
+        super().__init__(parent, bg=SIDEBAR_COLOR, width=220)
+        self.storage_dir = storage_dir
+        self.on_select = on_select_callback
+        self.pack_propagate(False)
+
+        # Header
+        tk.Label(self, text="_RagFORGE", bg=SIDEBAR_COLOR, fg=ACCENT_COLOR, 
+                 font=("Consolas", 14, "bold"), pady=15).pack(fill="x")
+        
+        # List
+        tk.Label(self, text="CARTRIDGES", bg=SIDEBAR_COLOR, fg="#666", 
+                 font=("Arial", 8, "bold"), anchor="w", padx=10).pack(fill="x")
+        
+        self.listbox = tk.Listbox(self, bg=SIDEBAR_COLOR, fg=TEXT_COLOR, bd=0, 
+                                  highlightthickness=0, selectbackground=ACCENT_COLOR)
+        self.listbox.pack(fill="both", expand=True, padx=5, pady=5)
+        self.listbox.bind("<<ListboxSelect>>", self._on_click)
+
+        # Footer Actions
+        btn_frame = tk.Frame(self, bg=SIDEBAR_COLOR, pady=10)
+        btn_frame.pack(fill="x", side="bottom")
+        
+        row1 = tk.Frame(btn_frame, bg=SIDEBAR_COLOR)
+        row1.pack(fill="x", pady=2)
+        tk.Button(row1, text="📂 ROOT", bg="#2d2d44", fg="#aaa", relief="flat", font=("Arial", 8), 
+                  command=self._change_root).pack(side="left", padx=10, fill="x", expand=True)
+        
+        row2 = tk.Frame(btn_frame, bg=SIDEBAR_COLOR)
+        row2.pack(fill="x", pady=2)
+        tk.Button(row2, text="REFRESH", bg="#2d2d44", fg="white", relief="flat", 
+                  command=self.refresh).pack(side="left", padx=10, fill="x", expand=True)
+        tk.Button(row2, text="+ NEW", bg="#2d2d44", fg="white", relief="flat", 
+                  command=self._create_new).pack(side="right", padx=10, fill="x", expand=True)
+
+        self.refresh()
+
+    def _change_root(self):
+        d = filedialog.askdirectory(title="Select Cartridge Library")
+        if d:
+            self.storage_dir = d
+            self.refresh()
+
+    def refresh(self):
+        self.listbox.delete(0, tk.END)
+        if not os.path.exists(self.storage_dir):
+            os.makedirs(self.storage_dir)
+        
+        dbs = [f for f in os.listdir(self.storage_dir) if f.endswith(".db")]
+        for db in dbs:
+            self.listbox.insert(tk.END, db)
+
+    def _on_click(self, event):
+        sel = self.listbox.curselection()
+        if sel:
+            db_name = self.listbox.get(sel[0])
+            self.on_select(os.path.join(self.storage_dir, db_name))
+
+    def _create_new(self):
+        name = simpledialog.askstring("New Cartridge", "Enter name (e.g. 'project_alpha'):")
+        if name:
+            if not name.endswith(".db"): name += ".db"
+            path = os.path.join(self.storage_dir, name)
+            # Just touching the file is enough, CartridgeService will init schema on load
+            sqlite3.connect(path).close()
+            self.refresh()
+
+class EditorPanel(tk.Frame):
+    """
+    Views the 'files' table content.
+    """
+    def __init__(self, parent):
+        super().__init__(parent, bg=BG_COLOR)
+        self.active_db = None
+        
+        paned = ttk.PanedWindow(self, orient="horizontal")
+        paned.pack(fill="both", expand=True)
+        
+        # Left: File Tree
+        self.tree = ttk.Treeview(paned, show="tree", selectmode="browse")
+        self.tree.heading("#0", text="VFS Path", anchor="w")
+        self.tree.bind("<<TreeviewSelect>>", self._on_select)
+        paned.add(self.tree, weight=1)
+        
+        # Right: Content
+        self.editor = scrolledtext.ScrolledText(paned, bg="#252526", fg=TEXT_COLOR, 
+                                                font=("Consolas", 10), insertbackground="white")
+        paned.add(self.editor, weight=3)
+
+    def load_db(self, db_path):
+        self.active_db = db_path
+        self.refresh_list()
+
+    def refresh_list(self):
+        self.tree.delete(*self.tree.get_children())
+        self.editor.delete("1.0", tk.END)
+        
+        if not self.active_db or not os.path.exists(self.active_db): return
+        
+        try:
+            conn = sqlite3.connect(self.active_db)
+            rows = conn.execute("SELECT id, vfs_path, status FROM files ORDER BY vfs_path").fetchall()
+            conn.close()
+            
+            for rid, path, status in rows:
+                display = f"[{status}] {path}"
+                self.tree.insert("", "end", iid=rid, text=display, values=(path,))
+        except Exception as e:
+            print(f"Tree load error: {e}")
+
+    def _on_select(self, event):
+        sel = self.tree.selection()
+        if not sel: return
+        file_id = sel[0]
+        
+        try:
+            conn = sqlite3.connect(self.active_db)
+            row = conn.execute("SELECT content FROM files WHERE id=?", (file_id,)).fetchone()
+            conn.close()
+            
+            self.editor.delete("1.0", tk.END)
+            if row and row[0]:
+                self.editor.insert("1.0", row[0])
+            else:
+                self.editor.insert("1.0", "(Binary content or empty)")
+        except: pass
+
+
+
+
+--------------------------------------------------------------------------------
 FILE: src\microservices\refinery_service.py
 --------------------------------------------------------------------------------
 import json
 import re
-import os
-import sqlite3
-from typing import Dict, Any, Optional, List
+from typing import Dict, List
 from .base_service import BaseService
 from .cartridge_service import CartridgeService
 from .neural_service import NeuralService
 from .semantic_chunker import SemanticChunker
 
-class SynapseWeaver:
-    """
-    Helper class to extract dependencies from code.
-    Moved from _NeoCORTEX to ensure silent graph building.
-    """
-    def __init__(self):
-        # Regex for Python imports
-        self.py_import = re.compile(r'^\s*(?:from|import)\s+([\w\.]+)')
-        # Regex for JS/TS imports
-        self.js_import = re.compile(r'(?:import\s+.*?from\s+[\'"]|require\([\'"])([\.\/\w\-_]+)[\'"]')
-
-    def extract(self, content: str, filename: str) -> List[str]:
-        deps = set()
-        if not content: return []
-        
-        lines = content.splitlines()
-        is_py = filename.endswith('.py')
-        is_js = filename.endswith(('.js', '.ts', '.jsx', '.tsx'))
-
-        if not (is_py or is_js):
-            return []
-
-        for line in lines:
-            match = None
-            if is_py:
-                match = self.py_import.match(line)
-            elif is_js:
-                match = self.js_import.search(line)
-            
-            if match:
-                # Clean up the import (e.g., 'src.utils' -> 'utils')
-                raw = match.group(1)
-                clean = raw.split('.')[-1].split('/')[-1]
-                deps.add(clean)
-        
-        return list(deps)
-
 class RefineryService(BaseService):
     """
-    The Night Shift (v3 - Graph Aware).
-    Chunks code, generates vectors, and WEAVES connections automatically.
+    The Night Shift.
+    Polls the DB for 'RAW' files and processes them into Chunks and Graph Nodes.
     """
 
     def __init__(self, cartridge: CartridgeService, neural: NeuralService):
@@ -1134,121 +1710,82 @@ class RefineryService(BaseService):
         self.cartridge = cartridge
         self.neural = neural
         self.chunker = SemanticChunker()
-        self.weaver = SynapseWeaver()
+        
+        # Simple regex for imports (Python/JS)
+        self.import_pattern = re.compile(r'(?:from|import)\s+([\w\.]+)|require\([\'"]([\w\.\-/]+)[\'"]\)')
 
-    def process_pending_files(self, batch_size: int = 10) -> int:
+    def process_pending(self, batch_size: int = 5) -> int:
+        """Main loop. Returns number of files processed."""
         pending = self.cartridge.get_pending_files(limit=batch_size)
         if not pending: return 0
 
-        self.log_info(f"Refining {len(pending)} files (Chunking + Vectorizing + Weaving)...")
-        # We process serially or parallel. For graph weaving, serial is safer for SQLite locking,
-        # but since we are just reading/writing, parallel is okay if SQLite handles concurrency well.
-        # Sticking to parallel for speed.
-        results = self.neural.process_parallel(pending, self._process_single_file)
-        return len(results)
-
-    def _process_single_file(self, file_row: Dict) -> bool:
-        file_id = file_row["id"]
-        path = file_row["path"]
-        content = file_row["content"]
+        self.log_info(f"Refining batch of {len(pending)} files...")
         
+        for file_row in pending:
+            self._refine_file(file_row)
+            
+        return len(pending)
+
+    def _refine_file(self, row: Dict):
+        file_id = row['id']
+        vfs_path = row['vfs_path']
+        content = row['content']
+        
+        # Skip binary files for now (unless we add OCR later)
         if not content:
-            self.cartridge.update_file_status(file_id, "SKIPPED_BINARY")
-            return True
+            self.cartridge.update_status(file_id, "SKIPPED_BINARY")
+            return
 
         try:
-            # --- 1. Semantic Chunking ---
-            chunks = self.chunker.chunk_file(content, path)
+            # 1. Semantic Chunking
+            chunks = self.chunker.chunk_file(content, vfs_path)
             
-            # --- 2. Vectorization ---
+            # 2. Vectorization & Storage
             conn = self.cartridge._get_conn()
-            cursor = conn.cursor()
-            
             for i, chunk in enumerate(chunks):
-                # Get Vector from CPU Embedder
+                # Embedding
                 vector = self.neural.get_embedding(chunk.content)
                 vec_blob = json.dumps(vector).encode('utf-8') if vector else None
                 
-                cursor.execute("""
+                # Store Chunk
+                conn.execute("""
                     INSERT INTO chunks (file_id, chunk_index, content, embedding, name, type, start_line, end_line)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                 """, (file_id, i, chunk.content, vec_blob, chunk.name, chunk.type, chunk.start_line, chunk.end_line))
-                
-                # Create a "Satellite Node" for important chunks (Classes/Functions)
+
+                # Graph Node for Chunks (Functions/Classes)
                 if chunk.type in ['class', 'function']:
-                    chunk_node_id = f"{path}::{chunk.name}"
-                    cursor.execute("""
-                        INSERT OR REPLACE INTO graph_nodes (id, type, label, data_json)
-                        VALUES (?, 'chunk', ?, ?)
-                    """, (chunk_node_id, chunk.name, json.dumps({'parent': path})))
-                    
-                    # Link Chunk -> File
-                    cursor.execute("INSERT OR IGNORE INTO graph_edges (source, target, relation) VALUES (?, ?, 'defined_in')", 
-                                   (chunk_node_id, path))
+                    node_id = f"{vfs_path}::{chunk.name}"
+                    self.cartridge.add_node(node_id, 'chunk', chunk.name, {'parent': vfs_path})
+                    self.cartridge.add_edge(node_id, vfs_path, "defined_in")
 
             conn.commit()
             conn.close()
 
-            # --- 3. Weaving (Dependency Graph) ---
-            self._weave_dependencies(path, content)
+            # 3. File Level Graph Node
+            self.cartridge.add_node(vfs_path, 'file', vfs_path.split('/')[-1], {'path': vfs_path})
 
-            # --- 4. Metadata Enrichment ---
-            meta = {}
-            if path.endswith(".py"):
-                meta = self._analyze_python(content)
-            
-            self.cartridge.update_file_status(file_id, "ENRICHED", metadata=meta)
-            return True
+            # 4. Import Weaving (Simple)
+            self._weave_imports(vfs_path, content)
+
+            self.cartridge.update_status(file_id, "REFINED")
 
         except Exception as e:
-            self.log_error(f"Refinery failed on {path}: {e}")
-            self.cartridge.update_file_status(file_id, "ERROR", metadata={"error": str(e)})
-            return False
+            self.log_error(f"Refining failed for {vfs_path}: {e}")
+            self.cartridge.update_status(file_id, "ERROR", {"error": str(e)})
 
-    def _weave_dependencies(self, source_path: str, content: str):
-        """Finds imports and attempts to link them to existing files in the DB."""
-        dependencies = self.weaver.extract(content, source_path)
-        if not dependencies: return
-
-        conn = self.cartridge._get_conn()
-        cursor = conn.cursor()
-        
-        for dep in dependencies:
-            # Search for the dependency in the DB (fuzzy match on filename)
-            # We look for a file that ends with 'dep.py' or 'dep.js'
-            # This is a heuristic but efficient.
-            query = f"%/{dep}.%" # e.g. %/utils.% matches src/utils.py
-            
-            # Also try exact match for flat directories
-            query_exact = f"{dep}.%"
-
-            cursor.execute("SELECT path FROM files WHERE path LIKE ? OR path LIKE ?", (query, query_exact))
-            result = cursor.fetchone()
-
-            if result:
-                target_path = result[0]
-                if target_path != source_path:
-                    # Found a link!
-                    self.cartridge.add_edge(source_path, target_path, relation="imports")
-            else:
-                # Broken Link / External Library
-                self.cartridge.log_unresolved_import(source_path, dep)
-
-        conn.close()
-
-    def _analyze_python(self, content: str) -> Dict:
-        """Ask 1.5b-coder for a structural summary."""
-        prompt = f"""
-        Analyze this Python code. Return JSON with:
-        - "summary": "One sentence description"
-        - "complexity": "Low/Medium/High"
-        
-        Code:
-        {content[:2000]}
-        """
-        response = self.neural.request_inference(prompt, tier="fast", format_json=True)
-        try: return json.loads(response)
-        except: return {"summary": "Analysis failed"}
+    def _weave_imports(self, source_path: str, content: str):
+        """Scans content for imports and links them in the graph."""
+        lines = content.splitlines()
+        for line in lines:
+            match = self.import_pattern.search(line)
+            if match:
+                # Extract the import name (e.g., 'os', 'numpy', './utils')
+                imp = match.group(1) or match.group(2)
+                if imp:
+                    # Heuristic: Link to any node ID that contains this string
+                    # Real implementation would do path resolution, but this creates the visual structure effectively.
+                    self.cartridge.add_edge(source_path, imp, "imports")
 --------------------------------------------------------------------------------
 FILE: src\microservices\scanner.py
 --------------------------------------------------------------------------------
@@ -1524,3 +2061,6 @@ class ThoughtStream(ttk.Frame):
             x1 = x0 + bar_w
             y1 = h
             cv.create_rectangle(x0, y0, x1, y1, fill=color, outline="")
+--------------------------------------------------------------------------------
+FILE: src\microservices\__init__.py
+--------------------------------------------------------------------------------
