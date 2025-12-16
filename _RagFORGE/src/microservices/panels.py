@@ -43,6 +43,15 @@ class IngestToolbar(tk.Frame):
                               insertbackground="white", relief="flat", font=("Consolas", 10))
         self.entry.pack(side="left", fill="x", expand=True, padx=5, ipady=4)
 
+        # Options
+        tk.Label(self, text="Depth:", bg=BG_COLOR, fg="#666", font=("Arial", 8)).pack(side="left")
+        self.spin_depth = tk.Spinbox(self, from_=0, to=5, width=3, bg="#333", fg="white", relief="flat")
+        self.spin_depth.pack(side="left", padx=2)
+        
+        self.combo_policy = ttk.Combobox(self, values=["Extract Text", "Store Blob", "Skip Binary"], width=12, state="readonly")
+        self.combo_policy.set("Extract Text")
+        self.combo_policy.pack(side="left", padx=5)
+
         # Buttons
         btn_cfg = {"bg": "#444", "fg": "white", "relief": "flat", "padx": 10, "font": ("Arial", 9)}
         
@@ -74,7 +83,12 @@ class IngestToolbar(tk.Frame):
 
     def _trigger_scan(self):
         path = self.path_var.get().strip()
-        if path: self.on_scan(path)
+        try:
+            depth = int(self.spin_depth.get())
+        except: depth = 0
+        
+        policy = self.combo_policy.get()
+        if path: self.on_scan(path, web_depth=depth, binary_policy=policy)
 
     def _trigger_ingest(self):
         self.on_ingest()
@@ -101,12 +115,14 @@ class FileTreePanel(tk.Frame):
         sb.place(relx=1, rely=0, relheight=1, anchor="ne")
         self.tree.configure(yscrollcommand=sb.set)
 
-    def load_tree(self, path):
+    def load_tree(self, path, web_depth=0):
         self.root_path = path
         self.tree.delete(*self.tree.get_children())
         self.node_map = {}
-        tree_data = self.intake.scan_path(path)
-        self._insert_node("", tree_data)
+        # Pass web_depth to scanner
+        tree_data = self.intake.scan_path(path, web_depth=web_depth)
+        if tree_data:
+            self._insert_node("", tree_data)
 
     def _insert_node(self, parent_id, node):
         icon = "☑" if node['checked'] else "☐"
@@ -281,6 +297,7 @@ class EditorPanel(tk.Frame):
             else:
                 self.editor.insert("1.0", "(Binary content or empty)")
         except: pass
+
 
 
 

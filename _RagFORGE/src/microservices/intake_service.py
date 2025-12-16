@@ -7,6 +7,8 @@ from pathlib import Path
 from typing import Dict, Set, List, Any
 from .base_service import BaseService
 from .cartridge_service import CartridgeService
+from .scanner import ScannerMS
+from . import document_utils
 
 # Optional import for Web
 try:
@@ -30,7 +32,7 @@ class IntakeService(BaseService):
     
     DEFAULT_IGNORE_EXTS = {
         '.pyc', '.pyd', '.exe', '.dll', '.so', '.db', '.sqlite', '.sqlite3', 
-        '.bin', '.iso', '.img', '.zip', '.tar', '.gz', '.7z', '.pdf', '.jpg', '.png'
+        '.bin', '.iso', '.img', '.zip', '.tar', '.gz', '.7z', '.jpg', '.png'
     }
 
     def __init__(self, cartridge: CartridgeService):
@@ -38,42 +40,60 @@ class IntakeService(BaseService):
         self.cartridge = cartridge
         self.ignore_patterns: Set[str] = set()
 
+    def ingest_source(self, source_path: str) -> Dict[str, int]:
+        """Headless/CLI Entry point: Scans and Ingests in one go."""
+        self.cartridge.initialize_manifest()
+        
+        # Update Manifest source info
+        self.cartridge.set_manifest("source_root", source_path)
+        
+        is_web = source_path.startswith("http")
+        self.cartridge.set_manifest("source_type", "web_root" if is_web else "filesystem_dir")
+
+        scanner = ScannerMS()
+        tree_node = scanner.scan_directory(source_path, web_depth=1 if is_web else 0)
+        
+        if not tree_node:
+             return {"error": "Source not found"}
+
+        # Flatten tree to list of paths
+        files_to_ingest = scanner.flatten_tree(tree_node)
+        self.cartridge.set_manifest("ingest_config", {"auto_flattened": True, "count": len(files_to_ingest)})
+        
+        return self.ingest_selected(files_to_ingest, source_path)
+
     # --- PHASE 1: SCANNING ---
 
-    def scan_path(self, root_path: str) -> Dict[str, Any]:
+    def scan_path(self, root_path: str, web_depth: int = 0) -> Dict[str, Any]:
         """
-        Builds a file tree dict.
-        Returns: { 'name': 'root', 'path': '...', 'type': 'dir', 'children': [...], 'checked': bool }
+        Unified Scanner Interface.
+        Delegates to ScannerMS for both Web and Local FS to ensure consistent node structure.
         """
-        # 1. Web URL
-        if root_path.startswith("http://") or root_path.startswith("https://"):
-            return {
-                'name': root_path,
-                'path': root_path,
-                'rel_path': root_path,
-                'type': 'web',
-                'children': [],
-                'checked': True
-            }
+        scanner = ScannerMS()
 
-        # 2. Local Path
-        root_path = os.path.abspath(root_path)
-        
-        if os.path.isfile(root_path):
-            # Single File Mode
-            return {
-                'name': os.path.basename(root_path),
-                'path': root_path,
-                'rel_path': os.path.basename(root_path),
-                'type': 'file',
-                'children': [],
-                'checked': True
-            }
-            
-        # 3. Directory Mode
-        self._load_gitignore(root_path)
-        saved_config = self._load_persistence(root_path)
-        return self._scan_recursive(root_path, root_path, saved_config)
+        # 1. Delegate to Scanner
+        tree_root = scanner.scan_directory(root_path, web_depth=web_depth)
+        if not tree_root: return None
+
+        # 2. Apply Persistence / Checked State
+        # (We only do this for FS usually, but we can try for web if we had it)
+        if not root_path.startswith("http"):
+            saved_config = self._load_persistence(os.path.abspath(root_path))
+            self._apply_persistence(tree_root, saved_config)
+    
+        return tree_root
+
+    def _apply_persistence(self, node: Dict, saved_config: Dict):
+        """Recursively applies checked state from saved config."""
+        if 'rel_path' in node and node['rel_path'] in saved_config:
+            node['checked'] = saved_config[node['rel_path']]
+        elif 'children' in node:
+            # Default check all if no config? Or check logic from before?
+            pass
+    
+        if 'children' in node:
+            for child in node['children']:
+                self._apply_persistence(child, saved_config)
 
     def _scan_recursive(self, current_path: str, root_path: str, saved_config: Dict) -> Dict:
         name = os.path.basename(current_path)
@@ -223,14 +243,51 @@ class IntakeService(BaseService):
     def _read_and_store(self, real_path: Path, vfs_path: str, origin_type: str, stats: Dict):
         mime_type, _ = mimetypes.guess_type(real_path)
         if not mime_type: mime_type = "application/octet-stream"
+        
+        content = None
+        blob = None
+        
+        # 1. Try Binary Read First (Covers PDF/Images/Safe Read)
         try:
-            with open(real_path, 'r', encoding='utf-8') as f:
-                content = f.read()
-                self.cartridge.store_file(vfs_path, str(real_path), content=content, mime_type=mime_type, origin_type=origin_type)
-        except UnicodeDecodeError:
+            with open(real_path, 'rb') as f:
+                blob = f.read()
+        except Exception as e:
+            self.log_error(f"Read error {real_path}: {e}")
+            stats["errors"] += 1
+            return
+
+        # 2. Text Extraction / Decoding Strategy
+        lower_path = str(real_path).lower()
+        
+        if lower_path.endswith(".pdf"):
+            # PDF: Extract text, keep blob
+            content = document_utils.extract_text_from_pdf(blob)
+            if not content: mime_type = "application/pdf" # Fallback if extraction fails
+            
+        elif lower_path.endswith(".html") or lower_path.endswith(".htm"):
+            # HTML: Decode and Clean
             try:
-                with open(real_path, 'rb') as f:
-                    blob = f.read()
-                    self.cartridge.store_file(vfs_path, str(real_path), blob=blob, mime_type=mime_type, origin_type=origin_type)
+                raw_text = blob.decode('utf-8', errors='ignore')
+                content = document_utils.extract_text_from_html(raw_text)
             except: pass
-        stats["added"] += 1
+            
+        else:
+            # Default: Try UTF-8 Decode
+            try:
+                content = blob.decode('utf-8')
+            except UnicodeDecodeError:
+                content = None # Leave as binary blob
+
+        # 3. Store in Cartridge
+        # If content is set, it will be chunked/indexed. If only blob, it's stored but skipped by refinery.
+        success = self.cartridge.store_file(
+            vfs_path, 
+            str(real_path), 
+            content=content, 
+            blob=blob, 
+            mime_type=mime_type, 
+            origin_type=origin_type
+        )
+        
+        if success: stats["added"] += 1
+        else: stats["errors"] += 1

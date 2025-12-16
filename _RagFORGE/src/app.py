@@ -64,6 +64,10 @@ def headless_forge(source_path: str, db_name: str, verbose: bool = False):
     print(">>> Phase 1: Intake (Vacuuming files...)")
     stats = intake.ingest_source(source_path)
     print(f"    Intake Result: {stats}")
+    
+    # Verify Manifest
+    cid = cartridge.get_manifest("cartridge_id")
+    print(f"    [Manifest] Cartridge ID: {cid}")
 
     print(">>> Phase 2: Refinery (Chunking & Weaving...)")
     while True:
@@ -262,13 +266,17 @@ class RagForgeApp(tk.Tk):
             self.refining = True
             self.after(1000, self._refinery_loop)
 
-    def run_scan_request(self, path):
+    def run_scan_request(self, path, web_depth=0, binary_policy="Extract Text"):
         if not self.active_cartridge:
             messagebox.showwarning("No Cartridge", "Select a cartridge first.")
             return
         
-        self.status_var.set(f"Scanning {path}...")
-        self.file_tree.load_tree(path)
+        # Update Manifest with policy preference
+        self.active_cartridge.set_manifest("binary_policy", binary_policy)
+        self.active_cartridge.set_manifest("web_depth", web_depth)
+
+        self.status_var.set(f"Scanning {path} (Depth: {web_depth})...")
+        self.file_tree.load_tree(path, web_depth=web_depth)
         self.sys_log.log(f"Scanned source: {path}")
         self.status_var.set("Scan complete. Select files to ingest.")
 
@@ -298,7 +306,12 @@ class RagForgeApp(tk.Tk):
                 err = f"Ingest Failed: {e}"
                 self.sys_log.log(err)
             
-            self.after(0, lambda: self.editor_panel.refresh_list())
+            # Refresh UI elements on main thread
+            def _refresh():
+                self.editor_panel.refresh_list()
+                self.graph_view.load_from_db(self.active_db_path)
+                
+            self.after(0, _refresh)
 
         threading.Thread(target=worker, daemon=True).start()
 
@@ -361,6 +374,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 

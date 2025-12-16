@@ -19,9 +19,17 @@ class SemanticChunker:
     """
     
     def chunk_file(self, content: str, filename: str) -> List[CodeChunk]:
+        # 1. Python Code
         if filename.endswith(".py"):
             return self._chunk_python(content)
-        return self._chunk_generic(content)
+            
+        # 2. Text / Prose Documents (Smaller semantic windows)
+        lower = filename.lower()
+        if lower.endswith(('.md', '.txt', '.pdf', '.html', '.htm', '.rst')):
+            return self._chunk_generic(content, window_size=800)
+            
+        # 3. Fallback (Generic Code/Binary)
+        return self._chunk_generic(content, window_size=1500)
 
     def _chunk_python(self, source: str) -> List[CodeChunk]:
         chunks = []
@@ -62,7 +70,10 @@ class SemanticChunker:
     def _chunk_generic(self, text: str, window_size: int = 1500) -> List[CodeChunk]:
         """Sliding window for non-code files."""
         chunks = []
+        # normalize newlines to avoid massive single-line blobs
+        text = text.replace('\r\n', '\n').replace('\r', '\n')
         lines = text.splitlines(keepends=True)
+        
         current_chunk = []
         current_size = 0
         chunk_idx = 1
@@ -89,3 +100,4 @@ class SemanticChunker:
             ))
             
         return chunks
+

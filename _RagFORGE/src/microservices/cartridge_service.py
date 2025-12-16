@@ -1,7 +1,17 @@
 import sqlite3
 import json
 import time
+import os
+import uuid
+import datetime
+import struct
 from pathlib import Path
+
+# Try to import sqlite-vec (pip install sqlite-vec)
+try:
+    import sqlite_vec
+except ImportError:
+    sqlite_vec = None
 from typing import Dict, Any, Optional, List
 from .base_service import BaseService
 
@@ -19,7 +29,15 @@ class CartridgeService(BaseService):
         self._init_db()
 
     def _get_conn(self):
-        return sqlite3.connect(self.db_path)
+        conn = sqlite3.connect(self.db_path)
+        if sqlite_vec:
+            try:
+                conn.enable_load_extension(True)
+                sqlite_vec.load(conn)
+                conn.enable_load_extension(False)
+            except Exception as e:
+                self.log_error(f"Failed to load sqlite-vec: {e}")
+        return conn
 
     def _init_db(self):
         """Initializes the standard Schema."""
@@ -77,6 +95,15 @@ class CartridgeService(BaseService):
             )
         """)
 
+        # 3.5 Vector Index (sqlite-vec)
+        # Defaulting to 1024 dimensions (mxbai-embed-large). 
+        # If you use a different model, this needs to match.
+        if sqlite_vec:
+            try:
+                cursor.execute("CREATE VIRTUAL TABLE IF NOT EXISTS vec_items USING vec0(embedding float[1024])")
+            except Exception as e:
+                self.log_error(f"Vector Table Init Error: {e}")
+
         # 4. Graph Topology (The Neural Wiring)
         cursor.execute("CREATE TABLE IF NOT EXISTS graph_nodes (id TEXT PRIMARY KEY, type TEXT, label TEXT, data_json TEXT)")
         cursor.execute("CREATE TABLE IF NOT EXISTS graph_edges (source TEXT, target TEXT, relation TEXT, weight REAL)")
@@ -86,6 +113,32 @@ class CartridgeService(BaseService):
         
         conn.commit()
         conn.close()
+        
+        # Initialize standard keys if new
+        self.initialize_manifest()
+
+    def initialize_manifest(self):
+        """Populates the boot sector with standard UNCF headers."""
+        if not self.get_manifest("cartridge_id"):
+            self.set_manifest("schema_version", self.SCHEMA_VERSION)
+            self.set_manifest("cartridge_id", str(uuid.uuid4()))
+            self.set_manifest("created_at_utc", datetime.datetime.utcnow().isoformat())
+            self.set_manifest("ragforge_version", "1.1.0")
+
+    def set_manifest(self, key: str, value: Any):
+        """Upsert metadata key."""
+        conn = self._get_conn()
+        val_str = json.dumps(value) if isinstance(value, (dict, list)) else str(value)
+        conn.execute("INSERT OR REPLACE INTO manifest (key, value) VALUES (?, ?)", (key, val_str))
+        conn.commit()
+        conn.close()
+
+    def get_manifest(self, key: str) -> Optional[str]:
+        """Retrieve metadata key."""
+        conn = self._get_conn()
+        row = conn.execute("SELECT value FROM manifest WHERE key=?", (key,)).fetchone()
+        conn.close()
+        return row[0] if row else None
 
     def store_file(self, vfs_path: str, origin_path: str, content: str = None, blob: bytes = None, mime_type: str = "text/plain", origin_type: str = "filesystem"):
         """
@@ -153,3 +206,45 @@ class CartridgeService(BaseService):
                      (source, target, relation, weight))
         conn.commit()
         conn.close()
+
+    # --- Vector Search ---
+    def search_embeddings(self, query_vector: List[float], limit: int = 5) -> List[Dict]:
+        """Performs semantic search using sqlite-vec."""
+        if not sqlite_vec or not query_vector:
+            return []
+
+        conn = self._get_conn()
+        conn.row_factory = sqlite3.Row
+        results = []
+        
+        try:
+            # Pack vector to binary if needed, but sqlite-vec usually handles raw lists in parameterized queries
+            # dependent on the binding. We'll pass binary for safety if using standard bindings,
+            # but typically raw list works with the extension's adapters. 
+            # For now, we assume the extension handles the list->vector conversion.
+            
+            rows = conn.execute("""
+                SELECT
+                    rowid,
+                    distance
+                FROM vec_items
+                WHERE embedding MATCH ?
+                ORDER BY distance
+                LIMIT ?
+            """, (json.dumps(query_vector), limit)).fetchall()
+            
+            # Resolve back to chunks
+            for r in rows:
+                chunk_id = r['rowid']
+                chunk = conn.execute("SELECT * FROM chunks WHERE id=?", (chunk_id,)).fetchone()
+                if chunk:
+                    res = dict(chunk)
+                    res['score'] = r['distance']
+                    results.append(res)
+                    
+        except Exception as e:
+            self.log_error(f"Vector Search Error: {e}")
+        finally:
+            conn.close()
+            
+        return results

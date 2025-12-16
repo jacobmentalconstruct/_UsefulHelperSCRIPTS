@@ -58,11 +58,18 @@ class ScannerMS:
         """
         Recursively fetches links.
         """
+        # Generate a nice VFS path: web/domain/path
+        parsed = urlparse(url)
+        clean_path = parsed.path.strip("/")
+        if not clean_path: clean_path = "index.html"
+        rel_path = f"web/{parsed.netloc}/{clean_path}"
+
         node = {
-            'text': url, 
-            'path': url, 
-            'type': 'web', 
-            'children': [], 
+            'name': url,
+            'path': url,
+            'rel_path': rel_path,
+            'type': 'web',
+            'children': [],
             'checked': True
         }
         
@@ -91,8 +98,10 @@ class ScannerMS:
         return node
 
     # --- File System Logic ---
-    def _scan_fs_recursive(self, current_path: str) -> Dict[str, Any]:
-        node = self._create_node(current_path, is_dir=True)
+    def _scan_fs_recursive(self, current_path: str, root_path: str = None) -> Dict[str, Any]:
+        if root_path is None: root_path = current_path
+        
+        node = self._create_node(current_path, is_dir=True, root_path=root_path)
         node['children'] = []
         try:
             with os.scandir(current_path) as it:
@@ -102,18 +111,31 @@ class ScannerMS:
                     if entry.name.startswith('.'): continue
 
                     if entry.is_dir():
-                        child = self._scan_fs_recursive(entry.path)
+                        child = self._scan_fs_recursive(entry.path, root_path=root_path)
                         if child: node['children'].append(child)
                     else:
-                        node['children'].append(self._create_node(entry.path, is_dir=False))
+                        node['children'].append(self._create_node(entry.path, is_dir=False, root_path=root_path))
         except PermissionError:
             node['error'] = "Access Denied"
         return node
 
-    def _create_node(self, path: str, is_dir: bool) -> Dict[str, Any]:
+    def _create_node(self, path: str, is_dir: bool, root_path: str = None) -> Dict[str, Any]:
         name = os.path.basename(path)
-        node = {'text': name, 'path': path, 'type': 'folder' if is_dir else 'file', 'checked': False}
-        if not is_dir and self.is_binary(path): node['type'] = 'binary'
+        # Calculate relative path for VFS
+        rel_path = name
+        if root_path:
+            try:
+                rel_path = os.path.relpath(path, root_path).replace("\\", "/")
+            except ValueError:
+                pass
+
+        node = {
+            'name': name, 
+            'path': path, 
+            'rel_path': rel_path,
+            'type': 'folder' if is_dir else 'file', 
+            'checked': False
+        }
         return node
 
     def flatten_tree(self, tree_node: Dict[str, Any]) -> List[str]:
