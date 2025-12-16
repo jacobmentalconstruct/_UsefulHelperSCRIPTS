@@ -1,0 +1,1526 @@
+Dump: C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_RagFORGE
+
+
+--------------------------------------------------------------------------------
+FILE: LICENSE.md
+--------------------------------------------------------------------------------
+MIT License
+
+Copyright (c) 2025 Jacob Lambert
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+--------------------------------------------------------------------------------
+FILE: README.md
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+FILE: requirements.txt
+--------------------------------------------------------------------------------
+# Standard Library dependencies only:
+# tkinter, argparse, json, ast, threading, os, sys
+#
+# No external pip packages required.
+--------------------------------------------------------------------------------
+FILE: setup_env.bat
+--------------------------------------------------------------------------------
+@echo off
+echo [SYSTEM] Initializing new project environment...
+
+:: 1. Create the venv if it doesn't exist
+if not exist .venv (
+    echo [SYSTEM] Creating .venv...
+    py -m venv .venv
+)
+
+:: 2. Upgrade pip and install requirements
+echo [SYSTEM] Installing dependencies...
+.venv\Scripts\python.exe -m pip install --upgrade pip
+if exist requirements.txt (
+    .venv\Scripts\pip install -r requirements.txt
+)
+
+echo.
+echo [SUCCESS] Environment ready!
+echo You can now open this folder in VS Code or launch via scripts_menu.py
+pause
+--------------------------------------------------------------------------------
+FILE: src\app.py
+--------------------------------------------------------------------------------
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+"""
+== Generic Python Module/CLI Boilerplate ==
+
+This is a generic template for a Python file that can be:
+1.  Imported as a module by other scripts (e.g., `import generic_module`).
+2.  Run as a standalone command-line script (e.g., `$ python generic_module.py --input data.txt`).
+
+How to use this template:
+1.  Rename this file to match your new tool (e.g., `my_data_processor.py`).
+2.  Update this docstring to describe what your tool does.
+3.  Fill in the "CORE FUNCTIONALITY" section with your app's logic.
+4.  Go to the `main()` function to define your CLI arguments.
+5.  In `main()`, add the code to call your core functions using the parsed arguments.
+"""
+
+# 1. IMPORTS
+# Standard library imports
+import sys
+import os
+import argparse  # For parsing command-line arguments
+
+# Third-party imports (if any)
+# e.g., import requests
+
+# Local/application imports (if any)
+# e.g., from . import my_other_module
+
+
+# 2. CONSTANTS
+# TODO: Define any constants your application needs.
+SOME_DEFAULT_SETTING = "default_value"
+
+
+# 3. CORE FUNCTIONALITY (The "Importable" Module)
+#
+# These functions make up the "core logic" of your application.
+# They can be imported and used by other Python scripts.
+# They should be self-contained and not rely on command-line arguments.
+
+def core_logic_function(data: any, setting: str = SOME_DEFAULT_SETTING) -> any:
+    """
+    TODO: Replace this with your main logic function.
+    
+    This function should perform the primary task of your module.
+    
+    Args:
+        data (any): The input data to process.
+        setting (str, optional): An example of an optional setting.
+                                 Defaults to SOME_DEFAULT_SETTING.
+
+    Returns:
+        any: The processed data.
+    """
+    print(f"[Core Logic] Processing data with setting: {setting}")
+    
+    # --- TODO: Your actual logic goes here ---
+    # Example:
+    try:
+        processed_data = f"Processed data: {str(data).upper()}"
+        print("[Core Logic] Processing complete.")
+        return processed_data
+    except Exception as e:
+        print(f"[Core Logic] Error during processing: {e}", file=sys.stderr)
+        # Re-raise the exception to be handled by the caller
+        raise
+
+
+def helper_function(value: int) -> str:
+    """
+    TODO: Add any helper functions your core logic needs.
+    
+    This is an example of a helper that might be called by
+    core_logic_function or also be importable.
+    
+    Args:
+        value (int): An input value.
+
+    Returns:
+        str: A formatted string.
+    """
+    return f"Helper processed value: {value * 2}"
+
+
+# 4. CLI (Command-Line Interface) LOGIC
+#
+# This code only runs when the script is executed directly.
+# It should handle parsing arguments and calling the core functions.
+
+def main():
+    """
+    Main function to run the script from the command line.
+    
+    It parses arguments, calls core functions, and handles CLI-specific
+    input/output and error handling.
+    """
+    
+    # --- Argument Parsing ---
+    # Set up the argument parser
+    # TODO: Update the description to match your tool.
+    parser = argparse.ArgumentParser(
+        description="A generic CLI tool. TODO: Describe your tool here.",
+        epilog="Example: python generic_module.py my_input.txt -o my_output.txt -v"
+    )
+    
+    # --- TODO: Define your arguments ---
+    
+    # Example of a required positional argument
+    parser.add_argument(
+        "input_path",  # The name of the argument
+        type=str,
+        help="TODO: Describe this required input (e.g., path to an input file)."
+    )
+    
+    # Example of an optional argument (e.g., -o or --output)
+    parser.add_argument(
+        "-o", "--output",
+        type=str,
+        default=None,  # Default to None if not provided
+        help="TODO: Describe this optional argument (e.g., path to an output file)."
+    )
+    
+    # Example of a "flag" argument (stores True if present)
+    parser.add_argument(
+        "-v", "--verbose",
+        action="store_true",  # This makes it a boolean flag
+        help="Enable verbose output."
+    )
+    
+    # Parse the arguments from the command line (e.g., sys.argv)
+    args = parser.parse_args()
+
+    # --- Main Application Flow ---
+    
+    # Use the 'verbose' flag to control print statements
+    if args.verbose:
+        print("Verbose mode enabled.", file=sys.stderr)
+        print(f"Arguments received: {args}", file=sys.stderr)
+
+    try:
+        # 1. Load data (CLI-specific task)
+        #    TODO: Replace this with your actual data loading
+        if args.verbose:
+            print(f"Loading data from {args.input_path}...", file=sys.stderr)
+        # This is just an example. You'd likely load a file here.
+        input_data = f"Content of {args.input_path}" 
+
+        # 2. Call core logic (the "importable" part)
+        if args.verbose:
+            print("Calling core logic...", file=sys.stderr)
+        
+        # Here we pass the CLI arguments to the core function
+        processed_data = core_logic_function(input_data)
+        
+        # 3. Handle output (CLI-specific task)
+        if args.output:
+            # Save to a file
+            if args.verbose:
+                print(f"Saving processed data to {args.output}...", file=sys.stderr)
+            # TODO: Add file-saving logic here
+            # with open(args.output, 'w') as f:
+            #     f.write(processed_data)
+            print(f"Success: Output saved to {args.output}")
+        else:
+            # Print to standard output
+            if args.verbose:
+                print("Printing processed data to stdout:", file=sys.stderr)
+            print(processed_data)
+        
+        # Exit with a success code
+        sys.exit(0)
+
+    except FileNotFoundError as e:
+        print(f"\nError: Input file not found.", file=sys.stderr)
+        print(f"Details: {e}", file=sys.stderr)
+        sys.exit(1) # Exit with a non-zero error code
+    except Exception as e:
+        print(f"\nAn unexpected error occurred: {e}", file=sys.stderr)
+        sys.exit(1)
+
+
+# This "magic" line is the key to the whole pattern:
+#
+# - If you run `python generic_module.py ...`, Python sets
+#   __name__ = "__main__", and the main() function is called.
+#
+# - If you `import generic_module` in another script, __name__
+#   is "generic_module", so this block is SKIPPED.
+#
+if __name__ == "__main__":
+    main()
+--------------------------------------------------------------------------------
+FILE: src\__init__.py
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+FILE: src\microservices\base_service.py
+--------------------------------------------------------------------------------
+import logging
+import sys
+
+class BaseService:
+    """
+    Standard base class for all _NeoCORTEX microservices.
+    Provides unified logging and error handling.
+    """
+    def __init__(self, service_name: str):
+        self.service_name = service_name
+        self.log = logging.getLogger(service_name)
+        
+        # Configure logging if not already set up
+        if not self.log.handlers:
+            handler = logging.StreamHandler(sys.stdout)
+            formatter = logging.Formatter('%(asctime)s [%(name)s] %(levelname)s: %(message)s', datefmt='%H:%M:%S')
+            handler.setFormatter(formatter)
+            self.log.addHandler(handler)
+            self.log.setLevel(logging.INFO)
+
+    def log_info(self, msg: str):
+        self.log.info(msg)
+
+    def log_error(self, msg: str):
+        self.log.error(msg)
+
+--------------------------------------------------------------------------------
+FILE: src\microservices\cartridge_service.py
+--------------------------------------------------------------------------------
+import sqlite3
+import json
+import time
+from pathlib import Path
+from typing import Dict, Any, Optional, List
+from .base_service import BaseService
+
+class CartridgeService(BaseService):
+    """
+    The Storage Manager (v2 - Graph Ready).
+    Manages the SQLite Cartridge format, now including Graph Nodes, Edges, and Validation Logs.
+    """
+    
+    def __init__(self, db_path: str):
+        super().__init__("CartridgeService")
+        self.db_path = Path(db_path)
+        self._init_db()
+
+    def _init_db(self):
+        """Initializes the ELT Schema + Graph Schema."""
+        self.db_path.parent.mkdir(parents=True, exist_ok=True)
+        
+        conn = self._get_conn()
+        cursor = conn.cursor()
+        
+        # 1. Manifest & Files (Standard ELT)
+        cursor.execute("CREATE TABLE IF NOT EXISTS manifest (key TEXT PRIMARY KEY, value TEXT)")
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS files (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                path TEXT UNIQUE NOT NULL,
+                content TEXT,
+                blob_data BLOB,
+                status TEXT DEFAULT 'RAW',
+                mime_type TEXT,
+                metadata TEXT DEFAULT '{}',
+                last_updated TIMESTAMP
+            )
+        """)
+
+        # 2. Chunks (Vectors)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS chunks (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                file_id INTEGER,
+                chunk_index INTEGER,
+                content TEXT,
+                embedding BLOB,
+                name TEXT,
+                type TEXT,
+                start_line INTEGER,
+                end_line INTEGER,
+                FOREIGN KEY(file_id) REFERENCES files(id)
+            )
+        """)
+
+        # 3. [NEW] Graph Topology (The Neural Wiring)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS graph_nodes (
+                id TEXT PRIMARY KEY, 
+                type TEXT, 
+                label TEXT, 
+                data_json TEXT
+            )
+        """)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS graph_edges (
+                source TEXT, 
+                target TEXT, 
+                weight REAL,
+                relation TEXT
+            )
+        """)
+
+        # 4. [NEW] Validation (The "Integrity Check")
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS unresolved_imports (
+                source_file TEXT, 
+                import_name TEXT,
+                timestamp TIMESTAMP
+            )
+        """)
+        
+        conn.commit()
+        conn.close()
+
+    def _get_conn(self):
+        return sqlite3.connect(self.db_path)
+
+    # --- Existing Methods (store_raw_file, get_pending_files) remain the same ---
+
+    def store_raw_file(self, path: str, content: str = None, blob: bytes = None, mime_type: str = "text/plain"):
+        """Stores raw data. Updates timestamp if file exists."""
+        conn = self._get_conn()
+        cursor = conn.cursor()
+        try:
+            cursor.execute("""
+                INSERT OR REPLACE INTO files (path, content, blob_data, mime_type, status, last_updated)
+                VALUES (?, ?, ?, ?, 'RAW', ?)
+            """, (path, content, blob, mime_type, time.time()))
+            
+            # Also register as a Graph Node immediately
+            node_id = path
+            cursor.execute("""
+                INSERT OR REPLACE INTO graph_nodes (id, type, label, data_json)
+                VALUES (?, ?, ?, ?)
+            """, (node_id, 'file', path, json.dumps({'mime': mime_type})))
+            
+            conn.commit()
+            return True
+        except Exception as e:
+            self.log_error(f"Failed to store {path}: {e}")
+            return False
+        finally:
+            conn.close()
+
+    def update_file_status(self, file_id: int, status: str, metadata: Dict = None):
+        """Promotes a file's status."""
+        conn = self._get_conn()
+        cursor = conn.cursor()
+        if metadata:
+            meta_json = json.dumps(metadata)
+            cursor.execute("UPDATE files SET status = ?, metadata = ? WHERE id = ?", (status, meta_json, file_id))
+        else:
+            cursor.execute("UPDATE files SET status = ? WHERE id = ?", (status, file_id))
+        conn.commit()
+        conn.close()
+
+    # --- [NEW] Graph Methods ---
+
+    def add_edge(self, source: str, target: str, weight: float = 1.0, relation: str = "dependency"):
+        """Wiries two nodes together."""
+        conn = self._get_conn()
+        try:
+            conn.execute("INSERT OR IGNORE INTO graph_edges (source, target, weight, relation) VALUES (?, ?, ?, ?)",
+                         (source, target, weight, relation))
+            conn.commit()
+        except Exception as e:
+            self.log_error(f"Edge Error: {e}")
+        finally:
+            conn.close()
+
+    def log_unresolved_import(self, source_file: str, import_name: str):
+        """Logs a broken link for the Validation Report."""
+        conn = self._get_conn()
+        conn.execute("INSERT INTO unresolved_imports (source_file, import_name, timestamp) VALUES (?, ?, ?)",
+                     (source_file, import_name, time.time()))
+        conn.commit()
+        conn.close()
+    
+    def get_pending_files(self, limit: int = 100) -> List[Dict]:
+        """Fetches files waiting for the Refinery."""
+        conn = self._get_conn()
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        rows = cursor.execute("SELECT id, path, content, mime_type FROM files WHERE status = 'RAW' LIMIT ?", (limit,)).fetchall()
+        conn.close()
+        return [dict(row) for row in rows]
+--------------------------------------------------------------------------------
+FILE: src\microservices\graph_engine.py
+--------------------------------------------------------------------------------
+import pygame
+import math
+import random
+
+# Initialize font module globally once
+pygame.font.init()
+
+class GraphRenderer:
+    def __init__(self, width, height, bg_color=(16, 16, 24)):
+        self.width = width
+        self.height = height
+        self.bg_color = bg_color
+        
+        self.surface = pygame.Surface((width, height))
+        
+        # Camera
+        self.cam_x = 0
+        self.cam_y = 0
+        self.zoom = 1.0
+        
+        # Assets
+        self.font = pygame.font.SysFont("Consolas", 12)
+        
+        # Data
+        self.nodes = [] 
+        self.links = []
+        
+        # Interaction
+        self.dragged_node_idx = None
+        self.hovered_node_idx = None
+        
+        # Physics State
+        self.settled = False
+
+    def resize(self, width, height):
+        self.width = width
+        self.height = height
+        self.surface = pygame.Surface((width, height))
+
+    def set_data(self, nodes, links):
+        self.nodes = nodes
+        self.links = links
+        self.settled = False # Wake up physics on new data
+        
+        # 1. Build an ID map so we can find parents
+        node_map = {node['id']: node for node in self.nodes}
+
+        for n in self.nodes:
+            # GNN Injection: Use pre-calculated layout if available
+            if 'gnn_x' in n and 'gnn_y' in n:
+                n['x'] = n['gnn_x'] * self.width
+                n['y'] = n['gnn_y'] * self.height
+
+            elif 'x' not in n:
+                # SMART SPAWN: If I am a satellite, spawn near my planet
+                parent_id = n.get('meta', {}).get('parent')
+                if parent_id and parent_id in node_map and 'x' in node_map[parent_id]:
+                    p = node_map[parent_id]
+                    angle = random.random() * 6.28
+                    dist = 30
+                    n['x'] = p['x'] + math.cos(angle) * dist
+                    n['y'] = p['y'] + math.sin(angle) * dist
+                else:
+                    # Random spawn for Files
+                    n['x'] = random.randint(int(self.width*0.2), int(self.width*0.8))
+                    n['y'] = random.randint(int(self.height*0.2), int(self.height*0.8))
+            if 'vx' not in n: n['vx'] = 0
+            if 'vy' not in n: n['vy'] = 0
+            
+            # Semantic Coloring
+            if n.get('type') == 'file':
+                n['_color'] = (0, 122, 204) # Blue
+                n['_radius'] = 6
+            elif n.get('type') == 'web':
+                n['_color'] = (204, 0, 122) # Purple/Pink
+                n['_radius'] = 7
+            elif n.get('type') == 'chunk':
+                n['_color'] = (100, 200, 100) # Satellite Green
+                n['_radius'] = 3
+            else:
+                n['_color'] = (160, 32, 240) # Default
+                n['_radius'] = 6
+
+    # --- INPUT HANDLING ---
+    
+    def screen_to_world(self, sx, sy):
+        cx, cy = self.width / 2, self.height / 2
+        wx = (sx - cx) / self.zoom + cx - self.cam_x
+        wy = (sy - cy) / self.zoom + cy - self.cam_y
+        return wx, wy
+
+    def get_node_at(self, sx, sy):
+        wx, wy = self.screen_to_world(sx, sy)
+        for n in self.nodes:
+            dist = math.hypot(n['x'] - wx, n['y'] - wy)
+            if dist < n['_radius'] * 2:
+                return n
+        return None
+
+    def handle_mouse_down(self, x, y):
+        wx, wy = self.screen_to_world(x, y)
+        for i, n in enumerate(self.nodes):
+            dist = math.hypot(n['x'] - wx, n['y'] - wy)
+            if dist < n['_radius'] * 2:
+                self.dragged_node_idx = i
+                self.settled = False # Wake up physics
+                return True
+        return False
+
+    def handle_mouse_move(self, x, y, is_dragging):
+        wx, wy = self.screen_to_world(x, y)
+        
+        if is_dragging and self.dragged_node_idx is not None:
+            node = self.nodes[self.dragged_node_idx]
+            node['x'] = wx
+            node['y'] = wy
+            node['vx'] = 0
+            node['vy'] = 0
+            self.settled = False
+        else:
+            prev_hover = self.hovered_node_idx
+            self.hovered_node_idx = None
+            for i, n in enumerate(self.nodes):
+                dist = math.hypot(n['x'] - wx, n['y'] - wy)
+                if dist < n['_radius'] * 2:
+                    self.hovered_node_idx = i
+                    break
+            return prev_hover != self.hovered_node_idx
+
+    def handle_mouse_up(self):
+        self.dragged_node_idx = None
+
+    def pan(self, dx, dy):
+        self.cam_x += dx / self.zoom
+        self.cam_y += dy / self.zoom
+
+    def zoom_camera(self, amount, mouse_x, mouse_y):
+        self.zoom *= amount
+        self.zoom = max(0.1, min(self.zoom, 5.0))
+
+    # --- PHYSICS (Damped) ---
+
+    def step_physics(self):
+        if not self.nodes or self.settled: return
+
+        REPULSION = 1000
+        ATTRACTION = 0.01
+        CENTER_GRAVITY = 0.01
+        DAMPING = 0.85 # Increased damping to settle faster
+        
+        cx, cy = self.width / 2, self.height / 2
+        total_kinetic_energy = 0
+
+        for i, a in enumerate(self.nodes):
+            if i == self.dragged_node_idx: continue
+
+            # LOD: Freeze satellites if zoomed out
+            if self.zoom < 1.2 and a.get('type') == 'chunk':
+                a['vx'] = 0
+                a['vy'] = 0
+                continue
+            
+            fx, fy = 0, 0
+            
+            # 1. Gravity (Center pull)
+            fx += (cx - a['x']) * CENTER_GRAVITY
+            fy += (cy - a['y']) * CENTER_GRAVITY
+
+            # 2. Repulsion
+            for j, b in enumerate(self.nodes):
+                if i == j: continue
+                dx = a['x'] - b['x']
+                dy = a['y'] - b['y']
+                dist_sq = dx*dx + dy*dy
+                if dist_sq < 0.1: dist_sq = 0.1
+                
+                # Performance opt: Ignore far away nodes
+                if dist_sq > 25000: continue 
+
+                f = REPULSION / dist_sq
+                dist = math.sqrt(dist_sq)
+                fx += (dx / dist) * f
+                fy += (dy / dist) * f
+
+            a['vx'] = (a['vx'] + fx) * DAMPING
+            a['vy'] = (a['vy'] + fy) * DAMPING
+
+        # 3. Attraction (Links)
+        for u, v in self.links:
+            a = self.nodes[u]
+            b = self.nodes[v]
+            dx = b['x'] - a['x']
+            dy = b['y'] - a['y']
+            fx = dx * ATTRACTION
+            fy = dy * ATTRACTION
+            
+            if u != self.dragged_node_idx:
+                a['vx'] += fx
+                a['vy'] += fy
+            if v != self.dragged_node_idx:
+                b['vx'] -= fx
+                b['vy'] -= fy
+
+        # 4. Apply & Measure Energy
+        for i, n in enumerate(self.nodes):
+            if i == self.dragged_node_idx: continue
+            n['x'] += n['vx']
+            n['y'] += n['vy']
+            total_kinetic_energy += (abs(n['vx']) + abs(n['vy']))
+
+        # 5. Sleep Threshold
+        if total_kinetic_energy < 0.5:
+            self.settled = True
+
+    # --- RENDERING ---
+
+    def get_image_bytes(self):
+        self.surface.fill(self.bg_color)
+        
+        cx, cy = self.width / 2, self.height / 2
+        def to_screen(x, y):
+            sx = (x - cx + self.cam_x) * self.zoom + cx
+            sy = (y - cy + self.cam_y) * self.zoom + cy
+            return int(sx), int(sy)
+
+        # Links
+        for u, v in self.links:
+            if self.zoom < 1.2:
+                if self.nodes[u].get('type') == 'chunk' or self.nodes[v].get('type') == 'chunk':
+                    continue
+
+            start = to_screen(self.nodes[u]['x'], self.nodes[u]['y'])
+            end = to_screen(self.nodes[v]['x'], self.nodes[v]['y'])
+            pygame.draw.line(self.surface, (60, 60, 80), start, end, 1)
+
+        # Nodes
+        for i, n in enumerate(self.nodes):
+            # LOD: Hide chunks if zoomed out
+            if self.zoom < 1.2 and n.get('type') == 'chunk':
+                continue
+
+            sx, sy = to_screen(n['x'], n['y'])
+            if sx < -20 or sx > self.width + 20 or sy < -20 or sy > self.height + 20: continue
+                
+            rad = int(n['_radius'] * self.zoom)
+            col = n['_color']
+            
+            if i == self.hovered_node_idx or i == self.dragged_node_idx:
+                pygame.draw.circle(self.surface, (255, 255, 255), (sx, sy), rad + 2)
+            
+            pygame.draw.circle(self.surface, col, (sx, sy), rad)
+            
+            if self.zoom > 0.8 or i == self.hovered_node_idx:
+                text = self.font.render(n['label'], True, (200, 200, 200))
+                self.surface.blit(text, (sx + rad + 4, sy - 6))
+
+        return pygame.image.tostring(self.surface, 'RGB')
+
+
+--------------------------------------------------------------------------------
+FILE: src\microservices\graph_view.py
+--------------------------------------------------------------------------------
+import tkinter as tk
+from tkinter import ttk
+from PIL import Image, ImageTk
+import sqlite3
+import json
+import os
+from .graph_engine import GraphRenderer
+
+class GraphView(ttk.Frame):
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.pack(fill="both", expand=True)
+        
+        # UI Container
+        self.canvas_lbl = tk.Label(self, bg="#101018", cursor="crosshair")
+        self.canvas_lbl.pack(fill="both", expand=True)
+        
+        # Engine Init
+        self.engine = GraphRenderer(800, 600)
+        self.photo = None 
+        
+        # Input State
+        self.last_mouse_x = 0
+        self.last_mouse_y = 0
+        self.is_dragging_node = False
+        self.is_panning = False
+
+        # Bindings
+        self.canvas_lbl.bind('<Button-1>', self.on_click)
+        self.canvas_lbl.bind('<Double-Button-1>', self.on_double_click)
+        self.canvas_lbl.bind('<ButtonRelease-1>', self.on_release)
+        self.canvas_lbl.bind('<B1-Motion>', self.on_drag)
+        self.canvas_lbl.bind('<Motion>', self.on_hover)
+        self.canvas_lbl.bind('<Button-4>', lambda e: self.on_zoom(1.1)) # Linux Scroll Up
+        self.canvas_lbl.bind('<Button-5>', lambda e: self.on_zoom(0.9)) # Linux Scroll Down
+        self.canvas_lbl.bind('<MouseWheel>', self.on_windows_scroll)    # Windows Scroll
+        self.canvas_lbl.bind('<Configure>', self.on_resize)
+        
+        # Start the Heartbeat
+        self.animate()
+
+    def load_from_db(self, db_path):
+        """
+        Loads graph data from SQLite.
+        Does NOT block the UI. The physics engine will settle the nodes frame-by-frame.
+        """
+        if not os.path.exists(db_path): return
+        
+        try:
+            conn = sqlite3.connect(db_path)
+            cursor = conn.cursor()
+            
+            # [cite_start]Fetch Nodes [cite: 198]
+            db_nodes = cursor.execute("SELECT id, type, label, data_json FROM graph_nodes").fetchall()
+            
+            # [cite_start]Fetch Edges [cite: 198]
+            db_edges = cursor.execute("SELECT source, target FROM graph_edges").fetchall()
+            
+            conn.close()
+        except Exception as e:
+            print(f"Graph Load Error: {e}")
+            return
+
+        # Format for Engine
+        id_to_index = {}
+        formatted_nodes = []
+        
+        for idx, row in enumerate(db_nodes):
+            node_id, n_type, label, raw_json = row
+            meta = {}
+            try:
+                if raw_json: meta = json.loads(raw_json)
+            except: pass
+            
+            id_to_index[node_id] = idx
+            formatted_nodes.append({'id': node_id, 'type': n_type, 'label': label, 'meta': meta})
+
+        formatted_links = []
+        for src, tgt in db_edges:
+            if src in id_to_index and tgt in id_to_index:
+                formatted_links.append((id_to_index[src], id_to_index[tgt]))
+
+        # Inject Data - The Physics Engine handles the "Explosion" logic internally
+        self.engine.set_data(formatted_nodes, formatted_links)
+
+    def on_resize(self, event):
+        if event.width > 1 and event.height > 1:
+            self.engine.resize(event.width, event.height)
+
+    def on_double_click(self, event):
+        # Zoom in on the node we clicked
+        hit_node = self.engine.get_node_at(event.x, event.y)
+        if hit_node:
+            # Center camera on node and zoom in
+            self.engine.cam_x = hit_node['x']
+            self.engine.cam_y = hit_node['y']
+            self.engine.zoom = 2.0
+            self.engine.settled = False
+
+    def on_click(self, event):
+        self.last_mouse_x = event.x
+        self.last_mouse_y = event.y
+        
+        # Check if we clicked a node
+        hit = self.engine.handle_mouse_down(event.x, event.y)
+        if hit:
+            self.is_dragging_node = True
+        else:
+            self.is_panning = True
+
+    def on_release(self, event):
+        self.engine.handle_mouse_up()
+        self.is_dragging_node = False
+        self.is_panning = False
+
+    def on_drag(self, event):
+        if self.is_dragging_node:
+            self.engine.handle_mouse_move(event.x, event.y, True)
+        elif self.is_panning:
+            # Camera Pan
+            dx = event.x - self.last_mouse_x
+            dy = event.y - self.last_mouse_y
+            self.engine.pan(dx, dy)
+            
+        self.last_mouse_x = event.x
+        self.last_mouse_y = event.y
+
+    def on_hover(self, event):
+        if not self.is_dragging_node:
+            self.engine.handle_mouse_move(event.x, event.y, False)
+
+    def on_zoom(self, amount):
+        self.engine.zoom_camera(amount, 0, 0)
+        self.engine.settled = False # Wake up physics on zoom
+
+    def on_windows_scroll(self, event):
+        if event.delta > 0: self.on_zoom(1.1)
+        else: self.on_zoom(0.9)
+
+    def animate(self):
+        """
+        The Heartbeat Loop. 
+        Runs at ~30 FPS. Handles Physics + Rendering.
+        """
+        # 1. Step Physics (Micro-calculations)
+        self.engine.step_physics()
+        
+        # 2. Render to Buffer
+        raw_data = self.engine.get_image_bytes()
+        
+        # 3. Blit to Screen
+        if raw_data:
+            img = Image.frombytes('RGB', (self.engine.width, self.engine.height), raw_data)
+            self.photo = ImageTk.PhotoImage(img)
+            self.canvas_lbl.configure(image=self.photo)
+        
+        # 4. Loop
+        self.after(30, self.animate)
+--------------------------------------------------------------------------------
+FILE: src\microservices\intake_service.py
+--------------------------------------------------------------------------------
+import os
+import mimetypes
+from pathlib import Path
+from typing import List, Dict
+from .base_service import BaseService
+from .cartridge_service import CartridgeService
+
+class IntakeService(BaseService):
+    """
+    The Vacuum.
+    Crawls local directories and ingests raw files into the Cartridge.
+    Performs NO analysis, only storage.
+    """
+
+    # Files to absolutely ignore
+    IGNORE_DIRS = {'.git', '__pycache__', 'node_modules', '.venv', 'dist', 'build', '.idea', '.vscode'}
+    IGNORE_EXTS = {'.pyc', '.pyd', '.db', '.sqlite', '.sqlite3'}
+
+    def __init__(self, cartridge_service: CartridgeService):
+        super().__init__("IntakeService")
+        self.cartridge = cartridge_service
+
+    def scan_directory(self, root_path: str) -> Dict[str, int]:
+        """
+        Recursively walks the directory and stores everything in the DB.
+        Returns a report of what it did.
+        """
+        root = Path(root_path).resolve()
+        stats = {"text": 0, "binary": 0, "skipped": 0, "total": 0}
+
+        self.log_info(f"Starting scan of {root}...")
+
+        for current_dir, dirs, files in os.walk(root):
+            # In-place modification of dirs to prune IGNORED directories
+            dirs[:] = [d for d in dirs if d not in self.IGNORE_DIRS]
+
+            for filename in files:
+                file_path = Path(current_dir) / filename
+                
+                # Check extension blacklist
+                if file_path.suffix.lower() in self.IGNORE_EXTS:
+                    stats["skipped"] += 1
+                    continue
+
+                # Calculate the "Virtual Path" (relative to project root)
+                try:
+                    vfs_path = file_path.relative_to(root).as_posix()
+                except ValueError:
+                    vfs_path = filename
+
+                # Attempt Ingestion
+                if self._ingest_file(file_path, vfs_path, stats):
+                    stats["total"] += 1
+                else:
+                    stats["skipped"] += 1
+
+        self.log_info(f"Scan Complete. {stats}")
+        return stats
+
+    def _ingest_file(self, real_path: Path, vfs_path: str, stats: Dict) -> bool:
+        """Reads the file and pushes to CartridgeService."""
+        mime_type, _ = mimetypes.guess_type(real_path)
+        if not mime_type:
+            mime_type = "application/octet-stream"
+
+        # Strategy: Try to read as Text first. If that fails, treat as Binary.
+        content = None
+        blob = None
+        
+        try:
+            # Try Text
+            with open(real_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+            stats["text"] += 1
+        except UnicodeDecodeError:
+            # Fallback to Binary
+            try:
+                with open(real_path, 'rb') as f:
+                    blob = f.read()
+                stats["binary"] += 1
+                # Ensure mime reflects binary if we guessed wrong
+                if mime_type.startswith("text"): 
+                    mime_type = "application/octet-stream"
+            except Exception as e:
+                self.log_error(f"Access denied or read error {vfs_path}: {e}")
+                return False
+
+        # Store in DB
+        return self.cartridge.store_raw_file(
+            path=vfs_path,
+            content=content,
+            blob=blob,
+            mime_type=mime_type
+        )
+
+--------------------------------------------------------------------------------
+FILE: src\microservices\neural_service.py
+--------------------------------------------------------------------------------
+import requests
+import json
+import concurrent.futures
+from typing import Optional, Dict, Any, List
+from .base_service import BaseService
+
+# Configuration constants
+OLLAMA_API_URL = "http://localhost:11434/api"
+
+class NeuralService(BaseService):
+    def __init__(self, max_workers: int = 4):
+        super().__init__("NeuralService")
+        self.max_workers = max_workers
+        # Default configs
+        self.config = {
+            "fast": "qwen2.5-coder:1.5b-cpu",
+            "smart": "qwen2.5:3b-cpu",
+            "embed": "mxbai-embed-large:latest-cpu"
+        }
+
+    def update_models(self, fast_model: str, smart_model: str, embed_model: str):
+        """Called by the UI Settings Modal to change models on the fly."""
+        self.config["fast"] = fast_model
+        self.config["smart"] = smart_model
+        self.config["embed"] = embed_model
+        self.log_info(f"Models Updated: Fast={fast_model}, Smart={smart_model}")
+
+    def get_available_models(self) -> List[str]:
+        """Fetches list from Ollama for the UI dropdown."""
+        try:
+            res = requests.get(f"{OLLAMA_API_URL}/tags", timeout=2)
+            if res.status_code == 200:
+                return [m['name'] for m in res.json().get('models', [])]
+        except:
+            return []
+        return []
+
+    def check_connection(self) -> bool:
+        """Pings Ollama to see if it's alive."""
+        try:
+            requests.get(f"{OLLAMA_API_URL}/tags", timeout=2)
+            return True
+        except requests.RequestException:
+            self.log_error("Ollama connection failed. Is 'ollama serve' running?")
+            return False
+
+    def get_embedding(self, text: str) -> Optional[List[float]]:
+        """Generates a vector using the CPU embedder."""
+        try:
+            res = requests.post(
+                f"{OLLAMA_API_URL}/embeddings",
+                json={"model": self.config["embed"], "prompt": text},
+                timeout=30
+            )
+            if res.status_code == 200:
+                return res.json().get("embedding")
+        except Exception as e:
+            self.log_error(f"Embedding failed: {e}")
+        return None
+
+    def request_inference(self, prompt: str, tier: str = "fast", format_json: bool = False) -> str:
+        """
+        Synchronous inference request.
+        tier: 'fast' (1.5b-cpu), 'smart' (3b-cpu), or 'architect' (7b-gpu)
+        """
+        model = self.config.get(tier, self.config["fast"])
+        payload = {
+            "model": model,
+            "prompt": prompt,
+            "stream": False
+        }
+        if format_json:
+            payload["format"] = "json"
+
+        try:
+            res = requests.post(f"{OLLAMA_API_URL}/generate", json=payload, timeout=60)
+            if res.status_code == 200:
+                return res.json().get("response", "").strip()
+        except Exception as e:
+            self.log_error(f"Inference ({tier}) failed: {e}")
+        return ""
+
+    def process_parallel(self, items: List[Any], worker_func) -> List[Any]:
+        """
+        Helper to run a function across many items using the ThreadPool.
+        Useful for batch ingestion.
+        """
+        results = []
+        with concurrent.futures.ThreadPoolExecutor(max_workers=self.max_workers) as executor:
+            # worker_func should take a single item and return a result
+            futures = {executor.submit(worker_func, item): item for item in items}
+            for future in concurrent.futures.as_completed(futures):
+                try:
+                    results.append(future.result())
+                except Exception as e:
+                    self.log_error(f"Worker task failed: {e}")
+        return results
+
+
+--------------------------------------------------------------------------------
+FILE: src\microservices\refinery_service.py
+--------------------------------------------------------------------------------
+import json
+import re
+import os
+import sqlite3
+from typing import Dict, Any, Optional, List
+from .base_service import BaseService
+from .cartridge_service import CartridgeService
+from .neural_service import NeuralService
+from .semantic_chunker import SemanticChunker
+
+class SynapseWeaver:
+    """
+    Helper class to extract dependencies from code.
+    Moved from _NeoCORTEX to ensure silent graph building.
+    """
+    def __init__(self):
+        # Regex for Python imports
+        self.py_import = re.compile(r'^\s*(?:from|import)\s+([\w\.]+)')
+        # Regex for JS/TS imports
+        self.js_import = re.compile(r'(?:import\s+.*?from\s+[\'"]|require\([\'"])([\.\/\w\-_]+)[\'"]')
+
+    def extract(self, content: str, filename: str) -> List[str]:
+        deps = set()
+        if not content: return []
+        
+        lines = content.splitlines()
+        is_py = filename.endswith('.py')
+        is_js = filename.endswith(('.js', '.ts', '.jsx', '.tsx'))
+
+        if not (is_py or is_js):
+            return []
+
+        for line in lines:
+            match = None
+            if is_py:
+                match = self.py_import.match(line)
+            elif is_js:
+                match = self.js_import.search(line)
+            
+            if match:
+                # Clean up the import (e.g., 'src.utils' -> 'utils')
+                raw = match.group(1)
+                clean = raw.split('.')[-1].split('/')[-1]
+                deps.add(clean)
+        
+        return list(deps)
+
+class RefineryService(BaseService):
+    """
+    The Night Shift (v3 - Graph Aware).
+    Chunks code, generates vectors, and WEAVES connections automatically.
+    """
+
+    def __init__(self, cartridge: CartridgeService, neural: NeuralService):
+        super().__init__("RefineryService")
+        self.cartridge = cartridge
+        self.neural = neural
+        self.chunker = SemanticChunker()
+        self.weaver = SynapseWeaver()
+
+    def process_pending_files(self, batch_size: int = 10) -> int:
+        pending = self.cartridge.get_pending_files(limit=batch_size)
+        if not pending: return 0
+
+        self.log_info(f"Refining {len(pending)} files (Chunking + Vectorizing + Weaving)...")
+        # We process serially or parallel. For graph weaving, serial is safer for SQLite locking,
+        # but since we are just reading/writing, parallel is okay if SQLite handles concurrency well.
+        # Sticking to parallel for speed.
+        results = self.neural.process_parallel(pending, self._process_single_file)
+        return len(results)
+
+    def _process_single_file(self, file_row: Dict) -> bool:
+        file_id = file_row["id"]
+        path = file_row["path"]
+        content = file_row["content"]
+        
+        if not content:
+            self.cartridge.update_file_status(file_id, "SKIPPED_BINARY")
+            return True
+
+        try:
+            # --- 1. Semantic Chunking ---
+            chunks = self.chunker.chunk_file(content, path)
+            
+            # --- 2. Vectorization ---
+            conn = self.cartridge._get_conn()
+            cursor = conn.cursor()
+            
+            for i, chunk in enumerate(chunks):
+                # Get Vector from CPU Embedder
+                vector = self.neural.get_embedding(chunk.content)
+                vec_blob = json.dumps(vector).encode('utf-8') if vector else None
+                
+                cursor.execute("""
+                    INSERT INTO chunks (file_id, chunk_index, content, embedding, name, type, start_line, end_line)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                """, (file_id, i, chunk.content, vec_blob, chunk.name, chunk.type, chunk.start_line, chunk.end_line))
+                
+                # Create a "Satellite Node" for important chunks (Classes/Functions)
+                if chunk.type in ['class', 'function']:
+                    chunk_node_id = f"{path}::{chunk.name}"
+                    cursor.execute("""
+                        INSERT OR REPLACE INTO graph_nodes (id, type, label, data_json)
+                        VALUES (?, 'chunk', ?, ?)
+                    """, (chunk_node_id, chunk.name, json.dumps({'parent': path})))
+                    
+                    # Link Chunk -> File
+                    cursor.execute("INSERT OR IGNORE INTO graph_edges (source, target, relation) VALUES (?, ?, 'defined_in')", 
+                                   (chunk_node_id, path))
+
+            conn.commit()
+            conn.close()
+
+            # --- 3. Weaving (Dependency Graph) ---
+            self._weave_dependencies(path, content)
+
+            # --- 4. Metadata Enrichment ---
+            meta = {}
+            if path.endswith(".py"):
+                meta = self._analyze_python(content)
+            
+            self.cartridge.update_file_status(file_id, "ENRICHED", metadata=meta)
+            return True
+
+        except Exception as e:
+            self.log_error(f"Refinery failed on {path}: {e}")
+            self.cartridge.update_file_status(file_id, "ERROR", metadata={"error": str(e)})
+            return False
+
+    def _weave_dependencies(self, source_path: str, content: str):
+        """Finds imports and attempts to link them to existing files in the DB."""
+        dependencies = self.weaver.extract(content, source_path)
+        if not dependencies: return
+
+        conn = self.cartridge._get_conn()
+        cursor = conn.cursor()
+        
+        for dep in dependencies:
+            # Search for the dependency in the DB (fuzzy match on filename)
+            # We look for a file that ends with 'dep.py' or 'dep.js'
+            # This is a heuristic but efficient.
+            query = f"%/{dep}.%" # e.g. %/utils.% matches src/utils.py
+            
+            # Also try exact match for flat directories
+            query_exact = f"{dep}.%"
+
+            cursor.execute("SELECT path FROM files WHERE path LIKE ? OR path LIKE ?", (query, query_exact))
+            result = cursor.fetchone()
+
+            if result:
+                target_path = result[0]
+                if target_path != source_path:
+                    # Found a link!
+                    self.cartridge.add_edge(source_path, target_path, relation="imports")
+            else:
+                # Broken Link / External Library
+                self.cartridge.log_unresolved_import(source_path, dep)
+
+        conn.close()
+
+    def _analyze_python(self, content: str) -> Dict:
+        """Ask 1.5b-coder for a structural summary."""
+        prompt = f"""
+        Analyze this Python code. Return JSON with:
+        - "summary": "One sentence description"
+        - "complexity": "Low/Medium/High"
+        
+        Code:
+        {content[:2000]}
+        """
+        response = self.neural.request_inference(prompt, tier="fast", format_json=True)
+        try: return json.loads(response)
+        except: return {"summary": "Analysis failed"}
+--------------------------------------------------------------------------------
+FILE: src\microservices\scanner.py
+--------------------------------------------------------------------------------
+import os
+import time
+import requests
+from urllib.parse import urljoin, urlparse
+from typing import Dict, List, Any, Optional
+
+# Try imports for Web/PDF support
+try:
+    from bs4 import BeautifulSoup
+except ImportError:
+    BeautifulSoup = None
+
+class ScannerMS:
+    """
+    The Scanner: Walks file systems OR crawls websites (Depth-Aware).
+    """
+    
+    def __init__(self):
+        self.IGNORE_DIRS = {
+            '.git', '__pycache__', 'node_modules', 'venv', '.env', 
+            '.idea', '.vscode', 'dist', 'build', 'coverage', 'site-packages'
+        }
+        self.BINARY_EXTENSIONS = {
+            '.pyc', '.pyd', '.exe', '.dll', '.so', '.dylib', '.class', 
+            '.jpg', '.jpeg', '.png', '.gif', '.ico', 
+            '.zip', '.tar', '.gz', '.docx', '.xlsx',
+            '.db', '.sqlite', '.sqlite3'
+        }
+        self.visited_urls = set()
+
+    def is_binary(self, file_path: str) -> bool:
+        _, ext = os.path.splitext(file_path)
+        if ext.lower() in self.BINARY_EXTENSIONS: return True
+        return False
+
+    def scan_directory(self, root_path: str, web_depth: int = 0) -> Optional[Dict[str, Any]]:
+        """
+        Main Entry Point.
+        :param root_path: File path or URL.
+        :param web_depth: How many links deep to crawl (0 = single page).
+        """
+        # 1. Web Crawl Mode
+        if root_path.startswith("http://") or root_path.startswith("https://"):
+            self.visited_urls.clear()
+            return self._crawl_web_recursive(root_path, depth=web_depth, origin_domain=urlparse(root_path).netloc)
+
+        # 2. Local File System Mode
+        target = os.path.abspath(root_path)
+        if not os.path.exists(target): return None
+        
+        if not os.path.isdir(target): 
+            return self._create_node(target, is_dir=False)
+            
+        return self._scan_fs_recursive(target)
+
+    # --- Web Logic ---
+    def _crawl_web_recursive(self, url: str, depth: int, origin_domain: str) -> Dict[str, Any]:
+        """
+        Recursively fetches links.
+        """
+        node = {
+            'text': url, 
+            'path': url, 
+            'type': 'web', 
+            'children': [], 
+            'checked': True
+        }
+        
+        if depth < 0 or url in self.visited_urls: return node
+        self.visited_urls.add(url)
+
+        if depth > 0 and BeautifulSoup:
+            try:
+                # Polite Delay
+                time.sleep(0.1)
+                resp = requests.get(url, timeout=5)
+                if resp.status_code == 200:
+                    soup = BeautifulSoup(resp.content, 'html.parser')
+                    for link in soup.find_all('a', href=True):
+                        full_url = urljoin(url, link['href'])
+                        parsed = urlparse(full_url)
+                        
+                        # Filter: Only same domain, valid schemes
+                        if parsed.netloc == origin_domain and parsed.scheme in ['http', 'https']:
+                            if full_url not in self.visited_urls:
+                                child_node = self._crawl_web_recursive(full_url, depth - 1, origin_domain)
+                                node['children'].append(child_node)
+            except Exception as e:
+                node['error'] = str(e)
+                
+        return node
+
+    # --- File System Logic ---
+    def _scan_fs_recursive(self, current_path: str) -> Dict[str, Any]:
+        node = self._create_node(current_path, is_dir=True)
+        node['children'] = []
+        try:
+            with os.scandir(current_path) as it:
+                entries = sorted(it, key=lambda e: (not e.is_dir(), e.name.lower()))
+                for entry in entries:
+                    if entry.is_dir() and entry.name in self.IGNORE_DIRS: continue
+                    if entry.name.startswith('.'): continue
+
+                    if entry.is_dir():
+                        child = self._scan_fs_recursive(entry.path)
+                        if child: node['children'].append(child)
+                    else:
+                        node['children'].append(self._create_node(entry.path, is_dir=False))
+        except PermissionError:
+            node['error'] = "Access Denied"
+        return node
+
+    def _create_node(self, path: str, is_dir: bool) -> Dict[str, Any]:
+        name = os.path.basename(path)
+        node = {'text': name, 'path': path, 'type': 'folder' if is_dir else 'file', 'checked': False}
+        if not is_dir and self.is_binary(path): node['type'] = 'binary'
+        return node
+
+    def flatten_tree(self, tree_node: Dict[str, Any]) -> List[str]:
+        files = []
+        if tree_node['type'] in ['file', 'web']:
+            files.append(tree_node['path'])
+        elif 'children' in tree_node:
+            for child in tree_node['children']:
+                files.extend(self.flatten_tree(child))
+        return files
+--------------------------------------------------------------------------------
+FILE: src\microservices\semantic_chunker.py
+--------------------------------------------------------------------------------
+import ast
+from dataclasses import dataclass
+from typing import List
+
+@dataclass
+class CodeChunk:
+    name: str          # e.g., "class AuthMS"
+    type: str          # "class", "function", "text"
+    content: str       # The raw source
+    start_line: int
+    end_line: int
+    docstring: str = "" # Captured separately for high-quality RAG
+
+class SemanticChunker:
+    """
+    Intelligent Code Splitter.
+    Parses source code into logical units (Classes, Functions) 
+    rather than arbitrary text windows.
+    """
+    
+    def chunk_file(self, content: str, filename: str) -> List[CodeChunk]:
+        if filename.endswith(".py"):
+            return self._chunk_python(content)
+        return self._chunk_generic(content)
+
+    def _chunk_python(self, source: str) -> List[CodeChunk]:
+        chunks = []
+        try:
+            tree = ast.parse(source)
+            lines = source.splitlines(keepends=True)
+            
+            def get_segment(node):
+                start = node.lineno - 1
+                end = node.end_lineno if hasattr(node, 'end_lineno') else start + 1
+                return "".join(lines[start:end]), start + 1, end
+
+            for node in tree.body:
+                if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                    text, s, e = get_segment(node)
+                    doc = ast.get_docstring(node) or ""
+                    chunks.append(CodeChunk(
+                        name=f"def {node.name}", type="function", 
+                        content=text, start_line=s, end_line=e, docstring=doc
+                    ))
+                elif isinstance(node, ast.ClassDef):
+                    text, s, e = get_segment(node)
+                    doc = ast.get_docstring(node) or ""
+                    chunks.append(CodeChunk(
+                        name=f"class {node.name}", type="class", 
+                        content=text, start_line=s, end_line=e, docstring=doc
+                    ))
+
+            # Fallback: If no classes/functions found (e.g., script file), treat as generic
+            if not chunks:
+                return self._chunk_generic(source)
+                
+        except SyntaxError:
+            return self._chunk_generic(source)
+            
+        return chunks
+
+    def _chunk_generic(self, text: str, window_size: int = 1500) -> List[CodeChunk]:
+        """Sliding window for non-code files."""
+        chunks = []
+        lines = text.splitlines(keepends=True)
+        current_chunk = []
+        current_size = 0
+        chunk_idx = 1
+        start_line = 1
+        
+        for i, line in enumerate(lines):
+            current_chunk.append(line)
+            current_size += len(line)
+            
+            if current_size >= window_size:
+                chunks.append(CodeChunk(
+                    name=f"Chunk {chunk_idx}", type="text_block",
+                    content="".join(current_chunk), start_line=start_line, end_line=i + 1
+                ))
+                current_chunk = []
+                current_size = 0
+                chunk_idx += 1
+                start_line = i + 2
+                
+        if current_chunk:
+            chunks.append(CodeChunk(
+                name=f"Chunk {chunk_idx}", type="text_block",
+                content="".join(current_chunk), start_line=start_line, end_line=len(lines)
+            ))
+            
+        return chunks
+
+--------------------------------------------------------------------------------
+FILE: src\microservices\thought_stream.py
+--------------------------------------------------------------------------------
+import tkinter as tk
+from tkinter import ttk
+import datetime
+
+class ThoughtStream(ttk.Frame):
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.header = ttk.Label(self, text="NEURAL INSPECTOR", font=("Consolas", 10, "bold"))
+        self.header.pack(fill="x", padx=5, pady=5)
+        
+        self.canvas = tk.Canvas(self, bg="#13131f", highlightthickness=0)
+        self.scrollbar = ttk.Scrollbar(self, orient="vertical", command=self.canvas.yview)
+        self.scrollable_frame = tk.Frame(self.canvas, bg="#13131f")
+        
+        self.scrollable_frame.bind("<Configure>", lambda e: self.canvas.configure(scrollregion=self.canvas.bbox("all")))
+        self.canvas.create_window((0, 0), window=self.scrollable_frame, anchor="nw", width=340)
+        self.canvas.configure(yscrollcommand=self.scrollbar.set)
+        
+        self.canvas.pack(side="left", fill="both", expand=True)
+        self.scrollbar.pack(side="right", fill="y")
+
+    def add_thought_bubble(self, filename, chunk_id, content, vector_preview, color):
+        bubble = tk.Frame(self.scrollable_frame, bg="#1a1a25", highlightbackground="#444", highlightthickness=1)
+        bubble.pack(fill="x", padx=5, pady=5)
+        
+        ts = datetime.datetime.now().strftime("%H:%M:%S")
+        tk.Label(bubble, text=f"{filename} #{chunk_id} [{ts}]", fg="#007ACC", bg="#1a1a25", font=("Consolas", 8)).pack(anchor="w", padx=5, pady=2)
+        
+        snippet = content[:400] + "..." if len(content) > 400 else content
+        tk.Label(bubble, text=snippet, fg="#ccc", bg="#10101a", font=("Consolas", 8), justify="left", wraplength=300).pack(fill="x", padx=5, pady=2)
+        
+        self._draw_sparkline(bubble, vector_preview, color)
+
+    def _draw_sparkline(self, parent, vector, color):
+        if not vector: return
+        h = 30
+        w = 300
+        cv = tk.Canvas(parent, height=h, width=w, bg="#1a1a25", highlightthickness=0)
+        cv.pack(padx=5, pady=2)
+        bar_w = w / len(vector)
+        for i, val in enumerate(vector):
+            mag = abs(val) 
+            bar_h = mag * h
+            x0 = i * bar_w
+            y0 = h - bar_h
+            x1 = x0 + bar_w
+            y1 = h
+            cv.create_rectangle(x0, y0, x1, y1, fill=color, outline="")
