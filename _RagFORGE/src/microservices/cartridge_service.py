@@ -170,9 +170,12 @@ class CartridgeService(BaseService):
             self.set_manifest("content_stats", {
                 "chunks": {"count": 0},
                 "vector_index": {
-                    "enabled": True,
+                    # Don't assume sqlite-vec is available until proven.
+                    "enabled": False,
                     "table": "vec_items",
-                    "dims": 0
+                    "backend": "sqlite-vec",
+                    "dims": 0,
+                    "status": "unknown"
                 },
                 "graph": {
                     "nodes": 0,
@@ -202,6 +205,20 @@ class CartridgeService(BaseService):
                     "raw_file_content_query": "SELECT content, blob_data, mime_type FROM files WHERE vfs_path=?",
                     "chunks_by_file_query": "SELECT chunk_index, name, type, start_line, end_line, content FROM chunks WHERE file_id=? ORDER BY chunk_index",
                     "vector_search": "sqlite-vec on vec_items if available"
+                },
+                "python_helper_api": {
+                    "note": "Optional convenience layer for agents running inside Python. For non-Python consumers, use the SQL queries above.",
+                    "methods": [
+                        "CartridgeService.get_status_flags",
+                        "CartridgeService.list_files",
+                        "CartridgeService.list_directories",
+                        "CartridgeService.get_file_record",
+                        "CartridgeService.get_directory_tree",
+                        "CartridgeService.get_status_summary",
+                        "CartridgeService.add_node",
+                        "CartridgeService.add_edge",
+                        "CartridgeService.search_embeddings"
+                    ]
                 }
             })
 
@@ -253,17 +270,52 @@ class CartridgeService(BaseService):
                 report["valid"] = False
                 report["errors"].append(f"Missing Manifest Key: {key}")
         
-        # 2. Check Vector Index Presence
+        # 2. Check Vector Index Presence (and stamp reality into the manifest)
         conn = self._get_conn()
+        vec_enabled = False
+        vec_status = "unknown"
         try:
-            # Check if vec_items table exists (sqlite-vec)
+            # If this succeeds, the vec_items table exists and is queryable.
             conn.execute("SELECT count(*) FROM vec_items").fetchone()
+            vec_enabled = True
+            vec_status = "available"
         except Exception:
-             report["errors"].append("Vector Index (vec_items) missing or not loaded.")
-             # Not fatal for 'valid' but impacts capability
-             report["health"] = "WARN_NO_VECTORS"
+            vec_enabled = False
+            vec_status = "unavailable"
+            report["errors"].append("Vector Index (vec_items) missing or not loaded.")
+            # Not fatal for 'valid' but impacts capability
+            report["health"] = "WARN_NO_VECTORS"
         finally:
             conn.close()
+
+        # Update manifest content_stats.vector_index to reflect truth
+        try:
+            content_stats = self.get_manifest("content_stats") or {}
+            vec = content_stats.get("vector_index", {}) if isinstance(content_stats, dict) else {}
+
+            # Use embedding_spec dim if present; otherwise keep existing dims value
+            embed_spec = self.get_manifest("embedding_spec") or {}
+            spec_dim = 0
+            if isinstance(embed_spec, dict):
+                spec_dim = int(embed_spec.get("dim", 0) or 0)
+
+            vec["enabled"] = bool(vec_enabled)
+            vec["status"] = vec_status
+            if spec_dim > 0:
+                vec["dims"] = spec_dim
+
+            # Preserve backend/table fields if present
+            if "table" not in vec:
+                vec["table"] = "vec_items"
+            if "backend" not in vec:
+                vec["backend"] = "sqlite-vec"
+
+            content_stats["vector_index"] = vec
+            self.set_manifest("content_stats", content_stats)
+        except Exception as e:
+            # Non-fatal; validation should still return a report
+            report["errors"].append(f"Failed to stamp vector_index status into manifest: {e}")
+            report["health"] = "WARN_MANIFEST_STAMP_FAIL"
             
         return report
 
@@ -565,6 +617,8 @@ class CartridgeService(BaseService):
             conn.close()
             
         return results
+
+
 
 
 
