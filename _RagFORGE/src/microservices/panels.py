@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox, scrolledtext, simpledialog
 import os
+import time
 import sqlite3
 import threading
 import time
@@ -331,6 +332,7 @@ class EditorPanel(tk.Frame):
             else:
                 self.editor.insert("1.0", "(Binary content or empty)")
         except: pass
+
 
 
 

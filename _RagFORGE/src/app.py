@@ -26,6 +26,7 @@ from microservices.cartridge_service import CartridgeService
 from microservices.neural_service import NeuralService
 from microservices.intake_service import IntakeService
 from microservices.refinery_service import RefineryService
+from microservices.telemetry_service import TelemetryService
 
 # UI Components
 from microservices.panels import (
@@ -215,6 +216,10 @@ class RagForgeApp(tk.Tk):
         self.sys_log = SystemLog(right_col)
         right_col.add(self.sys_log, weight=1)
 
+        # Initialize the Nervous System (Telemetry)
+        self.telemetry = TelemetryService(self, self.sys_log)
+        self.telemetry.start()
+
         self.editor_panel = EditorPanel(self.notebook)
         self.notebook.add(self.editor_panel, text="  KNOWLEDGE INSPECTOR  ")
 
@@ -375,6 +380,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 

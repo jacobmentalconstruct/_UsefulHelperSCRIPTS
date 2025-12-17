@@ -2,6 +2,46 @@ Dump: C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_RagFORGE
 
 
 --------------------------------------------------------------------------------
+FILE: .ragforge.json
+--------------------------------------------------------------------------------
+{
+  ".": true,
+  "_logs": false,
+  "_logs/_project_mapper_config.json": false,
+  "_logs/_RagFORGE_backup.tar.gz": false,
+  "_logs/_RagFORGE_filedump.txt": false,
+  "_logs/_RagFORGE_project_folder_tree.txt": false,
+  "cartridges": false,
+  "cartridges/_RagFORGE_CARTRIDGE.db": false,
+  "src": true,
+  "src/microservices": true,
+  "src/microservices/__init__.py": true,
+  "src/microservices/base_service.py": true,
+  "src/microservices/cartridge_service.py": true,
+  "src/microservices/document_utils.py": true,
+  "src/microservices/graph_engine.py": true,
+  "src/microservices/graph_view.py": true,
+  "src/microservices/intake_service.py": true,
+  "src/microservices/neural_service.py": true,
+  "src/microservices/panels.py": true,
+  "src/microservices/refinery_service.py": true,
+  "src/microservices/scanner.py": true,
+  "src/microservices/semantic_chunker.py": true,
+  "src/microservices/telemetry_service.py": true,
+  "src/microservices/thought_stream.py": true,
+  "src/__init__.py": false,
+  "src/app.py": true,
+  "tests": false,
+  "tests/dummy_source": false,
+  "tests/dummy_source/concept.txt": false,
+  "tests/test_cartridge.db": false,
+  "tests/verify_forge.py": false,
+  "LICENSE.md": true,
+  "README.md": true,
+  "requirements.txt": true,
+  "setup_env.bat": true
+}
+--------------------------------------------------------------------------------
 FILE: LICENSE.md
 --------------------------------------------------------------------------------
 MIT License
@@ -29,7 +69,140 @@ SOFTWARE.
 --------------------------------------------------------------------------------
 FILE: README.md
 --------------------------------------------------------------------------------
+# **\_RagFORGE: The Neural Cartridge Factory**
 
+**"Manufacture portable, self-contained RAG databases for your AI agents."**
+
+\_RagFORGE is a "Knowledge Foundry." It ingests raw data (Source Code, PDFs, Websites) and refines it into a **Unified Neural Cartridge (.db)**. These cartridges are portable SQLite databases that contain the raw archive, the semantic vector index, and the relational knowledge graph—everything an AI needs to understand a topic, in a single file.
+
+## **🚀 Features**
+
+* **Universal Ingestion:**  
+  * **Filesystem:** Recursively scans folders, respecting .gitignore.  
+  * **Documents:** Automatically extracts text from **PDFs** and **HTML**.  
+  * **Web Crawler:** Spiders websites to a specified depth and converts them into a navigable Virtual File System (VFS).  
+* **The Refinery (Background Daemon):**  
+  * **Smart Chunking:** Uses AST parsing for Python (splitting by Class/Function) and semantic windows for prose/text.  
+  * **Parallel Embedding:** High-speed vector generation using local LLMs (via Ollama).  
+  * **Graph Weaving:** Automatically links files based on imports and definitions.  
+* **The Cartridge (UNCF v1.0):**  
+  * Portable .db file (SQLite).  
+  * Contains **Source** (Text/Blob), **Vectors** (sqlite-vec), and **Graph** (Nodes/Edges).  
+  * Self-describing Manifest.  
+* **Visual Verification:**  
+  * Force-Directed Graph Visualization.  
+  * Real-time **Neural Test** to verify vector search relevance immediately.
+
+## **🛠️ Installation**
+
+1. **Prerequisites:**  
+   * Python 3.10+  
+   * [Ollama](https://ollama.ai/) running locally (ollama serve).  
+   * Models pulled: ollama pull mxbai-embed-large (or your preferred embedder).  
+2. **Setup:**  
+   git clone \[https://github.com/yourusername/\_RagFORGE.git\](https://github.com/yourusername/\_RagFORGE.git)  
+   cd \_RagFORGE  
+   setup\_env.bat
+
+3. **Run:**  
+   \# Launch GUI  
+   python \-m src.app
+
+   \# Headless Mode (CLI)  
+   python \-m src.app \--input "./my\_project" \--output "project\_brain.db"
+
+## **💾 The Cartridge Contract (UNCF v1.0)**
+
+Every cartridge produced by \_RagFORGE adheres to the **Unified Neural Cartridge Format**. This ensures any consuming agent (like \_LocalMIND) can instantly mount and query the brain.
+
+\[ YOUR CARTRIDGE (.db) \]  
+│  
+├── 1\. The Archive (Verbatim Storage)   
+│   └── Table: 'files'  
+│       ├── vfs\_path: "src/main.py"      (Hierarchy)  
+│       ├── content:  "import os..."     (Raw Text for LLM reading)  
+│       └── blob:     \[Binary Data\]      (Original PDF/Image backup)  
+│  
+├── 2\. The Index (Semantic Search)  
+│   ├── Table: 'chunks'                  (Text Segments)  
+│   │   └── content: "def scan\_path..."  
+│   └── Table: 'vec\_items'               (Mathematical Index)  
+│       └── embedding: \[0.12, \-0.98...\]  (Fast Nearest-Neighbor Search)  
+│  
+└── 3\. The Map (Knowledge Graph)  
+    ├── Table: 'graph\_nodes'             (File & Function Nodes)  
+    └── Table: 'graph\_edges'             (Imports & Definitions)
+
+### **1\. The Manifest (Boot Sector)**
+
+Table: manifest  
+Key-value store describing the cartridge's provenance and configuration.
+
+* cartridge\_id: UUID4 unique identifier.  
+* schema\_version: uncf\_v1.0.  
+* created\_at\_utc: Timestamp of manufacture.  
+* source\_root: Original path or URL of the source material.  
+* ingest\_config: JSON record of which files were explicitly selected by the user.
+
+### **2\. The Archive (Verbatim Storage)**
+
+Table: files  
+The "Physical" layer. Contains the raw data.
+
+* vfs\_path: Portable, relative path (e.g., src/main.py or web/example.com/docs/intro.html).  
+* content: UTF-8 Extracted Text (Input for the LLM).  
+* blob\_data: Binary backup (Original PDF bytes, Images, etc.).  
+* status: RAW (Needs processing), REFINED (Ready), or SKIPPED.
+
+### **3\. The Index (Semantic Search)**
+
+Tables: chunks, vec\_items  
+The "Mathematical" layer. Enables similarity search.
+
+* **chunks:** Text segments derived from the files.  
+  * *Python:* Split by Class (class X) and Function (def y).  
+  * *Docs:* Split by semantic window (e.g., 800 chars).  
+* **vec\_items:** Virtual table (via sqlite-vec) storing the 1024-dimension embeddings.  
+  * Queryable via KNN: WHERE embedding MATCH ? ORDER BY distance.
+
+### **4\. The Map (Knowledge Graph)**
+
+Tables: graph\_nodes, graph\_edges  
+The "Relational" layer. Describes structure.
+
+* **Nodes:** Represents Files (file), Web Pages (web), and Code Symbols (chunk).  
+* **Edges:** Represents relationships like imports, defined\_in, or links\_to.
+
+## **🖥️ Usage Guide**
+
+### **The Workflow**
+
+1. **Select Source:** Choose a local folder or paste a URL.  
+2. **Scan:** \_RagFORGE builds a file tree. Adjust "Web Depth" for crawlers.  
+3. **Ingest:** Select the files you want. Click **INGEST**.  
+4. **Refine:** The background daemon will wake up, chunk the data, and embed it. Watch the "System Log."  
+5. **Verify:** Go to **Neural Topology**, type a query (e.g., "Authentication System"), and click **Neural Test**. Relevant nodes will light up.
+
+### **Keyboard Controls (Graph View)**
+
+* **Scroll:** Zoom In/Out.  
+* **Left Click:** Pan Camera.  
+* **Left Click \+ Drag Node:** Move Node (Physics active).  
+* **Double Click Node:** Focus & Zoom.
+
+## **🧩 Architecture**
+
+\[ \_RagFORGE App \]                 \[ External Services \]  
+       │                                   │  
+       ├── Intake Service  \<──(Scan)───\> Filesystem / Web  
+       │        │                          │  
+       ├── Refinery Service \<──(Embed)──\> Ollama (Localhost)  
+       │        │  
+       └── Cartridge Service ──\> \[ .db File (UNCF v1.0) \]
+
+## **📄 License**
+
+MIT License. Copyright (c) 2025 Jacob Lambert.
 --------------------------------------------------------------------------------
 FILE: requirements.txt
 --------------------------------------------------------------------------------
@@ -72,6 +245,29 @@ echo [SUCCESS] Environment ready!
 echo You can now open this folder in VS Code or launch via scripts_menu.py
 pause
 --------------------------------------------------------------------------------
+FILE: src\.ragforge.json
+--------------------------------------------------------------------------------
+{
+  ".": true,
+  "microservices": true,
+  "microservices/__init__.py": false,
+  "microservices/base_service.py": true,
+  "microservices/cartridge_service.py": true,
+  "microservices/document_utils.py": true,
+  "microservices/graph_engine.py": true,
+  "microservices/graph_view.py": true,
+  "microservices/intake_service.py": true,
+  "microservices/neural_service.py": true,
+  "microservices/panels.py": true,
+  "microservices/refinery_service.py": true,
+  "microservices/scanner.py": true,
+  "microservices/semantic_chunker.py": true,
+  "microservices/telemetry_service.py": true,
+  "microservices/thought_stream.py": true,
+  "__init__.py": false,
+  "app.py": true
+}
+--------------------------------------------------------------------------------
 FILE: src\app.py
 --------------------------------------------------------------------------------
 #!/usr/bin/env python3
@@ -102,6 +298,7 @@ from microservices.cartridge_service import CartridgeService
 from microservices.neural_service import NeuralService
 from microservices.intake_service import IntakeService
 from microservices.refinery_service import RefineryService
+from microservices.telemetry_service import TelemetryService
 
 # UI Components
 from microservices.panels import (
@@ -140,6 +337,10 @@ def headless_forge(source_path: str, db_name: str, verbose: bool = False):
     print(">>> Phase 1: Intake (Vacuuming files...)")
     stats = intake.ingest_source(source_path)
     print(f"    Intake Result: {stats}")
+    
+    # Verify Manifest
+    cid = cartridge.get_manifest("cartridge_id")
+    print(f"    [Manifest] Cartridge ID: {cid}")
 
     print(">>> Phase 2: Refinery (Chunking & Weaving...)")
     while True:
@@ -287,6 +488,10 @@ class RagForgeApp(tk.Tk):
         self.sys_log = SystemLog(right_col)
         right_col.add(self.sys_log, weight=1)
 
+        # Initialize the Nervous System (Telemetry)
+        self.telemetry = TelemetryService(self, self.sys_log)
+        self.telemetry.start()
+
         self.editor_panel = EditorPanel(self.notebook)
         self.notebook.add(self.editor_panel, text="  KNOWLEDGE INSPECTOR  ")
 
@@ -331,6 +536,7 @@ class RagForgeApp(tk.Tk):
         self.sys_log.log(f"Cartridge loaded: {os.path.basename(path)}")
         
         # 3. Load Graph (Non-blocking)
+        self.graph_view.bind_services(self.active_cartridge, self.neural)
         self.graph_view.load_from_db(path)
         
         # 4. Start Background Poller (The Refinery Daemon)
@@ -338,13 +544,17 @@ class RagForgeApp(tk.Tk):
             self.refining = True
             self.after(1000, self._refinery_loop)
 
-    def run_scan_request(self, path):
+    def run_scan_request(self, path, web_depth=0, binary_policy="Extract Text"):
         if not self.active_cartridge:
             messagebox.showwarning("No Cartridge", "Select a cartridge first.")
             return
         
-        self.status_var.set(f"Scanning {path}...")
-        self.file_tree.load_tree(path)
+        # Update Manifest with policy preference
+        self.active_cartridge.set_manifest("binary_policy", binary_policy)
+        self.active_cartridge.set_manifest("web_depth", web_depth)
+
+        self.status_var.set(f"Scanning {path} (Depth: {web_depth})...")
+        self.file_tree.load_tree(path, web_depth=web_depth)
         self.sys_log.log(f"Scanned source: {path}")
         self.status_var.set("Scan complete. Select files to ingest.")
 
@@ -374,7 +584,12 @@ class RagForgeApp(tk.Tk):
                 err = f"Ingest Failed: {e}"
                 self.sys_log.log(err)
             
-            self.after(0, lambda: self.editor_panel.refresh_list())
+            # Refresh UI elements on main thread
+            def _refresh():
+                self.editor_panel.refresh_list()
+                self.graph_view.load_from_db(self.active_db_path)
+                
+            self.after(0, _refresh)
 
         threading.Thread(target=worker, daemon=True).start()
 
@@ -441,10 +656,33 @@ if __name__ == "__main__":
 
 
 
+
+
+
 --------------------------------------------------------------------------------
 FILE: src\__init__.py
 --------------------------------------------------------------------------------
 
+--------------------------------------------------------------------------------
+FILE: src\microservices\.ragforge.json
+--------------------------------------------------------------------------------
+{
+  ".": false,
+  "__init__.py": false,
+  "base_service.py": false,
+  "cartridge_service.py": false,
+  "document_utils.py": false,
+  "graph_engine.py": false,
+  "graph_view.py": false,
+  "intake_service.py": false,
+  "neural_service.py": false,
+  "panels.py": false,
+  "refinery_service.py": false,
+  "scanner.py": false,
+  "semantic_chunker.py": false,
+  "telemetry_service.py": false,
+  "thought_stream.py": false
+}
 --------------------------------------------------------------------------------
 FILE: src\microservices\base_service.py
 --------------------------------------------------------------------------------
@@ -480,7 +718,17 @@ FILE: src\microservices\cartridge_service.py
 import sqlite3
 import json
 import time
+import os
+import uuid
+import datetime
+import struct
 from pathlib import Path
+
+# Try to import sqlite-vec (pip install sqlite-vec)
+try:
+    import sqlite_vec
+except ImportError:
+    sqlite_vec = None
 from typing import Dict, Any, Optional, List
 from .base_service import BaseService
 
@@ -498,7 +746,16 @@ class CartridgeService(BaseService):
         self._init_db()
 
     def _get_conn(self):
-        return sqlite3.connect(self.db_path)
+        # Set generous timeout (60s) for multi-threaded Ingest/Refinery contention
+        conn = sqlite3.connect(self.db_path, timeout=60.0)
+        if sqlite_vec:
+            try:
+                conn.enable_load_extension(True)
+                sqlite_vec.load(conn)
+                conn.enable_load_extension(False)
+            except Exception as e:
+                self.log_error(f"Failed to load sqlite-vec: {e}")
+        return conn
 
     def _init_db(self):
         """Initializes the standard Schema."""
@@ -506,6 +763,10 @@ class CartridgeService(BaseService):
         
         conn = self._get_conn()
         cursor = conn.cursor()
+        
+        # Enable WAL Mode: Allows concurrent Readers (Refinery) & Writers (Ingest)
+        cursor.execute("PRAGMA journal_mode=WAL")
+        cursor.execute("PRAGMA synchronous=NORMAL")
         
         # 1. Manifest (The Boot Sector)
         cursor.execute("CREATE TABLE IF NOT EXISTS manifest (key TEXT PRIMARY KEY, value TEXT)")
@@ -556,6 +817,15 @@ class CartridgeService(BaseService):
             )
         """)
 
+        # 3.5 Vector Index (sqlite-vec)
+        # Defaulting to 1024 dimensions (mxbai-embed-large). 
+        # If you use a different model, this needs to match.
+        if sqlite_vec:
+            try:
+                cursor.execute("CREATE VIRTUAL TABLE IF NOT EXISTS vec_items USING vec0(embedding float[1024])")
+            except Exception as e:
+                self.log_error(f"Vector Table Init Error: {e}")
+
         # 4. Graph Topology (The Neural Wiring)
         cursor.execute("CREATE TABLE IF NOT EXISTS graph_nodes (id TEXT PRIMARY KEY, type TEXT, label TEXT, data_json TEXT)")
         cursor.execute("CREATE TABLE IF NOT EXISTS graph_edges (source TEXT, target TEXT, relation TEXT, weight REAL)")
@@ -565,6 +835,154 @@ class CartridgeService(BaseService):
         
         conn.commit()
         conn.close()
+        
+        # Initialize standard keys if new
+        self.initialize_manifest()
+
+    def initialize_manifest(self):
+        """Populates the boot sector with strict RagFORGE Cartridge Schema (UNCF) v1.1."""
+        if not self.get_manifest("cartridge_id"):
+            now = datetime.datetime.utcnow().isoformat()
+
+            # 1. Identity & Versioning
+            self.set_manifest("schema_name", "ragforge_cartridge")
+            self.set_manifest("schema_version", "1.1.0")
+            self.set_manifest("cartridge_id", str(uuid.uuid4()))
+            self.set_manifest("created_at_utc", now)
+            self.set_manifest("created_by_app", "RagFORGE")
+
+            # 2. Provenance / Sources
+            # Agents can read this to understand where the content came from and what policies were used.
+            self.set_manifest("sources", [])
+            self.set_manifest("source_policies", {
+                "binary_policy": "Extract Text",
+                "web_depth": 0
+            })
+
+            # 3. Specs (Defaults - updated by RefineryService._stamp_specs)
+            self.set_manifest("embedding_spec", {
+                "provider": "unknown",
+                "model": "pending_init",
+                "dim": 0,
+                "dtype": "unknown",
+                "distance": "unknown"
+            })
+            self.set_manifest("chunking_spec", {
+                "strategy": "semantic_hybrid",
+                "python_ast": True,
+                "generic_window": 1500
+            })
+
+            # 4. VFS + Content Stats (populated/updated over time)
+            self.set_manifest("vfs", {
+                "root_label": "",
+                "directories": {"count": 0},
+                "files": {
+                    "count": 0,
+                    "by_origin_type": {},
+                    "by_mime": {}
+                },
+                "index_built": False
+            })
+            self.set_manifest("content_stats", {
+                "chunks": {"count": 0},
+                "vector_index": {
+                    "enabled": True,
+                    "table": "vec_items",
+                    "dims": 0
+                },
+                "graph": {
+                    "nodes": 0,
+                    "edges": 0
+                }
+            })
+
+            # 5. Capabilities Contract (what an agent can assume exists / how to navigate)
+            self.set_manifest("capabilities", {
+                "tables": {
+                    "manifest": True,
+                    "directories": True,
+                    "files": True,
+                    "chunks": True,
+                    "vec_items": True,
+                    "graph_nodes": True,
+                    "graph_edges": True,
+                    "logs": True
+                },
+                "navigation": {
+                    "vfs_path": "files.vfs_path",
+                    "directory_index": "directories.vfs_path",
+                    "list_files_query": "SELECT vfs_path, mime_type, origin_type, status FROM files ORDER BY vfs_path",
+                    "list_directories_query": "SELECT vfs_path, parent_path FROM directories ORDER BY vfs_path"
+                },
+                "retrieval": {
+                    "raw_file_content_query": "SELECT content, blob_data, mime_type FROM files WHERE vfs_path=?",
+                    "chunks_by_file_query": "SELECT chunk_index, name, type, start_line, end_line, content FROM chunks WHERE file_id=? ORDER BY chunk_index",
+                    "vector_search": "sqlite-vec on vec_items if available"
+                }
+            })
+
+            # 6. Status & Health
+            self.set_manifest("cartridge_health", "FRESH")
+            self.set_manifest("ingest_complete", False)
+            self.set_manifest("refine_complete", False)
+            self.set_manifest("last_ingest_at_utc", "")
+            self.set_manifest("last_refine_at_utc", "")
+            self.set_manifest("last_error", "")
+            self.set_manifest("locks", {
+                "write_lock_expected": False,
+                "notes": "If DB locks occur, consider batching writes and shorter-lived connections."
+            })
+
+    def set_manifest(self, key: str, value: Any):
+        """Upsert metadata key."""
+        conn = self._get_conn()
+        val_str = json.dumps(value) if isinstance(value, (dict, list)) else str(value)
+        conn.execute("INSERT OR REPLACE INTO manifest (key, value) VALUES (?, ?)", (key, val_str))
+        conn.commit()
+        conn.close()
+
+    def get_manifest(self, key: str) -> Optional[str]:
+        """Retrieve metadata key."""
+        conn = self._get_conn()
+        row = conn.execute("SELECT value FROM manifest WHERE key=?", (key,)).fetchone()
+        conn.close()
+        return row[0] if row else None
+
+    def validate_cartridge(self) -> Dict[str, Any]:
+        """Quality Control: Checks if the cartridge is Agent-Safe."""
+        report = {"valid": True, "health": "OK", "errors": []}
+        
+        # 1. Check Required Keys
+        # These are the minimum contract keys an agent needs to understand what it loaded.
+        required = [
+            "schema_name",
+            "schema_version",
+            "cartridge_id",
+            "created_at_utc",
+            "created_by_app",
+            "embedding_spec",
+            "chunking_spec",
+            "capabilities"
+        ]
+        for key in required:
+            if not self.get_manifest(key):
+                report["valid"] = False
+                report["errors"].append(f"Missing Manifest Key: {key}")
+        
+        # 2. Check Vector Index Presence
+        conn = self._get_conn()
+        try:
+            # Check if vec_items table exists (sqlite-vec)
+            conn.execute("SELECT count(*) FROM vec_items").fetchone()
+        except Exception:
+             report["errors"].append("Vector Index (vec_items) missing or not loaded.")
+             # Not fatal for 'valid' but impacts capability
+             report["health"] = "WARN_NO_VECTORS"
+        finally:
+            conn.close()
+            
+        return report
 
     def store_file(self, vfs_path: str, origin_path: str, content: str = None, blob: bytes = None, mime_type: str = "text/plain", origin_type: str = "filesystem"):
         """
@@ -618,6 +1036,188 @@ class CartridgeService(BaseService):
         finally:
             conn.close()
 
+    # --- Agent-Friendly Helpers (No raw SQL required) ---
+    def _coerce_bool(self, v: Any) -> bool:
+        """Best-effort conversion for manifest values stored as strings."""
+        if v is None:
+            return False
+        if isinstance(v, bool):
+            return v
+        s = str(v).strip().lower()
+        return s in ("1", "true", "yes", "y", "on")
+
+    def get_status_flags(self) -> Dict[str, Any]:
+        """Returns key manifest status flags in a single call."""
+        ingest_complete = self._coerce_bool(self.get_manifest("ingest_complete"))
+        refine_complete = self._coerce_bool(self.get_manifest("refine_complete"))
+        health = self.get_manifest("cartridge_health") or "UNKNOWN"
+        return {
+            "ingest_complete": ingest_complete,
+            "refine_complete": refine_complete,
+            "cartridge_health": health,
+            "schema_name": self.get_manifest("schema_name") or "",
+            "schema_version": self.get_manifest("schema_version") or "",
+            "cartridge_id": self.get_manifest("cartridge_id") or ""
+        }
+
+    def list_files(self, prefix: str = "", status: Optional[str] = None, limit: Optional[int] = None) -> List[Dict[str, Any]]:
+        """Enumerate files in the cartridge (optionally filtered by VFS prefix and/or status)."""
+        conn = self._get_conn()
+        conn.row_factory = sqlite3.Row
+        try:
+            sql = "SELECT id, vfs_path, origin_path, origin_type, mime_type, status, last_updated, metadata FROM files"
+            clauses = []
+            params = []
+
+            if prefix:
+                # Prefix match on portable path
+                clauses.append("vfs_path LIKE ?")
+                params.append(prefix.rstrip("/") + "/%")
+
+            if status:
+                clauses.append("status = ?")
+                params.append(status)
+
+            if clauses:
+                sql += " WHERE " + " AND ".join(clauses)
+
+            sql += " ORDER BY vfs_path"
+
+            if limit is not None:
+                sql += " LIMIT ?"
+                params.append(int(limit))
+
+            rows = conn.execute(sql, tuple(params)).fetchall()
+            out = []
+            for r in rows:
+                d = dict(r)
+                # metadata is stored as JSON string
+                try:
+                    d["metadata"] = json.loads(d.get("metadata") or "{}")
+                except Exception:
+                    d["metadata"] = {}
+                out.append(d)
+            return out
+        finally:
+            conn.close()
+
+    def get_file_record(self, vfs_path: str) -> Optional[Dict[str, Any]]:
+        """Fetch a single file record by VFS path."""
+        if not vfs_path:
+            return None
+        conn = self._get_conn()
+        conn.row_factory = sqlite3.Row
+        try:
+            row = conn.execute(
+                "SELECT id, vfs_path, origin_path, origin_type, content, blob_data, mime_type, status, metadata, last_updated FROM files WHERE vfs_path = ?",
+                (vfs_path,)
+            ).fetchone()
+            if not row:
+                return None
+            d = dict(row)
+            try:
+                d["metadata"] = json.loads(d.get("metadata") or "{}")
+            except Exception:
+                d["metadata"] = {}
+            return d
+        finally:
+            conn.close()
+
+    def list_directories(self, prefix: str = "") -> List[Dict[str, Any]]:
+        """Enumerate directories in the cartridge VFS."""
+        conn = self._get_conn()
+        conn.row_factory = sqlite3.Row
+        try:
+            if prefix:
+                rows = conn.execute(
+                    "SELECT id, vfs_path, parent_path, metadata FROM directories WHERE vfs_path LIKE ? ORDER BY vfs_path",
+                    (prefix.rstrip("/") + "/%",)
+                ).fetchall()
+            else:
+                rows = conn.execute(
+                    "SELECT id, vfs_path, parent_path, metadata FROM directories ORDER BY vfs_path"
+                ).fetchall()
+
+            out = []
+            for r in rows:
+                d = dict(r)
+                try:
+                    d["metadata"] = json.loads(d.get("metadata") or "{}")
+                except Exception:
+                    d["metadata"] = {}
+                out.append(d)
+            return out
+        finally:
+            conn.close()
+
+    def get_directory_tree(self, root: str = "") -> Dict[str, Any]:
+        """Builds a nested directory tree starting at `root` ("" for full tree)."""
+        dirs = self.list_directories(prefix=root) if root else self.list_directories()
+        files = self.list_files(prefix=root) if root else self.list_files()
+
+        # Tree nodes are dicts: {"_dirs": {name: node}, "_files": [file_records...]}
+        def new_node():
+            return {"_dirs": {}, "_files": []}
+
+        tree = new_node()
+
+        # Insert directories
+        for d in dirs:
+            path = (d.get("vfs_path") or "").strip("/")
+            if not path:
+                continue
+            parts = path.split("/")
+            cur = tree
+            for p in parts:
+                cur = cur["_dirs"].setdefault(p, new_node())
+
+        # Insert files
+        for f in files:
+            path = (f.get("vfs_path") or "").strip("/")
+            if not path:
+                continue
+            parts = path.split("/")
+            fname = parts[-1]
+            cur = tree
+            for p in parts[:-1]:
+                cur = cur["_dirs"].setdefault(p, new_node())
+            # Store a light file record for tree browsing
+            cur["_files"].append({
+                "name": fname,
+                "vfs_path": f.get("vfs_path"),
+                "mime_type": f.get("mime_type"),
+                "origin_type": f.get("origin_type"),
+                "status": f.get("status")
+            })
+
+        return tree
+
+    def get_status_summary(self) -> Dict[str, Any]:
+        """Counts files by status and provides a quick cartridge overview."""
+        conn = self._get_conn()
+        conn.row_factory = sqlite3.Row
+        try:
+            rows = conn.execute("SELECT status, COUNT(*) as n FROM files GROUP BY status").fetchall()
+            by_status = {r["status"]: r["n"] for r in rows}
+
+            dcnt = conn.execute("SELECT COUNT(*) FROM directories").fetchone()[0]
+            fcnt = conn.execute("SELECT COUNT(*) FROM files").fetchone()[0]
+            ccnt = conn.execute("SELECT COUNT(*) FROM chunks").fetchone()[0]
+            ncnt = conn.execute("SELECT COUNT(*) FROM graph_nodes").fetchone()[0]
+            ecnt = conn.execute("SELECT COUNT(*) FROM graph_edges").fetchone()[0]
+
+            return {
+                "directories": int(dcnt),
+                "files": int(fcnt),
+                "chunks": int(ccnt),
+                "graph_nodes": int(ncnt),
+                "graph_edges": int(ecnt),
+                "files_by_status": by_status,
+                "flags": self.get_status_flags()
+            }
+        finally:
+            conn.close()
+
     # --- Graph Helpers ---
     def add_node(self, node_id: str, node_type: str, label: str, data: dict = None):
         conn = self._get_conn()
@@ -632,6 +1232,128 @@ class CartridgeService(BaseService):
                      (source, target, relation, weight))
         conn.commit()
         conn.close()
+
+    # --- Vector Search ---
+    def search_embeddings(self, query_vector: List[float], limit: int = 5) -> List[Dict]:
+        """Performs semantic search using sqlite-vec."""
+        if not sqlite_vec or not query_vector:
+            return []
+
+        conn = self._get_conn()
+        conn.row_factory = sqlite3.Row
+        results = []
+        
+        try:
+            # Pack vector to binary if needed, but sqlite-vec usually handles raw lists in parameterized queries
+            # dependent on the binding. We'll pass binary for safety if using standard bindings,
+            # but typically raw list works with the extension's adapters. 
+            # For now, we assume the extension handles the list->vector conversion.
+            
+            rows = conn.execute("""
+                SELECT
+                    rowid,
+                    distance
+                FROM vec_items
+                WHERE embedding MATCH ?
+                ORDER BY distance
+                LIMIT ?
+            """, (json.dumps(query_vector), limit)).fetchall()
+            
+            # Resolve back to chunks with VFS context
+            for r in rows:
+                chunk_id = r['rowid']
+                # Join with files to get vfs_path
+                query = """
+                    SELECT c.*, f.vfs_path 
+                    FROM chunks c 
+                    JOIN files f ON c.file_id = f.id 
+                    WHERE c.id=?
+                """
+                chunk = conn.execute(query, (chunk_id,)).fetchone()
+                
+                if chunk:
+                    res = dict(chunk)
+                    res['score'] = r['distance']
+                    results.append(res)
+                    
+        except Exception as e:
+            self.log_error(f"Vector Search Error: {e}")
+        finally:
+            conn.close()
+            
+        return results
+
+
+
+
+
+--------------------------------------------------------------------------------
+FILE: src\microservices\document_utils.py
+--------------------------------------------------------------------------------
+import io
+import re
+from typing import Tuple, Optional
+
+# Third-party imports (from requirements.txt)
+try:
+    from pypdf import PdfReader
+except ImportError:
+    PdfReader = None
+
+try:
+    from bs4 import BeautifulSoup
+except ImportError:
+    BeautifulSoup = None
+
+def extract_text_from_pdf(file_bytes: bytes) -> str:
+    """Extracts text from a PDF blob using pypdf."""
+    if not PdfReader:
+        return ""
+    
+    text_content = []
+    try:
+        # Wrap bytes in a stream for PdfReader
+        stream = io.BytesIO(file_bytes)
+        reader = PdfReader(stream)
+        
+        for page in reader.pages:
+            extracted = page.extract_text()
+            if extracted:
+                text_content.append(extracted)
+        
+        return "\n".join(text_content)
+    except Exception as e:
+        print(f"[DocumentUtils] PDF Extraction Error: {e}")
+        return ""
+
+def extract_text_from_html(html_content: str) -> str:
+    """Cleans HTML to raw text using BeautifulSoup."""
+    if not BeautifulSoup:
+        return strip_tags_regex(html_content)
+    
+    try:
+        soup = BeautifulSoup(html_content, 'html.parser')
+        
+        # Kill all script and style elements
+        for script in soup(["script", "style", "meta", "noscript"]):
+            script.decompose()
+            
+        text = soup.get_text()
+        
+        # Collapse whitespace
+        lines = (line.strip() for line in text.splitlines())
+        chunks = (phrase.strip() for line in lines for phrase in line.split("  "))
+        text = '\n'.join(chunk for chunk in chunks if chunk)
+        
+        return text
+    except Exception as e:
+        print(f"[DocumentUtils] HTML Parsing Error: {e}")
+        return strip_tags_regex(html_content)
+
+def strip_tags_regex(html: str) -> str:
+    """Fallback if BS4 is missing."""
+    clean = re.compile('<.*?>')
+    return re.sub(clean, '', html)
 
 --------------------------------------------------------------------------------
 FILE: src\microservices\graph_engine.py
@@ -776,6 +1498,30 @@ class GraphRenderer:
         self.zoom *= amount
         self.zoom = max(0.1, min(self.zoom, 5.0))
 
+    def highlight_nodes(self, node_ids):
+        """Highlights specific nodes by ID."""
+        for n in self.nodes:
+            # 1. Reset to defaults
+            if n.get('type') == 'file': 
+                n['_color'] = (0, 122, 204)
+                n['_radius'] = 6
+            elif n.get('type') == 'web': 
+                n['_color'] = (204, 0, 122)
+                n['_radius'] = 7
+            elif n.get('type') == 'chunk': 
+                n['_color'] = (100, 200, 100)
+                n['_radius'] = 3
+            else: 
+                n['_color'] = (160, 32, 240)
+                n['_radius'] = 6
+                
+            # 2. Apply Highlight
+            if n['id'] in node_ids:
+                n['_color'] = (255, 255, 0) # Bright Yellow
+                n['_radius'] = 12
+                
+        self.settled = False # Wake up physics
+
     # --- PHYSICS (Damped) ---
 
     def step_physics(self):
@@ -895,6 +1641,7 @@ class GraphRenderer:
         return pygame.image.tostring(self.surface, 'RGB')
 
 
+
 --------------------------------------------------------------------------------
 FILE: src\microservices\graph_view.py
 --------------------------------------------------------------------------------
@@ -911,9 +1658,24 @@ class GraphView(ttk.Frame):
         super().__init__(parent)
         self.pack(fill="both", expand=True)
         
+        # Search Overlay
+        self.controls = tk.Frame(self, bg="#101018")
+        self.controls.pack(fill="x", side="top", padx=5, pady=5)
+        
+        self.entry_search = tk.Entry(self.controls, bg="#252526", fg="white", insertbackground="white", font=("Consolas", 10))
+        self.entry_search.pack(side="left", fill="x", expand=True, padx=(0, 5))
+        self.entry_search.bind("<Return>", self.run_search)
+        
+        btn = tk.Button(self.controls, text="NEURAL TEST", command=self.run_search, bg="#007ACC", fg="white", relief="flat")
+        btn.pack(side="right")
+
         # UI Container
         self.canvas_lbl = tk.Label(self, bg="#101018", cursor="crosshair")
         self.canvas_lbl.pack(fill="both", expand=True)
+        
+        # Services
+        self.cartridge = None
+        self.neural = None
         
         # Engine Init
         self.engine = GraphRenderer(800, 600)
@@ -938,6 +1700,34 @@ class GraphView(ttk.Frame):
         
         # Start the Heartbeat
         self.animate()
+
+    def bind_services(self, cartridge, neural):
+        self.cartridge = cartridge
+        self.neural = neural
+
+    def run_search(self, event=None):
+        if not self.cartridge or not self.neural:
+            return
+            
+        query = self.entry_search.get().strip()
+        if not query: return
+        
+        # 1. Embed
+        vec = self.neural.get_embedding(query)
+        if not vec: return
+        
+        # 2. Search
+        results = self.cartridge.search_embeddings(vec, limit=5)
+        
+        # 3. Resolve IDs for Graph
+        # Graph Node ID format: "{vfs_path}::{chunk_name}"
+        ids = set()
+        for r in results:
+            if 'vfs_path' in r and 'name' in r:
+                ids.add(f"{r['vfs_path']}::{r['name']}")
+                
+        # 4. Highlight
+        self.engine.highlight_nodes(ids)
 
     def load_from_db(self, db_path):
         """
@@ -1056,6 +1846,7 @@ class GraphView(ttk.Frame):
         
         # 4. Loop
         self.after(30, self.animate)
+
 --------------------------------------------------------------------------------
 FILE: src\microservices\intake_service.py
 --------------------------------------------------------------------------------
@@ -1068,6 +1859,8 @@ from pathlib import Path
 from typing import Dict, Set, List, Any
 from .base_service import BaseService
 from .cartridge_service import CartridgeService
+from .scanner import ScannerMS
+from . import document_utils
 
 # Optional import for Web
 try:
@@ -1091,7 +1884,7 @@ class IntakeService(BaseService):
     
     DEFAULT_IGNORE_EXTS = {
         '.pyc', '.pyd', '.exe', '.dll', '.so', '.db', '.sqlite', '.sqlite3', 
-        '.bin', '.iso', '.img', '.zip', '.tar', '.gz', '.7z', '.pdf', '.jpg', '.png'
+        '.bin', '.iso', '.img', '.zip', '.tar', '.gz', '.7z', '.jpg', '.png'
     }
 
     def __init__(self, cartridge: CartridgeService):
@@ -1099,42 +1892,60 @@ class IntakeService(BaseService):
         self.cartridge = cartridge
         self.ignore_patterns: Set[str] = set()
 
+    def ingest_source(self, source_path: str) -> Dict[str, int]:
+        """Headless/CLI Entry point: Scans and Ingests in one go."""
+        self.cartridge.initialize_manifest()
+        
+        # Update Manifest source info
+        self.cartridge.set_manifest("source_root", source_path)
+        
+        is_web = source_path.startswith("http")
+        self.cartridge.set_manifest("source_type", "web_root" if is_web else "filesystem_dir")
+
+        scanner = ScannerMS()
+        tree_node = scanner.scan_directory(source_path, web_depth=1 if is_web else 0)
+        
+        if not tree_node:
+             return {"error": "Source not found"}
+
+        # Flatten tree to list of paths
+        files_to_ingest = scanner.flatten_tree(tree_node)
+        self.cartridge.set_manifest("ingest_config", {"auto_flattened": True, "count": len(files_to_ingest)})
+        
+        return self.ingest_selected(files_to_ingest, source_path)
+
     # --- PHASE 1: SCANNING ---
 
-    def scan_path(self, root_path: str) -> Dict[str, Any]:
+    def scan_path(self, root_path: str, web_depth: int = 0) -> Dict[str, Any]:
         """
-        Builds a file tree dict.
-        Returns: { 'name': 'root', 'path': '...', 'type': 'dir', 'children': [...], 'checked': bool }
+        Unified Scanner Interface.
+        Delegates to ScannerMS for both Web and Local FS to ensure consistent node structure.
         """
-        # 1. Web URL
-        if root_path.startswith("http://") or root_path.startswith("https://"):
-            return {
-                'name': root_path,
-                'path': root_path,
-                'rel_path': root_path,
-                'type': 'web',
-                'children': [],
-                'checked': True
-            }
+        scanner = ScannerMS()
 
-        # 2. Local Path
-        root_path = os.path.abspath(root_path)
-        
-        if os.path.isfile(root_path):
-            # Single File Mode
-            return {
-                'name': os.path.basename(root_path),
-                'path': root_path,
-                'rel_path': os.path.basename(root_path),
-                'type': 'file',
-                'children': [],
-                'checked': True
-            }
-            
-        # 3. Directory Mode
-        self._load_gitignore(root_path)
-        saved_config = self._load_persistence(root_path)
-        return self._scan_recursive(root_path, root_path, saved_config)
+        # 1. Delegate to Scanner
+        tree_root = scanner.scan_directory(root_path, web_depth=web_depth)
+        if not tree_root: return None
+
+        # 2. Apply Persistence / Checked State
+        # (We only do this for FS usually, but we can try for web if we had it)
+        if not root_path.startswith("http"):
+            saved_config = self._load_persistence(os.path.abspath(root_path))
+            self._apply_persistence(tree_root, saved_config)
+    
+        return tree_root
+
+    def _apply_persistence(self, node: Dict, saved_config: Dict):
+        """Recursively applies checked state from saved config."""
+        if 'rel_path' in node and node['rel_path'] in saved_config:
+            node['checked'] = saved_config[node['rel_path']]
+        elif 'children' in node:
+            # Default check all if no config? Or check logic from before?
+            pass
+    
+        if 'children' in node:
+            for child in node['children']:
+                self._apply_persistence(child, saved_config)
 
     def _scan_recursive(self, current_path: str, root_path: str, saved_config: Dict) -> Dict:
         name = os.path.basename(current_path)
@@ -1284,18 +2095,54 @@ class IntakeService(BaseService):
     def _read_and_store(self, real_path: Path, vfs_path: str, origin_type: str, stats: Dict):
         mime_type, _ = mimetypes.guess_type(real_path)
         if not mime_type: mime_type = "application/octet-stream"
+        
+        content = None
+        blob = None
+        
+        # 1. Try Binary Read First (Covers PDF/Images/Safe Read)
         try:
-            with open(real_path, 'r', encoding='utf-8') as f:
-                content = f.read()
-                self.cartridge.store_file(vfs_path, str(real_path), content=content, mime_type=mime_type, origin_type=origin_type)
-        except UnicodeDecodeError:
-            try:
-                with open(real_path, 'rb') as f:
-                    blob = f.read()
-                    self.cartridge.store_file(vfs_path, str(real_path), blob=blob, mime_type=mime_type, origin_type=origin_type)
-            except: pass
-        stats["added"] += 1
+            with open(real_path, 'rb') as f:
+                blob = f.read()
+        except Exception as e:
+            self.log_error(f"Read error {real_path}: {e}")
+            stats["errors"] += 1
+            return
 
+        # 2. Text Extraction / Decoding Strategy
+        lower_path = str(real_path).lower()
+        
+        if lower_path.endswith(".pdf"):
+            # PDF: Extract text, keep blob
+            content = document_utils.extract_text_from_pdf(blob)
+            if not content: mime_type = "application/pdf" # Fallback if extraction fails
+            
+        elif lower_path.endswith(".html") or lower_path.endswith(".htm"):
+            # HTML: Decode and Clean
+            try:
+                raw_text = blob.decode('utf-8', errors='ignore')
+                content = document_utils.extract_text_from_html(raw_text)
+            except: pass
+            
+        else:
+            # Default: Try UTF-8 Decode
+            try:
+                content = blob.decode('utf-8')
+            except UnicodeDecodeError:
+                content = None # Leave as binary blob
+
+        # 3. Store in Cartridge
+        # If content is set, it will be chunked/indexed. If only blob, it's stored but skipped by refinery.
+        success = self.cartridge.store_file(
+            vfs_path, 
+            str(real_path), 
+            content=content, 
+            blob=blob, 
+            mime_type=mime_type, 
+            origin_type=origin_type
+        )
+        
+        if success: stats["added"] += 1
+        else: stats["errors"] += 1
 --------------------------------------------------------------------------------
 FILE: src\microservices\neural_service.py
 --------------------------------------------------------------------------------
@@ -1404,8 +2251,10 @@ FILE: src\microservices\panels.py
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox, scrolledtext, simpledialog
 import os
+import time
 import sqlite3
 import threading
+import time
 
 # --- UI CONSTANTS ---
 BG_COLOR = "#1e1e2f"
@@ -1446,6 +2295,15 @@ class IngestToolbar(tk.Frame):
                               insertbackground="white", relief="flat", font=("Consolas", 10))
         self.entry.pack(side="left", fill="x", expand=True, padx=5, ipady=4)
 
+        # Options
+        tk.Label(self, text="Depth:", bg=BG_COLOR, fg="#666", font=("Arial", 8)).pack(side="left")
+        self.spin_depth = tk.Spinbox(self, from_=0, to=5, width=3, bg="#333", fg="white", relief="flat")
+        self.spin_depth.pack(side="left", padx=2)
+        
+        self.combo_policy = ttk.Combobox(self, values=["Extract Text", "Store Blob", "Skip Binary"], width=12, state="readonly")
+        self.combo_policy.set("Extract Text")
+        self.combo_policy.pack(side="left", padx=5)
+
         # Buttons
         btn_cfg = {"bg": "#444", "fg": "white", "relief": "flat", "padx": 10, "font": ("Arial", 9)}
         
@@ -1477,7 +2335,12 @@ class IngestToolbar(tk.Frame):
 
     def _trigger_scan(self):
         path = self.path_var.get().strip()
-        if path: self.on_scan(path)
+        try:
+            depth = int(self.spin_depth.get())
+        except: depth = 0
+        
+        policy = self.combo_policy.get()
+        if path: self.on_scan(path, web_depth=depth, binary_policy=policy)
 
     def _trigger_ingest(self):
         self.on_ingest()
@@ -1490,6 +2353,19 @@ class FileTreePanel(tk.Frame):
         self.intake = intake_service
         self.root_path = None
         self.node_map = {}
+        
+        # --- UI ASSETS: Programmatic Icons ---
+        # Create 16x16 checkboxes using empty PhotoImages and coloring pixels (or simple rectangles)
+        # 1. Unchecked (Gray outline)
+        self.img_off = tk.PhotoImage(width=16, height=16)
+        self.img_off.put(("#666",), to=(2, 2, 14, 14))   # Border
+        self.img_off.put(("#1e1e2f",), to=(4, 4, 12, 12)) # Center (BG Color)
+        
+        # 2. Checked (Green Fill)
+        self.img_on = tk.PhotoImage(width=16, height=16)
+        self.img_on.put(("#388E3C",), to=(2, 2, 14, 14)) # Green Box
+        self.img_on.put(("#ffffff",), to=(5, 7, 7, 12))  # Checkmark (simple L shape)
+        self.img_on.put(("#ffffff",), to=(7, 10, 11, 7)) 
 
         # Header
         tk.Label(self, text="HIERARCHY EXPLORER", bg=BG_COLOR, fg="#666", 
@@ -1504,29 +2380,48 @@ class FileTreePanel(tk.Frame):
         sb.place(relx=1, rely=0, relheight=1, anchor="ne")
         self.tree.configure(yscrollcommand=sb.set)
 
-    def load_tree(self, path):
+    def load_tree(self, path, web_depth=0):
         self.root_path = path
         self.tree.delete(*self.tree.get_children())
         self.node_map = {}
-        tree_data = self.intake.scan_path(path)
-        self._insert_node("", tree_data)
+        # Pass web_depth to scanner
+        tree_data = self.intake.scan_path(path, web_depth=web_depth)
+        if tree_data:
+            self._insert_node("", tree_data)
 
     def _insert_node(self, parent_id, node):
-        icon = "☑" if node['checked'] else "☐"
-        display = f"{icon}  {node['name']}"
-        item_id = self.tree.insert(parent_id, "end", text=display, open=(parent_id==""))
+        # Use the image property for the checkbox, keep text clean for the name
+        img = self.img_on if node['checked'] else self.img_off
+        
+        item_id = self.tree.insert(parent_id, "end", text=f" {node['name']}", image=img, open=(parent_id==""))
         self.node_map[item_id] = node
-        for child in node['children']:
+        
+        # Safely handle children
+        children = node.get('children', [])
+        for child in children:
             self._insert_node(item_id, child)
 
     def _on_tree_click(self, event):
-        region = self.tree.identify_region(event.x, event.y)
-        if region in ["tree", "separator"]:
-            return 
         item_id = self.tree.identify_row(event.y)
-        if item_id:
+        if not item_id: return
+        
+        # Identify what part of the item was clicked
+        element = self.tree.identify_element(event.x, event.y)
+        
+        # Case 1: Clicked the Checkbox (Image) -> Toggle Selection
+        if element == "image":
             self._toggle_check(item_id)
             return "break"
+            
+        # Case 2: Clicked the Row/Text -> Toggle Expand (if folder)
+        else:
+            # If it has children, toggle the open state
+            if self.tree.get_children(item_id) or self.node_map[item_id]['type'] in ['dir', 'folder']:
+                current_state = self.tree.item(item_id, "open")
+                self.tree.item(item_id, open=not current_state)
+                return "break"
+            # If file, do nothing (or select row standard behavior)
+            return
 
     def _toggle_check(self, item_id):
         node = self.node_map[item_id]
@@ -1537,8 +2432,11 @@ class FileTreePanel(tk.Frame):
     def _set_node_state(self, item_id, state):
         node = self.node_map[item_id]
         node['checked'] = state
-        icon = "☑" if state else "☐"
-        self.tree.item(item_id, text=f"{icon}  {node['name']}")
+        
+        # Update image only
+        img = self.img_on if state else self.img_off
+        self.tree.item(item_id, image=img)
+        
         for child_id in self.tree.get_children(item_id):
             self._set_node_state(child_id, state)
 
@@ -1688,12 +2586,18 @@ class EditorPanel(tk.Frame):
 
 
 
+
+
+
 --------------------------------------------------------------------------------
 FILE: src\microservices\refinery_service.py
 --------------------------------------------------------------------------------
 import json
 import re
-from typing import Dict, List
+import os
+import ast
+import concurrent.futures
+from typing import Dict, List, Any, Optional, Tuple
 from .base_service import BaseService
 from .cartridge_service import CartridgeService
 from .neural_service import NeuralService
@@ -1703,6 +2607,10 @@ class RefineryService(BaseService):
     """
     The Night Shift.
     Polls the DB for 'RAW' files and processes them into Chunks and Graph Nodes.
+
+    Graph Enrichment:
+    - Code: function/class nodes, resolved import edges when possible.
+    - Docs: section/chapter nodes for long-form text (md/txt/rst).
     """
 
     def __init__(self, cartridge: CartridgeService, neural: NeuralService):
@@ -1710,27 +2618,104 @@ class RefineryService(BaseService):
         self.cartridge = cartridge
         self.neural = neural
         self.chunker = SemanticChunker()
-        
-        # Simple regex for imports (Python/JS)
-        self.import_pattern = re.compile(r'(?:from|import)\s+([\w\.]+)|require\([\'"]([\w\.\-/]+)[\'"]\)')
+
+        # --- Spec Enforcement ---
+        # Update the cartridge manifest to reflect the ACTUAL tools we are using.
+        self._stamp_specs()
+
+        # Import parsing / resolution
+        # Regex remains as a fallback (JS + non-parseable cases)
+        self.import_pattern = re.compile(r"""(?:from|import)\s+([\w\.]+)|require\(['"]([\w\.\-/]+)['"]\)""")
+
+        # Lightweight module/path index cache for resolving imports to VFS files
+        self._module_index: Dict[str, str] = {}
+        self._path_index: Dict[str, str] = {}
+        self._index_built: bool = False
+
+        # Simple section/chapter detection
+        self._md_heading = re.compile(r"^(#{1,6})\s+(.+?)\s*$")
+        self._chapter_heading = re.compile(r"^\s*(chapter|CHAPTER)\s+([0-9]+|[IVXLC]+)\b\s*[:\-]?\s*(.*)$")
+
+    def _stamp_specs(self):
+        """Writes the active Neural/Chunker configuration to the Manifest."""
+        try:
+            # 1. Embedding Spec
+            # We assume 1024 dim for mxbai-large, but ideally we'd probe it.
+            embed_model = self.neural.config["embed"]
+            spec = {
+                "provider": "ollama",
+                "model": embed_model,
+                "dim": 1024,  # Hardcoded for now based on mxbai-embed-large
+                "dtype": "float32",
+                "distance": "cosine"
+            }
+            self.cartridge.set_manifest("embedding_spec", spec)
+
+            # 2. Chunking Spec
+            # (We could expose chunker config params here if they were dynamic)
+
+        except Exception as e:
+            self.log_error(f"Failed to stamp specs: {e}")
+
+    def _build_import_index(self):
+        """Builds caches for resolving imports to VFS targets.
+
+        - _path_index: exact VFS path -> VFS path
+        - _module_index: python module name (a.b.c) -> VFS path (a/b/c.py, a/b/c/__init__.py)
+        """
+        if self._index_built:
+            return
+
+        path_index: Dict[str, str] = {}
+        module_index: Dict[str, str] = {}
+
+        conn = self.cartridge._get_conn()
+        try:
+            rows = conn.execute("SELECT vfs_path FROM files").fetchall()
+            for (vp,) in rows:
+                if not vp:
+                    continue
+                vfs_path = str(vp).replace("\\", "/")
+                path_index[vfs_path] = vfs_path
+
+                # Python module mapping
+                if vfs_path.endswith(".py"):
+                    mod = vfs_path[:-3].strip("/")
+                    mod = mod.replace("/", ".")
+                    if mod:
+                        module_index[mod] = vfs_path
+
+                    # If it's a package __init__.py, map the package name too
+                    if vfs_path.endswith("/__init__.py"):
+                        pkg = vfs_path[:-len("/__init__.py")].strip("/").replace("/", ".")
+                        if pkg:
+                            module_index[pkg] = vfs_path
+
+        finally:
+            conn.close()
+
+        self._path_index = path_index
+        self._module_index = module_index
+        self._index_built = True
 
     def process_pending(self, batch_size: int = 5) -> int:
         """Main loop. Returns number of files processed."""
         pending = self.cartridge.get_pending_files(limit=batch_size)
-        if not pending: return 0
+        if not pending:
+            return 0
 
         self.log_info(f"Refining batch of {len(pending)} files...")
-        
+
         for file_row in pending:
             self._refine_file(file_row)
-            
+
         return len(pending)
 
     def _refine_file(self, row: Dict):
         file_id = row['id']
         vfs_path = row['vfs_path']
         content = row['content']
-        
+
         # Skip binary files for now (unless we add OCR later)
         if not content:
             self.cartridge.update_status(file_id, "SKIPPED_BINARY")
@@ -1739,53 +2724,267 @@ class RefineryService(BaseService):
         try:
             # 1. Semantic Chunking
             chunks = self.chunker.chunk_file(content, vfs_path)
-            
+
             # 2. Vectorization & Storage
+            chunk_texts = [c.content for c in chunks]
+
+            # Buffer graph writes while DB transaction is open (prevents nested-writer locks)
+            pending_nodes: List[Tuple[str, str, str, Dict[str, Any]]] = []
+            pending_edges: List[Tuple[str, str, str, float]] = []
+
+            # Use ThreadPool to embed in parallel (preserve order with map)
+            with concurrent.futures.ThreadPoolExecutor(max_workers=self.neural.max_workers) as executor:
+                vectors = list(executor.map(self.neural.get_embedding, chunk_texts))
+
             conn = self.cartridge._get_conn()
-            for i, chunk in enumerate(chunks):
-                # Embedding
-                vector = self.neural.get_embedding(chunk.content)
-                vec_blob = json.dumps(vector).encode('utf-8') if vector else None
-                
-                # Store Chunk
-                conn.execute("""
-                    INSERT INTO chunks (file_id, chunk_index, content, embedding, name, type, start_line, end_line)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                """, (file_id, i, chunk.content, vec_blob, chunk.name, chunk.type, chunk.start_line, chunk.end_line))
+            try:
+                cursor = conn.cursor()
 
-                # Graph Node for Chunks (Functions/Classes)
-                if chunk.type in ['class', 'function']:
-                    node_id = f"{vfs_path}::{chunk.name}"
-                    self.cartridge.add_node(node_id, 'chunk', chunk.name, {'parent': vfs_path})
-                    self.cartridge.add_edge(node_id, vfs_path, "defined_in")
+                for i, chunk in enumerate(chunks):
+                    vector = vectors[i]
+                    vec_blob = json.dumps(vector).encode('utf-8') if vector else None
 
-            conn.commit()
-            conn.close()
+                    # Store Chunk
+                    cursor.execute(
+                        """
+                        INSERT INTO chunks (file_id, chunk_index, content, embedding, name, type, start_line, end_line)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                        """,
+                        (file_id, i, chunk.content, vec_blob, chunk.name, chunk.type, chunk.start_line, chunk.end_line)
+                    )
 
-            # 3. File Level Graph Node
-            self.cartridge.add_node(vfs_path, 'file', vfs_path.split('/')[-1], {'path': vfs_path})
+                    chunk_row_id = cursor.lastrowid
 
-            # 4. Import Weaving (Simple)
+                    # Insert into Vector Index (if vector exists)
+                    if vector:
+                        try:
+                            cursor.execute(
+                                "INSERT INTO vec_items(rowid, embedding) VALUES (?, ?)",
+                                (chunk_row_id, json.dumps(vector))
+                            )
+                        except Exception as ve:
+                            self.log_error(f"Vector Index Insert Failed: {ve}")
+
+                    # Graph Node for Chunks (Functions/Classes)
+                    # IMPORTANT: Do NOT call CartridgeService.add_node/add_edge while this conn is open.
+                    if chunk.type in ['class', 'function']:
+                        node_id = f"{vfs_path}::{chunk.name}"
+                        pending_nodes.append(
+                            (
+                                node_id,
+                                'chunk',
+                                chunk.name,
+                                {
+                                    'parent': vfs_path,
+                                    'file_id': file_id,
+                                    'chunk_row_id': chunk_row_id,
+                                    'chunk_type': chunk.type,
+                                    'start_line': chunk.start_line,
+                                    'end_line': chunk.end_line
+                                }
+                            )
+                        )
+                        pending_edges.append((node_id, vfs_path, "defined_in", 1.0))
+
+                conn.commit()
+
+            finally:
+                conn.close()
+
+            # 3. File Level Graph Node (after close)
+            pending_nodes.append((vfs_path, 'file', vfs_path.split('/')[-1], {'path': vfs_path, 'file_id': file_id}))
+
+            # 4. Section/Chapter Weaving (docs)
+            self._weave_sections(vfs_path, content)
+
+            # 5. Import Weaving (resolved when possible)
             self._weave_imports(vfs_path, content)
 
+            # 6. Flush buffered graph writes
+            for nid, ntype, label, data in pending_nodes:
+                self.cartridge.add_node(nid, ntype, label, data)
+            for src, tgt, rel, w in pending_edges:
+                self.cartridge.add_edge(src, tgt, rel, w)
+
+            # 7. Mark file refined
             self.cartridge.update_status(file_id, "REFINED")
 
         except Exception as e:
             self.log_error(f"Refining failed for {vfs_path}: {e}")
             self.cartridge.update_status(file_id, "ERROR", {"error": str(e)})
 
+    def _extract_imports_python(self, source_path: str, content: str) -> List[Tuple[str, int, int]]:
+        """Returns list of (module_or_path, level, lineno).
+
+        - level: 0 for absolute imports, >=1 for relative import-from statements.
+        """
+        out: List[Tuple[str, int, int]] = []
+        try:
+            tree = ast.parse(content)
+        except Exception:
+            return out
+
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Import):
+                for alias in node.names:
+                    if alias and alias.name:
+                        out.append((alias.name, 0, getattr(node, 'lineno', 0)))
+            elif isinstance(node, ast.ImportFrom):
+                level = int(getattr(node, 'level', 0) or 0)
+                mod = getattr(node, 'module', None) or ""
+                if mod:
+                    out.append((mod, level, getattr(node, 'lineno', 0)))
+                else:
+                    # from . import x
+                    for alias in node.names:
+                        if alias and alias.name:
+                            out.append((alias.name, level, getattr(node, 'lineno', 0)))
+
+        return out
+
+    def _resolve_python_import(self, source_path: str, module: str, level: int) -> List[str]:
+        """Resolve a python import to possible VFS target paths."""
+        self._build_import_index()
+
+        # Absolute: try direct module mapping
+        if level <= 0:
+            if module in self._module_index:
+                return [self._module_index[module]]
+            return []
+
+        # Relative: resolve from the source directory
+        src_dir = os.path.dirname(source_path).replace("\\", "/").strip("/")
+        base_parts = src_dir.split("/") if src_dir else []
+
+        # level=1 means "from .", so pop 0; level=2 means "from .." pop 1, etc.
+        pops = max(level - 1, 0)
+        if pops > 0 and pops <= len(base_parts):
+            base_parts = base_parts[:-pops]
+
+        rel_base = "/".join([p for p in base_parts if p])
+        mod_path = module.replace(".", "/").strip("/")
+
+        candidates: List[str] = []
+        if rel_base:
+            if mod_path:
+                candidates.append(f"{rel_base}/{mod_path}.py")
+                candidates.append(f"{rel_base}/{mod_path}/__init__.py")
+            else:
+                candidates.append(f"{rel_base}/__init__.py")
+        else:
+            if mod_path:
+                candidates.append(f"{mod_path}.py")
+                candidates.append(f"{mod_path}/__init__.py")
+
+        return [c for c in candidates if c in self._path_index]
+
+    def _resolve_js_like_import(self, source_path: str, imp: str) -> List[str]:
+        """Resolve require('./x') / import ... from './x' to VFS candidates."""
+        self._build_import_index()
+
+        sdir = os.path.dirname(source_path).replace("\\", "/").strip("/")
+        raw = imp.strip().replace("\\", "/")
+
+        # Only try to resolve relative-ish paths
+        if not (raw.startswith(".") or raw.startswith("/")):
+            return []
+
+        # Normalize
+        if raw.startswith("/"):
+            rel = raw.lstrip("/")
+        else:
+            rel = os.path.normpath(os.path.join(sdir, raw)).replace("\\", "/").lstrip("./")
+
+        ext_candidates = [rel]
+        # Common extensions
+        if not os.path.splitext(rel)[1]:
+            ext_candidates.extend([rel + ".js", rel + ".ts", rel + ".json"]) 
+            ext_candidates.extend([rel + "/index.js", rel + "/index.ts"]) 
+
+        return [c for c in ext_candidates if c in self._path_index]
+
     def _weave_imports(self, source_path: str, content: str):
-        """Scans content for imports and links them in the graph."""
-        lines = content.splitlines()
-        for line in lines:
+        """Scans content for imports and links them in the graph.
+
+        Creates edges:
+        - imports_file: source_path -> target_vfs_path (resolved)
+        - imports_unresolved: source_path -> module_string (fallback)
+        """
+        targets_resolved: List[str] = []
+
+        # Python: use AST when possible
+        if source_path.endswith(".py"):
+            for mod, level, lineno in self._extract_imports_python(source_path, content):
+                resolved = self._resolve_python_import(source_path, mod, level)
+                if resolved:
+                    for tgt in resolved:
+                        self.cartridge.add_edge(source_path, tgt, "imports_file", 1.0)
+                        targets_resolved.append(tgt)
+                else:
+                    self.cartridge.add_edge(source_path, mod, "imports_unresolved", 0.25)
+
+            return
+
+        # JS / generic: regex fallback
+        for line in content.splitlines():
             match = self.import_pattern.search(line)
-            if match:
-                # Extract the import name (e.g., 'os', 'numpy', './utils')
-                imp = match.group(1) or match.group(2)
-                if imp:
-                    # Heuristic: Link to any node ID that contains this string
-                    # Real implementation would do path resolution, but this creates the visual structure effectively.
-                    self.cartridge.add_edge(source_path, imp, "imports")
+            if not match:
+                continue
+
+            imp = match.group(1) or match.group(2)
+            if not imp:
+                continue
+
+            resolved = self._resolve_js_like_import(source_path, imp)
+            if resolved:
+                for tgt in resolved:
+                    self.cartridge.add_edge(source_path, tgt, "imports_file", 1.0)
+                    targets_resolved.append(tgt)
+            else:
+                self.cartridge.add_edge(source_path, imp, "imports_unresolved", 0.25)
+
+    def _weave_sections(self, vfs_path: str, content: str):
+        """Creates section/chapter nodes for long-form text and links them to the file node."""
+        ext = os.path.splitext(vfs_path)[1].lower()
+        if ext not in (".md", ".markdown", ".txt", ".rst"):
+            return
+
+        lines = content.splitlines()
+        for idx, line in enumerate(lines):
+            lineno = idx + 1
+
+            m = self._md_heading.match(line)
+            if m:
+                hashes = m.group(1)
+                title = (m.group(2) or "").strip()
+                level = len(hashes)
+                if title:
+                    node_id = f"{vfs_path}::section::{lineno}:{title}"
+                    self.cartridge.add_node(node_id, "section", title, {
+                        "parent": vfs_path,
+                        "level": level,
+                        "line": lineno
+                    })
+                    self.cartridge.add_edge(node_id, vfs_path, "in_file", 1.0)
+                continue
+
+            c = self._chapter_heading.match(line)
+            if c:
+                chap_num = (c.group(2) or "").strip()
+                chap_title = (c.group(3) or "").strip()
+                title = f"Chapter {chap_num}" + (f": {chap_title}" if chap_title else "")
+                node_id = f"{vfs_path}::chapter::{lineno}:{chap_num}"
+                self.cartridge.add_node(node_id, "section", title, {
+                    "parent": vfs_path,
+                    "level": 1,
+                    "line": lineno
+                })
+                self.cartridge.add_edge(node_id, vfs_path, "in_file", 1.0)
+
+
+
+
+
 --------------------------------------------------------------------------------
 FILE: src\microservices\scanner.py
 --------------------------------------------------------------------------------
@@ -1849,11 +3048,18 @@ class ScannerMS:
         """
         Recursively fetches links.
         """
+        # Generate a nice VFS path: web/domain/path
+        parsed = urlparse(url)
+        clean_path = parsed.path.strip("/")
+        if not clean_path: clean_path = "index.html"
+        rel_path = f"web/{parsed.netloc}/{clean_path}"
+
         node = {
-            'text': url, 
-            'path': url, 
-            'type': 'web', 
-            'children': [], 
+            'name': url,
+            'path': url,
+            'rel_path': rel_path,
+            'type': 'web',
+            'children': [],
             'checked': True
         }
         
@@ -1882,8 +3088,10 @@ class ScannerMS:
         return node
 
     # --- File System Logic ---
-    def _scan_fs_recursive(self, current_path: str) -> Dict[str, Any]:
-        node = self._create_node(current_path, is_dir=True)
+    def _scan_fs_recursive(self, current_path: str, root_path: str = None) -> Dict[str, Any]:
+        if root_path is None: root_path = current_path
+        
+        node = self._create_node(current_path, is_dir=True, root_path=root_path)
         node['children'] = []
         try:
             with os.scandir(current_path) as it:
@@ -1893,18 +3101,32 @@ class ScannerMS:
                     if entry.name.startswith('.'): continue
 
                     if entry.is_dir():
-                        child = self._scan_fs_recursive(entry.path)
+                        child = self._scan_fs_recursive(entry.path, root_path=root_path)
                         if child: node['children'].append(child)
                     else:
-                        node['children'].append(self._create_node(entry.path, is_dir=False))
+                        node['children'].append(self._create_node(entry.path, is_dir=False, root_path=root_path))
         except PermissionError:
             node['error'] = "Access Denied"
         return node
 
-    def _create_node(self, path: str, is_dir: bool) -> Dict[str, Any]:
+    def _create_node(self, path: str, is_dir: bool, root_path: str = None) -> Dict[str, Any]:
         name = os.path.basename(path)
-        node = {'text': name, 'path': path, 'type': 'folder' if is_dir else 'file', 'checked': False}
-        if not is_dir and self.is_binary(path): node['type'] = 'binary'
+        # Calculate relative path for VFS
+        rel_path = name
+        if root_path:
+            try:
+                rel_path = os.path.relpath(path, root_path).replace("\\", "/")
+            except ValueError:
+                pass
+
+        node = {
+            'name': name, 
+            'path': path, 
+            'rel_path': rel_path,
+            'type': 'folder' if is_dir else 'file', 
+            'children': [],
+            'checked': False
+        }
         return node
 
     def flatten_tree(self, tree_node: Dict[str, Any]) -> List[str]:
@@ -1915,6 +3137,8 @@ class ScannerMS:
             for child in tree_node['children']:
                 files.extend(self.flatten_tree(child))
         return files
+
+
 --------------------------------------------------------------------------------
 FILE: src\microservices\semantic_chunker.py
 --------------------------------------------------------------------------------
@@ -1939,9 +3163,17 @@ class SemanticChunker:
     """
     
     def chunk_file(self, content: str, filename: str) -> List[CodeChunk]:
+        # 1. Python Code
         if filename.endswith(".py"):
             return self._chunk_python(content)
-        return self._chunk_generic(content)
+            
+        # 2. Text / Prose Documents (Smaller semantic windows)
+        lower = filename.lower()
+        if lower.endswith(('.md', '.txt', '.pdf', '.html', '.htm', '.rst')):
+            return self._chunk_generic(content, window_size=800)
+            
+        # 3. Fallback (Generic Code/Binary)
+        return self._chunk_generic(content, window_size=1500)
 
     def _chunk_python(self, source: str) -> List[CodeChunk]:
         chunks = []
@@ -1982,7 +3214,10 @@ class SemanticChunker:
     def _chunk_generic(self, text: str, window_size: int = 1500) -> List[CodeChunk]:
         """Sliding window for non-code files."""
         chunks = []
+        # normalize newlines to avoid massive single-line blobs
+        text = text.replace('\r\n', '\n').replace('\r', '\n')
         lines = text.splitlines(keepends=True)
+        
         current_chunk = []
         current_size = 0
         chunk_idx = 1
@@ -2009,6 +3244,71 @@ class SemanticChunker:
             ))
             
         return chunks
+
+
+--------------------------------------------------------------------------------
+FILE: src\microservices\telemetry_service.py
+--------------------------------------------------------------------------------
+import logging
+import queue
+from .base_service import BaseService
+
+class TelemetryService(BaseService):
+    """
+    The Nervous System.
+    Watches the thread-safe LogQueue and updates the GUI Panels.
+    """
+    def __init__(self, root, panels):
+        super().__init__("TelemetryService")
+        self.root = root
+        self.panels = panels
+        self.log_queue = queue.Queue()
+        
+        # We set up the global logging hook HERE, inside the service
+        self._setup_logging_hook()
+
+    def _setup_logging_hook(self):
+        """Redirects Python's standard logging to our Queue."""
+        logger = logging.getLogger()
+        logger.setLevel(logging.INFO)
+        
+        # Create our custom handler that feeds the queue
+        q_handler = QueueHandler(self.log_queue)
+        formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s', datefmt='%H:%M:%S')
+        q_handler.setFormatter(formatter)
+        logger.addHandler(q_handler)
+
+    def start(self):
+        """Begins the GUI update loop."""
+        self.log_info("Telemetry Service starting...")
+        self._poll_queue()
+
+    def _poll_queue(self):
+        """The heartbeat that drains the queue into the GUI."""
+        try:
+            while True:
+                record = self.log_queue.get_nowait()
+                msg = f"[{record.levelname}] {record.message}" # Removed \n because .log() adds it
+                
+                # Update the GUI
+                self.panels.log(msg)
+                
+        except queue.Empty:
+            pass
+        finally:
+            # Check again in 100ms
+            self.root.after(100, self._poll_queue)
+
+# Helper Class for the Queue
+class QueueHandler(logging.Handler):
+    def __init__(self, log_queue):
+        super().__init__()
+        self.log_queue = log_queue
+
+    def emit(self, record):
+        self.format(record)
+        self.log_queue.put(record)
+
 
 --------------------------------------------------------------------------------
 FILE: src\microservices\thought_stream.py
@@ -2064,3 +3364,111 @@ class ThoughtStream(ttk.Frame):
 --------------------------------------------------------------------------------
 FILE: src\microservices\__init__.py
 --------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+FILE: tests\verify_forge.py
+--------------------------------------------------------------------------------
+import sys
+import os
+import time
+import json
+
+# Fix path so we can import src
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'src')))
+
+from microservices.cartridge_service import CartridgeService
+from microservices.neural_service import NeuralService
+from microservices.intake_service import IntakeService
+from microservices.refinery_service import RefineryService
+
+TEST_DB = "tests/test_cartridge.db"
+TEST_SOURCE_DIR = "tests/dummy_source"
+
+def setup_dummy_data():
+    if not os.path.exists(TEST_SOURCE_DIR):
+        os.makedirs(TEST_SOURCE_DIR)
+    
+    # Create a text file with specific distinct concepts
+    with open(f"{TEST_SOURCE_DIR}/concept.txt", "w") as f:
+        f.write("""
+        Project: Project Necromancy.
+        Objective: To resurrect dead code using AI patches.
+        Lead Engineer: Jacob Lambert.
+        Tools: _RagFORGE, _TokenizingPATCHER.
+        Status: ACTIVE.
+        """)
+    print("[TEST] Dummy data created.")
+
+def run_test():
+    # 1. Cleanup old test
+    if os.path.exists(TEST_DB):
+        os.remove(TEST_DB)
+
+    setup_dummy_data()
+
+    print(f"[TEST] Forging Cartridge: {TEST_DB}")
+    
+    # 2. Initialize Services
+    cartridge = CartridgeService(TEST_DB)
+    neural = NeuralService()
+    intake = IntakeService(cartridge)
+    refinery = RefineryService(cartridge, neural)
+
+    # 3. Intake Phase
+    print(">>> Phase 1: Intake")
+    # Using the new ingest_source method we patched
+    stats = intake.ingest_source(TEST_SOURCE_DIR)
+    print(f"    Stats: {stats}")
+
+    # 4. Refinery Phase
+    print(">>> Phase 2: Refinery")
+    processed = refinery.process_pending(batch_size=10)
+    print(f"    Refined {processed} files.")
+    
+    # Allow DB to settle
+    time.sleep(1)
+
+    # 5. Verification: Manifest
+    print("\n[VERIFY] Checking Manifest...")
+    cid = cartridge.get_manifest("cartridge_id")
+    schema = cartridge.get_manifest("schema_version")
+    print(f"    Cartridge ID: {cid}")
+    print(f"    Schema Ver:   {schema}")
+    
+    if not cid:
+        print("    [FAIL] Manifest missing!")
+        return
+
+    # 6. Verification: Vector Search
+    print("\n[VERIFY] Testing Vector Search...")
+    # We search for a concept that shouldn't match by keyword alone but works semantically
+    query = "Who is the lead engineer?" 
+    print(f"    Query: '{query}'")
+    
+    q_vec = neural.get_embedding(query)
+    results = cartridge.search_embeddings(q_vec, limit=1)
+    
+    if results:
+        top = results[0]
+        print(f"    [SUCCESS] Match found!")
+        print(f"    Score: {top['score']}")
+        print(f"    Content: {top['content'].strip()}")
+    else:
+        print("    [FAIL] No vector results found. Is sqlite-vec working?")
+
+if __name__ == "__main__":
+    try:
+        run_test()
+    except Exception as e:
+        print(f"[FATAL] Test failed: {e}")
+
+--------------------------------------------------------------------------------
+FILE: tests\dummy_source\concept.txt
+--------------------------------------------------------------------------------
+
+        Project: Project Necromancy.
+        Objective: To resurrect dead code using AI patches.
+        Lead Engineer: Jacob Lambert.
+        Tools: _RagFORGE, _TokenizingPATCHER.
+        Status: ACTIVE.
+        

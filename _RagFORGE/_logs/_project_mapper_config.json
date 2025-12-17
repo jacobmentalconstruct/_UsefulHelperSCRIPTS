@@ -245,9 +245,11 @@
     ".venv\\Lib\\site-packages\\urllib3\\util\\__pycache__": "unchecked",
     ".venv\\Lib\\site-packages\\urllib3-2.6.2.dist-info": "checked",
     ".venv\\Lib\\site-packages\\urllib3-2.6.2.dist-info\\licenses": "checked",
-    "cartridges": "checked",
+    "cartridges": "unchecked",
     "src\\__pycache__": "unchecked",
-    "src\\microservices\\__pycache__": "unchecked"
+    "src\\microservices\\__pycache__": "unchecked",
+    "tests": "checked",
+    "tests\\dummy_source": "checked"
   },
   "dynamic_exclusions": []
 }
