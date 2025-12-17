@@ -118,12 +118,31 @@ class CartridgeService(BaseService):
         self.initialize_manifest()
 
     def initialize_manifest(self):
-        """Populates the boot sector with standard UNCF headers."""
+        """Populates the boot sector with strict RagFORGE Cartridge Schema v1.0."""
         if not self.get_manifest("cartridge_id"):
-            self.set_manifest("schema_version", self.SCHEMA_VERSION)
+            # 1. Identity & Versioning
+            self.set_manifest("schema_name", "ragforge_cartridge")
+            self.set_manifest("schema_version", "1.0.0")
             self.set_manifest("cartridge_id", str(uuid.uuid4()))
             self.set_manifest("created_at_utc", datetime.datetime.utcnow().isoformat())
-            self.set_manifest("ragforge_version", "1.1.0")
+            self.set_manifest("created_by_app", "RagFORGE")
+            
+            # 2. Specs (Defaults - will be updated by Refinery)
+            self.set_manifest("embedding_spec", {
+                "provider": "unknown", 
+                "model": "pending_init", 
+                "dim": 0
+            })
+            self.set_manifest("chunking_spec", {
+                "strategy": "semantic_hybrid",
+                "python_ast": True, 
+                "generic_window": 1500
+            })
+            
+            # 3. Status & Health
+            self.set_manifest("cartridge_health", "FRESH")
+            self.set_manifest("ingest_complete", False)
+            self.set_manifest("refine_complete", False)
 
     def set_manifest(self, key: str, value: Any):
         """Upsert metadata key."""
@@ -139,6 +158,31 @@ class CartridgeService(BaseService):
         row = conn.execute("SELECT value FROM manifest WHERE key=?", (key,)).fetchone()
         conn.close()
         return row[0] if row else None
+
+    def validate_cartridge(self) -> Dict[str, Any]:
+        """Quality Control: Checks if the cartridge is Agent-Safe."""
+        report = {"valid": True, "health": "OK", "errors": []}
+        
+        # 1. Check Required Keys
+        required = ["cartridge_id", "schema_version", "embedding_spec"]
+        for key in required:
+            if not self.get_manifest(key):
+                report["valid"] = False
+                report["errors"].append(f"Missing Manifest Key: {key}")
+        
+        # 2. Check Vector Index Presence
+        conn = self._get_conn()
+        try:
+            # Check if vec_items table exists (sqlite-vec)
+            conn.execute("SELECT count(*) FROM vec_items").fetchone()
+        except Exception:
+             report["errors"].append("Vector Index (vec_items) missing or not loaded.")
+             # Not fatal for 'valid' but impacts capability
+             report["health"] = "WARN_NO_VECTORS"
+        finally:
+            conn.close()
+            
+        return report
 
     def store_file(self, vfs_path: str, origin_path: str, content: str = None, blob: bytes = None, mime_type: str = "text/plain", origin_type: str = "filesystem"):
         """
@@ -256,3 +300,4 @@ class CartridgeService(BaseService):
             conn.close()
             
         return results
+

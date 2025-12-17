@@ -14,13 +14,39 @@ class RefineryService(BaseService):
     """
 
     def __init__(self, cartridge: CartridgeService, neural: NeuralService):
-        super().__init__("RefineryService")
-        self.cartridge = cartridge
-        self.neural = neural
-        self.chunker = SemanticChunker()
-        
-        # Simple regex for imports (Python/JS)
-        self.import_pattern = re.compile(r'(?:from|import)\s+([\w\.]+)|require\([\'"]([\w\.\-/]+)[\'"]\)')
+            super().__init__("RefineryService")
+            self.cartridge = cartridge
+            self.neural = neural
+            self.chunker = SemanticChunker()
+            
+            # --- Spec Enforcement ---
+            # Update the cartridge manifest to reflect the ACTUAL tools we are using.
+            self._stamp_specs()
+
+            # Simple regex for imports (Python/JS)
+            # We use triple quotes r"""...""" to safely handle both ' and " inside the regex
+            self.import_pattern = re.compile(r"""(?:from|import)\s+([\w\.]+)|require\(['"]([\w\.\-/]+)['"]\)""")
+
+    def _stamp_specs(self):
+        """Writes the active Neural/Chunker configuration to the Manifest."""
+        try:
+            # 1. Embedding Spec
+            # We assume 1024 dim for mxbai-large, but ideally we'd probe it.
+            embed_model = self.neural.config["embed"]
+            spec = {
+                "provider": "ollama",
+                "model": embed_model,
+                "dim": 1024, # Hardcoded for now based on mxbai-embed-large
+                "dtype": "float32",
+                "distance": "cosine"
+            }
+            self.cartridge.set_manifest("embedding_spec", spec)
+            
+            # 2. Chunking Spec
+            # (We could expose chunker config params here if they were dynamic)
+            
+        except Exception as e:
+            self.log_error(f"Failed to stamp specs: {e}")
 
     def process_pending(self, batch_size: int = 5) -> int:
         """Main loop. Returns number of files processed."""
@@ -115,4 +141,5 @@ class RefineryService(BaseService):
                     # Heuristic: Link to any node ID that contains this string
                     # Real implementation would do path resolution, but this creates the visual structure effectively.
                     self.cartridge.add_edge(source_path, imp, "imports")
+
 

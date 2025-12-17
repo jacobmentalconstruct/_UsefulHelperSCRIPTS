@@ -3,6 +3,7 @@ from tkinter import ttk, filedialog, messagebox, scrolledtext, simpledialog
 import os
 import sqlite3
 import threading
+import time
 
 # --- UI CONSTANTS ---
 BG_COLOR = "#1e1e2f"

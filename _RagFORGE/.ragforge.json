@@ -6,7 +6,7 @@
   "_logs/_RagFORGE_filedump.txt": true,
   "_logs/_RagFORGE_project_folder_tree.txt": true,
   "cartridges": true,
-  "cartridges/_RagForgeCART.db": true,
+  "cartridges/_RagFORGE.db": false,
   "src": true,
   "src/microservices": true,
   "src/microservices/__init__.py": true,
