@@ -667,10 +667,9 @@ class ProjectMapperApp:
                 if self.stop_event.is_set(): 
                     f_out.write("\n\n!!! DUMP CANCELLED BY USER !!!")
                     break
-    
+                
                 curr = Path(r)
-                # First remove excluded folders, then apply selection logic
-                d[:] = [x for x in d if x not in EXCLUDED_FOLDERS and self.is_selected(curr/x, root)]
+                d[:] = [x for x in d if self.is_selected(curr/x, root)]
                 if not self.is_selected(curr, root): continue
                 
                 for fname_item in f:
@@ -852,4 +851,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
