@@ -1,6 +1,7 @@
 import pygame
 import math
 import random
+import time
 
 # Initialize font module globally once
 pygame.font.init()
@@ -8,8 +9,8 @@ pygame.font.init()
 from microservice_std_lib import service_metadata, service_endpoint
 
 @service_metadata(
-    name="NeuralGraphMS",
-    version="1.0.0",
+    name="NeuralGraphViewerMS",
+    version="1.1.0",
     description="The Cartographer: A physics-driven rendering engine for visualizing complex neural relationships in a 2D force-directed graph.",
     tags=["visualization", "graph", "pygame"],
     capabilities=["force-directed-layout", "real-time-rendering"]
@@ -17,6 +18,7 @@ from microservice_std_lib import service_metadata, service_endpoint
 class GraphRenderer:
     def __init__(self, width, height, bg_color=(16, 16, 24)):
         self.width = width
+        self.start_time = time.time()
         self.height = height
         self.bg_color = bg_color
         
@@ -40,6 +42,21 @@ class GraphRenderer:
         
         # Physics State
         self.settled = False
+
+    @service_endpoint(
+        inputs={},
+        outputs={"status": "str", "uptime": "float", "nodes": "int", "settled": "bool"},
+        description="Standardized health check to verify the operational state of the graph renderer.",
+        tags=["diagnostic", "health"]
+    )
+    def get_health(self) -> Dict[str, Any]:
+        """Returns the operational status of the GraphRenderer."""
+        return {
+            "status": "online",
+            "uptime": time.time() - self.start_time,
+            "nodes": len(self.nodes),
+            "settled": self.settled
+        }
 
     def resize(self, width, height):
         self.width = width
@@ -317,6 +334,7 @@ class GraphRenderer:
             engine.set_data(test_nodes, test_links)
             engine.step_physics()
             print("Physics step completed.")
+
 
 
 

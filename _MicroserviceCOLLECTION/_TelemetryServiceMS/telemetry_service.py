@@ -1,5 +1,6 @@
 import logging
 import queue
+import time
 from .base_service import BaseService
 from microservice_std_lib import service_metadata, service_endpoint
 
@@ -20,9 +21,25 @@ class TelemetryService(BaseService):
         self.root = root
         self.panels = panels
         self.log_queue = queue.Queue()
+        self.start_time = time.time()
+        self._heartbeat_count = 0
         
         # We set up the global logging hook HERE, inside the service
         self._setup_logging_hook()
+
+    @service_endpoint(
+        inputs={},
+        outputs={"status": "str", "uptime": "float", "queue_depth": "int"},
+        description="Standardized health check to verify the operational state of the telemetry pipeline.",
+        tags=["diagnostic", "health"]
+    )
+    def get_health(self) -> Dict[str, Any]:
+        """Returns the operational status of the TelemetryService."""
+        return {
+            "status": "online",
+            "uptime": time.time() - self.start_time,
+            "queue_depth": self.log_queue.qsize()
+        }
 
     def _setup_logging_hook(self):
         """Redirects Python's standard logging to our Queue."""
@@ -47,8 +64,19 @@ class TelemetryService(BaseService):
         self.log_info("Telemetry Service starting...")
         self._poll_queue()
 
+    @service_endpoint(
+        inputs={},
+        outputs={"alive": "bool", "heartbeat": "int"},
+        description="Verifies that the GUI polling loop is actively processing the log queue.",
+        tags=["diagnostic", "heartbeat"]
+    )
+    def ping(self) -> Dict[str, Any]:
+        """Allows an agent to verify the pulse of the UI loop."""
+        return {"alive": True, "heartbeat": self._heartbeat_count}
+
     def _poll_queue(self):
         """The heartbeat that drains the queue into the GUI."""
+        self._heartbeat_count += 1
         try:
             while True:
                 record = self.log_queue.get_nowait()
@@ -84,5 +112,6 @@ class QueueHandler(logging.Handler):
     print("Service ready:", svc._service_info["name"])
     svc.log_info("Internal test message")
     svc._poll_queue()
+
 
 
