@@ -174,7 +174,25 @@ class ProjectMapperApp:
         self.widgets = {}
         self.current_progress_popup = None
 
-        self.glyphs = {S_UNCHECKED: "[ ]", S_CHECKED: "[X]"}
+        # --- GENERATE ICONS PROGRAMMATICALLY (Robust/No Base64) ---
+        self.icon_imgs = {}
+
+        # 1. Unchecked Icon (Gray Border, Transparent Center)
+        img_u = tk.PhotoImage(width=14, height=14)
+        img_u.put(("#808080",), to=(0, 0, 14, 1))    # Top border
+        img_u.put(("#808080",), to=(0, 13, 14, 14))  # Bottom border
+        img_u.put(("#808080",), to=(0, 0, 1, 14))    # Left border
+        img_u.put(("#808080",), to=(13, 0, 14, 14))  # Right border
+        self.icon_imgs[S_UNCHECKED] = img_u
+
+        # 2. Checked Icon (Blue Fill, White Checkmarkish shape)
+        img_c = tk.PhotoImage(width=14, height=14)
+        img_c.put(("#007ACC",), to=(0, 0, 14, 14))   # Blue Background
+        # Simple white "check" pixels
+        img_c.put(("#FFFFFF",), to=(3, 7, 6, 10))    # Short leg
+        img_c.put(("#FFFFFF",), to=(6, 5, 11, 8))    # Long leg
+        self.icon_imgs[S_CHECKED] = img_c
+        # ----------------------------------------------------------
 
         self._setup_styles()
         self._setup_ui()
@@ -185,6 +203,19 @@ class ProjectMapperApp:
         # Initial Actions
         self.root.after(100, lambda: self.run_threaded_action(self._load_conda_info_impl, task_id='load_conda'))
         self.root.after(200, self._rescan_project_tree)
+
+        # File Icon (Simple text document shape)
+        img_f = tk.PhotoImage(width=14, height=14)
+        # Outline
+        img_f.put(("#FFFFFF",), to=(2, 1, 12, 2))   # Top
+        img_f.put(("#FFFFFF",), to=(2, 1, 3, 13))   # Left
+        img_f.put(("#FFFFFF",), to=(11, 1, 12, 13)) # Right
+        img_f.put(("#FFFFFF",), to=(2, 12, 12, 13)) # Bottom
+        # Lines representing text
+        img_f.put(("#808080",), to=(4, 4, 10, 5))
+        img_f.put(("#808080",), to=(4, 7, 10, 8))
+        img_f.put(("#808080",), to=(4, 10, 8, 11))
+        self.icon_imgs["file"] = img_f
 
     # --- UI Setup ---
     def _setup_styles(self):
@@ -292,6 +323,8 @@ class ProjectMapperApp:
         # -- Utility --
         tk.Button(util_frame, text="Open Logs", command=self.open_main_log_directory, bg="#4a4a5a", fg="white").pack(side=tk.RIGHT, padx=5)
         tk.Button(util_frame, text="Exclusions", command=self.manage_dynamic_exclusions_popup, bg="#007a7a", fg="white").pack(side=tk.RIGHT, padx=5)
+        tk.Button(util_frame, text="All", command=lambda: self.set_global_selection(S_CHECKED), bg="#4a4a5a", fg="white", width=4).pack(side=tk.RIGHT, padx=2)
+        tk.Button(util_frame, text="None", command=lambda: self.set_global_selection(S_UNCHECKED), bg="#4a4a5a", fg="white", width=4).pack(side=tk.RIGHT, padx=2)
         
         # -- Quick Add Exclusion --
         tk.Button(util_frame, text="Add", command=lambda: self.add_excluded_filename(self.exc_entry), bg="#007ACC", fg="white", font=("Arial", 8)).pack(side=tk.RIGHT, padx=5)
@@ -429,16 +462,38 @@ class ProjectMapperApp:
         def _recurse(current: Path, parent_iid: str):
             if self.stop_event.is_set(): return
             try:
-                items = sorted([x for x in current.iterdir() if x.is_dir()], key=lambda x: x.name.lower())
+                # LIST ALL ITEMS (Files + Folders)
+                # Sort: Folders first, then files (case insensitive)
+                items = sorted(list(current.iterdir()), key=lambda x: (not x.is_dir(), x.name.lower()))
+                
                 for p in items:
+                    # 1. SAFETY: Skip Excluded Folders/Files immediately
+                    if p.name in EXCLUDED_FOLDERS: continue
+                    if p.is_file() and self.should_exclude_file(p.name): continue
+
                     path_str = str(p.resolve())
-                    state = S_CHECKED
-                    if path_str in self.folder_item_states: state = self.folder_item_states[path_str]
-                    elif p.name in EXCLUDED_FOLDERS: state = S_UNCHECKED
                     
-                    with self.state_lock: self.folder_item_states[path_str] = state
-                    tree_data.append({'parent': parent_iid, 'iid': path_str, 'text': f" {p.name}"})
-                    _recurse(p, path_str)
+                    # 2. State Inheritance
+                    # If we don't have a specific state saved, inherit from parent
+                    if path_str not in self.folder_item_states:
+                        parent_state = self.folder_item_states.get(parent_iid, S_CHECKED)
+                        with self.state_lock:
+                            self.folder_item_states[path_str] = parent_state
+                    
+                    # 3. Add to Tree Data
+                    # We add a visual prefix for files since we are using the image slot for the checkbox
+                    display_text = f" {p.name}"
+                    
+                    tree_data.append({
+                        'parent': parent_iid, 
+                        'iid': path_str, 
+                        'text': display_text
+                    })
+                    
+                    # 4. Recurse only if Directory
+                    if p.is_dir():
+                        _recurse(p, path_str)
+                        
             except PermissionError: pass
 
         root_str = str(root_path.resolve())
@@ -447,7 +502,6 @@ class ProjectMapperApp:
         
         _recurse(root_path, root_str)
         self.gui_queue.put(lambda: self._populate_tree(tree_data))
-
     def _populate_tree(self, data):
         tree = self.widgets['folder_tree']
         for i in tree.get_children(): tree.delete(i)
@@ -480,11 +534,19 @@ class ProjectMapperApp:
             if not tree.exists(iid): return
             with self.state_lock:
                 st = self.folder_item_states.get(iid, S_UNCHECKED)
-            glyph = self.glyphs.get(st, "[?]")
-            name = Path(iid).name
-            display = f"{glyph} {name}"
-            tree.item(iid, text=display)
-            for child in tree.get_children(iid): _refresh(child)
+            
+            # Use Checkbox Icon
+            icon = self.icon_imgs.get(st, self.icon_imgs[S_UNCHECKED])
+            
+            # Add File/Folder distinction to text
+            p = Path(iid)
+            prefix = "📄 " if p.is_file() else "" 
+            
+            tree.item(iid, text=f" {prefix}{p.name}", image=icon)
+            
+            # Recursion only needed for folders (files have no children)
+            if tree.get_children(iid):
+                for child in tree.get_children(iid): _refresh(child)
         
         if start_node: _refresh(start_node)
         else:
@@ -493,13 +555,27 @@ class ProjectMapperApp:
 
     def on_tree_item_click(self, event):
         tree = event.widget
+        
+        # Identify specific element. 
+        # Note: element name varies by theme (e.g., "image", "Treeitem.image", etc.)
+        element = tree.identify("element", event.x, event.y)
         iid = tree.identify_row(event.y)
+        
         if not iid: return
+
+        # ROBUST FIX: Check if "image" is part of the element name
+        if "image" in element:
+            with self.state_lock:
+                curr = self.folder_item_states.get(iid, S_UNCHECKED)
+                new = S_CHECKED if curr != S_CHECKED else S_UNCHECKED
+                self.folder_item_states[iid] = new
+            self.refresh_tree_visuals(iid)
+
+    def set_global_selection(self, state):
         with self.state_lock:
-            curr = self.folder_item_states.get(iid, S_UNCHECKED)
-            new = S_CHECKED if curr != S_CHECKED else S_UNCHECKED
-            self.folder_item_states[iid] = new
-        self.refresh_tree_visuals(iid)
+            for k in self.folder_item_states:
+                self.folder_item_states[k] = state
+        self.refresh_tree_visuals()
 
     def is_selected(self, path: Path, project_root: Path) -> bool:
         try: p = path.resolve()
