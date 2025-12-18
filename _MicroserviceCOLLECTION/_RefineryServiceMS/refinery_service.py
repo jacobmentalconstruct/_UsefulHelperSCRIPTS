@@ -8,7 +8,7 @@ from typing import Dict, List, Any, Optional, Tuple
 from .base_service import BaseService
 from .cartridge_service import CartridgeService
 from .neural_service import NeuralService
-from .semantic_chunker import SemanticChunker
+from .chunking_router import ChunkingRouterMS
 from microservice_std_lib import service_metadata, service_endpoint
 
 @service_metadata(
@@ -32,7 +32,7 @@ class RefineryService(BaseService):
         super().__init__("RefineryService")
         self.cartridge = cartridge
         self.neural = neural
-        self.chunker = SemanticChunker()
+        self.chunker = ChunkingRouterMS()
         self.start_time = time.time()
 
     @service_endpoint(
@@ -159,7 +159,7 @@ class RefineryService(BaseService):
             return
 
         try:
-            # 1. Semantic Chunking
+            # 1. Specialized Chunking via Router
             chunks = self.chunker.chunk_file(content, vfs_path)
 
             # 2. Vectorization & Storage
@@ -426,6 +426,7 @@ class RefineryService(BaseService):
                     "line": lineno
                 })
                 self.cartridge.add_edge(node_id, vfs_path, "in_file", 1.0)
+
 
 
 

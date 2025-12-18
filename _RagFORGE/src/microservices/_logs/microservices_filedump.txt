@@ -2765,7 +2765,7 @@ FILE: _logs\microservices_filedump.txt
 FILE: _logs\microservices_project_folder_tree.txt
 --------------------------------------------------------------------------------
 Project Tree: C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_RagFORGE\src\microservices
-Generated: 2025-12-18 05:18:05.639417
+Generated: 2025-12-18 07:30:23.074357
 
 ├── 📁 __pycache__/
 ├── 📁 _logs/
@@ -2806,8 +2806,5 @@ FILE: _logs\_project_mapper_config.json
     "telemetry_service.py": "checked",
     "thought_stream.py": "checked"
   },
-  "dynamic_exclusions": [
-    ".venv",
-    "venv"
-  ]
+  "dynamic_exclusions": []
 }

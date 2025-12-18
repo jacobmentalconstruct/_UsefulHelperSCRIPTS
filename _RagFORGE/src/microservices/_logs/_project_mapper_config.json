@@ -17,8 +17,5 @@
     "telemetry_service.py": "checked",
     "thought_stream.py": "checked"
   },
-  "dynamic_exclusions": [
-    ".venv",
-    "venv"
-  ]
+  "dynamic_exclusions": []
 }

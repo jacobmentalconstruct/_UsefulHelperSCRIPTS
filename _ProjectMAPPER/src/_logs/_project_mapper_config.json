@@ -1,8 +1,0 @@
-{
-  "folder_states": {
-    ".": "checked",
-    "__pycache__": "unchecked",
-    "_logs": "checked"
-  },
-  "dynamic_exclusions": []
-}

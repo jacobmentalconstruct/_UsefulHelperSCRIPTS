@@ -35,7 +35,7 @@ DEFAULT_ROOT_DIR = APP_DIR
 EXCLUDED_FOLDERS = {
     "node_modules", ".git", "__pycache__", ".venv", ".mypy_cache",
     "_logs", "dist", "build", ".vscode", ".idea", "target", "out",
-    "bin", "obj", "Debug", "Release", "logs"
+    "bin", "obj", "Debug", "Release", "logs", "venv"
 }
 PREDEFINED_EXCLUDED_FILENAMES = {
     "package-lock.json", "yarn.lock", ".DS_Store", "Thumbs.db",

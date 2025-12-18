@@ -1,15 +1,16 @@
 import re
 from typing import Any, Dict, List, Optional
 from microservice_std_lib import service_metadata, service_endpoint
+from .semantic_chunker import PythonChunkerMS, CodeChunk
 
 @service_metadata(
-name="SmartChunker",
-version="1.0.0",
-description="Recursively splits text respecting natural boundaries (paragraphs, sentences).",
-tags=["chunking", "nlp", "text-processing"],
-capabilities=["compute"]
+    name="ChunkingRouterMS",
+    version="1.1.0",
+    description="The Dispatcher: Routes files to specialized chunkers based on extension (AST for Python, Recursive for Prose).",
+    tags=["orchestration", "chunking", "nlp"],
+    capabilities=["routing", "text-processing"]
 )
-class SmartChunkerMS:
+class ChunkingRouterMS:
     """
 The Editor: A 'Recursive' text splitter.
 It respects the natural structure of text (Paragraphs -> Sentences -> Words)
@@ -17,27 +18,37 @@ rather than just hacking it apart by character count.
 """
     
 def __init__(self, config: Optional[Dict[str, Any]] = None):
-self.config = config or {}
-# Separators in order of preference.
-        # 1. Double newline (Paragraph break)
-        # 2. Single newline (Line break / List item)
-        # 3. Sentence endings (Period, Question, Exclamation + Space)
-        # 4. Space (Word break)
-        # 5. Empty string (Hard character cut)
-        self.separators = ["\n\n", "\n", "(?<=[.?!])\s+", " ", ""]
+    self.config = config or {}
+    self.python_specialist = PythonChunkerMS()
+    # Separators for the Prose Specialist logic
+    self.separators = ["\n\n", "\n", "(?<=[.?!])\s+", " ", ""]
 
     @service_endpoint(
-    inputs={"text": "str", "max_size": "int", "overlap": "int"},
-    outputs={"chunks": "List[str]"},
-    description="Recursively chunks text while trying to keep related content together.",
-    tags=["chunking", "compute"],
-    side_effects=[]
+        inputs={"text": "str", "filename": "str", "max_size": "int", "overlap": "int"},
+        outputs={"chunks": "list"},
+        description="Routes text to the appropriate specialist. Returns a list of CodeChunk objects or raw strings.",
+        tags=["routing", "chunking"]
     )
-    def chunk(self, text: str, max_size: int = 1000, overlap: int = 100) -> List[str]:
-    """
-    Recursively chunks text while trying to keep related content together.
-    """
-        return self._recursive_split(text, self.separators, max_size, overlap)
+    def chunk_file(self, text: str, filename: str, max_size: int = 1000, overlap: int = 100) -> List[Any]:
+        """
+        Extension-aware router.
+        """
+        if filename.endswith(".py"):
+            return self.python_specialist.chunk(text)
+        
+        # Fallback to the internal Prose Specialist (Recursive Splitter)
+        raw_chunks = self._recursive_split(text, self.separators, max_size, overlap)
+        
+        # Standardize output for the Refinery: Wrap prose in CodeChunk objects
+        return [
+            CodeChunk(
+                name=f"prose_chunk_{i}", 
+                type="text", 
+                content=c, 
+                start_line=0, 
+                end_line=0
+            ) for i, c in enumerate(raw_chunks)
+        ]
 
     def _recursive_split(self, text: str, separators: List[str], max_size: int, overlap: int) -> List[str]:
         final_chunks = []
@@ -88,8 +99,7 @@ self.config = config or {}
                 # Flush the current buffer
                 doc_text = current_sep.join(current_doc)
                 final_chunks.append(doc_text)
-                
-                # Start new buffer with overlap logic?
+# Start new buffer with overlap logic?
                 # For simplicity in recursion, we often just start fresh or carry over 
                 # a small tail if we implemented a rolling window here.
                 # To keep this "Pure logic" simple, we start fresh with the current split.
@@ -118,8 +128,8 @@ self.config = config or {}
 
 # --- Independent Test Block ---
 if __name__ == "__main__":
-chunker = SmartChunkerMS()
-print("Service ready:", chunker)
+    chunker = SmartChunkerMS()
+    print("Service ready:", chunker)
     
     # Example: A technical document with structure
     doc = """
@@ -139,3 +149,4 @@ print("Service ready:", chunker)
     
     for i, c in enumerate(chunks):
         print(f"[{i}] {repr(c)}")
+
