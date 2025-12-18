@@ -8,7 +8,15 @@ from .base_service import BaseService
 from .cartridge_service import CartridgeService
 from .neural_service import NeuralService
 from .semantic_chunker import SemanticChunker
+from microservice_std_lib import service_metadata, service_endpoint
 
+@service_metadata(
+    name="RefineryService",
+    version="1.1.0",
+    description="The Night Shift: Processes 'RAW' files into semantic chunks and weaves them into a knowledge graph.",
+    tags=["processing", "refinery", "graph", "RAG"],
+    capabilities=["semantic-chunking", "graph-weaving", "parallel-embedding"]
+)
 class RefineryService(BaseService):
     """
     The Night Shift.
@@ -104,6 +112,13 @@ class RefineryService(BaseService):
         self._module_index = module_index
         self._index_built = True
 
+    @service_endpoint(
+        inputs={"batch_size": "int"},
+        outputs={"processed_count": "int"},
+        description="Polls the database for files with 'RAW' status and processes them into chunks and graph nodes.",
+        tags=["pipeline", "batch"],
+        side_effects=["cartridge:write", "neural:inference"]
+    )
     def process_pending(self, batch_size: int = 5) -> int:
         """Main loop. Returns number of files processed."""
         pending = self.cartridge.get_pending_files(limit=batch_size)
@@ -372,7 +387,16 @@ class RefineryService(BaseService):
                         "line": lineno
                     })
                     self.cartridge.add_edge(node_id, vfs_path, "in_file", 1.0)
-                continue
+                                    continue
+
+                    if __name__ == "__main__":
+                        # Requires Cartridge and Neural services for testing
+                        from .cartridge_service import CartridgeService
+                        from .neural_service import NeuralService
+                        c = CartridgeService(":memory:")
+                        n = NeuralService()
+                        svc = RefineryService(c, n)
+                        print("Service ready:", svc._service_info["name"])
 
             c = self._chapter_heading.match(line)
             if c:
@@ -386,6 +410,7 @@ class RefineryService(BaseService):
                     "line": lineno
                 })
                 self.cartridge.add_edge(node_id, vfs_path, "in_file", 1.0)
+
 
 
 

@@ -48,6 +48,14 @@ class CartridgeService(BaseService):
                 self.log_error(f"Failed to load sqlite-vec: {e}")
         return conn
 
+    def get_vector_dim(self) -> int:
+        """Retrieves the expected vector dimension from the manifest spec."""
+        spec = self.get_manifest("embedding_spec") or {}
+        if isinstance(spec, str):
+            try: spec = json.loads(spec)
+            except: spec = {}
+        return int(spec.get("dim", 0))
+
     def _init_db(self):
         """Initializes the standard Schema."""
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
@@ -109,13 +117,15 @@ class CartridgeService(BaseService):
         """)
 
         # 3.5 Vector Index (sqlite-vec)
-        # Defaulting to 1024 dimensions (mxbai-embed-large). 
-        # If you use a different model, this needs to match.
         if sqlite_vec:
-            try:
-                cursor.execute("CREATE VIRTUAL TABLE IF NOT EXISTS vec_items USING vec0(embedding float[1024])")
-            except Exception as e:
-                self.log_error(f"Vector Table Init Error: {e}")
+            dim = self.get_vector_dim()
+            if dim > 0:
+                try:
+                    cursor.execute(f"CREATE VIRTUAL TABLE IF NOT EXISTS vec_items USING vec0(embedding float[{dim}])")
+                except Exception as e:
+                    self.log_error(f"Vector Table Init Error: {e}")
+            else:
+                self.log_info("Vector table creation deferred: No dimensions found in manifest yet.")
 
         # 4. Graph Topology (The Neural Wiring)
         cursor.execute("CREATE TABLE IF NOT EXISTS graph_nodes (id TEXT PRIMARY KEY, type TEXT, label TEXT, data_json TEXT)")
@@ -643,6 +653,7 @@ class CartridgeService(BaseService):
             conn.close()
             
         return results
+
 
 
 

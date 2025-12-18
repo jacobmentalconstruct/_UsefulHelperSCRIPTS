@@ -319,3 +319,4 @@ class IntakeService(BaseService):
             mock_cartridge = CartridgeService(":memory:")
             svc = IntakeService(mock_cartridge)
             print("Service ready:", svc._service_info["name"])
+
