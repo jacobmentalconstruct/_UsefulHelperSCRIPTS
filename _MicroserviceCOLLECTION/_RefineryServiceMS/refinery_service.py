@@ -1,6 +1,7 @@
 import json
 import re
 import os
+import time
 import ast
 import concurrent.futures
 from typing import Dict, List, Any, Optional, Tuple
@@ -15,7 +16,7 @@ from microservice_std_lib import service_metadata, service_endpoint
     version="1.1.0",
     description="The Night Shift: Processes 'RAW' files into semantic chunks and weaves them into a knowledge graph.",
     tags=["processing", "refinery", "graph", "RAG"],
-    capabilities=["semantic-chunking", "graph-weaving", "parallel-embedding"]
+    capabilities=["smart-chunking", "graph-weaving", "parallel-embedding"]
 )
 class RefineryService(BaseService):
     """
@@ -32,6 +33,21 @@ class RefineryService(BaseService):
         self.cartridge = cartridge
         self.neural = neural
         self.chunker = SemanticChunker()
+        self.start_time = time.time()
+
+    @service_endpoint(
+        inputs={},
+        outputs={"status": "str", "uptime": "float", "cartridge_health": "str"},
+        description="Standardized health check to verify the operational state of the Refinery service.",
+        tags=["diagnostic", "health"]
+    )
+    def get_health(self) -> Dict[str, Any]:
+        """Returns the operational status of the RefineryService."""
+        return {
+            "status": "online",
+            "uptime": time.time() - self.start_time,
+            "cartridge_health": self.cartridge.get_status_flags().get("cartridge_health", "UNKNOWN")
+        }
 
         # --- Spec Enforcement ---
         # Update the cartridge manifest to reflect the ACTUAL tools we are using.
@@ -410,6 +426,7 @@ class RefineryService(BaseService):
                     "line": lineno
                 })
                 self.cartridge.add_edge(node_id, vfs_path, "in_file", 1.0)
+
 
 
 

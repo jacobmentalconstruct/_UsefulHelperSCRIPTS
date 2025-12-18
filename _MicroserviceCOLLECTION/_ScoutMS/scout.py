@@ -168,12 +168,13 @@ class ScoutMS:
         return files
 
     if __name__ == "__main__":
-    svc = ScoutMS()
-    print("Service ready:", svc._service_info["name"])
+        svc = ScoutMS()
+        print("Service ready:", svc._service_info["name"])
     # Basic local test
     current_dir = os.path.dirname(os.path.abspath(__file__))
     tree = svc.scan_directory(current_dir)
     if tree:
         print(f"Scanned {len(svc.flatten_tree(tree))} files in current directory.")
+
 
 

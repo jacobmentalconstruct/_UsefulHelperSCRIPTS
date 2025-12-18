@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Dict, Set, List, Any
 from .base_service import BaseService
 from .cartridge_service import CartridgeService
-from .scanner import ScannerMS
+from .scout import ScoutMS
 from . import document_utils
 from microservice_std_lib import service_metadata, service_endpoint
 
@@ -45,6 +45,21 @@ class IntakeService(BaseService):
 
     def __init__(self, cartridge: CartridgeService):
         super().__init__("IntakeService")
+        self.start_time = time.time()
+
+    @service_endpoint(
+        inputs={},
+        outputs={"status": "str", "uptime": "float", "cartridge_connected": "bool"},
+        description="Standardized health check to verify service status and cartridge connectivity.",
+        tags=["diagnostic", "health"]
+    )
+    def get_health(self) -> Dict[str, Any]:
+        """Returns the operational status of the IntakeService."""
+        return {
+            "status": "online",
+            "uptime": time.time() - self.start_time,
+            "cartridge_connected": self.cartridge is not None
+        }
         self.cartridge = cartridge
         self.ignore_patterns: Set[str] = set()
 
@@ -58,7 +73,7 @@ class IntakeService(BaseService):
         is_web = source_path.startswith("http")
         self.cartridge.set_manifest("source_type", "web_root" if is_web else "filesystem_dir")
 
-        scanner = ScannerMS()
+        scanner = ScoutMS()
         tree_node = scanner.scan_directory(source_path, web_depth=1 if is_web else 0)
         
         if not tree_node:
@@ -81,9 +96,9 @@ class IntakeService(BaseService):
     def scan_path(self, root_path: str, web_depth: int = 0) -> Dict[str, Any]:
         """
         Unified Scanner Interface.
-        Delegates to ScannerMS for both Web and Local FS to ensure consistent node structure.
+        Delegates to ScoutMS for both Web and Local FS to ensure consistent node structure.
         """
-        scanner = ScannerMS()
+        scanner = ScoutMS()
 
         # 1. Delegate to Scanner
         tree_root = scanner.scan_directory(root_path, web_depth=web_depth)
@@ -319,4 +334,5 @@ class IntakeService(BaseService):
             mock_cartridge = CartridgeService(":memory:")
             svc = IntakeService(mock_cartridge)
             print("Service ready:", svc._service_info["name"])
+
 
