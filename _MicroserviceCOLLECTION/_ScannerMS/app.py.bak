@@ -1,0 +1,177 @@
+import os
+import time
+from typing import Dict, List, Any, Optional
+from microservice_std_lib import service_metadata, service_endpoint
+
+@service_metadata(
+name="Scanner",
+version="1.0.0",
+description="Recursively scans directories, filters junk, and detects binaries.",
+tags=["filesystem", "scanner", "tree"],
+capabilities=["filesystem:read"]
+)
+class ScannerMS:
+    """
+The Scanner: Walks the file system, filters junk, and detects binary files.
+Generates the tree structure used by the UI.
+"""
+    
+def __init__(self, config: Optional[Dict[str, Any]] = None):
+self.config = config or {}
+        # Folders to completely ignore (Standard developer noise)
+        self.IGNORE_DIRS = {
+            '.git', '__pycache__', 'node_modules', 'venv', '.env', 
+            '.idea', '.vscode', 'dist', 'build', 'coverage'
+        }
+        
+        # Extensions that are explicitly binary/junk
+        self.BINARY_EXTENSIONS = {
+            '.pyc', '.pyd', '.exe', '.dll', '.so', '.dylib', '.class', 
+            '.jpg', '.jpeg', '.png', '.gif', '.ico', '.svg', 
+            '.zip', '.tar', '.gz', '.pdf', '.docx', '.xlsx',
+            '.db', '.sqlite', '.sqlite3'
+        }
+
+    def is_binary(self, file_path: str) -> bool:
+        """
+        Determines if a file is binary using two heuristics:
+        1. Extension check (Fast)
+        2. Content check for null bytes (Accurate)
+        """
+        # 1. Fast Fail on Extension
+        _, ext = os.path.splitext(file_path)
+        if ext.lower() in self.BINARY_EXTENSIONS:
+            return True
+            
+        # 2. Content Inspection (Read first 1KB)
+        try:
+            with open(file_path, 'rb') as f:
+                chunk = f.read(1024)
+                # Text files shouldn't contain null bytes
+                if b'\x00' in chunk:
+                    return True
+        except (IOError, OSError):
+            # If we can't read it, treat as binary/unsafe
+            return True
+            
+        return False
+
+    @service_endpoint(
+    inputs={"root_path": "str"},
+    outputs={"tree": "Optional[Dict]"},
+    description="Recursively scans a directory and returns a JSON-compatible tree.",
+    tags=["filesystem", "scan"],
+    side_effects=["filesystem:read"]
+    )
+    def scan_directory(self, root_path: str) -> Optional[Dict[str, Any]]:
+    """
+    Recursively scans a directory and returns a JSON-compatible tree.
+    Returns None if path is invalid.
+    """
+        target = os.path.abspath(root_path)
+        
+        if not os.path.exists(target):
+            return None
+            
+        if not os.path.isdir(target):
+            # Handle single file case
+            return self._create_node(target, is_dir=False)
+
+        return self._scan_recursive(target)
+
+    def _scan_recursive(self, current_path: str) -> Dict[str, Any]:
+        """
+        Internal recursive worker.
+        """
+        node = self._create_node(current_path, is_dir=True)
+        node['children'] = []
+        
+        try:
+            # os.scandir is faster than os.listdir as it returns file attributes
+            with os.scandir(current_path) as it:
+                entries = sorted(it, key=lambda e: (not e.is_dir(), e.name.lower()))
+                
+                for entry in entries:
+                    # Skip ignored directories
+                    if entry.is_dir() and entry.name in self.IGNORE_DIRS:
+                        continue
+                        
+                    # Skip hidden files (dotfiles)
+                    if entry.name.startswith('.'):
+                        continue
+
+                    if entry.is_dir():
+                        child_node = self._scan_recursive(entry.path)
+                        if child_node: # Only add if valid
+                            node['children'].append(child_node)
+                    else:
+                        child_node = self._create_node(entry.path, is_dir=False)
+                        node['children'].append(child_node)
+                        
+        except PermissionError:
+            node['error'] = "Access Denied"
+            
+        return node
+
+    def _create_node(self, path: str, is_dir: bool) -> Dict[str, Any]:
+        """
+        Standardizes the node structure for the UI.
+        """
+        name = os.path.basename(path)
+        node = {
+            'text': name,
+            'path': path,
+            'type': 'folder' if is_dir else 'file',
+            'checked': False, # UI State
+        }
+        
+        if not is_dir:
+            if self.is_binary(path):
+                node['type'] = 'binary'
+                
+        return node
+
+    @service_endpoint(
+    inputs={"tree_node": "Dict"},
+    outputs={"files": "List[str]"},
+    description="Flattens a tree node into a list of file paths.",
+    tags=["filesystem", "utility"],
+    side_effects=[]
+    )
+    def flatten_tree(self, tree_node: Dict[str, Any]) -> List[str]:
+    """
+    Helper to extract all valid file paths from a tree node 
+    (e.g., when the user clicks 'Start Ingest').
+    """
+        files = []
+        if tree_node['type'] == 'file':
+            files.append(tree_node['path'])
+        elif tree_node['type'] == 'folder' and 'children' in tree_node:
+            for child in tree_node['children']:
+                files.extend(self.flatten_tree(child))
+        return files
+
+# --- Independent Test Block ---
+if __name__ == "__main__":
+scanner = ScannerMS()
+print("Service ready:", scanner)
+    
+    # Scan the current directory
+    cwd = os.getcwd()
+    print(f"Scanning: {cwd} ...")
+    
+    start_time = time.time()
+    tree = scanner.scan_directory(cwd)
+    duration = time.time() - start_time
+    
+    if tree:
+        file_count = len(scanner.flatten_tree(tree))
+        print(f"Scan complete in {duration:.4f}s")
+        print(f"Found {file_count} files.")
+        
+        # Print top level children to verify
+        print("Top Level Structure:")
+        for child in tree.get('children', [])[:5]:
+            print(f" - [{child['type'].upper()}] {child['text']}")
+    else:
+        print("Scan failed or path invalid.")

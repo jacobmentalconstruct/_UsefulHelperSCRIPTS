@@ -1,0 +1,1 @@
+microservice-std-lib>=1.0.0

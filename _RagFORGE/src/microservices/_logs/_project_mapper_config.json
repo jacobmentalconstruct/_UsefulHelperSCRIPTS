@@ -1,0 +1,24 @@
+{
+  "folder_states": {
+    ".": "checked",
+    ".ragforge.json": "checked",
+    "__init__.py": "checked",
+    "base_service.py": "checked",
+    "cartridge_service.py": "checked",
+    "document_utils.py": "checked",
+    "graph_engine.py": "checked",
+    "graph_view.py": "checked",
+    "intake_service.py": "checked",
+    "neural_service.py": "checked",
+    "panels.py": "checked",
+    "refinery_service.py": "checked",
+    "scanner.py": "checked",
+    "semantic_chunker.py": "checked",
+    "telemetry_service.py": "checked",
+    "thought_stream.py": "checked"
+  },
+  "dynamic_exclusions": [
+    ".venv",
+    "venv"
+  ]
+}

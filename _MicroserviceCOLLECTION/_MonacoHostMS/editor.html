@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Monaco Host</title>
+    <style>
+        html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #1e1e1e; font-family: sans-serif; }
+        #container { display: flex; flex-direction: column; height: 100%; }
+        #tabs { background: #252526; display: flex; overflow-x: auto; height: 35px; }
+        .tab { 
+            padding: 8px 15px; color: #969696; background: #2d2d2d; cursor: pointer; border-right: 1px solid #1e1e1e; font-size: 13px;
+            display: flex; align-items: center;
+        }
+        .tab.active { background: #1e1e1e; color: #fff; }
+        .tab:hover { background: #2d2d2d; color: #fff; }
+        #editor { flex-grow: 1; }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <div id="tabs"></div>
+        <div id="editor"></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.41.0/min/vs/loader.js"></script>
+    <script>
+        require.config({ paths: { 'vs': 'https://cdn.jsdelivr.net/npm/monaco-editor@0.41.0/min/vs' }});
+
+        let editor;
+        let models = {}; // filepath -> model
+        let currentPath = null;
+
+        require(['vs/editor/editor.main'], function() {
+            editor = monaco.editor.create(document.getElementById('editor'), {
+                value: "# Ready.\n",
+                language: 'python',
+                theme: 'vs-dark',
+                automaticLayout: true
+            });
+
+            // Signal Python that we are ready
+            if (window.pywebview) window.pywebview.api.signal_editor_ready();
+
+            // Keybindings
+            editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, function() {
+                if (currentPath) {
+                    const content = editor.getValue();
+                    window.pywebview.api.save_file(currentPath, content);
+                }
+            });
+        });
+
+        // --- API exposed to Python ---
+        window.pywebview = window.pywebview || {};
+        window.pywebview.api = window.pywebview.api || {};
+
+        window.pywebview.api.open_in_tab = function(filepath, content) {
+            // Determine language
+            let lang = 'plaintext';
+            if (filepath.endsWith('.py')) lang = 'python';
+            if (filepath.endsWith('.js')) lang = 'javascript';
+            if (filepath.endsWith('.html')) lang = 'html';
+            if (filepath.endsWith('.json')) lang = 'json';
+
+            // Create or switch model
+            if (!models[filepath]) {
+                const uri = monaco.Uri.file(filepath);
+                models[filepath] = monaco.editor.createModel(content, lang, uri);
+                addTab(filepath);
+            }
+            
+            switchTo(filepath);
+        };
+
+        window.pywebview.api.reveal_range = function(filepath, startLine, endLine) {
+            if (filepath !== currentPath) switchTo(filepath);
+            editor.revealLineInCenter(startLine);
+            editor.setSelection({
+                startLineNumber: startLine,
+                startColumn: 1,
+                endLineNumber: endLine,
+                endColumn: 1000
+            });
+        };
+
+        // --- Internal Helpers ---
+        function addTab(filepath) {
+            const tabs = document.getElementById('tabs');
+            const tab = document.createElement('div');
+            tab.className = 'tab';
+            tab.innerText = filepath;
+            tab.onclick = () => switchTo(filepath);
+            tab.dataset.path = filepath;
+            tabs.appendChild(tab);
+        }
+
+        function switchTo(filepath) {
+            if (!models[filepath]) return;
+            editor.setModel(models[filepath]);
+            currentPath = filepath;
+
+            // UI update
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            const activeTab = document.querySelector(`.tab[data-path="${filepath}"]`);
+            if (activeTab) activeTab.classList.add('active');
+        }
+    </script>
+</body>
+</html>
