@@ -1,0 +1,1922 @@
+Dump: C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_MicroserviceSyntaxTreeTRANSFORMER
+
+
+--------------------------------------------------------------------------------
+FILE: LICENSE.md
+--------------------------------------------------------------------------------
+MIT License
+
+Copyright (c) 2025 Jacob Lambert
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+--------------------------------------------------------------------------------
+FILE: README.md
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+FILE: requirements.txt
+--------------------------------------------------------------------------------
+# This project intentionally uses ONLY Python's standard library.
+# No external pip dependencies are required.
+
+# Standard library modules used:
+# - tkinter
+# - argparse
+# - json
+# - threading
+# - queue
+# - os
+# - sys
+# - time
+# - typing
+
+
+--------------------------------------------------------------------------------
+FILE: setup_env.bat
+--------------------------------------------------------------------------------
+@echo off
+echo [SYSTEM] Initializing new project environment...
+
+:: 1. Create the venv if it doesn't exist
+if not exist .venv (
+    echo [SYSTEM] Creating .venv...
+    py -m venv .venv
+)
+
+:: 2. Upgrade pip and install requirements
+echo [SYSTEM] Installing dependencies...
+.venv\Scripts\python.exe -m pip install --upgrade pip
+if exist requirements.txt (
+    .venv\Scripts\pip install -r requirements.txt
+)
+
+echo.
+echo [SUCCESS] Environment ready!
+echo You can now open this folder in VS Code or launch via scripts_menu.py
+pause
+--------------------------------------------------------------------------------
+FILE: src\app.py
+--------------------------------------------------------------------------------
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+"""
+Microservice Syntax Tree Transformer (Prototype)
+
+This tool:
+- Loads a JSON tasklist (tasklist_microservice_refactor.json).
+- Lets the user select a folder of Python files.
+- Iterates over each .py file in that folder.
+- Runs a simple, ordered pipeline of tasks per file.
+- Logs all activity to a Tkinter UI log panel and stderr.
+
+NOTE:
+- This prototype focuses on orchestration + monitoring.
+- The actual "parse / scaffold / patch" logic is stubbed out with clear hooks
+  where you can integrate:
+    - your semantic diff-based patcher
+    - Ollama / Qwen model calls
+    - your microservice-specific scaffold + IR logic.
+"""
+
+# =========================================================
+# 1. IMPORTS
+# =========================================================
+
+import sys
+import os
+import json
+import threading
+import queue
+import time
+from typing import List, Dict, Any, Optional
+
+import tkinter as tk
+from tkinter import filedialog, messagebox
+from tkinter import scrolledtext
+
+from microservices._TokenizingPatcherMS import TokenizingPatcherMS
+
+# =========================================================
+# 2. GLOBAL CONFIGURATION
+# =========================================================
+
+WINDOW_TITLE = "Microservice Syntax Tree Transformer"
+WINDOW_WIDTH = 1000
+WINDOW_HEIGHT = 700
+LOG_FONT = ("Consolas", 10)
+
+DEFAULT_TASKLIST_PATH = os.path.join(
+    os.path.dirname(__file__),
+    "tasklist_microservice_refactor.json"
+)
+
+VALID_EXTENSIONS = [".py"]
+
+LOG_PREFIX_INFO = "[INFO]"
+LOG_PREFIX_WARN = "[WARN]"
+LOG_PREFIX_ERROR = "[ERROR]"
+LOG_PREFIX_TASK = "[TASK]"
+LOG_PREFIX_FILE = "[FILE]"
+
+# =========================================================
+# 3. LOGGING + UTILITY HELPERS
+# =========================================================
+
+class UILogger:
+    """
+    Thread-safe logger that writes to:
+    - a Tkinter Text/ScrolledText widget (if available)
+    - stderr
+
+    Uses an internal queue to synchronize log messages
+    from worker threads into the main Tkinter thread.
+    """
+
+    def __init__(self, text_widget: Optional[tk.Text] = None):
+        self.text_widget = text_widget
+        self.queue: "queue.Queue[str]" = queue.Queue()
+        self._stop = False
+
+    def attach_widget(self, text_widget: tk.Text) -> None:
+        self.text_widget = text_widget
+
+    def log(self, prefix: str, message: str) -> None:
+        line = f"{prefix} {message}"
+        print(line, file=sys.stderr)
+        self.queue.put(line + "\n")
+
+    def info(self, message: str) -> None:
+        self.log(LOG_PREFIX_INFO, message)
+
+    def warn(self, message: str) -> None:
+        self.log(LOG_PREFIX_WARN, message)
+
+    def error(self, message: str) -> None:
+        self.log(LOG_PREFIX_ERROR, message)
+
+    def task(self, message: str) -> None:
+        self.log(LOG_PREFIX_TASK, message)
+
+    def file(self, message: str) -> None:
+        self.log(LOG_PREFIX_FILE, message)
+
+    def pump(self):
+        """
+        Drain the queue into the UI text widget.
+        This should be called periodically from the Tkinter main thread.
+        """
+        if self.text_widget is None:
+            while not self.queue.empty():
+                _ = self.queue.get_nowait()
+            return
+
+        try:
+            while True:
+                line = self.queue.get_nowait()
+                self.text_widget.insert(tk.END, line)
+                self.text_widget.see(tk.END)
+        except queue.Empty:
+            pass
+
+        if not self._stop:
+            self.text_widget.after(100, self.pump)
+
+    def stop(self):
+        self._stop = True
+
+
+def load_tasklist(tasklist_path: str, logger: UILogger) -> List[Dict[str, Any]]:
+    logger.info(f"Loading tasklist from: {tasklist_path}")
+    if not os.path.exists(tasklist_path):
+        logger.error(f"Tasklist not found at: {tasklist_path}")
+        return []
+
+    try:
+        with open(tasklist_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        if not isinstance(data, list):
+            logger.error("Tasklist JSON is not a list.")
+            return []
+        logger.info(f"Loaded {len(data)} tasks from tasklist.")
+        return data
+    except Exception as e:
+        logger.error(f"Failed to load tasklist JSON: {e}")
+        return []
+
+
+def discover_python_files(root_folder: str, logger: UILogger) -> List[str]:
+    logger.info(f"Scanning for Python files in: {root_folder}")
+    results: List[str] = []
+
+    for dirpath, dirnames, filenames in os.walk(root_folder):
+        for name in filenames:
+            _, ext = os.path.splitext(name)
+            if ext.lower() in VALID_EXTENSIONS:
+                full_path = os.path.join(dirpath, name)
+                results.append(full_path)
+
+    logger.info(f"Discovered {len(results)} Python files.")
+    return results
+
+# =========================================================
+# 4. CORE PIPELINE ROLES (STUBS)
+# =========================================================
+
+class RefactorContext:
+    """
+    Per-file context for the refactor pipeline.
+    """
+
+    def __init__(self, file_path: str):
+        self.file_path = file_path
+        self.original_source: str = ""
+        self.ir: Dict[str, Any] = {}
+        self.scaffold_source: str = ""
+
+
+class ParserRole:
+    """
+    Task: 'parse_file'
+    Loads the file and extracts a minimal IR.
+    """
+
+    TASK_NAME = "parse_file"
+
+    def run(self, ctx: RefactorContext, logger: UILogger) -> None:
+            import ast
+
+            logger.task(f"[{self.TASK_NAME}] Parsing file: {ctx.file_path}")
+            try:
+                with open(ctx.file_path, "r", encoding="utf-8") as f:
+                    ctx.original_source = f.read()
+            except Exception as e:
+                logger.error(f"[{self.TASK_NAME}] Failed to read file: {e}")
+                return
+
+            try:
+                tree = ast.parse(ctx.original_source)
+            except Exception as e:
+                logger.error(f"[{self.TASK_NAME}] AST parse error: {e}")
+                return
+
+            ir = {
+                "file_path": ctx.file_path,
+                "service_name": None,
+                "imports": [],
+                "endpoints": [],
+                "metadata": {},
+            }
+
+            # --- Extract imports ---
+            for node in tree.body:
+                if isinstance(node, ast.Import):
+                    for alias in node.names:
+                        ir["imports"].append(alias.name)
+                elif isinstance(node, ast.ImportFrom):
+                    module = node.module or ""
+                    for alias in node.names:
+                        ir["imports"].append(f"{module}.{alias.name}")
+
+            # --- Find the service class ---
+            for node in tree.body:
+                if isinstance(node, ast.ClassDef):
+                    for deco in node.decorator_list:
+                        if isinstance(deco, ast.Call) and getattr(deco.func, "id", None) == "service_metadata":
+                            ir["service_name"] = node.name
+
+                            # Extract metadata arguments
+                            meta = {}
+                            for kw in deco.keywords:
+                                try:
+                                    meta[kw.arg] = ast.literal_eval(kw.value)
+                                except Exception:
+                                    meta[kw.arg] = None
+                            ir["metadata"] = meta
+
+                            # Extract endpoints
+                            for item in node.body:
+                                if isinstance(item, ast.FunctionDef):
+                                    for d in item.decorator_list:
+                                        if isinstance(d, ast.Call) and getattr(d.func, "id", None) == "service_endpoint":
+                                            endpoint_info = {"name": item.name, "inputs": {}, "outputs": {}, "description": None, "tags": [], "side_effects": [], "mode": "sync"}
+                                            for kw in d.keywords:
+                                                try:
+                                                    endpoint_info[kw.arg] = ast.literal_eval(kw.value)
+                                                except Exception:
+                                                    endpoint_info[kw.arg] = None
+                                            ir["endpoints"].append(endpoint_info)
+
+            ctx.ir = ir
+            logger.info(f"[{self.TASK_NAME}] IR extracted: service={ir['service_name']}, endpoints={len(ir['endpoints'])}")
+
+
+class ScaffoldRole:
+    """
+    Task: 'generate_scaffold'
+    Creates the symbolic scaffold with placeholders.
+    """
+
+    TASK_NAME = "generate_scaffold"
+
+    # --- STUB SCAFFOLD (will be replaced by patch) ---
+    SCAFFOLD_TEMPLATE = """# {{IMPORTS}}
+
+    from microservice_std_lib import service_metadata, service_endpoint
+    from base_service import BaseService
+    from typing import Dict, Any, Optional
+
+    @service_metadata(
+        name=\"{{SERVICE_NAME}}\",
+        version=\"{{VERSION}}\",
+        description=\"{{DESCRIPTION}}\",
+        tags={{TAGS}},
+        capabilities={{CAPABILITIES}},
+        dependencies={{DEPENDENCIES}},
+        side_effects={{SIDE_EFFECTS}}
+    )
+    class {{CLASS_NAME}}(BaseService):
+        def __init__(self):
+            super().__init__(\"{{SERVICE_NAME}}\")
+            # {{INIT}}
+
+        # {{ENDPOINTS}}
+    """
+
+    def run(self, ctx: RefactorContext, logger: UILogger) -> None:
+        logger.task(f"[{self.TASK_NAME}] Generating scaffold.")
+        ctx.scaffold_source = self.SCAFFOLD_TEMPLATE
+        logger.info(f"[{self.TASK_NAME}] Scaffold initialized (stub).")
+
+
+class PatchRole:
+    """
+    Handles all patch_* tasks.
+    """
+
+    SUPPORTED_TASKS = {
+        "patch_imports",
+        "patch_metadata",
+        "patch_class_header",
+        "patch_init",
+        "patch_endpoints",
+        "final_cleanup",
+    }
+
+    def __init__(self, get_base_dir):
+        """get_base_dir: callable that returns the current sandbox folder (or None)."""
+        self.get_base_dir = get_base_dir
+        self.patcher = None
+
+    def run(self, task_name: str, ctx: RefactorContext, logger: UILogger) -> None:
+        if task_name not in self.SUPPORTED_TASKS:
+            logger.warn(f"[PatchRole] Unsupported task: {task_name}")
+            return
+
+        base_dir = self.get_base_dir()
+        if not base_dir:
+            logger.warn(f"[PatchRole] No base directory selected; skipping task: {task_name}")
+            return
+
+        self._ensure_patcher(base_dir, logger)
+        if self.patcher is None:
+            logger.error("[PatchRole] Patcher could not be initialized.")
+            return
+
+        logger.task(f"[{task_name}] Generating patch hunk...")
+        hunk_obj = self._generate_patch_hunk(task_name, ctx, logger)
+
+        if not hunk_obj:
+            logger.warn(f"[{task_name}] No hunk generated.")
+            return
+
+        logger.task(f"[{task_name}] Applying patch hunk via TokenizingPatcherMS...")
+        self._apply_patch(hunk_obj, ctx, base_dir, logger)
+
+    def _ensure_patcher(self, base_dir: str, logger: UILogger) -> None:
+        if self.patcher is not None:
+            return
+        try:
+            self.patcher = TokenizingPatcherMS(
+                config={
+                    "base_dir": base_dir,
+                    "default_force_indent": False,
+                    "allow_absolute_paths": False,
+                }
+            )
+            logger.info(f"[PatchRole] TokenizingPatcherMS initialized with base_dir={base_dir}")
+        except Exception as e:
+            logger.error(f"[PatchRole] Failed to initialize TokenizingPatcherMS: {e}")
+            self.patcher = None
+
+    def _generate_patch_hunk(self, task_name: str, ctx: RefactorContext, logger: UILogger) -> Dict[str, Any]:
+        """Placeholder: future patches will implement real hunk generation per task."""
+        return {
+            "hunks": [
+                {
+                    "description": f"placeholder hunk for {task_name}",
+                    "search_block": "",
+                    "replace_block": "",
+                    "use_patch_indent": False,
+                }
+            ]
+        }
+
+    def _apply_patch(self, hunk_obj: Dict[str, Any], ctx: RefactorContext, base_dir: str, logger: UILogger) -> None:
+        """Call TokenizingPatcherMS to apply the patch to ctx.file_path."""
+        import os
+        import json
+
+        try:
+            # Compute path relative to base_dir so the patcher stays sandboxed
+            rel_path = os.path.relpath(ctx.file_path, base_dir)
+        except Exception as e:
+            logger.error(f"[PatchRole] Failed to compute relative path for {ctx.file_path}: {e}")
+            return
+
+        try:
+            schema_str = json.dumps(hunk_obj)
+        except Exception as e:
+            logger.error(f"[PatchRole] Failed to serialize patch hunk: {e}")
+            return
+
+        # First do a dry-run
+        try:
+            dry_result = self.patcher.apply_patch_to_file(
+                target_path=rel_path,
+                patch_schema=schema_str,
+                dry_run=True,
+                return_preview=True,
+            )
+        except Exception as e:
+            logger.error(f"[PatchRole] Exception during dry-run patch: {e}")
+            return
+
+        if not dry_result.get("success"):
+            logger.error(f"[PatchRole] Dry-run patch failed: {dry_result.get('message')}")
+            return
+
+        preview = dry_result.get("patched_preview")
+        if preview is not None:
+            logger.info(f"[PatchRole] Dry-run patched preview length: {len(preview)} characters")
+
+        # Now apply destructively
+        try:
+            apply_result = self.patcher.apply_patch_to_file(
+                target_path=rel_path,
+                patch_schema=schema_str,
+                dry_run=False,
+                return_preview=False,
+            )
+        except Exception as e:
+            logger.error(f"[PatchRole] Exception during destructive patch: {e}")
+            return
+
+        if not apply_result.get("success"):
+            logger.error(f"[PatchRole] Destructive patch failed: {apply_result.get('message')}")
+            return
+
+        logger.info(f"[PatchRole] Patch applied successfully to {ctx.file_path}")
+
+
+# =========================================================
+# 5. TASKLIST-DRIVEN PIPELINE EXECUTION
+# =========================================================
+
+class RefactorEngine:
+    """
+    Orchestrates:
+    - loading the tasklist
+    - discovering files
+    - running each task over each file
+    """
+
+    def __init__(self, logger: UILogger, get_base_dir, tasklist_path: str = DEFAULT_TASKLIST_PATH):
+        self.logger = logger
+        self.get_base_dir = get_base_dir
+        self.tasklist_path = tasklist_path
+        self.tasklist: List[Dict[str, Any]] = []
+        self.parser = ParserRole()
+        self.scaffold = ScaffoldRole()
+        self.patcher = PatchRole(get_base_dir)
+
+    def load_tasklist(self) -> None:
+        self.tasklist = load_tasklist(self.tasklist_path, self.logger)
+
+    def run_for_folder(self, folder: str) -> None:
+        if not self.tasklist:
+            self.logger.error("No tasklist loaded. Aborting.")
+            return
+
+        files = discover_python_files(folder, self.logger)
+        if not files:
+            self.logger.warn("No Python files found in selected folder.")
+            return
+
+        for file_path in files:
+            self.logger.file(f"Processing file: {file_path}")
+            ctx = RefactorContext(file_path)
+            self._run_for_file(ctx)
+
+        self.logger.info("Refactor pipeline complete for all files.")
+
+    def _run_for_file(self, ctx: RefactorContext) -> None:
+        for task in self.tasklist:
+            task_name = task.get("task")
+            description = task.get("description", "")
+            self.logger.task(f"Running task '{task_name}': {description}")
+
+            if task_name == ParserRole.TASK_NAME:
+                self.parser.run(ctx, self.logger)
+            elif task_name == ScaffoldRole.TASK_NAME:
+                self.scaffold.run(ctx, self.logger)
+            else:
+                self.patcher.run(task_name, ctx, self.logger)
+
+            time.sleep(0.05)
+
+# =========================================================
+# 6. TKINTER UI
+# =========================================================
+
+class RefactorApp(tk.Tk):
+    """
+    Tkinter UI wrapper for:
+    - choosing a folder
+    - kicking off the refactor pipeline
+    - monitoring logs
+    """
+
+    def __init__(self):
+        super().__init__()
+        self.title(WINDOW_TITLE)
+        self.geometry(f"{WINDOW_WIDTH}x{WINDOW_HEIGHT}")
+
+        self.logger = UILogger()
+        self.engine = RefactorEngine(self.logger, lambda: self.selected_folder)
+
+        self.selected_folder: Optional[str] = None
+        self.worker_thread: Optional[threading.Thread] = None
+        self._is_running = False
+
+        self._build_ui()
+
+        self.logger.attach_widget(self.log_text)
+        self.logger.pump()
+
+        self.engine.load_tasklist()
+
+    def _build_ui(self) -> None:
+        top_frame = tk.Frame(self)
+        top_frame.pack(side=tk.TOP, fill=tk.X, padx=10, pady=10)
+
+        folder_label = tk.Label(top_frame, text="Target folder:")
+        folder_label.pack(side=tk.LEFT)
+
+        self.folder_var = tk.StringVar(value="")
+        folder_entry = tk.Entry(top_frame, textvariable=self.folder_var, width=60)
+        folder_entry.pack(side=tk.LEFT, padx=5)
+
+        browse_btn = tk.Button(top_frame, text="Browse...", command=self._on_browse)
+        browse_btn.pack(side=tk.LEFT, padx=5)
+
+        self.run_btn = tk.Button(top_frame, text="Run Refactor", command=self._on_run)
+        self.run_btn.pack(side=tk.LEFT, padx=10)
+
+        self.status_var = tk.StringVar(value="Idle")
+        status_label = tk.Label(self, textvariable=self.status_var, anchor="w")
+        status_label.pack(side=tk.TOP, fill=tk.X, padx=10)
+
+        self.log_text = scrolledtext.ScrolledText(self, font=LOG_FONT, wrap=tk.WORD)
+        self.log_text.pack(side=tk.TOP, fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+    def _on_browse(self) -> None:
+        folder = filedialog.askdirectory(title="Select folder containing microservices")
+        if folder:
+            self.selected_folder = folder
+            self.folder_var.set(folder)
+            self.logger.info(f"Selected folder: {folder}")
+
+    def _on_run(self) -> None:
+        if self._is_running:
+            messagebox.showinfo("In Progress", "The refactor pipeline is already running.")
+            return
+
+        folder = self.folder_var.get().strip()
+        if not folder or not os.path.isdir(folder):
+            messagebox.showerror("Invalid Folder", "Please select a valid folder first.")
+            return
+
+        self.selected_folder = folder
+        self._is_running = True
+        self.status_var.set("Running...")
+        self.run_btn.config(state=tk.DISABLED)
+
+        self.logger.info(f"Starting refactor pipeline for folder: {folder}")
+
+        self.worker_thread = threading.Thread(
+            target=self._run_in_background,
+            args=(folder,),
+            daemon=True,
+        )
+        self.worker_thread.start()
+
+        self.after(250, self._check_worker)
+
+    def _run_in_background(self, folder: str) -> None:
+        try:
+            self.engine.run_for_folder(folder)
+        except Exception as e:
+            self.logger.error(f"Unexpected error in worker thread: {e}")
+        finally:
+            self._is_running = False
+
+    def _check_worker(self) -> None:
+        if self._is_running:
+            self.after(250, self._check_worker)
+        else:
+            self.status_var.set("Idle")
+            self.run_btn.config(state=tk.NORMAL)
+            self.logger.info("Refactor pipeline finished or aborted.")
+
+# =========================================================
+# 7. ENTRYPOINT
+# =========================================================
+
+def main():
+    app = RefactorApp()
+    app.mainloop()
+
+
+if __name__ == "__main__":
+    main()
+
+
+
+--------------------------------------------------------------------------------
+FILE: src\app.py.txt
+--------------------------------------------------------------------------------
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+"""
+Microservice Syntax Tree Transformer (Prototype)
+
+This tool:
+- Loads a JSON tasklist (tasklist_microservice_refactor.json).
+- Lets the user select a folder of Python files.
+- Iterates over each .py file in that folder.
+- Runs a simple, ordered pipeline of tasks per file.
+- Logs all activity to a Tkinter UI log panel and stderr.
+
+NOTE:
+- This prototype focuses on orchestration + monitoring.
+- The actual "parse / scaffold / patch" logic is stubbed out with clear hooks
+  where you can integrate:
+    - your semantic diff-based patcher
+    - Ollama / Qwen model calls
+    - your microservice-specific scaffold + IR logic.
+"""
+
+# =========================================================
+# 1. IMPORTS
+# =========================================================
+
+import sys
+import os
+import json
+import threading
+import queue
+import time
+from typing import List, Dict, Any, Optional
+
+import tkinter as tk
+from tkinter import filedialog, messagebox
+from tkinter import scrolledtext
+
+# =========================================================
+# 2. GLOBAL CONFIGURATION
+# =========================================================
+
+WINDOW_TITLE = "Microservice Syntax Tree Transformer"
+WINDOW_WIDTH = 1000
+WINDOW_HEIGHT = 700
+LOG_FONT = ("Consolas", 10)
+
+DEFAULT_TASKLIST_PATH = os.path.join(
+    os.path.dirname(__file__),
+    "tasklist_microservice_refactor.json"
+)
+
+VALID_EXTENSIONS = [".py"]
+
+LOG_PREFIX_INFO = "[INFO]"
+LOG_PREFIX_WARN = "[WARN]"
+LOG_PREFIX_ERROR = "[ERROR]"
+LOG_PREFIX_TASK = "[TASK]"
+LOG_PREFIX_FILE = "[FILE]"
+
+# =========================================================
+# 3. LOGGING + UTILITY HELPERS
+# =========================================================
+
+class UILogger:
+    """
+    Thread-safe logger that writes to:
+    - a Tkinter Text/ScrolledText widget (if available)
+    - stderr
+
+    Uses an internal queue to synchronize log messages
+    from worker threads into the main Tkinter thread.
+    """
+
+    def __init__(self, text_widget: Optional[tk.Text] = None):
+        self.text_widget = text_widget
+        self.queue: "queue.Queue[str]" = queue.Queue()
+        self._stop = False
+
+    def attach_widget(self, text_widget: tk.Text) -> None:
+        self.text_widget = text_widget
+
+    def log(self, prefix: str, message: str) -> None:
+        line = f"{prefix} {message}"
+        print(line, file=sys.stderr)
+        self.queue.put(line + "\n")
+
+    def info(self, message: str) -> None:
+        self.log(LOG_PREFIX_INFO, message)
+
+    def warn(self, message: str) -> None:
+        self.log(LOG_PREFIX_WARN, message)
+
+    def error(self, message: str) -> None:
+        self.log(LOG_PREFIX_ERROR, message)
+
+    def task(self, message: str) -> None:
+        self.log(LOG_PREFIX_TASK, message)
+
+    def file(self, message: str) -> None:
+        self.log(LOG_PREFIX_FILE, message)
+
+    def pump(self):
+        """
+        Drain the queue into the UI text widget.
+        This should be called periodically from the Tkinter main thread.
+        """
+        if self.text_widget is None:
+            while not self.queue.empty():
+                _ = self.queue.get_nowait()
+            return
+
+        try:
+            while True:
+                line = self.queue.get_nowait()
+                self.text_widget.insert(tk.END, line)
+                self.text_widget.see(tk.END)
+        except queue.Empty:
+            pass
+
+        if not self._stop:
+            self.text_widget.after(100, self.pump)
+
+    def stop(self):
+        self._stop = True
+
+
+def load_tasklist(tasklist_path: str, logger: UILogger) -> List[Dict[str, Any]]:
+    logger.info(f"Loading tasklist from: {tasklist_path}")
+    if not os.path.exists(tasklist_path):
+        logger.error(f"Tasklist not found at: {tasklist_path}")
+        return []
+
+    try:
+        with open(tasklist_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        if not isinstance(data, list):
+            logger.error("Tasklist JSON is not a list.")
+            return []
+        logger.info(f"Loaded {len(data)} tasks from tasklist.")
+        return data
+    except Exception as e:
+        logger.error(f"Failed to load tasklist JSON: {e}")
+        return []
+
+
+def discover_python_files(root_folder: str, logger: UILogger) -> List[str]:
+    logger.info(f"Scanning for Python files in: {root_folder}")
+    results: List[str] = []
+
+    for dirpath, dirnames, filenames in os.walk(root_folder):
+        for name in filenames:
+            _, ext = os.path.splitext(name)
+            if ext.lower() in VALID_EXTENSIONS:
+                full_path = os.path.join(dirpath, name)
+                results.append(full_path)
+
+    logger.info(f"Discovered {len(results)} Python files.")
+    return results
+
+# =========================================================
+# 4. CORE PIPELINE ROLES (STUBS)
+# =========================================================
+
+class RefactorContext:
+    """
+    Per-file context for the refactor pipeline.
+    """
+
+    def __init__(self, file_path: str):
+        self.file_path = file_path
+        self.original_source: str = ""
+        self.ir: Dict[str, Any] = {}
+        self.scaffold_source: str = ""
+
+
+class ParserRole:
+    """
+    Task: 'parse_file'
+    Loads the file and extracts a minimal IR.
+    """
+
+    TASK_NAME = "parse_file"
+
+    def run(self, ctx: RefactorContext, logger: UILogger) -> None:
+        logger.task(f"[{self.TASK_NAME}] Parsing file: {ctx.file_path}")
+        try:
+            with open(ctx.file_path, "r", encoding="utf-8") as f:
+                ctx.original_source = f.read()
+        except Exception as e:
+            logger.error(f"[{self.TASK_NAME}] Failed to read file: {e}")
+            return
+
+        ctx.ir = {
+            "file_path": ctx.file_path,
+            "service_name": None,
+            "imports": [],
+            "endpoints": [],
+            "metadata": {},
+        }
+        logger.info(f"[{self.TASK_NAME}] IR initialized (stub).")
+
+
+class ScaffoldRole:
+    """
+    Task: 'generate_scaffold'
+    Creates the symbolic scaffold with placeholders.
+    """
+
+    TASK_NAME = "generate_scaffold"
+
+    # --- STUB SCAFFOLD (will be replaced by patch) ---
+    SCAFFOLD_TEMPLATE = """# {{IMPORTS}}
+
+# {{METADATA}}
+
+class {{CLASS_NAME}}:
+    def __init__(self):
+        # {{INIT}}
+        pass
+
+    # {{ENDPOINTS}}
+"""
+
+    def run(self, ctx: RefactorContext, logger: UILogger) -> None:
+        logger.task(f"[{self.TASK_NAME}] Generating scaffold.")
+        ctx.scaffold_source = self.SCAFFOLD_TEMPLATE
+        logger.info(f"[{self.TASK_NAME}] Scaffold initialized (stub).")
+
+
+class PatchRole:
+    """
+    Handles all patch_* tasks.
+    """
+
+    SUPPORTED_TASKS = {
+        "patch_imports",
+        "patch_metadata",
+        "patch_class_header",
+        "patch_init",
+        "patch_endpoints",
+        "final_cleanup",
+    }
+
+    def run(self, task_name: str, ctx: RefactorContext, logger: UILogger) -> None:
+        if task_name not in self.SUPPORTED_TASKS:
+            logger.warn(f"[PatchRole] Unsupported task: {task_name}")
+            return
+
+        logger.task(f"[{task_name}] (stub) Would generate and apply patch hunks here.")
+        # This is where your semantic patcher will be integrated.
+
+
+# =========================================================
+# 5. TASKLIST-DRIVEN PIPELINE EXECUTION
+# =========================================================
+
+class RefactorEngine:
+    """
+    Orchestrates:
+    - loading the tasklist
+    - discovering files
+    - running each task over each file
+    """
+
+    def __init__(self, logger: UILogger, tasklist_path: str = DEFAULT_TASKLIST_PATH):
+        self.logger = logger
+        self.tasklist_path = tasklist_path
+        self.tasklist: List[Dict[str, Any]] = []
+        self.parser = ParserRole()
+        self.scaffold = ScaffoldRole()
+        self.patcher = PatchRole()
+
+    def load_tasklist(self) -> None:
+        self.tasklist = load_tasklist(self.tasklist_path, self.logger)
+
+    def run_for_folder(self, folder: str) -> None:
+        if not self.tasklist:
+            self.logger.error("No tasklist loaded. Aborting.")
+            return
+
+        files = discover_python_files(folder, self.logger)
+        if not files:
+            self.logger.warn("No Python files found in selected folder.")
+            return
+
+        for file_path in files:
+            self.logger.file(f"Processing file: {file_path}")
+            ctx = RefactorContext(file_path)
+            self._run_for_file(ctx)
+
+        self.logger.info("Refactor pipeline complete for all files.")
+
+    def _run_for_file(self, ctx: RefactorContext) -> None:
+        for task in self.tasklist:
+            task_name = task.get("task")
+            description = task.get("description", "")
+            self.logger.task(f"Running task '{task_name}': {description}")
+
+            if task_name == ParserRole.TASK_NAME:
+                self.parser.run(ctx, self.logger)
+            elif task_name == ScaffoldRole.TASK_NAME:
+                self.scaffold.run(ctx, self.logger)
+            else:
+                self.patcher.run(task_name, ctx, self.logger)
+
+            time.sleep(0.05)
+
+# =========================================================
+# 6. TKINTER UI
+# =========================================================
+
+class RefactorApp(tk.Tk):
+    """
+    Tkinter UI wrapper for:
+    - choosing a folder
+    - kicking off the refactor pipeline
+    - monitoring logs
+    """
+
+    def __init__(self):
+        super().__init__()
+        self.title(WINDOW_TITLE)
+        self.geometry(f"{WINDOW_WIDTH}x{WINDOW_HEIGHT}")
+
+        self.logger = UILogger()
+        self.engine = RefactorEngine(self.logger)
+
+        self.selected_folder: Optional[str] = None
+        self.worker_thread: Optional[threading.Thread] = None
+        self._is_running = False
+
+        self._build_ui()
+
+        self.logger.attach_widget(self.log_text)
+        self.logger.pump()
+
+        self.engine.load_tasklist()
+
+    def _build_ui(self) -> None:
+        top_frame = tk.Frame(self)
+        top_frame.pack(side=tk.TOP, fill=tk.X, padx=10, pady=10)
+
+        folder_label = tk.Label(top_frame, text="Target folder:")
+        folder_label.pack(side=tk.LEFT)
+
+        self.folder_var = tk.StringVar(value="")
+        folder_entry = tk.Entry(top_frame, textvariable=self.folder_var, width=60)
+        folder_entry.pack(side=tk.LEFT, padx=5)
+
+        browse_btn = tk.Button(top_frame, text="Browse...", command=self._on_browse)
+        browse_btn.pack(side=tk.LEFT, padx=5)
+
+        self.run_btn = tk.Button(top_frame, text="Run Refactor", command=self._on_run)
+        self.run_btn.pack(side=tk.LEFT, padx=10)
+
+        self.status_var = tk.StringVar(value="Idle")
+        status_label = tk.Label(self, textvariable=self.status_var, anchor="w")
+        status_label.pack(side=tk.TOP, fill=tk.X, padx=10)
+
+        self.log_text = scrolledtext.ScrolledText(self, font=LOG_FONT, wrap=tk.WORD)
+        self.log_text.pack(side=tk.TOP, fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+    def _on_browse(self) -> None:
+        folder = filedialog.askdirectory(title="Select folder containing microservices")
+        if folder:
+            self.selected_folder = folder
+            self.folder_var.set(folder)
+            self.logger.info(f"Selected folder: {folder}")
+
+    def _on_run(self) -> None:
+        if self._is_running:
+            messagebox.showinfo("In Progress", "The refactor pipeline is already running.")
+            return
+
+        folder = self.folder_var.get().strip()
+        if not folder or not os.path.isdir(folder):
+            messagebox.showerror("Invalid Folder", "Please select a valid folder first.")
+            return
+
+        self.selected_folder = folder
+        self._is_running = True
+        self.status_var.set("Running...")
+        self.run_btn.config(state=tk.DISABLED)
+
+        self.logger.info(f"Starting refactor pipeline for folder: {folder}")
+
+        self.worker_thread = threading.Thread(
+            target=self._run_in_background,
+            args=(folder,),
+            daemon=True,
+        )
+        self.worker_thread.start()
+
+        self.after(250, self._check_worker)
+
+    def _run_in_background(self, folder: str) -> None:
+        try:
+            self.engine.run_for_folder(folder)
+        except Exception as e:
+            self.logger.error(f"Unexpected error in worker thread: {e}")
+        finally:
+            self._is_running = False
+
+    def _check_worker(self) -> None:
+        if self._is_running:
+            self.after(250, self._check_worker)
+        else:
+            self.status_var.set("Idle")
+            self.run_btn.config(state=tk.NORMAL)
+            self.logger.info("Refactor pipeline finished or aborted.")
+
+# =========================================================
+# 7. ENTRYPOINT
+# =========================================================
+
+def main():
+    app = RefactorApp()
+    app.mainloop()
+
+
+if __name__ == "__main__":
+    main()
+
+--------------------------------------------------------------------------------
+FILE: src\tasklist_microservice_refactor.json
+--------------------------------------------------------------------------------
+[
+  {
+    "task": "parse_file",
+    "description": "Parse the Python file and extract IR (imports, class name, endpoints, metadata)."
+  },
+  {
+    "task": "generate_scaffold",
+    "description": "Create the symbolic scaffold with placeholders for imports, metadata, class header, init, and endpoints."
+  },
+  {
+    "task": "patch_imports",
+    "description": "Replace the {{IMPORTS}} placeholder with the inferred import block."
+  },
+  {
+    "task": "patch_metadata",
+    "description": "Replace the {{METADATA}} placeholder with the @service_metadata block."
+  },
+  {
+    "task": "patch_class_header",
+    "description": "Replace the {{CLASS_HEADER}} placeholder with the class declaration and inheritance."
+  },
+  {
+    "task": "patch_init",
+    "description": "Replace the {{INIT}} placeholder with the __init__ method including super().__init__."
+  },
+  {
+    "task": "patch_endpoints",
+    "description": "Replace the {{ENDPOINTS}} placeholder with all endpoint methods, each with correct decorators."
+  },
+  {
+    "task": "final_cleanup",
+    "description": "Remove any remaining placeholders and normalize whitespace."
+  }
+]
+
+--------------------------------------------------------------------------------
+FILE: src\__init__.py
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+FILE: src\microservices\_FileSaverMS.py
+--------------------------------------------------------------------------------
+from microservice_std_lib import service_metadata, service_endpoint
+from typing import Dict, Any, Optional
+from pathlib import Path
+
+
+@service_metadata(
+    name="FileSaverService",
+    version="1.0.0",
+    description="Safely writes text to a file inside a sandbox directory.",
+    tags=["filesystem", "write", "utility"],
+    capabilities=["filesystem:write"]
+)
+class FileSaverMS:
+    """
+    A minimal microservice that writes text to a file.
+    It enforces strict sandboxing: the resolved path must remain inside base_dir.
+    """
+
+    def __init__(self, config: Optional[Dict[str, Any]] = None):
+        self.config = config or {}
+
+        base_dir = self.config.get("base_dir")
+        if not base_dir:
+            raise ValueError("FileSaverMS requires a 'base_dir' for safety.")
+
+        self.base_dir = Path(base_dir).resolve()
+        self.base_dir.mkdir(parents=True, exist_ok=True)
+
+    @service_endpoint(
+        inputs={
+            "relative_path": "str  # Path relative to sandbox root.",
+            "content": "str  # Text to write to the file."
+        },
+        outputs={
+            "success": "bool",
+            "message": "str",
+            "written_path": "str"
+        },
+        description="Writes text to a file inside the sandbox. Overwrites existing files.",
+        tags=["action", "filesystem"],
+        side_effects=["filesystem:write"]
+    )
+    def save_file(self, relative_path: str, content: str) -> Dict[str, Any]:
+        """
+        Write text to a file inside the sandbox.
+        The path must remain inside base_dir after resolution.
+        """
+
+        try:
+            # Resolve path inside sandbox
+            target = (self.base_dir / relative_path).resolve()
+
+            # Enforce sandbox boundary
+            try:
+                target.relative_to(self.base_dir)
+            except ValueError:
+                return {
+                    "success": False,
+                    "message": "Refused: path escapes sandbox.",
+                    "written_path": ""
+                }
+
+            # Ensure parent directories exist
+            target.parent.mkdir(parents=True, exist_ok=True)
+
+            # Write file
+            with target.open("w", encoding="utf-8") as f:
+                f.write(content)
+
+            return {
+                "success": True,
+                "message": "File written successfully.",
+                "written_path": str(target)
+            }
+
+        except Exception as e:
+            return {
+                "success": False,
+                "message": f"Error writing file: {e}",
+                "written_path": ""
+            }
+
+
+if __name__ == "__main__":
+    svc = FileSaverMS(config={"base_dir": "./sandbox"})
+    print("Service ready:", svc)
+
+--------------------------------------------------------------------------------
+FILE: src\microservices\_TokenizingPatcherMS.py
+--------------------------------------------------------------------------------
+from typing import Dict, Any, Optional
+from pathlib import Path
+import json
+
+from microservice_std_lib import service_metadata, service_endpoint
+
+# Import the core engine + error type from your existing app
+# Adjust the import path as needed depending on your project layout.
+from app import apply_patch_text, PatchError
+
+
+@service_metadata(
+    name="TokenizingPatcherService",
+    version="1.0.0",
+    description=(
+        "Applies structured JSON patch hunks to a target text file using the "
+        "_TokenizingPATCHER engine (indentation-aware, non-overlapping, deterministic)."
+    ),
+    tags=["patching", "filesystem", "refactor", "automation"],
+    capabilities=[
+        "filesystem:read",
+        "filesystem:write"
+    ]
+)
+class TokenizingPatcherMS:
+    """
+    Microservice wrapper around the _TokenizingPATCHER core logic.
+
+    This service is designed to:
+    - Accept a target file path and a JSON patch schema.
+    - Use the existing `apply_patch_text` engine for deterministic patching.
+    - Optionally run as a dry run (no write).
+    - Destructively overwrite the target file when requested (for sandbox use).
+    """
+
+    def __init__(self, config: Optional[Dict[str, Any]] = None):
+        """
+        Optional config keys (all are optional):
+
+        - base_dir: str
+            If set, all target paths are resolved relative to this directory.
+            Useful for sandboxing. Example: "/sandbox/workspace"
+
+        - default_force_indent: bool
+            Default for force_indent when the endpoint caller does not specify it.
+            (Defaults to False if not provided.)
+
+        - allow_absolute_paths: bool
+            If False (default), absolute paths are rejected when base_dir is set,
+            to enforce sandboxing. If True, caller can pass absolute paths.
+        """
+        self.config = config or {}
+
+        base_dir = self.config.get("base_dir")
+        self.base_dir: Optional[Path] = Path(base_dir).resolve() if base_dir else None
+
+        self.default_force_indent: bool = bool(
+            self.config.get("default_force_indent", False)
+        )
+        self.allow_absolute_paths: bool = bool(
+            self.config.get("allow_absolute_paths", False)
+        )
+
+    # -------------------------------------------------------------------------
+    # Core endpoint: apply patch to a file
+    # -------------------------------------------------------------------------
+
+    @service_endpoint(
+        inputs={
+            "target_path": "str  # Relative or absolute path to the file to patch.",
+            "patch_schema": (
+                "str  # JSON string matching the _TokenizingPATCHER schema "
+                "with a top-level 'hunks' list."
+            ),
+            "force_indent": (
+                "bool (optional)  # If true, use patch indentation as-is; "
+                "otherwise adapt indentation relative to target file."
+            ),
+            "dry_run": "bool (optional)  # If true, do not write back to disk.",
+            "return_preview": (
+                "bool (optional)  # If true, include patched text in response "
+                "even for destructive runs."
+            ),
+        },
+        outputs={
+            "success": "bool",
+            "message": "str",
+            "target_path": "str",
+            "dry_run": "bool",
+            "force_indent_used": "bool",
+            "written": "bool  # True if file was actually overwritten.",
+            "patched_preview": "str (optional)  # May be omitted for large files.",
+        },
+        description=(
+            "Apply a structured JSON patch to a target file using the "
+            "_TokenizingPATCHER engine. Supports dry runs and destructive "
+            "overwrites, with optional sandboxing via service config."
+        ),
+        tags=["action", "patch", "filesystem"],
+        side_effects=[
+            "filesystem:read",
+            "filesystem:write"
+        ]
+    )
+    def apply_patch_to_file(
+        self,
+        target_path: str,
+        patch_schema: str,
+        force_indent: Optional[bool] = None,
+        dry_run: bool = False,
+        return_preview: bool = True,
+    ) -> Dict[str, Any]:
+        """
+        Apply patch hunks defined in `patch_schema` to the file at `target_path`.
+
+        - Reads the target file from disk.
+        - Parses the JSON schema into a patch object.
+        - Uses `apply_patch_text(...)` to compute the new text.
+        - Writes back to the SAME file when not in dry_run mode.
+        - Returns a structured result describing what happened.
+        """
+
+        # -------------------------------------------------------------
+        # 1. Resolve target path (respecting optional sandboxing)
+        # -------------------------------------------------------------
+        try:
+            raw_path = Path(target_path)
+
+            # Enforce sandboxing when base_dir is configured
+            if self.base_dir:
+                if raw_path.is_absolute():
+                    if not self.allow_absolute_paths:
+                        return {
+                            "success": False,
+                            "message": (
+                                "Absolute paths are not allowed when 'base_dir' is configured. "
+                                "Pass a path relative to the sandbox."
+                            ),
+                            "target_path": str(raw_path),
+                            "dry_run": dry_run,
+                            "force_indent_used": bool(
+                                self.default_force_indent if force_indent is None else force_indent
+                            ),
+                            "written": False,
+                        }
+                    resolved_target = raw_path.resolve()
+                else:
+                    resolved_target = (self.base_dir / raw_path).resolve()
+
+                # Optional: enforce that resolved_target stays inside base_dir
+                try:
+                    resolved_target.relative_to(self.base_dir)
+                except ValueError:
+                    return {
+                        "success": False,
+                        "message": (
+                            "Resolved target path escapes the configured base_dir sandbox. "
+                            "Refusing to patch."
+                        ),
+                        "target_path": str(resolved_target),
+                        "dry_run": dry_run,
+                        "force_indent_used": bool(
+                            self.default_force_indent if force_indent is None else force_indent
+                        ),
+                        "written": False,
+                    }
+            else:
+                # No base_dir configured; trust the caller
+                resolved_target = raw_path.resolve()
+
+        except Exception as e:
+            return {
+                "success": False,
+                "message": f"Failed to resolve target path: {e}",
+                "target_path": target_path,
+                "dry_run": dry_run,
+                "force_indent_used": bool(
+                    self.default_force_indent if force_indent is None else force_indent
+                ),
+                "written": False,
+            }
+
+        # -------------------------------------------------------------
+        # 2. Read target file
+        # -------------------------------------------------------------
+        try:
+            with resolved_target.open("r", encoding="utf-8") as f:
+                original_text = f.read()
+        except FileNotFoundError:
+            return {
+                "success": False,
+                "message": f"Target file not found: {resolved_target}",
+                "target_path": str(resolved_target),
+                "dry_run": dry_run,
+                "force_indent_used": bool(
+                    self.default_force_indent if force_indent is None else force_indent
+                ),
+                "written": False,
+            }
+        except Exception as e:
+            return {
+                "success": False,
+                "message": f"Error reading target file: {e}",
+                "target_path": str(resolved_target),
+                "dry_run": dry_run,
+                "force_indent_used": bool(
+                    self.default_force_indent if force_indent is None else force_indent
+                ),
+                "written": False,
+            }
+
+        # -------------------------------------------------------------
+        # 3. Parse patch schema JSON
+        # -------------------------------------------------------------
+        try:
+            patch_obj = json.loads(patch_schema)
+        except json.JSONDecodeError as e:
+            return {
+                "success": False,
+                "message": f"Patch schema is not valid JSON: {e}",
+                "target_path": str(resolved_target),
+                "dry_run": dry_run,
+                "force_indent_used": bool(
+                    self.default_force_indent if force_indent is None else force_indent
+                ),
+                "written": False,
+            }
+
+        # -------------------------------------------------------------
+        # 4. Apply patch using core engine
+        # -------------------------------------------------------------
+        force_indent_used = (
+            self.default_force_indent if force_indent is None else bool(force_indent)
+        )
+
+        try:
+            new_text = apply_patch_text(
+                original_text,
+                patch_obj,
+                global_force_indent=force_indent_used,
+            )
+        except PatchError as e:
+            return {
+                "success": False,
+                "message": f"Patch engine failure: {e}",
+                "target_path": str(resolved_target),
+                "dry_run": dry_run,
+                "force_indent_used": force_indent_used,
+                "written": False,
+            }
+        except Exception as e:
+            return {
+                "success": False,
+                "message": f"Unexpected error during patching: {e}",
+                "target_path": str(resolved_target),
+                "dry_run": dry_run,
+                "force_indent_used": force_indent_used,
+                "written": False,
+            }
+
+        # -------------------------------------------------------------
+        # 5. Optionally write back to disk (destructive overwrite)
+        # -------------------------------------------------------------
+        written = False
+        if not dry_run:
+            try:
+                with resolved_target.open("w", encoding="utf-8") as f:
+                    f.write(new_text)
+                written = True
+            except Exception as e:
+                return {
+                    "success": False,
+                    "message": f"Failed to write patched file: {e}",
+                    "target_path": str(resolved_target),
+                    "dry_run": dry_run,
+                    "force_indent_used": force_indent_used,
+                    "written": False,
+                }
+
+        # -------------------------------------------------------------
+        # 6. Build response payload
+        # -------------------------------------------------------------
+        result: Dict[str, Any] = {
+            "success": True,
+            "message": (
+                "Dry run successful; patch applies cleanly."
+                if dry_run
+                else "Patch applied and file overwritten successfully."
+            ),
+            "target_path": str(resolved_target),
+            "dry_run": dry_run,
+            "force_indent_used": force_indent_used,
+            "written": written,
+        }
+
+        if return_preview:
+            # In dry_run mode, preview is the only observable side effect
+            # In destructive mode, this is still useful for logging/inspection
+            result["patched_preview"] = new_text
+
+        return result
+
+
+if __name__ == "__main__":
+    # Standard independent test block for the catalogue
+    svc = TokenizingPatcherMS(
+        config={
+            # Example: point this at a known sandbox root
+            # "base_dir": "/path/to/sandbox",
+            # "default_force_indent": False,
+            # "allow_absolute_paths": False,
+        }
+    )
+    print("Service ready:", svc)
+    # Example manual smoke test (adjust paths and patch as needed):
+    #
+    # dummy_patch = json.dumps({
+    #     "hunks": [
+    #         {
+    #             "description": "Example no-op hunk",
+    #             "search_block": "original text",
+    #             "replace_block": "modified text",
+    #             "use_patch_indent": False
+    #         }
+    #     ]
+    # })
+    # print(
+    #     svc.apply_patch_to_file(
+    #         target_path="relative/or/absolute/path/to/file.py",
+    #         patch_schema=dummy_patch,
+    #         dry_run=True,
+    #         return_preview=True,
+    #     )
+    # )
+
+
+--------------------------------------------------------------------------------
+FILE: src\microservices\_TokenizingPatcherMS_README.md
+--------------------------------------------------------------------------------
+# `_TokenizingPatcherMS_README.md`
+
+## Overview
+`TokenizingPatcherMS` is a deterministic, indentation‑aware patch‑application microservice built on the `_TokenizingPATCHER` engine. It applies structured JSON hunks to a target file, supports dry‑run validation, and can destructively overwrite files when requested.
+
+Agents use this service to perform safe, auditable, non‑overlapping code transformations.
+
+---
+
+## Capabilities
+- Deterministic hunk‑based patching  
+- Indentation‑aware replacement  
+- Collision detection  
+- Dry‑run + destructive modes  
+- Optional sandboxing  
+- Fully declarative JSON schema  
+
+This is the **canonical** way agents modify files.
+
+---
+
+## When Agents Should Use This Service
+Use it whenever you need to:
+- Insert, replace, or remove code  
+- Perform multi‑file refactors  
+- Apply transformations generated by analysis  
+- Maintain architectural consistency  
+
+Do **not** rewrite files manually.  
+Do **not** bypass the patcher.
+
+---
+
+## Endpoint: `apply_patch_to_file`
+
+### Inputs
+| Field | Type | Description |
+|-------|------|-------------|
+| `target_path` | str | File to patch (relative if sandboxed). |
+| `patch_schema` | str | JSON string containing `"hunks"`. |
+| `force_indent` | bool | Use patch indentation exactly. |
+| `dry_run` | bool | Validate without writing. |
+| `return_preview` | bool | Include patched text in response. |
+
+### Outputs
+| Field | Type | Description |
+|-------|------|-------------|
+| `success` | bool | Patch applied cleanly. |
+| `message` | str | Status. |
+| `target_path` | str | Resolved path. |
+| `dry_run` | bool | Whether this was a dry run. |
+| `force_indent_used` | bool | Final indentation mode. |
+| `written` | bool | True if file overwritten. |
+| `patched_preview` | str | Optional preview. |
+
+---
+
+## Patch Schema Contract
+
+```json
+{
+  "hunks": [
+    {
+      "description": "Short description",
+      "search_block": "text to find\n(multi-line allowed)",
+      "replace_block": "replacement text",
+      "use_patch_indent": false
+    }
+  ]
+}
+```
+
+### Rules
+1. Hunks must not overlap.  
+2. `search_block` must match exactly (strict → content‑only fallback).  
+3. Indentation must be intentional.  
+4. Hunks must be self‑contained.  
+5. Validate with dry‑run before destructive writes.
+
+---
+
+## How the Refactor Engine Calls This Service
+
+### 1. Import and instantiate
+```python
+from microservice.tokenizing_patcher_ms import TokenizingPatcherMS
+
+patcher = TokenizingPatcherMS(
+    config={
+        "base_dir": "/sandbox/workspace",
+        "default_force_indent": False,
+        "allow_absolute_paths": False
+    }
+)
+```
+
+### 2. Build patch schema
+```python
+patch_obj = {
+    "hunks": [
+        {
+            "description": "Replace header",
+            "search_block": "def old():",
+            "replace_block": "def new():",
+            "use_patch_indent": False
+        }
+    ]
+}
+```
+
+### 3. Convert to JSON string
+```python
+import json
+schema_str = json.dumps(patch_obj)
+```
+
+### 4. Dry‑run
+```python
+result = patcher.apply_patch_to_file(
+    target_path="src/module/example.py",
+    patch_schema=schema_str,
+    dry_run=True,
+    return_preview=True
+)
+```
+
+### 5. If correct → destructive overwrite
+```python
+patcher.apply_patch_to_file(
+    target_path="src/module/example.py",
+    patch_schema=schema_str,
+    dry_run=False
+)
+```
+
+### 6. Inspect results
+```python
+if not result["success"]:
+    raise RuntimeError(result["message"])
+```
+
+This is the **standard refactor‑engine ritual**:
+**analyze → generate patch → dry‑run → inspect → apply → recurse.**
+
+---
+
+## Sandbox Behavior
+If configured with:
+
+```python
+{
+  "base_dir": "/sandbox/workspace",
+  "allow_absolute_paths": false
+}
+```
+
+Then:
+- All paths must be inside the sandbox  
+- Escapes are rejected  
+- Destructive writes are safe  
+
+---
+
+## Philosophy
+This service enforces:
+- determinism  
+- clarity  
+- explicit intent  
+- safe automation  
+
+Agents participate in the recursive ritual:  
+**patch → validate → apply → recurse.**
+
+---
+
+
+--------------------------------------------------------------------------------
+FILE: src\microservices\_ZipCompressMS.py
+--------------------------------------------------------------------------------
+from microservice_std_lib import service_metadata, service_endpoint
+from typing import Dict, Any, Optional, List
+from pathlib import Path
+import zipfile
+import os
+
+
+@service_metadata(
+    name="ZipperService",
+    version="1.0.0",
+    description="Zips all files in a directory with optional exclusion filters.",
+    tags=["filesystem", "utility", "backup"],
+    capabilities=["filesystem:read", "filesystem:write"]
+)
+class ZipperMS:
+    """
+    A simple microservice that zips all files in a directory.
+    Exclusions are substring-based: if any exclusion string appears
+    in the file or folder name, it is skipped.
+    """
+
+    def __init__(self, config: Optional[Dict[str, Any]] = None):
+        self.config = config or {}
+
+        base_dir = self.config.get("base_dir")
+        self.base_dir: Optional[Path] = Path(base_dir).resolve() if base_dir else None
+
+        self.allow_absolute_paths: bool = bool(
+            self.config.get("allow_absolute_paths", False)
+        )
+
+    # -------------------------------------------------------------------------
+    # Endpoint: zip a directory
+    # -------------------------------------------------------------------------
+
+    @service_endpoint(
+        inputs={
+            "target_dir": "str  # Directory to zip.",
+            "output_zip": "str (optional)  # Output zip filename.",
+            "exclusions": "list[str] (optional)  # Skip files containing these substrings."
+        },
+        outputs={
+            "success": "bool",
+            "message": "str",
+            "zip_path": "str",
+            "skipped": "list[str]",
+            "included": "list[str]"
+        },
+        description="Zips all files in a directory, skipping any whose names contain exclusion substrings.",
+        tags=["action", "filesystem"],
+        side_effects=["filesystem:read", "filesystem:write"]
+    )
+    def zip_directory(
+        self,
+        target_dir: str,
+        output_zip: Optional[str] = None,
+        exclusions: Optional[List[str]] = None
+    ) -> Dict[str, Any]:
+
+        exclusions = exclusions or []
+
+        # -------------------------------------------------------------
+        # 1. Resolve directory path (sandbox-aware)
+        # -------------------------------------------------------------
+        try:
+            raw_path = Path(target_dir)
+
+            if self.base_dir:
+                if raw_path.is_absolute() and not self.allow_absolute_paths:
+                    return {
+                        "success": False,
+                        "message": "Absolute paths not allowed when sandboxing is enabled.",
+                        "zip_path": "",
+                        "skipped": [],
+                        "included": []
+                    }
+
+                resolved_dir = (self.base_dir / raw_path).resolve() if not raw_path.is_absolute() else raw_path.resolve()
+
+                try:
+                    resolved_dir.relative_to(self.base_dir)
+                except ValueError:
+                    return {
+                        "success": False,
+                        "message": "Target directory escapes sandbox.",
+                        "zip_path": "",
+                        "skipped": [],
+                        "included": []
+                    }
+            else:
+                resolved_dir = raw_path.resolve()
+
+        except Exception as e:
+            return {
+                "success": False,
+                "message": f"Failed to resolve directory: {e}",
+                "zip_path": "",
+                "skipped": [],
+                "included": []
+            }
+
+        if not resolved_dir.exists() or not resolved_dir.is_dir():
+            return {
+                "success": False,
+                "message": f"Directory not found: {resolved_dir}",
+                "zip_path": "",
+                "skipped": [],
+                "included": []
+            }
+
+        # -------------------------------------------------------------
+        # 2. Determine output zip path
+        # -------------------------------------------------------------
+        if output_zip:
+            zip_path = Path(output_zip)
+            if not zip_path.is_absolute():
+                zip_path = resolved_dir / zip_path
+        else:
+            zip_path = resolved_dir / "archive.zip"
+
+        # -------------------------------------------------------------
+        # 3. Walk directory and collect files
+        # -------------------------------------------------------------
+        included = []
+        skipped = []
+
+        try:
+            with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zf:
+                for root, dirs, files in os.walk(resolved_dir):
+                    root_path = Path(root)
+
+                    # Skip excluded directories
+                    dirs[:] = [
+                        d for d in dirs
+                        if not any(ex in d for ex in exclusions)
+                    ]
+
+                    for file in files:
+                        if any(ex in file for ex in exclusions):
+                            skipped.append(str(root_path / file))
+                            continue
+
+                        full_path = root_path / file
+                        arcname = full_path.relative_to(resolved_dir)
+
+                        zf.write(full_path, arcname)
+                        included.append(str(full_path))
+
+        except Exception as e:
+            return {
+                "success": False,
+                "message": f"Error creating zip: {e}",
+                "zip_path": "",
+                "skipped": skipped,
+                "included": included
+            }
+
+        return {
+            "success": True,
+            "message": "Directory zipped successfully.",
+            "zip_path": str(zip_path),
+            "skipped": skipped,
+            "included": included
+        }
+
+
+if __name__ == "__main__":
+    svc = ZipperMS()
+    print("Service ready:", svc)
+

@@ -12,7 +12,7 @@ from typing import Dict, List, Any, Optional, Type
 # DECORATORS (The "Writer" Tools)
 # ==============================================================================
 
-def service_metadata(name: str, version: str, description: str, tags: List[str], capabilities: List[str] = None):
+def service_metadata(name: str, version: str, description: str, tags: List[str], capabilities: List[str] = None, dependencies: List[str] = None, side_effects: List[str] = None):
     """
     Class Decorator.
     Labels a Microservice class with high-level metadata for the Catalog.
@@ -24,7 +24,9 @@ def service_metadata(name: str, version: str, description: str, tags: List[str],
             "version": version,
             "description": description,
             "tags": tags,
-            "capabilities": capabilities or []
+            "capabilities": capabilities or [],
+            "dependencies": dependencies or [],
+            "side_effects": side_effects or []
         }
         return cls
     return decorator

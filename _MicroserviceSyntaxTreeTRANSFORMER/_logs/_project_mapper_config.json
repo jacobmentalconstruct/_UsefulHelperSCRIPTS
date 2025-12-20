@@ -1,0 +1,23 @@
+{
+  "folder_states": {
+    ".": "checked",
+    "src": "checked",
+    "src\\__init__.py": "unchecked",
+    "src\\app.py": "checked",
+    "src\\tasklist_microservice_refactor.json": "checked",
+    "LICENSE.md": "checked",
+    "README.md": "checked",
+    "requirements.txt": "checked",
+    "setup_env.bat": "checked",
+    "src\\microservices": "checked",
+    "src\\microservices\\_TokenizingPatcherMS.py": "checked",
+    "src\\microservices\\_TokenizingPatcherMS_README.md": "checked",
+    "src\\app.py.txt": "checked",
+    "src\\microservices\\_FileSaverMS.py": "checked",
+    "src\\microservices\\_ZipCompressMS.py": "checked"
+  },
+  "dynamic_exclusions": [
+    "venv",
+    ".venv"
+  ]
+}

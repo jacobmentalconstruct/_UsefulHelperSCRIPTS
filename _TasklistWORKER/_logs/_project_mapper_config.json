@@ -2,7 +2,23 @@
   "folder_states": {
     ".": "checked",
     "_logs": "unchecked",
-    "src": "checked"
+    "src": "checked",
+    "assets": "checked",
+    "recipes": "unchecked",
+    "src\\_microservices": "checked",
+    "src\\_microservices\\ollama_client.py": "checked",
+    "src\\_microservices\\runner.py": "checked",
+    "src\\_microservices\\state.py": "checked",
+    "src\\_microservices\\tasklists.py": "checked",
+    "src\\_microservices\\template_engine.py": "checked",
+    "src\\__init__.py": "checked",
+    "src\\app - Copy.py": "checked",
+    "src\\app.py": "checked",
+    "src\\gui_layout.py": "checked",
+    "LICENSE.md": "checked",
+    "README.md": "checked",
+    "requirements.txt": "checked",
+    "setup_env.bat": "checked"
   },
   "dynamic_exclusions": []
 }
