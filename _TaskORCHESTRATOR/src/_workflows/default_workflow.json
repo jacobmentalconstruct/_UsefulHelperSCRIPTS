@@ -1,0 +1,8 @@
+{
+  "name": "Default Batch Runner",
+  "description": "Applies the currently loaded tasklist to all matching files in the target directory.",
+  "target_dir": "./src",
+  "extension": ".py",
+  "stop_on_error": true,
+  "sandbox_mode": true
+}

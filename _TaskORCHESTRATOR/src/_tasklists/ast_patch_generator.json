@@ -1,0 +1,13 @@
+[
+  { "role": "Mechanical Tool", "prompt": "create_backup" },
+  { "role": "Mechanical Tool", "prompt": "scan_file_structure" },
+  { 
+    "role": "Strict Analyst", 
+    "prompt": "Analyze the AST in [LAST_OUTPUT] and output a JSON migration plan for a new microservice." 
+  },
+  {
+    "role": "The Surgeon",
+    "prompt": "Using the analysis, generate the TokenizingPatcher JSON hunks to transform the target file."
+  },
+  { "role": "Mechanical Tool", "prompt": "apply_safe_patch" }
+]

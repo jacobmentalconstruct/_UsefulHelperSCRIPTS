@@ -1,0 +1,28 @@
+Project Tree: C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_TaskORCHESTRATOR
+Generated: 2025-12-21 16:03:50.339870
+
+├── 📁 src/
+│   ├── 📁 _microservices/
+│   │   ├── 📄 _FileSaverMS.py
+│   │   ├── 📄 _TokenizingPatcherMS .py.txt
+│   │   ├── 📄 _TokenizingPatcherMS.py
+│   │   ├── 📄 _TokenizingPatcherMS_README.md
+│   │   ├── 📄 _ToolsMS.py
+│   │   ├── 📄 _ZipCompressMS.py
+│   │   ├── 📄 base_service.py
+│   │   ├── 📄 document_utils.py
+│   │   ├── 📄 microservice_std_lib.py
+│   │   └── 📄 microservice_template.py
+│   ├── 📁 _roles/
+│   │   └── 📄 roles.json
+│   ├── 📁 _system_prompts/
+│   ├── 📁 _tasklists/
+│   │   ├── 📄 __init__.py
+│   │   └── 📄 tasklist_microservices_generator.json
+│   ├── 📁 _workflows/
+│   ├── 📄 __init__.py
+│   └── 📄 app.py
+├── 📄 LICENSE.md
+├── 📄 README.md
+├── 📄 requirements.txt
+└── 📄 setup_env.bat

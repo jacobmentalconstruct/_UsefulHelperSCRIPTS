@@ -1,0 +1,60 @@
+[
+  { "role": "Mechanical Tool", "prompt": "create_backup" },
+
+  { "role": "Mechanical Tool", "prompt": "read_template" },
+
+  {
+    "role": "Mechanical Tool",
+    "prompt": "scan_file_structure"
+  },
+
+  {
+    "role": "Strict Analyst",
+    "prompt": "From [LAST_OUTPUT] (AST IR), output RAW JSON with: {\"file_path\":..., \"current_imports\":[], \"classes\":[...], \"functions\":[...], \"likely_service_class\":..., \"candidate_endpoints\":[], \"io_side_effects\":[], \"external_deps\":[], \"risks\":[]}. JSON only."
+  },
+
+  {
+    "role": "Helpful Assistant",
+    "prompt": "Using the microservice template (from earlier step) and the analysis JSON, write a migration plan as bullet points: target service name, module layout, @service_metadata fields, endpoint list, inputs/outputs contract, and any safe path/sandbox rules."
+  },
+
+  {
+    "role": "Helpful Assistant",
+    "prompt": "Now draft the final microservice code as a single Python file (full file contents). It must use @service_metadata and @service_endpoint, accept config in __init__, and avoid any hard-coded paths. Keep functions small and deterministic."
+  },
+
+  { "role": "Mechanical Tool", "prompt": "read_target_file" }
+
+  {
+    "role": "Helpful Assistant",
+    "prompt": "Using the exact file text in [LAST_OUTPUT], generate a patch JSON that transforms it into the final version you drafted. Use verbatim search_block anchors copied from [LAST_OUTPUT]. Output ONLY JSON."
+  },
+
+  { "role": "Mechanical Tool", "prompt": "apply_safe_patch" },
+
+  { "role": "Mechanical Tool", "prompt": "scan_file_structure" },
+
+  {
+    "role": "Strict Analyst",
+    "prompt": "Validate the refactor using the new AST IR in [LAST_OUTPUT]. Output RAW JSON: {\"looks_like_microservice\":bool, \"has_service_metadata\":bool, \"has_endpoints\":bool, \"missing\":[], \"problems\":[], \"next_patch_needed\":bool, \"recommended_next_steps\":[]}."
+  },
+
+  {
+    "role": "Helpful Assistant",
+    "prompt": "If next_patch_needed is true, generate the next TokenizingPatcher JSON hunks to fix the problems list. Output ONLY raw JSON patch."
+  },
+
+  { "role": "Mechanical Tool", "prompt": "apply_safe_patch" },
+
+  {
+    "role": "Mechanical Tool",
+    "prompt": "get_cleanup_patch"
+  },
+
+  { "role": "Mechanical Tool", "prompt": "apply_safe_patch" },
+
+  {
+    "role": "Helpful Assistant",
+    "prompt": "Final review checklist: confirm metadata is complete, endpoints have explicit inputs/outputs, no circular imports, no hard-coded paths, and config supports sandboxing where needed. Output a short pass/fail list."
+  }
+]

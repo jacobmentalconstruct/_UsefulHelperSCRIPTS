@@ -1,0 +1,2288 @@
+Dump: C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_TaskORCHESTRATOR
+
+
+--------------------------------------------------------------------------------
+FILE: LICENSE.md
+--------------------------------------------------------------------------------
+MIT License
+
+Copyright (c) 2025 Jacob Lambert
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+--------------------------------------------------------------------------------
+FILE: README.md
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+FILE: requirements.txt
+--------------------------------------------------------------------------------
+tk
+ollama
+requests
+--------------------------------------------------------------------------------
+FILE: setup_env.bat
+--------------------------------------------------------------------------------
+@echo off
+echo [SYSTEM] Initializing new project environment...
+
+:: 1. Create the venv if it doesn't exist
+if not exist .venv (
+    echo [SYSTEM] Creating .venv...
+    py -m venv .venv
+)
+
+:: 2. Upgrade pip and install requirements
+echo [SYSTEM] Installing dependencies...
+.venv\Scripts\python.exe -m pip install --upgrade pip
+if exist requirements.txt (
+    .venv\Scripts\pip install -r requirements.txt
+)
+
+echo.
+echo [SUCCESS] Environment ready!
+echo You can now open this folder in VS Code or launch via scripts_menu.py
+pause
+--------------------------------------------------------------------------------
+FILE: src\app.py
+--------------------------------------------------------------------------------
+import tkinter as tk
+from tkinter import ttk, scrolledtext, messagebox, filedialog
+import threading
+import json
+import os
+import sys
+import datetime
+import requests
+
+# --- CRITICAL PATH RESOLUTION ---
+# Since we run via 'python -m src.app', we must find the repo root for microservices/
+_current_dir = os.path.dirname(os.path.abspath(__file__))
+_root_dir = os.path.abspath(os.path.join(_current_dir, ".."))
+if _root_dir not in sys.path:
+    sys.path.insert(0, _root_dir)
+# --------------------------------
+
+# --- INTEGRATED MICROSERVICES ---
+# sys.path injection above guarantees root-relative imports
+from microservices._ToolsMS import MicroserviceTools
+
+# =========================================================
+# 1. CORE CLIENTS
+# =========================================================
+
+class OllamaClient:
+    """Manages local inference via Ollama."""
+    def list_models(self):
+        try:
+            res = requests.get("http://localhost:11434/api/tags", timeout=2)
+            if res.status_code == 200:
+                return [m["name"] for m in res.json().get("models", [])]
+        except Exception:
+            pass
+        return ["qwen2.5:7b-instruct", "qwen2.5:7b-coder", "qwen2.5:1.5b"]
+
+    def generate(self, model, system, prompt):
+        url = "http://localhost:11434/api/chat"
+        payload = {
+            "model": model,
+            "messages": [
+                {"role": "system", "content": system},
+                {"role": "user", "content": prompt}
+            ],
+            "stream": False,
+            "options": {"temperature": 0.2}
+        }
+        res = requests.post(url, json=payload, timeout=60)
+        res.raise_for_status()
+        return res.json()['message']['content']
+
+class RoleManager:
+    """Defines personas for the AI or signals for mechanical tools."""
+    def __init__(self):
+        self.roles = {
+            "Helpful Assistant": "You are a helpful AI assistant.",
+            "Python Expert": "You are a senior Python developer. Output code only.",
+            "Strict Analyst": "You are a logic-first analyst. Output raw JSON only.",
+            "Mechanical Tool": "EXECUTE_TOOL" # Special signal for _ToolsMS
+        }
+    def get_names(self): return list(self.roles.keys())
+    def get_prompt(self, name): return self.roles.get(name, "")
+
+# =========================================================
+# 2. UI COMPONENTS
+# =========================================================
+
+class TaskStepController(tk.Frame):
+    """A single row in the iterative task list."""
+    def __init__(self, parent, index, app_ref, role_mgr):
+        super().__init__(parent, bg="#1e293b", bd=1, relief="flat", pady=2)
+        self.app = app_ref
+        self.index = index
+        self.role_mgr = role_mgr
+        # model: "(default)" means use the global model dropdown
+        self.data = {"role": "Helpful Assistant", "prompt": "", "model": "(default)"}
+        self._build_ui()
+
+    def _build_ui(self):
+        self.lbl_idx = tk.Label(self, text=f"#{self.index+1}", bg="#1e293b", fg="#94a3b8", width=3)
+        self.lbl_idx.pack(side="left")
+
+        self.cb_role = ttk.Combobox(self, values=self.role_mgr.get_names(), state="readonly", width=18)
+        self.cb_role.pack(side="left", padx=5)
+        self.cb_role.set(self.data["role"])
+        self.cb_role.bind("<<ComboboxSelected>>", self._sync)
+
+        # Per-step model override
+        model_values = ["(default)"] + list(self.app.client.list_models())
+        self.cb_model = ttk.Combobox(self, values=model_values, state="readonly", width=18)
+        self.cb_model.pack(side="left", padx=5)
+        self.cb_model.set(self.data.get("model") or "(default)")
+        self.cb_model.bind("<<ComboboxSelected>>", self._sync)
+
+        self.txt_prompt = tk.Entry(self, bg="#0f172a", fg="white", insertbackground="white", borderwidth=0)
+        self.txt_prompt.pack(side="left", fill="x", expand=True, padx=5)
+        self.txt_prompt.bind("<FocusOut>", self._sync)
+        self.txt_prompt.bind("<Return>", self._run_step_from_enter)
+        self.txt_prompt.bind("<KP_Enter>", self._run_step_from_enter)
+
+        tk.Button(self, text="▶", command=lambda: self.app.run_step(self.index), 
+                  bg="#3b82f6", fg="white", font=("Arial", 9, "bold")).pack(side="right", padx=5)
+
+        # Click row to recall last output for this step
+        self.bind("<Button-1>", self._on_click)
+        self.lbl_idx.bind("<Button-1>", self._on_click)
+        self.cb_role.bind("<Button-1>", self._on_click)
+        self.cb_model.bind("<Button-1>", self._on_click)
+        self.txt_prompt.bind("<Button-1>", self._on_click)
+
+        # Initial enable/disable based on role
+        self._update_model_state()
+
+    def _sync(self, e=None):
+        self.data["role"] = self.cb_role.get()
+        self.data["prompt"] = self.txt_prompt.get()
+        self.data["model"] = self.cb_model.get() if hasattr(self, "cb_model") else "(default)"
+        self._update_model_state()
+
+    def _update_model_state(self):
+        try:
+            if self.cb_role.get() == "Mechanical Tool":
+                self.cb_model.configure(state="disabled")
+            else:
+                self.cb_model.configure(state="readonly")
+        except Exception:
+            pass
+
+    def _on_click(self, e=None):
+        # Recall output for this step if available
+        try:
+            self.app.show_step_output(self.index)
+        except Exception:
+            pass
+
+    def _run_step_from_enter(self, e=None):
+        """Enter key runs this step."""
+        self._sync()
+        self.app.run_step(self.index)
+        return "break"
+
+# =========================================================
+# 3. MAIN WORKBENCH APPLICATION
+# =========================================================
+
+class WorkbenchApp(tk.Tk):
+    def __init__(self):
+        super().__init__()
+        self.title("Systems Thinker: Microservice Transformer")
+        self.geometry("1200x800")
+        self.configure(bg="#0f172a")
+
+        self.client = OllamaClient()
+        self.roles = RoleManager()
+        self.steps = []
+        self.state = {"last_response": "", "current_file": ""}
+
+        # Per-step output history
+        # step_outputs[idx] = {"content": str, "success": bool|None, "ts": str, "log_msg": str}
+        self.step_outputs = {}
+        self._selected_step_index = None
+
+        # RUN-ALL state
+        self._run_all_active = False
+        self._run_all_index = 0
+        self._run_all_last_stop_reason = ""
+
+        # Initialize ToolsMS pointing to the repo root so it can find std_lib and base_service
+        self.tools_engine = MicroserviceTools(_root_dir)
+        self.recipe_path = tk.StringVar()
+
+        self._build_ui()
+        self.log("Workbench Ready. Tooling Cartridge initialized.")
+
+    def _build_ui(self):
+        # Top Config
+        top = tk.Frame(self, bg="#1e293b", pady=10)
+        top.pack(fill="x")
+        
+        tk.Label(top, text="TARGET DIR:", bg="#1e293b", fg="white").pack(side="left", padx=(10, 5))
+        self.ent_dir = tk.Entry(top, width=50, bg="#0f172a", fg="white")
+        self.ent_dir.insert(0, os.getcwd())
+        self.ent_dir.pack(side="left", padx=5)
+        tk.Button(top, text="Browse", command=self._browse).pack(side="left")
+
+        tk.Label(top, text="FILE:", bg="#1e293b", fg="#fbbf24").pack(side="left", padx=(15, 5))
+        self.ent_file = tk.Entry(top, width=20, bg="#0f172a", fg="white")
+        self.ent_file.insert(0, "dirty_service.py")
+        self.ent_file.pack(side="left", padx=5)
+
+        self.var_test_mode = tk.BooleanVar(value=True)
+        tk.Checkbutton(top, text="TEST MODE (SANDBOX)", variable=self.var_test_mode, 
+                       bg="#1e293b", fg="#f87171", selectcolor="#0f172a").pack(side="left", padx=10)
+
+        self.cb_model = ttk.Combobox(top, values=self.client.list_models(), width=25)
+        self.cb_model.pack(side="right", padx=10)
+        if self.cb_model['values']: self.cb_model.set(self.cb_model['values'][0])
+        tk.Label(top, text="MODEL:", bg="#1e293b", fg="white").pack(side="right")
+
+        # Layout
+        main_panes = tk.PanedWindow(self, orient="horizontal", bg="#0f172a", sashwidth=4)
+        main_panes.pack(fill="both", expand=True)
+
+        # Left: Task Recipe
+        left_frame = tk.Frame(main_panes, bg="#0f172a")
+        main_panes.add(left_frame, width=500)
+        
+        tk.Label(left_frame, text="ITERATIVE TASK LIST", bg="#0f172a", fg="#3b82f6", font=("Arial", 10, "bold")).pack(pady=5)
+        self.step_container = tk.Frame(left_frame, bg="#0f172a")
+        self.step_container.pack(fill="both", expand=True, padx=5)
+        
+        f_recipe_actions = tk.Frame(left_frame, bg="#0f172a")
+        f_recipe_actions.pack(fill="x", side="bottom", pady=5, padx=5)
+        
+        tk.Button(f_recipe_actions, text="LOAD RECIPE", command=self.load_tasklist, bg="#1e293b", fg="#3b82f6").pack(side="left", expand=True, fill="x", padx=2)
+        tk.Button(f_recipe_actions, text="SAVE RECIPE", command=self.save_tasklist, bg="#1e293b", fg="#10b981").pack(side="left", expand=True, fill="x", padx=2)
+        tk.Button(f_recipe_actions, text="RUN ALL", command=self.run_all_steps, bg="#1e293b", fg="#fbbf24").pack(side="left", expand=True, fill="x", padx=2)
+        tk.Button(left_frame, text="+ ADD STEP", command=self.add_step, bg="#334155", fg="white").pack(fill="x", pady=(5, 0), padx=5)
+
+        # Right: Response & Log
+        right_panes = tk.PanedWindow(main_panes, orient="vertical", bg="#0f172a")
+        main_panes.add(right_panes)
+
+        self.txt_response = scrolledtext.ScrolledText(right_panes, bg="#1e1e1e", fg="white", font=("Consolas", 10))
+        right_panes.add(self.txt_response, height=450)
+
+        self.txt_summary = scrolledtext.ScrolledText(right_panes, bg="#0b1220", fg="#e2e8f0", font=("Consolas", 9))
+        right_panes.add(self.txt_summary, height=140)
+
+        self.txt_log = scrolledtext.ScrolledText(right_panes, bg="#000000", fg="#00ff00", font=("Consolas", 9))
+        right_panes.add(self.txt_log)
+
+        # Initial Default Steps
+        self.add_step("Mechanical Tool", "scan_file_structure")
+        self.add_step("Strict Analyst", "Analyze the AST and plan migration.")
+
+    def log(self, msg):
+        ts = datetime.datetime.now().strftime("%H:%M:%S")
+
+        def _do_log():
+            self.txt_log.insert("end", f"[{ts}] {msg}\n")
+            self.txt_log.see("end")
+
+        # Tkinter widgets must only be touched from the main/UI thread
+        if threading.current_thread() is threading.main_thread():
+            _do_log()
+        else:
+            self.after(0, _do_log)
+
+    def _browse(self):
+        d = filedialog.askdirectory()
+        if d:
+            self.ent_dir.delete(0, "end")
+            self.ent_dir.insert(0, d)
+            # Keep ToolsMS anchored to repo root (not the selected working dir)
+            self.tools_engine = MicroserviceTools(_root_dir)
+
+    def add_step(self, role=None, prompt=None):
+        s = TaskStepController(self.step_container, len(self.steps), self, self.roles)
+        if role: s.cb_role.set(role)
+        if prompt: s.txt_prompt.insert(0, prompt)
+        s.pack(fill="x", pady=1)
+        self.steps.append(s)
+
+    def save_tasklist(self):
+        """Export current steps to JSON recipe."""
+        recipe = []
+        for s in self.steps:
+            s._sync()
+            recipe.append(s.data)
+        
+        path = filedialog.asksaveasfilename(defaultextension=".json", filetypes=[("JSON Recipe", "*.json")])
+        if path:
+            with open(path, "w") as f:
+                json.dump(recipe, f, indent=2)
+            self.log(f"Recipe saved to {os.path.basename(path)}")
+
+    def load_tasklist(self):
+        """Import steps from JSON recipe."""
+        path = filedialog.askopenfilename(filetypes=[("JSON Recipe", "*.json")])
+        if path:
+            with open(path, "r") as f:
+                recipe = json.load(f)
+            
+            # Clear existing steps
+            for s in self.steps: s.destroy()
+            self.steps = []
+            
+            for item in recipe:
+                self.add_step(item.get("role"), item.get("prompt"))
+                # Apply optional per-step model override
+                try:
+                    if self.steps and item.get("model"):
+                        self.steps[-1].data["model"] = item.get("model")
+                        if hasattr(self.steps[-1], "cb_model"):
+                            self.steps[-1].cb_model.set(item.get("model"))
+                        self.steps[-1]._sync()
+                except Exception:
+                    pass
+            self.log(f"Loaded {len(recipe)} steps from {os.path.basename(path)}")
+
+    def show_step_output(self, idx: int):
+        """Show the most recent output for a step (if it has run)."""
+        self._selected_step_index = idx
+        record = self.step_outputs.get(idx)
+        if not record:
+            return
+
+        content = record.get("content", "")
+        # Avoid triggering RUN ALL advance; this is a manual view action
+        def _do_show():
+            self.txt_response.delete("1.0", "end")
+            self.txt_response.insert("1.0", content)
+        if threading.current_thread() is threading.main_thread():
+            _do_show()
+        else:
+            self.after(0, _do_show)
+
+    def run_step(self, idx):
+        step = self.steps[idx]
+        step._sync()
+        role = step.data["role"]
+        prompt = step.data["prompt"]
+        
+        self.log(f"Initiating Step #{idx+1} ({role})")
+        
+        if role == "Mechanical Tool":
+            threading.Thread(target=self._tool_worker, args=(prompt, idx), daemon=True).start()
+        else:
+            # Per-step model override ("(default)" falls back to global)
+            step_model = step.data.get("model")
+            model = self.cb_model.get() if not step_model or step_model == "(default)" else step_model
+            sys_p = self.roles.get_prompt(role)
+            # Inject history context
+            full_p = f"{prompt}\n\n[LAST_OUTPUT]:\n{self.state['last_response']}"
+            threading.Thread(target=self._ai_worker, args=(model, sys_p, full_p, idx), daemon=True).start()
+
+    def run_all_steps(self):
+        """Run steps sequentially. Stops on detected failure."""
+        if self._run_all_active:
+            self.log("RUN ALL already active.")
+            return
+
+        if not self.steps:
+            self.log("No steps to run.")
+            return
+
+        self._run_all_active = True
+        self._run_all_index = 0
+        self._run_all_last_stop_reason = ""
+        self.log("RUN ALL started.")
+        self.run_step(self._run_all_index)
+
+    def _is_failure_output(self, content: str) -> bool:
+        """Best-effort failure detection across tool + AI outputs."""
+        if not content:
+            return False
+
+        # Common explicit signals
+        lowered = content.lower()
+        if "tool error" in lowered or "ai error" in lowered:
+            return True
+
+        # JSON outputs from tools often include success/error
+        try:
+            obj = json.loads(content)
+            if isinstance(obj, dict):
+                if obj.get("success") is False:
+                    return True
+                if "error" in obj and obj.get("error"):
+                    return True
+                if obj.get("message") and isinstance(obj.get("message"), str) and "error" in obj.get("message").lower():
+                    return True
+        except Exception:
+            pass
+
+        # Plain-text errors
+        if lowered.strip().startswith("error:"):
+            return True
+
+        return False
+
+    def _run_all_advance(self):
+        """Called after a step finishes (from _update_output)."""
+        if not self._run_all_active:
+            return
+
+        # Stop if last output looks like a failure
+        if self._is_failure_output(self.state.get("last_response", "")):
+            self._run_all_last_stop_reason = f"Failure at step #{self._run_all_index + 1}"
+            self.log(f"RUN ALL stopped on failure at step #{self._run_all_index + 1}.")
+            self._run_all_active = False
+            try:
+                self._update_run_summary()
+            except Exception:
+                pass
+            return
+
+        # Next step
+        self._run_all_index += 1
+        if self._run_all_index >= len(self.steps):
+            self._run_all_last_stop_reason = "Complete"
+            self.log("RUN ALL complete.")
+            self._run_all_active = False
+            try:
+                self._update_run_summary()
+            except Exception:
+                pass
+            return
+
+        self.run_step(self._run_all_index)
+
+    def _tool_worker(self, cmd, step_idx=None):
+        target_dir = self.ent_dir.get()
+        original_file = self.ent_file.get()
+
+        # SANDBOX LOGIC: If test mode is on, we work on a copy
+        if self.var_test_mode.get():
+            sandbox_file = f"TEST_{original_file}"
+            source_path = os.path.join(target_dir, original_file)
+            dest_path = os.path.join(target_dir, sandbox_file)
+
+            # Create sandbox copy if it doesn't exist yet
+            if not os.path.exists(dest_path) and os.path.exists(source_path):
+                import shutil
+                shutil.copy2(source_path, dest_path)
+                self.log(f"[SANDBOX] Created test file: {sandbox_file}")
+            target_file = sandbox_file
+        else:
+            target_file = original_file
+
+        try:
+            # 1. DIRECTORY BACKUP
+            if cmd == "create_backup":
+                import shutil
+                ts = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+                backup_path = os.path.join(os.path.dirname(target_dir), f"BACKUP_{ts}")
+                shutil.copytree(target_dir, backup_path)
+                res = {"success": True, "message": f"Backup created: {backup_path}"}
+
+            # 2. READ TEMPLATE (Boilerplate)
+            elif cmd == "read_template":
+                # Use repository root (where microservices/ actually resides)
+                template_path = os.path.join(_root_dir, "microservices", "microservice_template.py")
+                if os.path.exists(template_path):
+                    with open(template_path, "r", encoding="utf-8") as f:
+                        res = f.read()
+                else:
+                    res = {"success": False, "message": f"Error: Template not found at {template_path}"}
+
+            # 3. MECHANICAL ANALYSIS (AST)
+            elif cmd == "scan_file_structure":
+                target_path = os.path.join(target_dir, target_file)
+                res = self.tools_engine.scan_file_structure(target_path)
+
+            # 4. PATCHING (Surgeon)
+            elif cmd == "apply_safe_patch":
+                target_path = os.path.join(target_dir, target_file)
+                res = self.tools_engine.apply_patch(target_path, self.state["last_response"], dry_run=False)
+
+            # 5. CLEANUP PATCH GENERATOR
+            elif cmd == "get_cleanup_patch":
+                res = self.tools_engine.generate_cleanup_patch()
+
+            else:
+                res = {"success": False, "message": f"Error: Tool '{cmd}' not recognized."}
+
+        except Exception as e:
+            self.log(f"TOOL ERROR: {e}")
+            res = {"success": False, "message": f"TOOL ERROR: {e}"}
+
+        output = json.dumps(res, indent=2) if isinstance(res, (dict, list)) else str(res)
+        success = None
+        if isinstance(res, dict):
+            if res.get("success") is True:
+                success = True
+            elif res.get("success") is False or res.get("error"):
+                success = False
+
+        status = "succeeded" if success is True else ("failed" if success is False else "completed")
+        self._update_output(output, f"Tool '{cmd}' {status}.", step_idx=step_idx, success=success)
+
+    def _ai_worker(self, model, sys, prompt, step_idx=None):
+        try:
+            # Standardized context injection for the iteration swarm
+            augmented_prompt = f"### PREVIOUS STEP RESULT ###\n{self.state['last_response']}\n\n### CURRENT TASK ###\n{prompt}"
+            res = self.client.generate(model, sys, augmented_prompt)
+            self._update_output(res, "AI Generation complete.", step_idx=step_idx, success=True)
+        except Exception as e:
+            self.log(f"AI ERROR: {e}")
+            self._update_output(f"AI ERROR: {e}", "AI Generation failed.", step_idx=step_idx, success=False)
+
+    def _update_run_summary(self):
+        """Render a compact wrap-up of the current run state."""
+        lines = []
+        lines.append("=== RUN SUMMARY ===")
+        if self._run_all_active:
+            lines.append(f"Status: RUNNING (step {self._run_all_index + 1} / {len(self.steps)})")
+        else:
+            if self._run_all_last_stop_reason:
+                lines.append(f"Status: STOPPED - {self._run_all_last_stop_reason}")
+            else:
+                lines.append("Status: IDLE")
+
+        lines.append("")
+        for i, s in enumerate(self.steps):
+            rec = self.step_outputs.get(i)
+            if not rec:
+                status = "(not run)"
+            else:
+                succ = rec.get("success")
+                if succ is True:
+                    status = "OK"
+                elif succ is False:
+                    status = "FAIL"
+                else:
+                    status = "DONE"
+            role = s.data.get("role")
+            model = s.data.get("model") if role != "Mechanical Tool" else "-"
+            lines.append(f"#{i+1:02d} [{status}] {role} | model={model}")
+
+        lines.append("")
+        lines.append("Final output shown in main output pane.")
+
+        text = "\n".join(lines)
+        self.txt_summary.delete("1.0", "end")
+        self.txt_summary.insert("1.0", text)
+
+    def _update_output(self, content, log_msg, step_idx=None, success=None):
+        def _do_update():
+            self.state["last_response"] = content
+            self.txt_response.delete("1.0", "end")
+            self.txt_response.insert("1.0", content)
+            self.log(log_msg)
+
+            # Persist output per-step for later recall
+            if step_idx is not None:
+                ts = datetime.datetime.now().strftime("%H:%M:%S")
+                self.step_outputs[step_idx] = {
+                    "content": content,
+                    "success": success,
+                    "ts": ts,
+                    "log_msg": log_msg,
+                }
+
+            # Update summary panel
+            try:
+                self._update_run_summary()
+            except Exception:
+                pass
+
+            # If RUN ALL is active, advance after this step completes
+            if getattr(self, "_run_all_active", False):
+                # Always advance via after() to keep sequencing stable
+                self.after(0, self._run_all_advance)
+
+        # Tkinter widgets must only be touched from the main/UI thread
+        if threading.current_thread() is threading.main_thread():
+            _do_update()
+        else:
+            self.after(0, _do_update)
+
+if __name__ == "__main__":
+    import sys
+    # Phase 2 CLI Hook: If arguments are passed, we could bypass the UI
+    if len(sys.argv) > 1 and "--cli" in sys.argv:
+        print("[SYSTEM] CLI Mode detected. Bulk iteration would start here in Phase 2.")
+        # In Phase 2, we would initialize RefactorEngine and run without mainloop
+    else:
+        app = WorkbenchApp()
+        app.mainloop()
+
+
+
+
+
+
+
+--------------------------------------------------------------------------------
+FILE: src\__init__.py
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+FILE: src\_microservices\base_service.py
+--------------------------------------------------------------------------------
+import logging
+from typing import Dict, Any
+
+class BaseService:
+    """
+    Standard parent class for all microservices. 
+    Provides consistent logging and identity management.
+    """
+    def __init__(self, name: str):
+        self._service_info = {
+            "name": name, 
+            "id": name.lower().replace(" ", "_")
+        }
+        
+        # Setup standard logging (only if app hasn't configured logging yet)
+        root_logger = logging.getLogger()
+        if not root_logger.handlers:
+            logging.basicConfig(
+                level=logging.INFO,
+                format='%(asctime)s [%(levelname)s] %(message)s',
+                datefmt='%H:%M:%S'
+            )
+        self.logger = logging.getLogger(name)
+
+    def log_info(self, message: str):
+        self.logger.info(message)
+
+    def log_error(self, message: str):
+        self.logger.error(message)
+
+    def log_warning(self, message: str):
+        self.logger.warning(message)
+
+
+--------------------------------------------------------------------------------
+FILE: src\_microservices\document_utils.py
+--------------------------------------------------------------------------------
+from typing import Optional
+
+# ContentExtractorMS location can vary after refactors.
+# Try a few likely import paths; if not found, raise a clear runtime error.
+ContentExtractorMS: Optional[object] = None
+
+try:
+    from microservices._ContentExtractorMS import ContentExtractorMS  # type: ignore
+except Exception:
+    try:
+        from _ContentExtractorMS import ContentExtractorMS  # type: ignore
+    except Exception:
+        try:
+            from __ContentExtractorMS import ContentExtractorMS  # type: ignore
+        except Exception as e:
+            ContentExtractorMS = None
+            _import_error = e
+
+if ContentExtractorMS is None:
+    raise ImportError(
+        "ContentExtractorMS could not be imported. Expected one of: "
+        "microservices._ContentExtractorMS, _ContentExtractorMS, __ContentExtractorMS. "
+        f"Original error: {_import_error}"
+    )
+
+# Singleton instance to reuse the extractor logic
+_extractor = ContentExtractorMS()  # type: ignore
+
+def extract_text_from_pdf(blob: bytes) -> str:
+    """Proxy to ContentExtractorMS PDF logic."""
+    return _extractor._extract_pdf(blob)
+
+def extract_text_from_html(html_text: str) -> str:
+    """Proxy to ContentExtractorMS HTML logic."""
+    return _extractor._extract_html(html_text)
+
+
+--------------------------------------------------------------------------------
+FILE: src\_microservices\microservice_std_lib.py
+--------------------------------------------------------------------------------
+"""
+LIBRARY: Microservice Standard Lib
+VERSION: 2.0.0
+ROLE: Provides decorators for tagging Python classes as AI-discoverable services.
+"""
+
+import functools
+import inspect
+from typing import Dict, List, Any, Optional, Type
+
+# ==============================================================================
+# DECORATORS (The "Writer" Tools)
+# ==============================================================================
+
+def service_metadata(name: str, version: str, description: str, tags: List[str], capabilities: List[str] = None, dependencies: List[str] = None, side_effects: List[str] = None):
+    """
+    Class Decorator.
+    Labels a Microservice class with high-level metadata for the Catalog.
+    """
+    def decorator(cls):
+        cls._is_microservice = True
+        cls._service_info = {
+            "name": name,
+            "version": version,
+            "description": description,
+            "tags": tags,
+            "capabilities": capabilities or [],
+            "dependencies": dependencies or [],
+            "side_effects": side_effects or []
+        }
+        return cls
+    return decorator
+
+def service_endpoint(inputs: Dict[str, str], outputs: Dict[str, str], description: str, tags: List[str] = None, side_effects: List[str] = None, mode: str = "sync"):
+    """
+    Method Decorator.
+    Defines the 'Socket' that the AI Architect can plug into.
+    
+    :param inputs: Dict of {arg_name: type_string} (e.g. {"query": "str"})
+    :param outputs: Dict of {return_name: type_string} (e.g. {"results": "List[Dict]"})
+    :param description: What this specific function does.
+    :param tags: Keywords for searching (e.g. ["search", "read-only"])
+    :param side_effects: List of impact types (e.g. ["network:outbound", "disk:write"])
+    :param mode: 'sync', 'async', or 'ui_event'
+    """
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            return func(*args, **kwargs)
+        
+        # Attach metadata to the function object itself
+        wrapper._endpoint_info = {
+            "name": func.__name__,
+            "inputs": inputs,
+            "outputs": outputs,
+            "description": description,
+            "tags": tags or [],
+            "side_effects": side_effects or [],
+            "mode": mode
+        }
+        return wrapper
+    return decorator
+
+# ==============================================================================
+# INTROSPECTION (The "Reader" Tools)
+# ==============================================================================
+
+def extract_service_schema(service_cls: Type) -> Dict[str, Any]:
+    """
+    Scans a decorated Service Class and returns a JSON-serializable schema 
+    of its metadata and all its exposed endpoints.
+    
+    This is what the AI Agent uses to 'read' the manual.
+    """
+    if not getattr(service_cls, "_is_microservice", False):
+        raise ValueError(f"Class {service_cls.__name__} is not decorated with @service_metadata")
+
+    schema = {
+        "meta": getattr(service_cls, "_service_info", {}),
+        "endpoints": []
+    }
+
+    # Inspect all methods of the class
+    for name, method in inspect.getmembers(service_cls, predicate=inspect.isfunction):
+        # Unwrap decorators if necessary to find our tags
+        # (Though usually the wrapper has the tag attached)
+        endpoint_info = getattr(method, "_endpoint_info", None)
+        
+        if endpoint_info:
+            schema["endpoints"].append(endpoint_info)
+
+    return schema
+
+--------------------------------------------------------------------------------
+FILE: src\_microservices\microservice_template.py
+--------------------------------------------------------------------------------
+"""
+Standardized Microservice Template
+"""
+from microservice_std_lib import service_metadata, service_endpoint
+from base_service import BaseService
+
+@service_metadata(
+    name="{{SERVICE_NAME}}",
+    version="1.0.0",
+    description="{{DESCRIPTION}}",
+    tags=[],
+    capabilities=[]
+)
+class {{CLASS_NAME}}(BaseService):
+    def __init__(self):
+        super().__init__("{{SERVICE_NAME}}")
+        # {{INIT_LOGIC}}
+
+    # {{ENDPOINTS}}
+
+--------------------------------------------------------------------------------
+FILE: src\_microservices\_FileSaverMS.py
+--------------------------------------------------------------------------------
+from microservice_std_lib import service_metadata, service_endpoint
+from typing import Dict, Any, Optional
+from pathlib import Path
+
+
+@service_metadata(
+    name="FileSaverService",
+    version="1.0.0",
+    description="Safely writes text to a file inside a sandbox directory.",
+    tags=["filesystem", "write", "utility"],
+    capabilities=["filesystem:write"]
+)
+class FileSaverMS:
+    """
+    A minimal microservice that writes text to a file.
+    It enforces strict sandboxing: the resolved path must remain inside base_dir.
+    """
+
+    def __init__(self, config: Optional[Dict[str, Any]] = None):
+        self.config = config or {}
+
+        base_dir = self.config.get("base_dir")
+        if not base_dir:
+            raise ValueError("FileSaverMS requires a 'base_dir' for safety.")
+
+        self.base_dir = Path(base_dir).resolve()
+        self.base_dir.mkdir(parents=True, exist_ok=True)
+
+    @service_endpoint(
+        inputs={
+            "relative_path": "str  # Path relative to sandbox root.",
+            "content": "str  # Text to write to the file."
+        },
+        outputs={
+            "success": "bool",
+            "message": "str",
+            "written_path": "str"
+        },
+        description="Writes text to a file inside the sandbox. Overwrites existing files.",
+        tags=["action", "filesystem"],
+        side_effects=["filesystem:write"]
+    )
+    def save_file(self, relative_path: str, content: str) -> Dict[str, Any]:
+        """
+        Write text to a file inside the sandbox.
+        The path must remain inside base_dir after resolution.
+        """
+
+        try:
+            # Resolve path inside sandbox
+            target = (self.base_dir / relative_path).resolve()
+
+            # Enforce sandbox boundary
+            try:
+                target.relative_to(self.base_dir)
+            except ValueError:
+                return {
+                    "success": False,
+                    "message": "Refused: path escapes sandbox.",
+                    "written_path": ""
+                }
+
+            # Ensure parent directories exist
+            target.parent.mkdir(parents=True, exist_ok=True)
+
+            # Write file
+            with target.open("w", encoding="utf-8") as f:
+                f.write(content)
+
+            return {
+                "success": True,
+                "message": "File written successfully.",
+                "written_path": str(target)
+            }
+
+        except Exception as e:
+            return {
+                "success": False,
+                "message": f"Error writing file: {e}",
+                "written_path": ""
+            }
+
+
+if __name__ == "__main__":
+    svc = FileSaverMS(config={"base_dir": "./sandbox"})
+    print("Service ready:", svc)
+
+--------------------------------------------------------------------------------
+FILE: src\_microservices\_TokenizingPatcherMS .py.txt
+--------------------------------------------------------------------------------
+from typing import Dict, Any, Optional
+from pathlib import Path
+import json
+
+from microservice_std_lib import service_metadata, service_endpoint
+
+# Import the core engine + error type from your existing app
+# Adjust the import path as needed depending on your project layout.
+from app import apply_patch_text, PatchError
+
+
+@service_metadata(
+    name="TokenizingPatcherService",
+    version="1.0.0",
+    description=(
+        "Applies structured JSON patch hunks to a target text file using the "
+        "_TokenizingPATCHER engine (indentation-aware, non-overlapping, deterministic)."
+    ),
+    tags=["patching", "filesystem", "refactor", "automation"],
+    capabilities=[
+        "filesystem:read",
+        "filesystem:write"
+    ]
+)
+class TokenizingPatcherMS:
+    """
+    Microservice wrapper around the _TokenizingPATCHER core logic.
+
+    This service is designed to:
+    - Accept a target file path and a JSON patch schema.
+    - Use the existing `apply_patch_text` engine for deterministic patching.
+    - Optionally run as a dry run (no write).
+    - Destructively overwrite the target file when requested (for sandbox use).
+    """
+
+    def __init__(self, config: Optional[Dict[str, Any]] = None):
+        """
+        Optional config keys (all are optional):
+
+        - base_dir: str
+            If set, all target paths are resolved relative to this directory.
+            Useful for sandboxing. Example: "/sandbox/workspace"
+
+        - default_force_indent: bool
+            Default for force_indent when the endpoint caller does not specify it.
+            (Defaults to False if not provided.)
+
+        - allow_absolute_paths: bool
+            If False (default), absolute paths are rejected when base_dir is set,
+            to enforce sandboxing. If True, caller can pass absolute paths.
+        """
+        self.config = config or {}
+
+        base_dir = self.config.get("base_dir")
+        self.base_dir: Optional[Path] = Path(base_dir).resolve() if base_dir else None
+
+        self.default_force_indent: bool = bool(
+            self.config.get("default_force_indent", False)
+        )
+        self.allow_absolute_paths: bool = bool(
+            self.config.get("allow_absolute_paths", False)
+        )
+
+    # -------------------------------------------------------------------------
+    # Core endpoint: apply patch to a file
+    # -------------------------------------------------------------------------
+
+    @service_endpoint(
+        inputs={
+            "target_path": "str  # Relative or absolute path to the file to patch.",
+            "patch_schema": (
+                "str  # JSON string matching the _TokenizingPATCHER schema "
+                "with a top-level 'hunks' list."
+            ),
+            "force_indent": (
+                "bool (optional)  # If true, use patch indentation as-is; "
+                "otherwise adapt indentation relative to target file."
+            ),
+            "dry_run": "bool (optional)  # If true, do not write back to disk.",
+            "return_preview": (
+                "bool (optional)  # If true, include patched text in response "
+                "even for destructive runs."
+            ),
+        },
+        outputs={
+            "success": "bool",
+            "message": "str",
+            "target_path": "str",
+            "dry_run": "bool",
+            "force_indent_used": "bool",
+            "written": "bool  # True if file was actually overwritten.",
+            "patched_preview": "str (optional)  # May be omitted for large files.",
+        },
+        description=(
+            "Apply a structured JSON patch to a target file using the "
+            "_TokenizingPATCHER engine. Supports dry runs and destructive "
+            "overwrites, with optional sandboxing via service config."
+        ),
+        tags=["action", "patch", "filesystem"],
+        side_effects=[
+            "filesystem:read",
+            "filesystem:write"
+        ]
+    )
+    def apply_patch_to_file(
+        self,
+        target_path: str,
+        patch_schema: str,
+        force_indent: Optional[bool] = None,
+        dry_run: bool = False,
+        return_preview: bool = True,
+    ) -> Dict[str, Any]:
+        """
+        Apply patch hunks defined in `patch_schema` to the file at `target_path`.
+
+        - Reads the target file from disk.
+        - Parses the JSON schema into a patch object.
+        - Uses `apply_patch_text(...)` to compute the new text.
+        - Writes back to the SAME file when not in dry_run mode.
+        - Returns a structured result describing what happened.
+        """
+
+        # -------------------------------------------------------------
+        # 1. Resolve target path (respecting optional sandboxing)
+        # -------------------------------------------------------------
+        try:
+            raw_path = Path(target_path)
+
+            # Enforce sandboxing when base_dir is configured
+            if self.base_dir:
+                if raw_path.is_absolute():
+                    if not self.allow_absolute_paths:
+                        return {
+                            "success": False,
+                            "message": (
+                                "Absolute paths are not allowed when 'base_dir' is configured. "
+                                "Pass a path relative to the sandbox."
+                            ),
+                            "target_path": str(raw_path),
+                            "dry_run": dry_run,
+                            "force_indent_used": bool(
+                                self.default_force_indent if force_indent is None else force_indent
+                            ),
+                            "written": False,
+                        }
+                    resolved_target = raw_path.resolve()
+                else:
+                    resolved_target = (self.base_dir / raw_path).resolve()
+
+                # Optional: enforce that resolved_target stays inside base_dir
+                try:
+                    resolved_target.relative_to(self.base_dir)
+                except ValueError:
+                    return {
+                        "success": False,
+                        "message": (
+                            "Resolved target path escapes the configured base_dir sandbox. "
+                            "Refusing to patch."
+                        ),
+                        "target_path": str(resolved_target),
+                        "dry_run": dry_run,
+                        "force_indent_used": bool(
+                            self.default_force_indent if force_indent is None else force_indent
+                        ),
+                        "written": False,
+                    }
+            else:
+                # No base_dir configured; trust the caller
+                resolved_target = raw_path.resolve()
+
+        except Exception as e:
+            return {
+                "success": False,
+                "message": f"Failed to resolve target path: {e}",
+                "target_path": target_path,
+                "dry_run": dry_run,
+                "force_indent_used": bool(
+                    self.default_force_indent if force_indent is None else force_indent
+                ),
+                "written": False,
+            }
+
+        # -------------------------------------------------------------
+        # 2. Read target file
+        # -------------------------------------------------------------
+        try:
+            with resolved_target.open("r", encoding="utf-8") as f:
+                original_text = f.read()
+        except FileNotFoundError:
+            return {
+                "success": False,
+                "message": f"Target file not found: {resolved_target}",
+                "target_path": str(resolved_target),
+                "dry_run": dry_run,
+                "force_indent_used": bool(
+                    self.default_force_indent if force_indent is None else force_indent
+                ),
+                "written": False,
+            }
+        except Exception as e:
+            return {
+                "success": False,
+                "message": f"Error reading target file: {e}",
+                "target_path": str(resolved_target),
+                "dry_run": dry_run,
+                "force_indent_used": bool(
+                    self.default_force_indent if force_indent is None else force_indent
+                ),
+                "written": False,
+            }
+
+        # -------------------------------------------------------------
+        # 3. Parse patch schema JSON
+        # -------------------------------------------------------------
+        try:
+            patch_obj = json.loads(patch_schema)
+        except json.JSONDecodeError as e:
+            return {
+                "success": False,
+                "message": f"Patch schema is not valid JSON: {e}",
+                "target_path": str(resolved_target),
+                "dry_run": dry_run,
+                "force_indent_used": bool(
+                    self.default_force_indent if force_indent is None else force_indent
+                ),
+                "written": False,
+            }
+
+        # -------------------------------------------------------------
+        # 4. Apply patch using core engine
+        # -------------------------------------------------------------
+        force_indent_used = (
+            self.default_force_indent if force_indent is None else bool(force_indent)
+        )
+
+        try:
+            new_text = apply_patch_text(
+                original_text,
+                patch_obj,
+                global_force_indent=force_indent_used,
+            )
+        except PatchError as e:
+            return {
+                "success": False,
+                "message": f"Patch engine failure: {e}",
+                "target_path": str(resolved_target),
+                "dry_run": dry_run,
+                "force_indent_used": force_indent_used,
+                "written": False,
+            }
+        except Exception as e:
+            return {
+                "success": False,
+                "message": f"Unexpected error during patching: {e}",
+                "target_path": str(resolved_target),
+                "dry_run": dry_run,
+                "force_indent_used": force_indent_used,
+                "written": False,
+            }
+
+        # -------------------------------------------------------------
+        # 5. Optionally write back to disk (destructive overwrite)
+        # -------------------------------------------------------------
+        written = False
+        if not dry_run:
+            try:
+                with resolved_target.open("w", encoding="utf-8") as f:
+                    f.write(new_text)
+                written = True
+            except Exception as e:
+                return {
+                    "success": False,
+                    "message": f"Failed to write patched file: {e}",
+                    "target_path": str(resolved_target),
+                    "dry_run": dry_run,
+                    "force_indent_used": force_indent_used,
+                    "written": False,
+                }
+
+        # -------------------------------------------------------------
+        # 6. Build response payload
+        # -------------------------------------------------------------
+        result: Dict[str, Any] = {
+            "success": True,
+            "message": (
+                "Dry run successful; patch applies cleanly."
+                if dry_run
+                else "Patch applied and file overwritten successfully."
+            ),
+            "target_path": str(resolved_target),
+            "dry_run": dry_run,
+            "force_indent_used": force_indent_used,
+            "written": written,
+        }
+
+        if return_preview:
+            # In dry_run mode, preview is the only observable side effect
+            # In destructive mode, this is still useful for logging/inspection
+            result["patched_preview"] = new_text
+
+        return result
+
+
+if __name__ == "__main__":
+    # Standard independent test block for the catalogue
+    svc = TokenizingPatcherMS(
+        config={
+            # Example: point this at a known sandbox root
+            # "base_dir": "/path/to/sandbox",
+            # "default_force_indent": False,
+            # "allow_absolute_paths": False,
+        }
+    )
+    print("Service ready:", svc)
+    # Example manual smoke test (adjust paths and patch as needed):
+    #
+    # dummy_patch = json.dumps({
+    #     "hunks": [
+    #         {
+    #             "description": "Example no-op hunk",
+    #             "search_block": "original text",
+    #             "replace_block": "modified text",
+    #             "use_patch_indent": False
+    #         }
+    #     ]
+    # })
+    # print(
+    #     svc.apply_patch_to_file(
+    #         target_path="relative/or/absolute/path/to/file.py",
+    #         patch_schema=dummy_patch,
+    #         dry_run=True,
+    #         return_preview=True,
+    #     )
+    # )
+
+
+--------------------------------------------------------------------------------
+FILE: src\_microservices\_TokenizingPatcherMS.py
+--------------------------------------------------------------------------------
+from typing import Dict, Any, Optional
+from pathlib import Path
+import json
+
+from microservice_std_lib import service_metadata, service_endpoint
+
+from typing import Callable, Optional, Type
+
+# NOTE:
+# Do NOT import the patch engine from the UI module at import-time.
+# That creates circular imports (UI -> ToolsMS -> TokenizingPatcherMS -> UI).
+# Instead, we lazy-load on demand, or allow injection via config.
+
+
+@service_metadata(
+    name="TokenizingPatcherService",
+    version="1.0.0",
+    description=(
+        "Applies structured JSON patch hunks to a target text file using the "
+        "_TokenizingPATCHER engine (indentation-aware, non-overlapping, deterministic)."
+    ),
+    tags=["patching", "filesystem", "refactor", "automation"],
+    capabilities=[
+        "filesystem:read",
+        "filesystem:write"
+    ]
+)
+class TokenizingPatcherMS:
+    """
+    Microservice wrapper around the _TokenizingPATCHER core logic.
+
+    This service is designed to:
+    - Accept a target file path and a JSON patch schema.
+    - Use the existing `apply_patch_text` engine for deterministic patching.
+    - Optionally run as a dry run (no write).
+    - Destructively overwrite the target file when requested (for sandbox use).
+    """
+
+    def __init__(self, config: Optional[Dict[str, Any]] = None):
+        """
+        Optional config keys (all are optional):
+
+        - base_dir: str
+            If set, all target paths are resolved relative to this directory.
+            Useful for sandboxing. Example: "/sandbox/workspace"
+
+        - default_force_indent: bool
+            Default for force_indent when the endpoint caller does not specify it.
+            (Defaults to False if not provided.)
+
+        - allow_absolute_paths: bool
+            If False (default), absolute paths are rejected when base_dir is set,
+            to enforce sandboxing. If True, caller can pass absolute paths.
+
+        - patch_engine: callable
+            Optional injection point for the patch engine function.
+            Signature: (original_text: str, patch_obj: dict, global_force_indent: bool) -> str
+
+        - patch_error_type: Exception type
+            Optional injection point for the patch engine's expected exception class.
+        """
+        self.config = config or {}
+
+        base_dir = self.config.get("base_dir")
+        self.base_dir: Optional[Path] = Path(base_dir).resolve() if base_dir else None
+
+        self.default_force_indent: bool = bool(
+            self.config.get("default_force_indent", False)
+        )
+        self.allow_absolute_paths: bool = bool(
+            self.config.get("allow_absolute_paths", False)
+        )
+
+        self._patch_engine: Optional[Callable[..., str]] = self.config.get("patch_engine")
+        self._patch_error_type: Optional[Type[BaseException]] = self.config.get("patch_error_type")
+
+    # -------------------------------------------------------------------------
+    # Core endpoint: apply patch to a file
+    # -------------------------------------------------------------------------
+
+    @service_endpoint(
+        inputs={
+            "target_path": "str  # Relative or absolute path to the file to patch.",
+            "patch_schema": (
+                "str  # JSON string matching the _TokenizingPATCHER schema "
+                "with a top-level 'hunks' list."
+            ),
+            "force_indent": (
+                "bool (optional)  # If true, use patch indentation as-is; "
+                "otherwise adapt indentation relative to target file."
+            ),
+            "dry_run": "bool (optional)  # If true, do not write back to disk.",
+            "return_preview": (
+                "bool (optional)  # If true, include patched text in response "
+                "even for destructive runs."
+            ),
+        },
+        outputs={
+            "success": "bool",
+            "message": "str",
+            "target_path": "str",
+            "dry_run": "bool",
+            "force_indent_used": "bool",
+            "written": "bool  # True if file was actually overwritten.",
+            "patched_preview": "str (optional)  # May be omitted for large files.",
+        },
+        description=(
+            "Apply a structured JSON patch to a target file using the "
+            "_TokenizingPATCHER engine. Supports dry runs and destructive "
+            "overwrites, with optional sandboxing via service config."
+        ),
+        tags=["action", "patch", "filesystem"],
+        side_effects=[
+            "filesystem:read",
+            "filesystem:write"
+        ]
+    )
+    def apply_patch_to_file(
+        self,
+        target_path: str,
+        patch_schema: str,
+        force_indent: Optional[bool] = None,
+        dry_run: bool = False,
+        return_preview: bool = True,
+    ) -> Dict[str, Any]:
+        """
+        Apply patch hunks defined in `patch_schema` to the file at `target_path`.
+
+        - Reads the target file from disk.
+        - Parses the JSON schema into a patch object.
+        - Uses `apply_patch_text(...)` to compute the new text.
+        - Writes back to the SAME file when not in dry_run mode.
+        - Returns a structured result describing what happened.
+        """
+
+        # -------------------------------------------------------------
+        # 1. Resolve target path (respecting optional sandboxing)
+        # -------------------------------------------------------------
+        try:
+            raw_path = Path(target_path)
+
+            # Enforce sandboxing when base_dir is configured
+            if self.base_dir:
+                if raw_path.is_absolute():
+                    if not self.allow_absolute_paths:
+                        return {
+                            "success": False,
+                            "message": (
+                                "Absolute paths are not allowed when 'base_dir' is configured. "
+                                "Pass a path relative to the sandbox."
+                            ),
+                            "target_path": str(raw_path),
+                            "dry_run": dry_run,
+                            "force_indent_used": bool(
+                                self.default_force_indent if force_indent is None else force_indent
+                            ),
+                            "written": False,
+                        }
+                    resolved_target = raw_path.resolve()
+                else:
+                    resolved_target = (self.base_dir / raw_path).resolve()
+
+                # Optional: enforce that resolved_target stays inside base_dir
+                try:
+                    resolved_target.relative_to(self.base_dir)
+                except ValueError:
+                    return {
+                        "success": False,
+                        "message": (
+                            "Resolved target path escapes the configured base_dir sandbox. "
+                            "Refusing to patch."
+                        ),
+                        "target_path": str(resolved_target),
+                        "dry_run": dry_run,
+                        "force_indent_used": bool(
+                            self.default_force_indent if force_indent is None else force_indent
+                        ),
+                        "written": False,
+                    }
+            else:
+                # No base_dir configured; trust the caller
+                resolved_target = raw_path.resolve()
+
+        except Exception as e:
+            return {
+                "success": False,
+                "message": f"Failed to resolve target path: {e}",
+                "target_path": target_path,
+                "dry_run": dry_run,
+                "force_indent_used": bool(
+                    self.default_force_indent if force_indent is None else force_indent
+                ),
+                "written": False,
+            }
+
+        # -------------------------------------------------------------
+        # 2. Read target file
+        # -------------------------------------------------------------
+        try:
+            with resolved_target.open("r", encoding="utf-8") as f:
+                original_text = f.read()
+        except FileNotFoundError:
+            return {
+                "success": False,
+                "message": f"Target file not found: {resolved_target}",
+                "target_path": str(resolved_target),
+                "dry_run": dry_run,
+                "force_indent_used": bool(
+                    self.default_force_indent if force_indent is None else force_indent
+                ),
+                "written": False,
+            }
+        except Exception as e:
+            return {
+                "success": False,
+                "message": f"Error reading target file: {e}",
+                "target_path": str(resolved_target),
+                "dry_run": dry_run,
+                "force_indent_used": bool(
+                    self.default_force_indent if force_indent is None else force_indent
+                ),
+                "written": False,
+            }
+
+        # -------------------------------------------------------------
+        # 3. Parse patch schema JSON
+        # -------------------------------------------------------------
+        try:
+            patch_obj = json.loads(patch_schema)
+        except json.JSONDecodeError as e:
+            return {
+                "success": False,
+                "message": f"Patch schema is not valid JSON: {e}",
+                "target_path": str(resolved_target),
+                "dry_run": dry_run,
+                "force_indent_used": bool(
+                    self.default_force_indent if force_indent is None else force_indent
+                ),
+                "written": False,
+            }
+
+        # -------------------------------------------------------------
+        # 4. Apply patch using core engine
+        # -------------------------------------------------------------
+        force_indent_used = (
+            self.default_force_indent if force_indent is None else bool(force_indent)
+        )
+
+        # Lazy-load engine if not injected
+        patch_engine = self._patch_engine
+        patch_error_type = self._patch_error_type
+
+        if patch_engine is None:
+            # Prefer the repo's UI module path (src.app) if available
+            try:
+                from src.app import apply_patch_text as _apply_patch_text  # type: ignore
+                from src.app import PatchError as _PatchError  # type: ignore
+                patch_engine = _apply_patch_text
+                patch_error_type = _PatchError
+            except Exception as e:
+                return {
+                    "success": False,
+                    "message": (
+                        "Patch engine not available. Provide config.patch_engine / config.patch_error_type "
+                        "or ensure src.app exports apply_patch_text and PatchError. "
+                        f"Import error: {e}"
+                    ),
+                    "target_path": str(resolved_target),
+                    "dry_run": dry_run,
+                    "force_indent_used": force_indent_used,
+                    "written": False,
+                }
+
+        try:
+            new_text = patch_engine(
+                original_text,
+                patch_obj,
+                global_force_indent=force_indent_used,
+            )
+        except Exception as e:
+            if patch_error_type and isinstance(e, patch_error_type):
+                return {
+                    "success": False,
+                    "message": f"Patch engine failure: {e}",
+                    "target_path": str(resolved_target),
+                    "dry_run": dry_run,
+                    "force_indent_used": force_indent_used,
+                    "written": False,
+                }
+            return {
+                "success": False,
+                "message": f"Unexpected error during patching: {e}",
+                "target_path": str(resolved_target),
+                "dry_run": dry_run,
+                "force_indent_used": force_indent_used,
+                "written": False,
+            }
+
+        # -------------------------------------------------------------
+        # 5. Optionally write back to disk (destructive overwrite)
+        # -------------------------------------------------------------
+        written = False
+        if not dry_run:
+            try:
+                with resolved_target.open("w", encoding="utf-8") as f:
+                    f.write(new_text)
+                written = True
+            except Exception as e:
+                return {
+                    "success": False,
+                    "message": f"Failed to write patched file: {e}",
+                    "target_path": str(resolved_target),
+                    "dry_run": dry_run,
+                    "force_indent_used": force_indent_used,
+                    "written": False,
+                }
+
+        # -------------------------------------------------------------
+        # 6. Build response payload
+        # -------------------------------------------------------------
+        result: Dict[str, Any] = {
+            "success": True,
+            "message": (
+                "Dry run successful; patch applies cleanly."
+                if dry_run
+                else "Patch applied and file overwritten successfully."
+            ),
+            "target_path": str(resolved_target),
+            "dry_run": dry_run,
+            "force_indent_used": force_indent_used,
+            "written": written,
+        }
+
+        if return_preview:
+            # In dry_run mode, preview is the only observable side effect
+            # In destructive mode, this is still useful for logging/inspection
+            result["patched_preview"] = new_text
+
+        return result
+
+
+if __name__ == "__main__":
+    # Standard independent test block for the catalogue
+    svc = TokenizingPatcherMS(
+        config={
+            # Example: point this at a known sandbox root
+            # "base_dir": "/path/to/sandbox",
+            # "default_force_indent": False,
+            # "allow_absolute_paths": False,
+        }
+    )
+    print("Service ready:", svc)
+    # Example manual smoke test (adjust paths and patch as needed):
+    #
+    # dummy_patch = json.dumps({
+    #     "hunks": [
+    #         {
+    #             "description": "Example no-op hunk",
+    #             "search_block": "original text",
+    #             "replace_block": "modified text",
+    #             "use_patch_indent": False
+    #         }
+    #     ]
+    # })
+    # print(
+    #     svc.apply_patch_to_file(
+    #         target_path="relative/or/absolute/path/to/file.py",
+    #         patch_schema=dummy_patch,
+    #         dry_run=True,
+    #         return_preview=True,
+    #     )
+    # )
+
+
+
+--------------------------------------------------------------------------------
+FILE: src\_microservices\_TokenizingPatcherMS_README.md
+--------------------------------------------------------------------------------
+# `_TokenizingPatcherMS_README.md`
+
+## Overview
+`TokenizingPatcherMS` is a deterministic, indentation‑aware patch‑application microservice built on the `_TokenizingPATCHER` engine. It applies structured JSON hunks to a target file, supports dry‑run validation, and can destructively overwrite files when requested.
+
+Agents use this service to perform safe, auditable, non‑overlapping code transformations.
+
+---
+
+## Capabilities
+- Deterministic hunk‑based patching  
+- Indentation‑aware replacement  
+- Collision detection  
+- Dry‑run + destructive modes  
+- Optional sandboxing  
+- Fully declarative JSON schema  
+
+This is the **canonical** way agents modify files.
+
+---
+
+## When Agents Should Use This Service
+Use it whenever you need to:
+- Insert, replace, or remove code  
+- Perform multi‑file refactors  
+- Apply transformations generated by analysis  
+- Maintain architectural consistency  
+
+Do **not** rewrite files manually.  
+Do **not** bypass the patcher.
+
+---
+
+## Endpoint: `apply_patch_to_file`
+
+### Inputs
+| Field | Type | Description |
+|-------|------|-------------|
+| `target_path` | str | File to patch (relative if sandboxed). |
+| `patch_schema` | str | JSON string containing `"hunks"`. |
+| `force_indent` | bool | Use patch indentation exactly. |
+| `dry_run` | bool | Validate without writing. |
+| `return_preview` | bool | Include patched text in response. |
+
+### Outputs
+| Field | Type | Description |
+|-------|------|-------------|
+| `success` | bool | Patch applied cleanly. |
+| `message` | str | Status. |
+| `target_path` | str | Resolved path. |
+| `dry_run` | bool | Whether this was a dry run. |
+| `force_indent_used` | bool | Final indentation mode. |
+| `written` | bool | True if file overwritten. |
+| `patched_preview` | str | Optional preview. |
+
+---
+
+## Patch Schema Contract
+
+```json
+{
+  "hunks": [
+    {
+      "description": "Short description",
+      "search_block": "text to find\n(multi-line allowed)",
+      "replace_block": "replacement text",
+      "use_patch_indent": false
+    }
+  ]
+}
+```
+
+### Rules
+1. Hunks must not overlap.  
+2. `search_block` must match exactly (strict → content‑only fallback).  
+3. Indentation must be intentional.  
+4. Hunks must be self‑contained.  
+5. Validate with dry‑run before destructive writes.
+
+---
+
+## How the Refactor Engine Calls This Service
+
+### 1. Import and instantiate
+```python
+from microservice.tokenizing_patcher_ms import TokenizingPatcherMS
+
+patcher = TokenizingPatcherMS(
+    config={
+        "base_dir": "/sandbox/workspace",
+        "default_force_indent": False,
+        "allow_absolute_paths": False
+    }
+)
+```
+
+### 2. Build patch schema
+```python
+patch_obj = {
+    "hunks": [
+        {
+            "description": "Replace header",
+            "search_block": "def old():",
+            "replace_block": "def new():",
+            "use_patch_indent": False
+        }
+    ]
+}
+```
+
+### 3. Convert to JSON string
+```python
+import json
+schema_str = json.dumps(patch_obj)
+```
+
+### 4. Dry‑run
+```python
+result = patcher.apply_patch_to_file(
+    target_path="src/module/example.py",
+    patch_schema=schema_str,
+    dry_run=True,
+    return_preview=True
+)
+```
+
+### 5. If correct → destructive overwrite
+```python
+patcher.apply_patch_to_file(
+    target_path="src/module/example.py",
+    patch_schema=schema_str,
+    dry_run=False
+)
+```
+
+### 6. Inspect results
+```python
+if not result["success"]:
+    raise RuntimeError(result["message"])
+```
+
+This is the **standard refactor‑engine ritual**:
+**analyze → generate patch → dry‑run → inspect → apply → recurse.**
+
+---
+
+## Sandbox Behavior
+If configured with:
+
+```python
+{
+  "base_dir": "/sandbox/workspace",
+  "allow_absolute_paths": false
+}
+```
+
+Then:
+- All paths must be inside the sandbox  
+- Escapes are rejected  
+- Destructive writes are safe  
+
+---
+
+## Philosophy
+This service enforces:
+- determinism  
+- clarity  
+- explicit intent  
+- safe automation  
+
+Agents participate in the recursive ritual:  
+**patch → validate → apply → recurse.**
+
+---
+
+
+--------------------------------------------------------------------------------
+FILE: src\_microservices\_ToolsMS.py
+--------------------------------------------------------------------------------
+import ast
+import os
+import json
+from typing import Dict, Any, List
+
+# Import your existing patcher engine
+from microservices._TokenizingPatcherMS import TokenizingPatcherMS
+
+class MicroserviceTools:
+    """
+    The 'Cartridge' tools for the Microservice Refactor Domain.
+    These are deterministic functions that the AI or Orchestrator can call.
+    """
+
+    def __init__(self, base_dir: str):
+        self.base_dir = base_dir
+        # Initialize the mechanical patcher once
+        self.patcher = TokenizingPatcherMS(config={
+            "base_dir": base_dir,
+            "default_force_indent": False,
+            "allow_absolute_paths": False
+        })
+
+    # --- THE SCOUT (Parser) ---
+    def scan_file_structure(self, file_path: str) -> Dict[str, Any]:
+        """
+        Reads a Python file and extracts structured metadata via AST.
+        Replaces the old 'ParserRole'.
+        """
+        # Resolve path inside the configured base_dir
+        full_path = os.path.join(self.base_dir, file_path)
+        if not os.path.exists(full_path):
+            return {"error": f"File not found: {file_path} (resolved: {full_path})"}
+
+        with open(full_path, "r", encoding="utf-8") as f:
+            source = f.read()
+
+        try:
+            tree = ast.parse(source)
+        except SyntaxError as e:
+            return {"error": f"Syntax Error: {e}"}
+
+        ir = {
+            "file_path": file_path,
+            "imports": [],
+            "classes": [],
+            "functions": []
+        }
+
+        for node in tree.body:
+            # Extract Imports
+            if isinstance(node, ast.Import):
+                for alias in node.names:
+                    ir["imports"].append(alias.name)
+            elif isinstance(node, ast.ImportFrom):
+                module = node.module or ""
+                for alias in node.names:
+                    ir["imports"].append(f"{module}.{alias.name}")
+            
+            # Extract Classes (Potential Services)
+            elif isinstance(node, ast.ClassDef):
+                class_info = {"name": node.name, "decorators": []}
+                for deco in node.decorator_list:
+                    if isinstance(deco, ast.Call) and hasattr(deco.func, "id"):
+                        class_info["decorators"].append(deco.func.id)
+                ir["classes"].append(class_info)
+
+            # Extract Functions (Potential Endpoints)
+            elif isinstance(node, ast.FunctionDef):
+                ir["functions"].append(node.name)
+
+        return ir
+
+    # --- THE SURGEON (Patcher) ---
+    def apply_patch(self, file_path: str, patch_json_str: str, dry_run: bool = True) -> Dict[str, Any]:
+        """
+        Applies a JSON patch to a file.
+        Replaces 'PatchRole._apply_patch'.
+
+        This tool is intentionally defensive:
+        - If the model returns markdown fences (```json ... ```), it will extract the JSON object.
+        - If the model returns an empty object ({}), it will fail with a schema error.
+        """
+
+        def _extract_json_object(text: str) -> str:
+            """Return the first {...} JSON object substring, or "" if not found."""
+            if not text:
+                return ""
+            s = text.strip()
+
+            # Remove common markdown code fences
+            if s.startswith("```"):
+                # Strip leading fence line
+                first_nl = s.find("\n")
+                if first_nl != -1:
+                    s = s[first_nl + 1 :]
+                # Strip trailing fence
+                if s.rstrip().endswith("```"):
+                    s = s.rstrip()
+                    s = s[: -3]
+                s = s.strip()
+
+            # Extract JSON object boundaries
+            start = s.find("{")
+            end = s.rfind("}")
+            if start == -1 or end == -1 or end < start:
+                return ""
+            return s[start : end + 1].strip()
+
+        try:
+            # Normalize incoming patch schema
+            patch_obj = None
+
+            if isinstance(patch_json_str, dict):
+                patch_obj = patch_json_str
+            elif isinstance(patch_json_str, str):
+                extracted = _extract_json_object(patch_json_str)
+                if not extracted:
+                    return {
+                        "success": False,
+                        "message": "Patch schema did not contain a JSON object. Output must be a JSON object with top-level 'hunks'.",
+                    }
+                try:
+                    patch_obj = json.loads(extracted)
+                except json.JSONDecodeError as e:
+                    return {
+                        "success": False,
+                        "message": f"Patch schema is not valid JSON after extraction: {e}",
+                    }
+            else:
+                return {
+                    "success": False,
+                    "message": "Patch schema must be a JSON string or dict.",
+                }
+
+            # Validate required schema
+            if not isinstance(patch_obj, dict) or "hunks" not in patch_obj or not isinstance(patch_obj.get("hunks"), list):
+                return {
+                    "success": False,
+                    "message": "Patch schema must be a JSON object with a top-level 'hunks' list.",
+                }
+
+            # Re-serialize to a clean JSON string for the patcher
+            clean_schema_str = json.dumps(patch_obj)
+
+            result = self.patcher.apply_patch_to_file(
+                target_path=file_path,
+                patch_schema=clean_schema_str,
+                dry_run=dry_run,
+                return_preview=True,
+            )
+            return result
+
+        except Exception as e:
+            return {"success": False, "message": str(e)}
+
+    # --- THE JANITOR (Helpers) ---
+    def generate_cleanup_patch(self) -> str:
+        """
+        Returns the standard regex cleanup patch for this domain.
+        Replaces 'PatchRole._generate_patch_hunk(final_cleanup)'.
+        """
+        cleanup_hunks = [
+            {
+                "description": "Collapse double blank lines",
+                "search_block": "\n\n\n",
+                "replace_block": "\n\n",
+                "use_patch_indent": False
+            }
+        ]
+        return json.dumps({"hunks": cleanup_hunks})
+
+
+--------------------------------------------------------------------------------
+FILE: src\_microservices\_ZipCompressMS.py
+--------------------------------------------------------------------------------
+from microservice_std_lib import service_metadata, service_endpoint
+from typing import Dict, Any, Optional, List
+from pathlib import Path
+import zipfile
+import os
+
+
+@service_metadata(
+    name="ZipperService",
+    version="1.0.0",
+    description="Zips all files in a directory with optional exclusion filters.",
+    tags=["filesystem", "utility", "backup"],
+    capabilities=["filesystem:read", "filesystem:write"]
+)
+class ZipperMS:
+    """
+    A simple microservice that zips all files in a directory.
+    Exclusions are substring-based: if any exclusion string appears
+    in the file or folder name, it is skipped.
+    """
+
+    def __init__(self, config: Optional[Dict[str, Any]] = None):
+        self.config = config or {}
+
+        base_dir = self.config.get("base_dir")
+        self.base_dir: Optional[Path] = Path(base_dir).resolve() if base_dir else None
+
+        self.allow_absolute_paths: bool = bool(
+            self.config.get("allow_absolute_paths", False)
+        )
+
+    # -------------------------------------------------------------------------
+    # Endpoint: zip a directory
+    # -------------------------------------------------------------------------
+
+    @service_endpoint(
+        inputs={
+            "target_dir": "str  # Directory to zip.",
+            "output_zip": "str (optional)  # Output zip filename.",
+            "exclusions": "list[str] (optional)  # Skip files containing these substrings."
+        },
+        outputs={
+            "success": "bool",
+            "message": "str",
+            "zip_path": "str",
+            "skipped": "list[str]",
+            "included": "list[str]"
+        },
+        description="Zips all files in a directory, skipping any whose names contain exclusion substrings.",
+        tags=["action", "filesystem"],
+        side_effects=["filesystem:read", "filesystem:write"]
+    )
+    def zip_directory(
+        self,
+        target_dir: str,
+        output_zip: Optional[str] = None,
+        exclusions: Optional[List[str]] = None
+    ) -> Dict[str, Any]:
+
+        exclusions = exclusions or []
+
+        # -------------------------------------------------------------
+        # 1. Resolve directory path (sandbox-aware)
+        # -------------------------------------------------------------
+        try:
+            raw_path = Path(target_dir)
+
+            if self.base_dir:
+                if raw_path.is_absolute() and not self.allow_absolute_paths:
+                    return {
+                        "success": False,
+                        "message": "Absolute paths not allowed when sandboxing is enabled.",
+                        "zip_path": "",
+                        "skipped": [],
+                        "included": []
+                    }
+
+                resolved_dir = (self.base_dir / raw_path).resolve() if not raw_path.is_absolute() else raw_path.resolve()
+
+                try:
+                    resolved_dir.relative_to(self.base_dir)
+                except ValueError:
+                    return {
+                        "success": False,
+                        "message": "Target directory escapes sandbox.",
+                        "zip_path": "",
+                        "skipped": [],
+                        "included": []
+                    }
+            else:
+                resolved_dir = raw_path.resolve()
+
+        except Exception as e:
+            return {
+                "success": False,
+                "message": f"Failed to resolve directory: {e}",
+                "zip_path": "",
+                "skipped": [],
+                "included": []
+            }
+
+        if not resolved_dir.exists() or not resolved_dir.is_dir():
+            return {
+                "success": False,
+                "message": f"Directory not found: {resolved_dir}",
+                "zip_path": "",
+                "skipped": [],
+                "included": []
+            }
+
+        # -------------------------------------------------------------
+        # 2. Determine output zip path
+        # -------------------------------------------------------------
+        if output_zip:
+            zip_path = Path(output_zip)
+            if not zip_path.is_absolute():
+                zip_path = resolved_dir / zip_path
+        else:
+            zip_path = resolved_dir / "archive.zip"
+
+        # If sandboxing is enabled, ensure zip output stays inside base_dir
+        try:
+            zip_path = zip_path.resolve()
+        except Exception:
+            zip_path = Path(str(zip_path)).resolve()
+
+        if self.base_dir:
+            try:
+                zip_path.relative_to(self.base_dir)
+            except ValueError:
+                return {
+                    "success": False,
+                    "message": "Output zip path escapes sandbox.",
+                    "zip_path": "",
+                    "skipped": [],
+                    "included": []
+                }
+
+        # Ensure output directory exists
+        try:
+            zip_path.parent.mkdir(parents=True, exist_ok=True)
+        except Exception as e:
+            return {
+                "success": False,
+                "message": f"Failed to create output directory: {e}",
+                "zip_path": "",
+                "skipped": [],
+                "included": []
+            }
+
+        # -------------------------------------------------------------
+        # 3. Walk directory and collect files
+        # -------------------------------------------------------------
+        included = []
+        skipped = []
+
+        try:
+            with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zf:
+                for root, dirs, files in os.walk(resolved_dir):
+                    root_path = Path(root)
+
+                    # Skip excluded directories
+                    dirs[:] = [
+                        d for d in dirs
+                        if not any(ex in d for ex in exclusions)
+                    ]
+
+                    for file in files:
+                        if any(ex in file for ex in exclusions):
+                            skipped.append(str(root_path / file))
+                            continue
+
+                        full_path = root_path / file
+                        arcname = full_path.relative_to(resolved_dir)
+
+                        zf.write(full_path, arcname)
+                        included.append(str(full_path))
+
+        except Exception as e:
+            return {
+                "success": False,
+                "message": f"Error creating zip: {e}",
+                "zip_path": "",
+                "skipped": skipped,
+                "included": included
+            }
+
+        return {
+            "success": True,
+            "message": "Directory zipped successfully.",
+            "zip_path": str(zip_path),
+            "skipped": skipped,
+            "included": included
+        }
+
+
+if __name__ == "__main__":
+    svc = ZipperMS()
+    print("Service ready:", svc)
+
+
+
+--------------------------------------------------------------------------------
+FILE: src\_roles\roles.json
+--------------------------------------------------------------------------------
+{
+  "Helpful Assistant": "You are a helpful AI assistant. Provide clear, concise answers.",
+  "Python Expert": "You are a senior Python developer. Focus on PEP 8 compliance, efficiency, and clean Abstract Syntax Tree structures. Output code only unless asked for explanation.",
+  "Strict Analyst": "You are a logic-first analyst. Your task is to extract facts from code. Output your findings in raw, valid JSON only. No markdown formatting.",
+  "The Architect": "You are a software architect specializing in microservices. Your goal is to map legacy code logic into a modern, standardized boilerplate structure.",
+  "The Surgeon": "You are a code patching specialist. You write perfect TokenizingPatcher JSON hunks. Every search_block must match the original source EXACTLY.",
+  "Mechanical Tool": "EXECUTE_TOOL"
+}
+
+--------------------------------------------------------------------------------
+FILE: src\_tasklists\tasklist_microservices_generator.json
+--------------------------------------------------------------------------------
+[
+  { "role": "Mechanical Tool", "prompt": "create_backup" },
+
+  { "role": "Mechanical Tool", "prompt": "read_template" },
+
+  {
+    "role": "Mechanical Tool",
+    "prompt": "scan_file_structure"
+  },
+
+  {
+    "role": "Strict Analyst",
+    "prompt": "From [LAST_OUTPUT] (AST IR), output RAW JSON with: {\"file_path\":..., \"current_imports\":[], \"classes\":[...], \"functions\":[...], \"likely_service_class\":..., \"candidate_endpoints\":[], \"io_side_effects\":[], \"external_deps\":[], \"risks\":[]}. JSON only."
+  },
+
+  {
+    "role": "Helpful Assistant",
+    "prompt": "Using the microservice template (from earlier step) and the analysis JSON, write a migration plan as bullet points: target service name, module layout, @service_metadata fields, endpoint list, inputs/outputs contract, and any safe path/sandbox rules."
+  },
+
+  {
+    "role": "Helpful Assistant",
+    "prompt": "Now draft the final microservice code as a single Python file (full file contents). It must use @service_metadata and @service_endpoint, accept config in __init__, and avoid any hard-coded paths. Keep functions small and deterministic."
+  },
+
+  { "role": "Mechanical Tool", "prompt": "read_target_file" }
+
+  {
+    "role": "Helpful Assistant",
+    "prompt": "Using the exact file text in [LAST_OUTPUT], generate a patch JSON that transforms it into the final version you drafted. Use verbatim search_block anchors copied from [LAST_OUTPUT]. Output ONLY JSON."
+  },
+
+  { "role": "Mechanical Tool", "prompt": "apply_safe_patch" },
+
+  { "role": "Mechanical Tool", "prompt": "scan_file_structure" },
+
+  {
+    "role": "Strict Analyst",
+    "prompt": "Validate the refactor using the new AST IR in [LAST_OUTPUT]. Output RAW JSON: {\"looks_like_microservice\":bool, \"has_service_metadata\":bool, \"has_endpoints\":bool, \"missing\":[], \"problems\":[], \"next_patch_needed\":bool, \"recommended_next_steps\":[]}."
+  },
+
+  {
+    "role": "Helpful Assistant",
+    "prompt": "If next_patch_needed is true, generate the next TokenizingPatcher JSON hunks to fix the problems list. Output ONLY raw JSON patch."
+  },
+
+  { "role": "Mechanical Tool", "prompt": "apply_safe_patch" },
+
+  {
+    "role": "Mechanical Tool",
+    "prompt": "get_cleanup_patch"
+  },
+
+  { "role": "Mechanical Tool", "prompt": "apply_safe_patch" },
+
+  {
+    "role": "Helpful Assistant",
+    "prompt": "Final review checklist: confirm metadata is complete, endpoints have explicit inputs/outputs, no circular imports, no hard-coded paths, and config supports sandboxing where needed. Output a short pass/fail list."
+  }
+]
+
+--------------------------------------------------------------------------------
+FILE: src\_tasklists\__init__.py
+--------------------------------------------------------------------------------
