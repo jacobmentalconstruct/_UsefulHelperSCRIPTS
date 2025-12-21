@@ -1,18 +1,30 @@
 Project Tree: C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_MicroserviceSyntaxTreeTRANSFORMER
-Generated: 2025-12-20 09:53:47.909081
+Generated: 2025-12-21 10:03:51.229350
 
+├── 📁 _sandbox_test_directory/
+│   └── 📄 dirty_service.py
+├── 📁 microservices/
+│   ├── 📄 _FileSaverMS.py
+│   ├── 📄 _TokenizingPatcherMS .py.txt
+│   ├── 📄 _TokenizingPatcherMS.py
+│   ├── 📄 _TokenizingPatcherMS_README.md
+│   ├── 📄 _ToolsMS.py
+│   ├── 📄 _ZipCompressMS.py
+│   └── 📄 microservice_template.py
+├── 📁 refactor_engine/
+│   ├── 📁 _tasklists/
+│   │   ├── 📄 default_microservice_refactor.json
+│   │   ├── 📄 default_micvroservice_refactor.json
+│   │   ├── 📄 roles.json
+│   │   └── 📄 tasklist_microservice_refactor.json
+│   └── 📄 __init__.py
 ├── 📁 src/
-│   ├── 📁 __pycache__/
-│   ├── 📁 microservices/
-│   │   ├── 📄 _FileSaverMS.py
-│   │   ├── 📄 _TokenizingPatcherMS.py
-│   │   ├── 📄 _TokenizingPatcherMS_README.md
-│   │   └── 📄 _ZipCompressMS.py
 │   ├── 📄 __init__.py
-│   ├── 📄 app.py
-│   ├── 📄 app.py.txt
-│   └── 📄 tasklist_microservice_refactor.json
+│   └── 📄 app.py
+├── 📄 base_service.py
+├── 📄 document_utils.py
 ├── 📄 LICENSE.md
+├── 📄 microservice_std_lib.py
 ├── 📄 README.md
 ├── 📄 requirements.txt
 └── 📄 setup_env.bat

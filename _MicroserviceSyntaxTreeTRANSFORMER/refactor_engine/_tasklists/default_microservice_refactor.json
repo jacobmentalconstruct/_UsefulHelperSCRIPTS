@@ -1,0 +1,32 @@
+[
+  {
+    "role": "Mechanical Tool",
+    "prompt": "create_backup",
+    "description": "Snapshot the current state before modifications."
+  },
+  {
+    "role": "Mechanical Tool",
+    "prompt": "scan_file_structure",
+    "description": "Extract imports, classes, and methods using AST."
+  },
+  {
+    "role": "Strict Analyst",
+    "prompt": "Review the scanned AST in [LAST_OUTPUT]. Identify the core business logic in the legacy file. Output as a JSON list of capabilities.",
+    "description": "Translate syntax into semantic meaning."
+  },
+  {
+    "role": "The Architect",
+    "prompt": "Create a migration plan. How do we fit the capabilities identified in the previous step into our microservice boilerplate? Focus on decorator placement.",
+    "description": "Structural mapping."
+  },
+  {
+    "role": "The Surgeon",
+    "prompt": "Generate the TokenizingPatcher JSON hunks to refactor the file based on the Architect's plan. ENSURE search_blocks are verbatim. Output RAW JSON.",
+    "description": "Code generation."
+  },
+  {
+    "role": "Mechanical Tool",
+    "prompt": "apply_safe_patch",
+    "description": "Physically update the file on disk using the generated JSON."
+  }
+]

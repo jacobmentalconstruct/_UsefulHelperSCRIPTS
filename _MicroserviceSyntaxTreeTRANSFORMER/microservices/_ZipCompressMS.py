@@ -118,6 +118,36 @@ class ZipperMS:
         else:
             zip_path = resolved_dir / "archive.zip"
 
+        # If sandboxing is enabled, ensure zip output stays inside base_dir
+        try:
+            zip_path = zip_path.resolve()
+        except Exception:
+            zip_path = Path(str(zip_path)).resolve()
+
+        if self.base_dir:
+            try:
+                zip_path.relative_to(self.base_dir)
+            except ValueError:
+                return {
+                    "success": False,
+                    "message": "Output zip path escapes sandbox.",
+                    "zip_path": "",
+                    "skipped": [],
+                    "included": []
+                }
+
+        # Ensure output directory exists
+        try:
+            zip_path.parent.mkdir(parents=True, exist_ok=True)
+        except Exception as e:
+            return {
+                "success": False,
+                "message": f"Failed to create output directory: {e}",
+                "zip_path": "",
+                "skipped": [],
+                "included": []
+            }
+
         # -------------------------------------------------------------
         # 3. Walk directory and collect files
         # -------------------------------------------------------------
@@ -167,4 +197,5 @@ class ZipperMS:
 if __name__ == "__main__":
     svc = ZipperMS()
     print("Service ready:", svc)
+
 

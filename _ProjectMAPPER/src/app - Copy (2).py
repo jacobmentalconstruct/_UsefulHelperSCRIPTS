@@ -163,6 +163,12 @@ class ProjectMapperApp:
         # Application State
         self.folder_item_states = {}
         self.dynamic_global_excluded_filenames = set()
+
+        # .gitignore support (best-effort, simple patterns)
+        self.gitignore_dirnames = set()
+        self.gitignore_file_patterns = set()
+        self.gitignore_path_patterns = set()
+
         self.running_tasks = set()
         self._tree_is_ready = False
         
@@ -468,8 +474,13 @@ class ProjectMapperApp:
                 
                 for p in items:
                     # 1. SAFETY: Skip Excluded Folders/Files immediately
-                    if p.name in EXCLUDED_FOLDERS: continue
-                    if p.is_file() and self.should_exclude_file(p.name): continue
+                    if p.is_dir() and self.should_exclude_dir(p, root_path):
+                        continue
+
+                    if p.is_file():
+                        relp = self._rel_posix(p, root_path)
+                        if self.should_exclude_file(p.name, rel_posix=relp):
+                            continue
 
                     path_str = str(p.resolve())
                     
@@ -591,10 +602,110 @@ class ProjectMapperApp:
             curr = curr.parent
         return True
 
-    def should_exclude_file(self, filename: str) -> bool:
+    def _load_gitignore_patterns(self, root: Path):
+        """Best-effort .gitignore parsing.
+
+        Supported (simple):
+          - dir ignores via trailing '/'
+          - bare patterns like '*.log'
+          - path-ish patterns containing '/'
+
+        Not supported (yet):
+          - negation rules starting with '!'
+          - advanced gitignore semantics (root anchoring, '**' edge cases, etc.)
+        """
+        gi = root / ".gitignore"
+        with self.state_lock:
+            self.gitignore_dirnames = set()
+            self.gitignore_file_patterns = set()
+            self.gitignore_path_patterns = set()
+
+        if not gi.exists():
+            return
+
+        try:
+            lines = gi.read_text(encoding="utf-8", errors="ignore").splitlines()
+        except Exception:
+            return
+
+        dirnames = set()
+        file_pats = set()
+        path_pats = set()
+
+        for raw in lines:
+            s = raw.strip()
+            if not s or s.startswith("#"):
+                continue
+            # Skip negation rules for now
+            if s.startswith("!"):
+                continue
+
+            # Normalize Windows separators to POSIX-ish for matching
+            s = s.replace("\\", "/")
+
+            if s.endswith("/"):
+                # directory name or dir-pattern
+                d = s[:-1].strip("/")
+                if d:
+                    dirnames.add(d)
+                continue
+
+            if "/" in s:
+                path_pats.add(s.strip("/"))
+            else:
+                file_pats.add(s)
+
+        with self.state_lock:
+            self.gitignore_dirnames = dirnames
+            self.gitignore_file_patterns = file_pats
+            self.gitignore_path_patterns = path_pats
+
+    def _rel_posix(self, p: Path, root: Path) -> str:
+        """Return a posix-style relative path; fall back to name if relative fails."""
+        try:
+            return p.relative_to(root).as_posix()
+        except Exception:
+            return p.name
+
+    def should_exclude_dir(self, dir_path: Path, project_root: Path) -> bool:
+        """Directory exclusion check: hard-coded exclusions + .gitignore (best-effort)."""
+        name = dir_path.name
+        if name in EXCLUDED_FOLDERS:
+            return True
+
+        rel = self._rel_posix(dir_path, project_root)
+
+        with self.state_lock:
+            if name in self.gitignore_dirnames:
+                return True
+            # Match path patterns against directory relpath
+            for pat in self.gitignore_path_patterns:
+                if fnmatch.fnmatch(rel, pat) or fnmatch.fnmatch(rel + "/", pat) or fnmatch.fnmatch(rel + "/", pat + "/"):
+                    return True
+
+        return False
+
+    def should_exclude_file(self, filename: str, rel_posix: str | None = None) -> bool:
+        """File exclusion check: predefined + dynamic + .gitignore (best-effort)."""
         with self.state_lock:
             pats = PREDEFINED_EXCLUDED_FILENAMES.union(self.dynamic_global_excluded_filenames)
-        return any(fnmatch.fnmatch(filename, p) for p in pats)
+            gi_files = set(self.gitignore_file_patterns)
+            gi_paths = set(self.gitignore_path_patterns)
+
+        # filename-based patterns
+        if any(fnmatch.fnmatch(filename, p) for p in pats):
+            return True
+        if any(fnmatch.fnmatch(filename, p) for p in gi_files):
+            return True
+
+        # relative-path patterns (if available)
+        if rel_posix:
+            rel_posix = rel_posix.replace("\\", "/")
+            for pat in gi_paths:
+                if fnmatch.fnmatch(rel_posix, pat):
+                    return True
+
+        return False
 
     # --- Core Actions ---
     def get_log_dir(self, root: Path) -> Path | None:
@@ -639,6 +750,10 @@ class ProjectMapperApp:
                 conn = "└── " if is_last else "├── "
                 
                 if item.is_dir():
+                    # Respect hard exclusions and .gitignore for directories
+                    if self.should_exclude_dir(item, root):
+                        continue
+
                     if self.is_selected(item, root):
                         lines.append(f"{prefix}{conn}📁 {item.name}/")
                         _write_recurse(item, prefix + ("    " if is_last else "│   "))
@@ -667,16 +782,27 @@ class ProjectMapperApp:
                 if self.stop_event.is_set(): 
                     f_out.write("\n\n!!! DUMP CANCELLED BY USER !!!")
                     break
-                
+    
                 curr = Path(r)
-                d[:] = [x for x in d if self.is_selected(curr/x, root)]
+                # First remove excluded folders (hard + .gitignore), then apply selection logic
+                kept_dirs = []
+                for x in d:
+                    dp = curr / x
+                    if self.should_exclude_dir(dp, root):
+                        continue
+                    if not self.is_selected(dp, root):
+                        continue
+                    kept_dirs.append(x)
+                d[:] = kept_dirs
                 if not self.is_selected(curr, root): continue
                 
                 for fname_item in f:
                     if self.stop_event.is_set(): break
-                    if self.should_exclude_file(fname_item): continue
-                    
+
                     fpath = curr / fname_item
+                    relp = self._rel_posix(fpath, root)
+                    if self.should_exclude_file(fname_item, rel_posix=relp):
+                        continue
                     if fpath.stat().st_size > 1_000_000: continue
                     if is_binary(fpath) or "".join(fpath.suffixes).lower() in FORCE_BINARY_EXTENSIONS_FOR_DUMP: continue
                     
@@ -706,11 +832,21 @@ class ProjectMapperApp:
             for r, d, f in os.walk(root):
                 if self.stop_event.is_set(): break
                 curr = Path(r)
-                d[:] = [x for x in d if self.is_selected(curr/x, root)]
+                kept_dirs = []
+                for x in d:
+                    dp = curr / x
+                    if self.should_exclude_dir(dp, root):
+                        continue
+                    if not self.is_selected(dp, root):
+                        continue
+                    kept_dirs.append(x)
+                d[:] = kept_dirs
                 if not self.is_selected(curr, root): continue
                 for fname_item in f:
-                    if self.should_exclude_file(fname_item): continue
                     fpath = curr / fname_item
+                    relp = self._rel_posix(fpath, root)
+                    if self.should_exclude_file(fname_item, rel_posix=relp):
+                        continue
                     tar.add(fpath, arcname=fpath.relative_to(root))
                     count += 1
                     if count % 10 == 0: self.schedule_log_message(f"Archiving: {fname_item}", "DEBUG")
@@ -774,6 +910,9 @@ class ProjectMapperApp:
         with open(cfg, "w") as f: json.dump(data, f, indent=2)
 
     def load_project_config(self, root: Path):
+        # Always (re)load .gitignore for the active root (best-effort)
+        self._load_gitignore_patterns(root)
+
         cfg = self.get_log_dir(root) / PROJECT_CONFIG_FILENAME
         if not cfg.exists(): return
         try:
@@ -851,3 +990,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+

@@ -1,14 +1,3 @@
-# This project intentionally uses ONLY Python's standard library.
-# No external pip dependencies are required.
-
-# Standard library modules used:
-# - tkinter
-# - argparse
-# - json
-# - threading
-# - queue
-# - os
-# - sys
-# - time
-# - typing
-
+tk
+ollama
+requests

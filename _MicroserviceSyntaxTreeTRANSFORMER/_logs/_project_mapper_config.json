@@ -1,23 +1,33 @@
 {
   "folder_states": {
     ".": "checked",
+    "_sandbox_test_directory": "checked",
+    "_sandbox_test_directory\\dirty_service.py": "checked",
+    "microservices": "checked",
+    "microservices\\_FileSaverMS.py": "checked",
+    "microservices\\_TokenizingPatcherMS .py.txt": "checked",
+    "microservices\\_TokenizingPatcherMS.py": "checked",
+    "microservices\\_TokenizingPatcherMS_README.md": "checked",
+    "microservices\\_ToolsMS.py": "checked",
+    "microservices\\_ZipCompressMS.py": "checked",
+    "microservices\\microservice_template.py": "checked",
+    "refactor_engine": "checked",
+    "refactor_engine\\_tasklists": "checked",
+    "refactor_engine\\_tasklists\\default_microservice_refactor.json": "checked",
+    "refactor_engine\\_tasklists\\default_micvroservice_refactor.json": "checked",
+    "refactor_engine\\_tasklists\\roles.json": "checked",
+    "refactor_engine\\_tasklists\\tasklist_microservice_refactor.json": "checked",
+    "refactor_engine\\__init__.py": "checked",
     "src": "checked",
-    "src\\__init__.py": "unchecked",
+    "src\\__init__.py": "checked",
     "src\\app.py": "checked",
-    "src\\tasklist_microservice_refactor.json": "checked",
+    "base_service.py": "checked",
+    "document_utils.py": "checked",
     "LICENSE.md": "checked",
+    "microservice_std_lib.py": "checked",
     "README.md": "checked",
     "requirements.txt": "checked",
-    "setup_env.bat": "checked",
-    "src\\microservices": "checked",
-    "src\\microservices\\_TokenizingPatcherMS.py": "checked",
-    "src\\microservices\\_TokenizingPatcherMS_README.md": "checked",
-    "src\\app.py.txt": "checked",
-    "src\\microservices\\_FileSaverMS.py": "checked",
-    "src\\microservices\\_ZipCompressMS.py": "checked"
+    "setup_env.bat": "checked"
   },
-  "dynamic_exclusions": [
-    "venv",
-    ".venv"
-  ]
+  "dynamic_exclusions": []
 }
