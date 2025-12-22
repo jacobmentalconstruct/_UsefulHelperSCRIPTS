@@ -5,38 +5,37 @@ DEPENDENCIES: requests
 """
 
 # --- RUNTIME DEPENDENCY CHECK ---
-import importlib.util, sys
+import importlib.util
+import sys
+
 REQUIRED = ["requests"]
 MISSING = []
 for lib in REQUIRED:
-    # Clean version numbers for check (e.g., pygame==2.0 -> pygame)
-    clean_lib = lib.split('>=')[0].split('==')[0].split('>')[0].replace('-', '_')
-    if importlib.util.find_spec(clean_lib) is None:
-        if clean_lib == 'pywebview': clean_lib = 'webview' # Common alias
-        if importlib.util.find_spec(clean_lib) is None:
-            MISSING.append(lib)
+    if importlib.util.find_spec(lib) is None:
+        MISSING.append(lib)
 
 if MISSING:
-    print('\n' + '!'*60)
-    print(f'MISSING DEPENDENCIES for _IngestEngineMS:')
-    print(f'Run:  pip install {" ".join(MISSING)}')
-    print('!'*60 + '\n')
-    # sys.exit(1) # Uncomment to force stop if missing
+    print(f"MISSING DEPENDENCIES: {' '.join(MISSING)}")
+    print("Please run: pip install requests")
 
+import json
 import os
-import time
 import re
 import sqlite3
-import requests
-import json
-from typing import List, Generator, Dict, Any, Optional, Set
+import time
 from dataclasses import dataclass
-from microservice_std_lib import service_metadata, service_endpoint
+from typing import Any, Dict, Generator, List, Optional
 
-# Configuration
+import requests
+from microservice_std_lib import service_metadata, service_endpoint, BaseService
+
+# ==============================================================================
+# CONFIGURATION
+# ==============================================================================
 OLLAMA_API_URL = "http://localhost:11434/api"
 
-@dataclass IngestEngineMS IngestStatus:
+@dataclass
+class IngestStatus:
     current_file: str
     progress_percent: float
     processed_files: int
@@ -44,7 +43,10 @@ OLLAMA_API_URL = "http://localhost:11434/api"
     log_message: str
     thought_frame: Optional[Dict] = None
 
-IngestEngineMS SynapseWeaver:
+# ==============================================================================
+# HELPER: SYNAPSE WEAVER
+# ==============================================================================
+class SynapseWeaver:
     """
     Parses source code to extract import dependencies.
     Used to generate the 'DEPENDS_ON' edges in the Knowledge Graph.
@@ -76,24 +78,40 @@ IngestEngineMS SynapseWeaver:
         
         return dependencies
 
+# ==============================================================================
+# SERVICE DEFINITION
+# ==============================================================================
 @service_metadata(
-name="IngestEngine",
-version="1.0.0",
-description="Reads files, chunks text, fetches embeddings, and weaves graph edges.",
-tags=["ingest", "rag", "parsing", "embedding"],
-capabilities=["filesystem:read", "network:outbound", "db:sqlite"]
+    name="IngestEngine",
+    version="1.0.0",
+    description="Reads files, chunks text, fetches embeddings, and weaves graph edges.",
+    tags=["ingest", "rag", "parsing", "embedding"],
+    capabilities=["filesystem:read", "network:outbound", "db:sqlite"],
+    dependencies=["requests", "sqlite3"],
+    side_effects=["db:write", "network:outbound"]
 )
-IngestEngineMS IngestEngineMS:
+class IngestEngineMS(BaseService):
     """
-The Heavy Lifter: Reads files, chunks text, fetches embeddings,
-populates the Graph Nodes, and weaves Graph Edges.
-"""
+    The Heavy Lifter: Reads files, chunks text, fetches embeddings,
+    populates the Graph Nodes, and weaves Graph Edges.
+    """
     
-def __init__(self, config: Optional[Dict[str, Any]] = None):
-self.config = config or {}
-self.db_path = self.config.get("db_path", "knowledge.db")
-self.stop_signal = False
-self.weaver = SynapseWeaver()
+    def __init__(self, config: Optional[Dict[str, Any]] = None):
+        super().__init__("IngestEngine")
+        self.config = config or {}
+        self.db_path = self.config.get("db_path", "knowledge.db")
+        self.stop_signal = False
+        self.weaver = SynapseWeaver()
+        self._init_db()
+
+    def _init_db(self):
+        """Ensures the target database has the required schema."""
+        conn = sqlite3.connect(self.db_path)
+        conn.execute("CREATE TABLE IF NOT EXISTS files (id INTEGER PRIMARY KEY, path TEXT, last_updated REAL)")
+        conn.execute("CREATE TABLE IF NOT EXISTS chunks (id INTEGER PRIMARY KEY, file_id INT, chunk_index INT, content TEXT, embedding BLOB)")
+        conn.execute("CREATE TABLE IF NOT EXISTS graph_nodes (id TEXT PRIMARY KEY, type TEXT, label TEXT, data_json TEXT)")
+        conn.execute("CREATE TABLE IF NOT EXISTS graph_edges (source TEXT, target TEXT, weight REAL)")
+        conn.close()
 
     def abort(self):
         self.stop_signal = True
@@ -116,15 +134,15 @@ self.weaver = SynapseWeaver()
         return []
 
     @service_endpoint(
-    inputs={"file_paths": "List[str]", "model_name": "str"},
-    outputs={"status": "IngestStatus"},
-    description="Processes a list of files, ingesting them into the knowledge graph.",
-    tags=["ingest", "processing"],
-    mode="generator",
-    side_effects=["db:write", "network:outbound"]
+        inputs={"file_paths": "List[str]", "model_name": "str"},
+        outputs={"status": "IngestStatus"},
+        description="Processes a list of files, ingesting them into the knowledge graph.",
+        tags=["ingest", "processing"],
+        mode="generator",
+        side_effects=["db:write", "network:outbound"]
     )
     def process_files(self, file_paths: List[str], model_name: str = "none") -> Generator[IngestStatus, None, None]:
-    total = len(file_paths)
+        total = len(file_paths)
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         
@@ -232,7 +250,7 @@ self.weaver = SynapseWeaver()
                     try:
                         cursor.execute("""
                             INSERT OR IGNORE INTO graph_edges (source, target, weight)
-VALUES (?, ?, 1.0)
+                            VALUES (?, ?, 1.0)
                         """, (filename, target_id))
                         edge_count += 1
                     except:
@@ -248,6 +266,8 @@ VALUES (?, ?, 1.0)
             total_files=total,
             log_message=f"Ingestion Complete. Created {edge_count} dependency edges."
         )
+
+    # --- Internal Helpers ---
 
     def _chunk_text(self, text: str, chunk_size: int = 1000, overlap: int = 100) -> List[str]:
         if len(text) < chunk_size: return [text]
@@ -270,23 +290,28 @@ VALUES (?, ?, 1.0)
                 return res.json().get("embedding")
         except:
             return None
-# --- Independent Test Block ---
+
+# ==============================================================================
+# SELF-TEST / RUNNER
+# ==============================================================================
 if __name__ == "__main__":
     TEST_DB = "test_ingest_v2.db"
     
-    # Init DB Schema manually for test
-    conn = sqlite3.connect(TEST_DB)
-    conn.execute("CREATE TABLE IF NOT EXISTS files (id INTEGER PRIMARY KEY, path TEXT, last_updated REAL)")
-    conn.execute("CREATE TABLE IF NOT EXISTS chunks (id INTEGER PRIMARY KEY, file_id INT, chunk_index INT, content TEXT, embedding BLOB)")
-    conn.execute("CREATE TABLE IF NOT EXISTS graph_nodes (id TEXT PRIMARY KEY, type TEXT, label TEXT, data_json TEXT)")
-    conn.execute("CREATE TABLE IF NOT EXISTS graph_edges (source TEXT, target TEXT, weight REAL)")
-    conn.close()
-
+    # Init Engine (Schema created automatically in __init__)
     engine = IngestEngineMS({"db_path": TEST_DB})
+    print(f"Service Ready: {engine}")
+
     # Self-ingest to test dependency parsing
-    files = ["_IngestEngineMS.py"] 
+    # Note: Ensure this file actually exists in the run directory or change filename
+    target_file = "__IngestEngineMS.py"
+    if not os.path.exists(target_file):
+        # Create a dummy file if running in a temp environment without self
+        with open(target_file, "w") as f:
+            f.write("import os\nimport json\nprint('Hello World')")
+
+    print(f"Running Ingest on {target_file}...")
     
-    print("Running Ingest V2...")
+    files = [target_file] 
     for status in engine.process_files(files, "none"):
         print(f"[{status.progress_percent:.0f}%] {status.log_message}")
     
@@ -299,3 +324,5 @@ if __name__ == "__main__":
     
     if os.path.exists(TEST_DB):
         os.remove(TEST_DB)
+    if os.path.exists(target_file) and "Hello World" in open(target_file).read():
+        os.remove(target_file)

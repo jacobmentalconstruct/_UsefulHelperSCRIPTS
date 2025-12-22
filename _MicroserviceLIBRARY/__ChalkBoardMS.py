@@ -4,11 +4,15 @@ ENTRY_POINT: __ChalkBoardMS.py
 DEPENDENCIES: None
 """
 
-import webview 
 import json
 import os
+import webview
 
-# --- EMBEDDED HTML WITH NEW THEMES ---
+from microservice_std_lib import service_metadata, service_endpoint, BaseService
+
+# ==============================================================================
+# CONFIGURATION & ASSETS
+# ==============================================================================
 HTML_CONTENT = """
 <!DOCTYPE html>
 <html lang="en">
@@ -57,7 +61,7 @@ HTML_CONTENT = """
 
     <script>
         const container = document.getElementById('sign-container');
-
+        
         function updateDisplay(text, theme) {
             container.innerText = text;
             document.body.className = theme;
@@ -89,25 +93,25 @@ HTML_CONTENT = """
 </html>
 """
 
-# --- PYTHON MICROSERVICE ---
-try:
-    from microservice_std_lib import service_metadata, service_endpoint
-except ImportError:
-    def service_metadata(**kwargs): return lambda c: c
-    def service_endpoint(**kwargs): return lambda f: f
-
+# ==============================================================================
+# SERVICE DEFINITION
+# ==============================================================================
 @service_metadata(
     name="ChalkboardWeb",
     version="2.0.1",
     description="Integrated HTML5/CSS3 Digital Signage Engine",
     tags=["ui", "webview", "obs"],
-    capabilities=["ui:gui"]
+    capabilities=["ui:gui"],
+    dependencies=["webview", "json"],
+    side_effects=["ui:update"]
 )
-class ChalkBoardMS:
+class ChalkBoardMS(BaseService):
     def __init__(self):
+        super().__init__("ChalkboardWeb")
         self._window = None
         self.state = {"text": "ON AIR", "theme": "neon"}
 
+    # --- Internal/JS Callbacks ---
     def loaded(self):
         """Called by JS when the page is ready."""
         print("Frontend handshake complete.")
@@ -117,7 +121,13 @@ class ChalkBoardMS:
         """Called by JS when user interacts."""
         print(f"Webview Event: {action_name}")
 
-    @service_endpoint(inputs={"text": "str", "theme": "str"}, outputs={})
+    # --- Public Endpoints ---
+    @service_endpoint(
+        inputs={"text": "str", "theme": "str"}, 
+        outputs={},
+        description="Updates the embedded HTML via JS injection.",
+        tags=["ui", "display"]
+    )
     def update_sign(self, text: str, theme: str = "neon"):
         """Updates the embedded HTML via JS injection."""
         self.state["text"] = text
@@ -126,17 +136,27 @@ class ChalkBoardMS:
             sanitized_text = json.dumps(text)
             self._window.evaluate_js(f"updateDisplay({sanitized_text}, '{theme}')")
 
-    @service_endpoint(inputs={"effect": "str"}, outputs={})
+    @service_endpoint(
+        inputs={"effect": "str"}, 
+        outputs={},
+        description="Triggers CSS animations like 'shake'.",
+        tags=["ui", "animation"]
+    )
     def trigger_effect(self, effect: str):
         """Triggers CSS animations like 'shake'."""
         if self._window:
             self._window.evaluate_js(f"triggerEffect('{effect}')")
 
-def start_app():
+# ==============================================================================
+# SELF-TEST / RUNNER
+# ==============================================================================
+if __name__ == "__main__":
     api = ChalkBoardMS()
+    print(f"Service Ready: {api}")
+    
     window = webview.create_window(
         'OBS Signboard v2', 
-        html=HTML_CONTENT, # No external file dependency now!
+        html=HTML_CONTENT,
         js_api=api,
         width=1000, 
         height=700,
@@ -144,6 +164,3 @@ def start_app():
     )
     api._window = window
     webview.start(debug=True)
-
-if __name__ == "__main__":
-    start_app()

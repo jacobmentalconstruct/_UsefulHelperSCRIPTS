@@ -4,32 +4,35 @@ ENTRY_POINT: __CartridgeServiceMS.py
 DEPENDENCIES: None
 """
 
-import sqlite3
-import json
-import time
-import os
-import uuid
 import datetime
+import json
+import os
+import sqlite3
 import struct
+import time
+import uuid
 from pathlib import Path
+from typing import Any, Dict, List, Optional
 
 # Try to import sqlite-vec (pip install sqlite-vec)
 try:
     import sqlite_vec
 except ImportError:
     sqlite_vec = None
-from typing import Dict, Any, Optional, List
-from base_service import BaseService
-from microservice_std_lib import service_metadata, service_endpoint
 
+from microservice_std_lib import service_metadata, service_endpoint, BaseService
+
+# ==============================================================================
+# SERVICE DEFINITION
+# ==============================================================================
 @service_metadata(
     name="CartridgeServiceMS",
     version="1.1.0",
     description="The Source of Truth. Manages the Unified Neural Cartridge Format (UNCF v1.0).",
     tags=["storage", "database", "RAG"],
     capabilities=["sqlite", "vector-search", "graph-storage"],
-    dependencies=["sqlite3", "sqlite-vec", "uuid", "json"],
-    side_effects=["filesystem:read", "filesystem:write", "database:write"]
+    dependencies=["sqlite3", "json", "uuid"],
+    side_effects=["filesystem:read", "filesystem:write"]
 )
 class CartridgeServiceMS(BaseService):
     """
@@ -161,7 +164,6 @@ class CartridgeServiceMS(BaseService):
             self.set_manifest("created_by_app", "RagFORGE")
 
             # 2. Provenance / Sources
-            # Agents can read this to understand where the content came from and what policies were used.
             self.set_manifest("sources", [])
             self.set_manifest("source_policies", {
                 "binary_policy": "Extract Text",
@@ -196,7 +198,6 @@ class CartridgeServiceMS(BaseService):
             self.set_manifest("content_stats", {
                 "chunks": {"count": 0},
                 "vector_index": {
-                    # Don't assume sqlite-vec is available until proven.
                     "enabled": False,
                     "table": "vec_items",
                     "backend": "sqlite-vec",
@@ -280,28 +281,21 @@ class CartridgeServiceMS(BaseService):
         report = {"valid": True, "health": "OK", "errors": []}
         
         # 1. Check Required Keys
-        # These are the minimum contract keys an agent needs to understand what it loaded.
         required = [
-            "schema_name",
-            "schema_version",
-            "cartridge_id",
-            "created_at_utc",
-            "created_by_app",
-            "embedding_spec",
-            "chunking_spec",
-            "capabilities"
+            "schema_name", "schema_version", "cartridge_id",
+            "created_at_utc", "created_by_app", "embedding_spec",
+            "chunking_spec", "capabilities"
         ]
         for key in required:
             if not self.get_manifest(key):
                 report["valid"] = False
                 report["errors"].append(f"Missing Manifest Key: {key}")
         
-        # 2. Check Vector Index Presence (and stamp reality into the manifest)
+        # 2. Check Vector Index Presence
         conn = self._get_conn()
         vec_enabled = False
         vec_status = "unknown"
         try:
-            # If this succeeds, the vec_items table exists and is queryable.
             conn.execute("SELECT count(*) FROM vec_items").fetchone()
             vec_enabled = True
             vec_status = "available"
@@ -309,7 +303,6 @@ class CartridgeServiceMS(BaseService):
             vec_enabled = False
             vec_status = "unavailable"
             report["errors"].append("Vector Index (vec_items) missing or not loaded.")
-            # Not fatal for 'valid' but impacts capability
             report["health"] = "WARN_NO_VECTORS"
         finally:
             conn.close()
@@ -317,10 +310,17 @@ class CartridgeServiceMS(BaseService):
         # Update manifest content_stats.vector_index to reflect truth
         try:
             content_stats = self.get_manifest("content_stats") or {}
+            if isinstance(content_stats, str):
+                 try: content_stats = json.loads(content_stats)
+                 except: content_stats = {}
+            
             vec = content_stats.get("vector_index", {}) if isinstance(content_stats, dict) else {}
 
-            # Use embedding_spec dim if present; otherwise keep existing dims value
             embed_spec = self.get_manifest("embedding_spec") or {}
+            if isinstance(embed_spec, str):
+                try: embed_spec = json.loads(embed_spec)
+                except: embed_spec = {}
+            
             spec_dim = 0
             if isinstance(embed_spec, dict):
                 spec_dim = int(embed_spec.get("dim", 0) or 0)
@@ -330,7 +330,6 @@ class CartridgeServiceMS(BaseService):
             if spec_dim > 0:
                 vec["dims"] = spec_dim
 
-            # Preserve backend/table fields if present
             if "table" not in vec:
                 vec["table"] = "vec_items"
             if "backend" not in vec:
@@ -339,7 +338,6 @@ class CartridgeServiceMS(BaseService):
             content_stats["vector_index"] = vec
             self.set_manifest("content_stats", content_stats)
         except Exception as e:
-            # Non-fatal; validation should still return a report
             report["errors"].append(f"Failed to stamp vector_index status into manifest: {e}")
             report["health"] = "WARN_MANIFEST_STAMP_FAIL"
             
@@ -437,7 +435,6 @@ class CartridgeServiceMS(BaseService):
             params = []
 
             if prefix:
-                # Prefix match on portable path
                 clauses.append("vfs_path LIKE ?")
                 params.append(prefix.rstrip("/") + "/%")
 
@@ -458,7 +455,6 @@ class CartridgeServiceMS(BaseService):
             out = []
             for r in rows:
                 d = dict(r)
-                # metadata is stored as JSON string
                 try:
                     d["metadata"] = json.loads(d.get("metadata") or "{}")
                 except Exception:
@@ -551,6 +547,7 @@ class CartridgeServiceMS(BaseService):
                 continue
             parts = path.split("/")
             fname = parts[-1]
+            
             cur = tree
             for p in parts[:-1]:
                 cur = cur["_dirs"].setdefault(p, new_node())
@@ -625,9 +622,8 @@ class CartridgeServiceMS(BaseService):
         try:
             # Pack vector to binary if needed, but sqlite-vec usually handles raw lists in parameterized queries
             # dependent on the binding. We'll pass binary for safety if using standard bindings,
-            # but typically raw list works with the extension's adapters. 
+            # but typically raw list works with the extension's adapters.
             # For now, we assume the extension handles the list->vector conversion.
-            
             rows = conn.execute("""
                 SELECT
                     rowid,
@@ -662,12 +658,19 @@ class CartridgeServiceMS(BaseService):
             
         return results
 
-
-
-
-
-
-
-
-
-
+# ==============================================================================
+# SELF-TEST / RUNNER
+# ==============================================================================
+if __name__ == "__main__":
+    import tempfile
+    
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        db_file = os.path.join(tmp_dir, "test_cartridge.db")
+        print(f"Initializing service at: {db_file}")
+        
+        svc = CartridgeServiceMS(db_file)
+        print(f"Service Ready: {svc}")
+        
+        # Simple test: check manifest
+        status = svc.get_status_flags()
+        print(f"Initial Status: {status}")

@@ -4,21 +4,6 @@ ENTRY_POINT: __ArchiveBotMS.py
 DEPENDENCIES: None
 """
 
-"""
-SERVICE: ArchiveBot
-VERSION: 1.1.0
-ROLE: Create timestamped compressed .tar.gz backups of directory trees.
-INPUTS:
-- source_path: (str) The root folder to backup.
-- output_dir: (str) Where to save the resulting file.
-OUTPUTS:
-- archive_path: (str) Absolute path to the created file.
-- file_count: (int) Total files compressed.
-DEPENDENCIES: None (Standard Library)
-NOTES:
-Includes default ignore lists for common dev artifacts (node_modules, venv, etc).
-"""
-
 import datetime
 import fnmatch
 import logging
@@ -27,9 +12,11 @@ import tarfile
 from pathlib import Path
 from typing import Any, Dict, Optional, Set, Tuple
 
-from microservice_std_lib import service_metadata, service_endpoint
+from microservice_std_lib import service_metadata, service_endpoint, BaseService
 
-# === [ CONFIGURATION ] ========================================================
+# ==============================================================================
+# CONFIGURATION
+# ==============================================================================
 SERVICE_TITLE = "ArchiveBot"
 SERVICE_VERSION = "1.1.0"
 LOG_LEVEL = logging.INFO
@@ -48,25 +35,29 @@ DEFAULT_IGNORE_FILES: Set[str] = {
 logging.basicConfig(level=LOG_LEVEL, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(SERVICE_TITLE)
 
-# === [ SERVICE DEFINITION ] ===================================================
+# ==============================================================================
+# SERVICE DEFINITION
+# ==============================================================================
 @service_metadata(
     name=SERVICE_TITLE,
     version=SERVICE_VERSION,
     description="Creates timestamped .tar.gz backups of directory trees.",
     tags=["utility", "backup", "filesystem"],
-    capabilities=["filesystem:read", "filesystem:write"]
+    capabilities=["filesystem:read", "filesystem:write"],
+    dependencies=["tarfile", "pathlib", "datetime"],
+    side_effects=["filesystem:write"]
 )
-class ArchiveBotMS:
+class ArchiveBotMS(BaseService):
     
     def __init__(self, config: Optional[Dict[str, Any]] = None) -> None:
+        super().__init__(SERVICE_TITLE)
         self.config = config or {}
 
-    # === [ CORE ENDPOINTS ] ===================================================
     @service_endpoint(
         inputs={
             "source_path": "str",
             "output_dir": "str",
-            "extra_exclusions": "List[str] | None",
+            "extra_exclusions": "List[str]",
             "use_default_exclusions": "bool"
         },
         outputs={
@@ -120,8 +111,10 @@ class ArchiveBotMS:
                             continue
 
                         full_path = Path(root) / file_name
+                        
                         # Don't zip the file if we are writing it inside the source folder
-                        if full_path == archive_path: continue
+                        if full_path == archive_path: 
+                            continue
 
                         rel_path = full_path.relative_to(src)
                         tar.add(full_path, arcname=rel_path)
@@ -141,20 +134,22 @@ class ArchiveBotMS:
                 except Exception: pass
             raise exc
 
-    # === [ HELPERS ] ==========================================================
+    # --- Helpers ---
     def _is_excluded(self, name: str, patterns: Set[str]) -> bool:
         for pattern in patterns:
             if name == pattern or fnmatch.fnmatch(name, pattern):
                 return True
         return False
 
-# === [ SELF-TEST / RUNNER ] ===================================================
+# ==============================================================================
+# SELF-TEST / RUNNER
+# ==============================================================================
 if __name__ == "__main__":
-    # Create a dummy file to backup for testing
     import tempfile
     
     bot = ArchiveBotMS()
-    
+    print(f"Service Ready: {bot}")
+
     with tempfile.TemporaryDirectory() as tmp_source:
         with tempfile.TemporaryDirectory() as tmp_out:
             # Create a test file

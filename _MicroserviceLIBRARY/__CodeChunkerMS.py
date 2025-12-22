@@ -4,46 +4,56 @@ ENTRY_POINT: __CodeChunkerMS.py
 DEPENDENCIES: None
 """
 
+import os
 import re
-from typing import List, Dict, Any, Optional
+import tempfile
 from pathlib import Path
-from microservice_std_lib import service_metadata, service_endpoint
+from typing import Any, Dict, List, Optional
 
+from microservice_std_lib import service_metadata, service_endpoint, BaseService
+
+# ==============================================================================
+# SERVICE DEFINITION
+# ==============================================================================
 @service_metadata(
-name="CodeChunker",
-version="1.0.0",
-description="Splits code into semantic blocks (Classes, Functions) using indentation and regex heuristics.",
-tags=["parsing", "chunking", "code"],
-capabilities=["filesystem:read"]
+    name="CodeChunker",
+    version="1.0.0",
+    description="Splits code into semantic blocks (Classes, Functions) using indentation and regex heuristics.",
+    tags=["parsing", "chunking", "code"],
+    capabilities=["filesystem:read"],
+    dependencies=["re", "pathlib"],
+    side_effects=["filesystem:read"]
 )
-class CodeChunkerMS:
+class CodeChunkerMS(BaseService):
     """
-The Surgeon (Pure Python Edition): Splits code into semantic blocks
+    The Surgeon (Pure Python Edition): Splits code into semantic blocks
     (Classes, Functions) using indentation and regex heuristics.
     
     Advantages: Zero dependencies. Works on any machine.
     Disadvantages: Slightly less precise than Tree-Sitter for messy code.
     """
+
     def __init__(self, config: Optional[Dict[str, Any]] = None):
-    self.config = config or {}
-    # Regex to find definitions. Capture group 1 is the indentation.
-    # Supports Python, JS, TS, Go signatures loosely.
+        super().__init__("CodeChunker")
+        self.config = config or {}
+        # Regex to find definitions. Capture group 1 is the indentation.
+        # Supports Python, JS, TS, Go signatures loosely.
         self.def_pattern = re.compile(
             r'^(\s*)(?:async\s+)?(?:class|def|function|func|var|const)\s+([a-zA-Z0-9_]+)', 
             re.MULTILINE
         )
 
     @service_endpoint(
-    inputs={"file_path": "str", "max_chars": "int"},
-    outputs={"chunks": "List[Dict]"},
-    description="Reads a file and breaks it into logical blocks based on indentation.",
-    tags=["parsing", "chunking"],
-    side_effects=["filesystem:read"]
+        inputs={"file_path": "str", "max_chars": "int"},
+        outputs={"chunks": "List[Dict]"},
+        description="Reads a file and breaks it into logical blocks based on indentation.",
+        tags=["parsing", "chunking"],
+        side_effects=["filesystem:read"]
     )
     def chunk_file(self, file_path: str, max_chars: int = 1500) -> List[Dict[str, Any]]:
-    """
-    Reads a file and breaks it into logical blocks based on indentation.
-    """
+        """
+        Reads a file and breaks it into logical blocks based on indentation.
+        """
         path = Path(file_path)
         try:
             code = path.read_text(encoding="utf-8", errors="ignore")
@@ -53,8 +63,11 @@ The Surgeon (Pure Python Edition): Splits code into semantic blocks
 
         return self._chunk_by_indentation(code, max_chars)
 
+    # ==========================================================================
+    # INTERNAL LOGIC
+    # ==========================================================================
     def _chunk_by_indentation(self, code: str, max_chars: int) -> List[Dict]:
-lines = code.splitlines()
+        lines = code.splitlines()
         chunks = []
         
         current_chunk_lines = []
@@ -152,12 +165,14 @@ lines = code.splitlines()
                 "end_line": sub_start + len(current_sub)
             })
 
-# --- Independent Test Block ---
+# ==============================================================================
+# SELF-TEST / RUNNER
+# ==============================================================================
 if __name__ == "__main__":
-chunker = CodeChunkerMS()
-print("Service ready:", chunker)
+    chunker = CodeChunkerMS()
+    print(f"Service ready: {chunker}")
     
-# Test Python Code
+    # Test Python Code
     py_code = """
 import os
 
@@ -176,16 +191,16 @@ class DataProcessor:
     """
     
     # Write temp file
-    import tempfile
     with tempfile.NamedTemporaryFile(suffix=".py", mode="w+", delete=False) as tmp:
         tmp.write(py_code)
         tmp_path = tmp.name
         
-    print(f"--- Chunking {tmp_path} (Pure Python) ---")
-    chunks = chunker.chunk_file(tmp_path)
-    
-    for i, c in enumerate(chunks):
-        print(f"\n[Chunk {i}] Lines {c['start_line']}-{c['end_line']}")
-        print(f"{'-'*20}\n{c['text'].strip()}\n{'-'*20}")
+    try:
+        print(f"--- Chunking {tmp_path} (Pure Python) ---")
+        chunks = chunker.chunk_file(tmp_path)
         
-    os.remove(tmp_path)
+        for i, c in enumerate(chunks):
+            print(f"\n[Chunk {i}] Lines {c['start_line']}-{c['end_line']}")
+            print(f"{'-'*20}\n{c['text'].strip()}\n{'-'*20}")
+    finally:
+        os.remove(tmp_path)

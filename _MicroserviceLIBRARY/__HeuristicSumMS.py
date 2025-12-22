@@ -4,10 +4,11 @@ ENTRY_POINT: __HeuristicSumMS.py
 DEPENDENCIES: None
 """
 
-import re
 import os
+import re
 from typing import Any, Dict, List, Optional
-from microservice_std_lib import service_metadata, service_endpoint
+
+from microservice_std_lib import service_metadata, service_endpoint, BaseService
 
 # ==============================================================================
 # CONFIGURATION: REGEX PATTERNS
@@ -20,31 +21,36 @@ MD_HDR_RE = re.compile(r'^\s{0,3}(#{1,3})\s+(.+)')
 
 # Captures: """ Docstring """ or ''' Docstring ''' (Start of block)
 DOC_RE = re.compile(r'^\s*("{3}|\'{3})(.*)', re.DOTALL)
+
 # ==============================================================================
-
+# SERVICE DEFINITION
+# ==============================================================================
 @service_metadata(
-name="HeuristicSum",
-version="1.0.0",
-description="Generates quick summaries of code/text files using regex heuristics (No AI).",
-tags=["parsing", "summary", "heuristics"],
-capabilities=["compute"]
+    name="HeuristicSum",
+    version="1.0.0",
+    description="Generates quick summaries of code/text files using regex heuristics (No AI).",
+    tags=["parsing", "summary", "heuristics"],
+    capabilities=["compute"],
+    dependencies=["re"],
+    side_effects=[]
 )
-class HeuristicSumMS:
+class HeuristicSumMS(BaseService):
     """
-The Skimmer: Generates quick summaries of code/text files without AI.
-Scans for high-value lines (headers, signatures, docstrings) and concatenates them.
-"""
+    The Skimmer: Generates quick summaries of code/text files without AI.
+    Scans for high-value lines (headers, signatures, docstrings) and concatenates them.
+    """
 
-def __init__(self, config: Optional[Dict[str, Any]] = None):
-self.config = config or {}
+    def __init__(self, config: Optional[Dict[str, Any]] = None):
+        super().__init__("HeuristicSum")
+        self.config = config or {}
 
-@service_endpoint(
-inputs={"text": "str", "filename": "str", "max_chars": "int"},
-outputs={"summary": "str"},
-description="Generates a summary string from the provided text.",
-tags=["summary", "parsing"]
-)
-def summarize(self, text: str, filename: str = "", max_chars: int = 480) -> str:
+    @service_endpoint(
+        inputs={"text": "str", "filename": "str", "max_chars": "int"},
+        outputs={"summary": "str"},
+        description="Generates a summary string from the provided text.",
+        tags=["summary", "parsing"]
+    )
+    def summarize(self, text: str, filename: str = "", max_chars: int = 480) -> str:
         """
         Generates a summary string from the provided text.
         """
@@ -101,12 +107,14 @@ def summarize(self, text: str, filename: str = "", max_chars: int = 480) -> str:
             
         return summary.strip() if summary else "[No summary available]"
 
-# --- Independent Test Block ---
+# ==============================================================================
+# SELF-TEST / RUNNER
+# ==============================================================================
 if __name__ == "__main__":
-skimmer = HeuristicSumMS()
-print("Service ready:", skimmer)
+    skimmer = HeuristicSumMS()
+    print(f"Service ready: {skimmer}")
     
-# Test 1: Python Code
+    # Test 1: Python Code
     py_code = """
     class DataProcessor:
         '''

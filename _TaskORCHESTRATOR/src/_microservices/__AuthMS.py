@@ -11,69 +11,48 @@ import logging
 import time
 from typing import Any, Dict, Optional
 
-from microservice_std_lib import service_metadata, service_endpoint
-
-"""
-SERVICE: Auth
-ROLE: Manage user authentication and signed session tokens.
-INPUTS:
-  - username: Login identifier.
-  - password: Secret credential.
-  - token: Serialized session token string.
-OUTPUTS:
-  - token: Signed session token (str) or None on failure.
-  - is_valid: Boolean indicating whether a token is valid and not expired.
-NOTES:
-  This is a simplified in-memory auth system intended for local tools and
-  pipelines, not production-grade security.
-"""
-
-logger = logging.getLogger(__name__)
+from microservice_std_lib import service_metadata, service_endpoint, BaseService
 
 # ==============================================================================
 # CONFIGURATION
 # ==============================================================================
-
 DEFAULT_SECRET_KEY = "super_secret_cortex_key"
 DEFAULT_SALT = "cortex_salt"
 
+logger = logging.getLogger("Auth")
 
 # ==============================================================================
-
-
+# SERVICE DEFINITION
+# ==============================================================================
 @service_metadata(
     name="Auth",
     version="1.0.0",
-    description="Manages user authentication and session tokens.",
+    description="Manages user authentication and signed session tokens.",
     tags=["auth", "security", "crypto"],
     capabilities=["crypto"],
+    dependencies=["hashlib", "json", "time", "base64"],
+    side_effects=[]
 )
-class AuthMS:
+class AuthMS(BaseService):
     """
     ROLE: Simple authentication microservice providing username/password login
           and signed session tokens.
-
-    INPUTS:
-      - config: Optional configuration dict. Recognized keys:
-          - 'secret_key': Secret used to sign tokens.
-
-    OUTPUTS:
-      - Exposes `login` and `validate_session` endpoints for use in pipelines.
     """
 
     def __init__(self, config: Optional[Dict[str, Any]] = None) -> None:
+        super().__init__("Auth")
         self.config = config or {}
         self.secret_key: str = self.config.get("secret_key", DEFAULT_SECRET_KEY)
 
         # In a real scenario, this might load from a secure config file or DB.
-        # For now, we keep a minimal in-memory user database.
+        # For now, we keep a minimal in-memory user database[cite: 21].
         self.users_db: Dict[str, str] = {
             "admin": self._hash_password("admin123"),
         }
 
-    # --------------------------------------------------------------------- #
-    # Public endpoints
-    # --------------------------------------------------------------------- #
+    # ==========================================================================
+    # CORE ENDPOINTS
+    # ==========================================================================
 
     @service_endpoint(
         inputs={"username": "str", "password": "str"},
@@ -84,10 +63,6 @@ class AuthMS:
     def login(self, username: str, password: str) -> Optional[str]:
         """
         Attempt to log in with the provided username and password.
-
-        :param username: Login identifier.
-        :param password: Plain-text password.
-        :returns: Signed session token if successful, None otherwise.
         """
         if username not in self.users_db:
             return None
@@ -106,39 +81,30 @@ class AuthMS:
     )
     def validate_session(self, token: str) -> bool:
         """
-        Check if a serialized token is valid and not expired.
-
-        :param token: Session token string.
-        :returns: True if token is valid and not expired, False otherwise.
+        Check if a serialized token is valid and not expired[cite: 26].
         """
         payload = self._decode_token(token)
         return payload is not None
 
-    # --------------------------------------------------------------------- #
-    # Internal helpers
-    # --------------------------------------------------------------------- #
+    # ==========================================================================
+    # INTERNAL HELPERS
+    # ==========================================================================
 
     def _hash_password(self, password: str) -> str:
         """
-        Securely hashes a password using SHA-256 with a static salt.
+        Securely hashes a password using SHA-256 with a static salt[cite: 29].
         """
         return hashlib.sha256((password + DEFAULT_SALT).encode("utf-8")).hexdigest()
 
     def _verify_password(self, plain_password: str, hashed_password: str) -> bool:
         """
-        Verifies a provided password against the stored hash.
+        Verifies a provided password against the stored hash[cite: 30].
         """
         return self._hash_password(plain_password) == hashed_password
 
     def _create_token(self, user_id: str, expires_in: int = 3600) -> str:
         """
-        Generates a signed session token.
-
-        Payload includes:
-          - 'sub' (subject)
-          - 'exp' (expiration time)
-          - 'iat' (issued-at time)
-          - 'scope' (authorization scope)
+        Generates a signed session token containing sub, exp, iat, and scope[cite: 31].
         """
         now = int(time.time())
         payload = {
@@ -157,7 +123,6 @@ class AuthMS:
     def _decode_token(self, token: str) -> Optional[Dict[str, Any]]:
         """
         Parses and validates the incoming token.
-
         Returns the payload if valid, None otherwise.
         """
         try:
@@ -185,15 +150,21 @@ class AuthMS:
             return payload
 
         except Exception:
-            # Intentionally swallow details here and just treat token as invalid.
+            # Intentionally swallow details here and just treat token as invalid[cite: 37].
             logger.exception("Failed to decode or validate auth token.")
             return None
 
 
+# ==============================================================================
+# SELF-TEST / RUNNER
+# ==============================================================================
 if __name__ == "__main__":
     svc = AuthMS()
-    print("Service ready:", svc)
-    # Example (manual) usage:
-    # token = svc.login("admin", "admin123")
-    # print("Token:", token)
-    # print("Valid:", svc.validate_session(token) if token else False)
+    print(f"Service Ready: {svc}")
+    
+    # Simple test
+    token = svc.login("admin", "admin123")
+    print(f"Token Generated: {token is not None}")
+    if token:
+        is_valid = svc.validate_session(token)
+        print(f"Token Valid: {is_valid}")

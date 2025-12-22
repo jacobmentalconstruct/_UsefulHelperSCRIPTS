@@ -6,28 +6,47 @@ DEPENDENCIES: None
 
 import re
 from typing import Any, Dict, List, Optional
-from microservice_std_lib import service_metadata, service_endpoint
-from __PythonChunkerMS import PythonChunkerMS, CodeChunk
+from microservice_std_lib import service_metadata, service_endpoint, BaseService
 
+# Attempt to import the specialist. If missing, we will fallback or warn.
+try:
+    from __PythonChunkerMS import PythonChunkerMS, CodeChunk
+except ImportError:
+    # Fallback mock for standalone testing if dependency is missing
+    class CodeChunk:
+        def __init__(self, name, type, content, start_line, end_line):
+            self.name = name; self.type = type; self.content = content
+            self.start_line = start_line; self.end_line = end_line
+        def __repr__(self): return f"<CodeChunk {self.name}>"
+    
+    class PythonChunkerMS:
+        def chunk(self, text): return [CodeChunk("mock", "text", text, 0, 0)]
+
+# ==============================================================================
+# SERVICE DEFINITION
+# ==============================================================================
 @service_metadata(
     name="ChunkingRouterMS",
     version="1.1.0",
     description="The Dispatcher: Routes files to specialized chunkers based on extension (AST for Python, Recursive for Prose).",
     tags=["orchestration", "chunking", "nlp"],
-    capabilities=["routing", "text-processing"]
+    capabilities=["routing", "text-processing"],
+    dependencies=["re"],
+    side_effects=[]
 )
-class ChunkingRouterMS:
+class ChunkingRouterMS(BaseService):
     """
-The Editor: A 'Recursive' text splitter.
-It respects the natural structure of text (Paragraphs -> Sentences -> Words)
-rather than just hacking it apart by character count.
-"""
+    The Editor: A 'Recursive' text splitter.
+    It respects the natural structure of text (Paragraphs -> Sentences -> Words)
+    rather than just hacking it apart by character count.
+    """
     
-def __init__(self, config: Optional[Dict[str, Any]] = None):
-    self.config = config or {}
-    self.python_specialist = PythonChunkerMS()
-    # Separators for the Prose Specialist logic
-    self.separators = ["\n\n", "\n", "(?<=[.?!])\s+", " ", ""]
+    def __init__(self, config: Optional[Dict[str, Any]] = None):
+        super().__init__("ChunkingRouterMS")
+        self.config = config or {}
+        self.python_specialist = PythonChunkerMS()
+        # Separators for the Prose Specialist logic
+        self.separators = ["\n\n", "\n", "(?<=[.?!])\s+", " ", ""]
 
     @service_endpoint(
         inputs={"text": "str", "filename": "str", "max_size": "int", "overlap": "int"},
@@ -56,6 +75,9 @@ def __init__(self, config: Optional[Dict[str, Any]] = None):
             ) for i, c in enumerate(raw_chunks)
         ]
 
+    # ==========================================================================
+    # INTERNAL LOGIC (The Prose Specialist)
+    # ==========================================================================
     def _recursive_split(self, text: str, separators: List[str], max_size: int, overlap: int) -> List[str]:
         final_chunks = []
         
@@ -105,10 +127,8 @@ def __init__(self, config: Optional[Dict[str, Any]] = None):
                 # Flush the current buffer
                 doc_text = current_sep.join(current_doc)
                 final_chunks.append(doc_text)
-# Start new buffer with overlap logic?
-                # For simplicity in recursion, we often just start fresh or carry over 
-                # a small tail if we implemented a rolling window here.
-                # To keep this "Pure logic" simple, we start fresh with the current split.
+                
+                # For simplicity in recursion, we start fresh with the current split.
                 current_doc = [split]
                 current_length = len(split)
             else:
@@ -132,10 +152,12 @@ def __init__(self, config: Optional[Dict[str, Any]] = None):
             start += chunk_size - overlap
         return chunks
 
-# --- Independent Test Block ---
+# ==============================================================================
+# SELF-TEST / RUNNER
+# ==============================================================================
 if __name__ == "__main__":
-    chunker = SmartChunkerMS()
-    print("Service ready:", chunker)
+    chunker = ChunkingRouterMS()
+    print(f"Service ready: {chunker}")
     
     # Example: A technical document with structure
     doc = """
@@ -151,8 +173,7 @@ if __name__ == "__main__":
     
     print("--- Testing Smart Chunking (Max 60 chars) ---")
     # We set max_size very small to force it to use the sentence/word splitters
-    chunks = chunker.chunk(doc, max_size=60, overlap=0)
+    chunks = chunker.chunk_file(doc, "test.md", max_size=60, overlap=0)
     
     for i, c in enumerate(chunks):
         print(f"[{i}] {repr(c)}")
-
