@@ -1,46 +1,43 @@
-"""
-SERVICE_NAME: _VectorFactoryMS
-ENTRY_POINT: __VectorFactoryMS.py
-DEPENDENCIES: pip install chromadb faiss-cpu numpy
-"""
-
-# --- RUNTIME DEPENDENCY CHECK ---
-import importlib.util, sys
-REQUIRED = ["pip install chromadb faiss-cpu numpy"]
-MISSING = []
-for lib in REQUIRED:
-    # Clean version numbers for check (e.g., pygame==2.0 -> pygame)
-    clean_lib = lib.split('>=')[0].split('==')[0].split('>')[0].replace('-', '_')
-    if importlib.util.find_spec(clean_lib) is None:
-        if clean_lib == 'pywebview': clean_lib = 'webview' # Common alias
-        if importlib.util.find_spec(clean_lib) is None:
-            MISSING.append(lib)
-
-if MISSING:
-    print('\n' + '!'*60)
-    print(f'MISSING DEPENDENCIES for _VectorFactoryMS:')
-    print(f'Run:  pip install {" ".join(MISSING)}')
-    print('!'*60 + '\n')
-    # sys.exit(1) # Uncomment to force stop if missing
-
+import importlib.util
+import sys
 import os
 import uuid
 import logging
 import shutil
 from typing import List, Dict, Any, Optional, Protocol, Union
 from pathlib import Path
+
+# --- RUNTIME DEPENDENCY CHECK ---
+REQUIRED = ["chromadb", "faiss-cpu", "numpy"]
+MISSING = []
+
+for lib in REQUIRED:
+    # Clean version numbers/aliases for check
+    clean_lib = lib.split('>=')[0].replace('-', '_')
+    if clean_lib == "faiss_cpu": clean_lib = "faiss"
+    
+    if importlib.util.find_spec(clean_lib) is None:
+        MISSING.append(lib)
+
+if MISSING:
+    print('\n' + '!'*60)
+    print(f'MISSING DEPENDENCIES for _VectorFactoryMS:')
+    print(f'Run:  pip install {" ".join(MISSING)}')
+    print('!'*60 + '\n')
+    # We proceed so the class definition loads, but runtime methods will fail.
+
 from microservice_std_lib import service_metadata, service_endpoint
 
 # ==============================================================================
 # CONFIGURATION
 # ==============================================================================
-logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(message)s')
-log = logging.getLogger("VectorFactory")
+logger = logging.getLogger("VectorFactory")
+
+# ==============================================================================
+# PROTOCOL DEFINITION
 # ==============================================================================
 
-# --- Interface Definition ---
-
-class VectorFactoryMS(Protocol):
+class VectorStore(Protocol):
     """The contract that all vector backends must fulfill."""
     def add(self, embeddings: List[List[float]], metadatas: List[Dict[str, Any]]) -> None:
         ...
@@ -51,12 +48,16 @@ class VectorFactoryMS(Protocol):
     def clear(self) -> None:
         ...
 
-# --- Implementation 1: FAISS (Local, Fast, RAM-heavy) ---
+# ==============================================================================
+# IMPLEMENTATIONS
+# ==============================================================================
 
 class FaissVectorStore:
+    """Local, RAM-heavy, fast vector store using FAISS."""
+    
     def __init__(self, index_path: str, dimension: int):
         import numpy as np
-        import faiss # Lazy import
+        import faiss # type: ignore
         self.np = np
         self.faiss = faiss
         
@@ -66,13 +67,17 @@ class FaissVectorStore:
         
         # Load or Create
         if os.path.exists(index_path):
-            self.index = faiss.read_index(index_path)
-            # Load metadata (simple JSON sidecar for this implementation)
-            meta_path = index_path + ".meta.json"
-            if os.path.exists(meta_path):
-                import json
-                with open(meta_path, 'r') as f:
-                    self.metadata_store = json.load(f)
+            try:
+                self.index = faiss.read_index(index_path)
+                # Load metadata (simple JSON sidecar)
+                meta_path = index_path + ".meta.json"
+                if os.path.exists(meta_path):
+                    import json
+                    with open(meta_path, 'r') as f:
+                        self.metadata_store = json.load(f)
+            except Exception as e:
+                logger.error(f"Failed to load FAISS index: {e}")
+                self.index = faiss.IndexFlatL2(dimension)
         else:
             self.index = faiss.IndexFlatL2(dimension)
 
@@ -112,11 +117,15 @@ class FaissVectorStore:
         with open(self.index_path + ".meta.json", 'w') as f:
             json.dump(self.metadata_store, f)
 
-# --- Implementation 2: ChromaDB (Persistent, Feature-rich) ---
 
 class ChromaVectorStore:
+    """Persistent, feature-rich vector store using ChromaDB."""
+    
     def __init__(self, persist_dir: str, collection_name: str):
-        import chromadb # Lazy import
+        import chromadb # type: ignore
+        # Suppress Chroma telemetry noise
+        logging.getLogger("chromadb").setLevel(logging.ERROR)
+        
         self.client = chromadb.PersistentClient(path=persist_dir)
         self.collection = self.client.get_or_create_collection(collection_name)
 
@@ -128,9 +137,7 @@ class ChromaVectorStore:
         # Ensure metadata is flat (Chroma limitation on nested dicts)
         clean_metas = [{k: str(v) if isinstance(v, (list, dict)) else v for k, v in m.items()} for m in metadatas]
         
-        # Chroma expects 'documents' usually, but we handle logic upstream. 
-        # We pass empty strings for 'documents' if purely vector-based, 
-        # or map content from metadata if available.
+        # Chroma expects 'documents' usually. 
         docs = [m.get("content", "") for m in metadatas]
 
         self.collection.add(
@@ -151,10 +158,12 @@ class ChromaVectorStore:
 
         # Unpack Chroma's columnar response format
         for i in range(len(results['ids'][0])):
-            entry = results['metadatas'][0][i].copy()
-            entry['score'] = results['distances'][0][i]
-            entry['id'] = results['ids'][0][i]
-            output.append(entry)
+            meta = results['metadatas'][0][i]
+            if meta:
+                entry = meta.copy()
+                entry['score'] = results['distances'][0][i] if results['distances'] else 0.0
+                entry['id'] = results['ids'][0][i]
+                output.append(entry)
         return output
 
     def count(self) -> int:
@@ -166,36 +175,40 @@ class ChromaVectorStore:
         self.client.delete_collection(name)
         self.collection = self.client.get_or_create_collection(name)
 
-# --- The Factory ---
+
+# ==============================================================================
+# MICROSERVICE CLASS (FACTORY)
+# ==============================================================================
 
 @service_metadata(
-name="VectorFactory",
-version="1.0.0",
-description="Factory for creating VectorFactoryMS instances (FAISS, Chroma).",
-tags=["vector", "factory", "db"],
-capabilities=["filesystem:read", "filesystem:write"]
+    name="VectorFactory",
+    version="1.0.0",
+    description="Factory for creating VectorStore instances (FAISS, Chroma).",
+    tags=["vector", "factory", "db"],
+    capabilities=["filesystem:read", "filesystem:write"]
 )
 class VectorFactoryMS:
     """
-The Switchboard: Returns the appropriate VectorFactoryMS implementation
-based on configuration.
-"""
-def __init__(self, config: Optional[Dict[str, Any]] = None):
-self.config = config or {}
+    The Switchboard: Returns the appropriate VectorStore implementation
+    based on configuration.
+    """
+    
+    def __init__(self, config: Optional[Dict[str, Any]] = None):
+        self.config = config or {}
 
-@service_endpoint(
-inputs={"backend": "str", "config": "Dict"},
-outputs={"store": "VectorFactoryMS"},
-description="Creates and returns a configured VectorFactoryMS instance.",
-tags=["vector", "create"],
-side_effects=[]
-)
-def create(self, backend: str, config: Dict[str, Any]) -> VectorFactoryMS:
-"""
-:param backend: 'faiss' or 'chroma'
+    @service_endpoint(
+        inputs={"backend": "str", "config": "Dict"},
+        outputs={"store": "VectorStore"},
+        description="Creates and returns a configured VectorStore instance.",
+        tags=["vector", "create"],
+        side_effects=[]
+    )
+    def create(self, backend: str, config: Dict[str, Any]) -> VectorStore:
+        """
+        :param backend: 'faiss' or 'chroma'
         :param config: Dict containing 'path', 'dim' (for FAISS), or 'collection' (for Chroma)
         """
-        log.info(f"Initializing Vector Store: {backend.upper()}")
+        logger.info(f"Initializing Vector Store: {backend.upper()}")
         
         if backend == "faiss":
             path = config.get("path", "vector_index.bin")
@@ -210,40 +223,52 @@ def create(self, backend: str, config: Dict[str, Any]) -> VectorFactoryMS:
         else:
             raise ValueError(f"Unknown backend: {backend}")
 
+
 # --- Independent Test Block ---
 if __name__ == "__main__":
+    # Setup logging
+    logging.basicConfig(level=logging.INFO)
     print("--- Testing VectorFactoryMS ---")
     
     # 1. Mock Data (dim=4 for simplicity)
     mock_vec = [0.1, 0.2, 0.3, 0.4]
     mock_meta = {"text": "Hello World", "source": "test"}
     
-    # 2. Test FAISS
-    print("\n[Testing FAISS]")
     factory = VectorFactoryMS()
     print("Service ready:", factory)
+
+    # 2. Test FAISS
+    print("\n[Testing FAISS]")
     try:
-    faiss_store = factory.create("faiss", {"path": "test_faiss.index", "dim": 4})
+        faiss_store = factory.create("faiss", {"path": "test_faiss.index", "dim": 4})
         faiss_store.add([mock_vec], [mock_meta])
         print(f"Count: {faiss_store.count()}")
         res = faiss_store.search(mock_vec, 1)
-        print(f"Search Result: {res[0]['text']}")
+        if res:
+            print(f"Search Result: {res[0]['text']}")
+        
         # Cleanup
         if os.path.exists("test_faiss.index"): os.remove("test_faiss.index")
         if os.path.exists("test_faiss.index.meta.json"): os.remove("test_faiss.index.meta.json")
     except ImportError:
         print("Skipping FAISS test (library not installed)")
-# 3. Test Chroma
-print("\n[Testing Chroma]")
-try:
-    chroma_store = factory.create("chroma", {"path": "./test_chroma_db", "collection": "test_col"})
-    chroma_store.add([mock_vec], [mock_meta])
-    print(f"Count: {chroma_store.count()}")
-    res = chroma_store.search(mock_vec, 1)
-    print(f"Search Result: {res[0]['text']}")
-    # Cleanup
-    if os.path.exists("./test_chroma_db"): shutil.rmtree("./test_chroma_db")
-except ImportError:
-    print("Skipping Chroma test (library not installed)")
-except Exception as e:
-    print(f"Chroma Error: {e}")
+    except Exception as e:
+        print(f"FAISS Test Failed: {e}")
+
+    # 3. Test Chroma
+    print("\n[Testing Chroma]")
+    try:
+        chroma_store = factory.create("chroma", {"path": "./test_chroma_db", "collection": "test_col"})
+        chroma_store.add([mock_vec], [mock_meta])
+        print(f"Count: {chroma_store.count()}")
+        res = chroma_store.search(mock_vec, 1)
+        if res:
+            print(f"Search Result: {res[0]['text']}")
+        
+        # Cleanup
+        if os.path.exists("./test_chroma_db"): 
+            shutil.rmtree("./test_chroma_db")
+    except ImportError:
+        print("Skipping Chroma test (library not installed)")
+    except Exception as e:
+        print(f"Chroma Test Failed: {e}")

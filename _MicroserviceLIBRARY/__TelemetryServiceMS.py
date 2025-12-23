@@ -1,31 +1,53 @@
-"""
-SERVICE_NAME: _TelemetryServiceMS
-ENTRY_POINT: __TelemetryServiceMS.py
-DEPENDENCIES: None
-"""
-
 import logging
 import queue
 import time
-from base_service import BaseService
+from typing import Dict, Any, Optional
+
 from microservice_std_lib import service_metadata, service_endpoint
 
+logger = logging.getLogger("TelemetryService")
+
+# ==============================================================================
+# HELPER CLASS
+# ==============================================================================
+
+class QueueHandler(logging.Handler):
+    """
+    Custom logging handler that pushes log records into a thread-safe queue.
+    """
+    def __init__(self, log_queue: queue.Queue):
+        super().__init__()
+        self.log_queue = log_queue
+
+    def emit(self, record):
+        # We format the record before putting it in the queue so the message field exists
+        self.format(record)
+        self.log_queue.put(record)
+
+# ==============================================================================
+# MICROSERVICE CLASS
+# ==============================================================================
+
 @service_metadata(
-    name="TelemetryServiceMS",
+    name="TelemetryService",
     version="1.0.0",
     description="The Nervous System: Watches the thread-safe LogQueue and updates GUI components with real-time status.",
     tags=["utility", "logging", "telemetry"],
     capabilities=["log-redirection", "real-time-updates"]
 )
-class TelemetryServiceMS(BaseService):
+class TelemetryServiceMS:
     """
     The Nervous System.
     Watches the thread-safe LogQueue and updates the GUI Panels.
     """
-    def __init__(self, root, panels):
-        super().__init__("TelemetryServiceMS")
-        self.root = root
-        self.panels = panels
+    
+    def __init__(self, config: Optional[Dict[str, Any]] = None):
+        self.config = config or {}
+        
+        # Dependencies injected via config
+        self.root = self.config.get("root")
+        self.panels = self.config.get("panels")
+        
         self.log_queue = queue.Queue()
         self.start_time = time.time()
         self._heartbeat_count = 0
@@ -37,7 +59,8 @@ class TelemetryServiceMS(BaseService):
         inputs={},
         outputs={"status": "str", "uptime": "float", "queue_depth": "int"},
         description="Standardized health check to verify the operational state of the telemetry pipeline.",
-        tags=["diagnostic", "health"]
+        tags=["diagnostic", "health"],
+        side_effects=[]
     )
     def get_health(self) -> Dict[str, Any]:
         """Returns the operational status of the TelemetryServiceMS."""
@@ -49,32 +72,34 @@ class TelemetryServiceMS(BaseService):
 
     def _setup_logging_hook(self):
         """Redirects Python's standard logging to our Queue."""
-        logger = logging.getLogger()
-        logger.setLevel(logging.INFO)
+        root_logger = logging.getLogger()
+        root_logger.setLevel(logging.INFO)
         
         # Create our custom handler that feeds the queue
         q_handler = QueueHandler(self.log_queue)
         formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s', datefmt='%H:%M:%S')
         q_handler.setFormatter(formatter)
-        logger.addHandler(q_handler)
+        root_logger.addHandler(q_handler)
 
     @service_endpoint(
         inputs={},
         outputs={},
         description="Initiates the telemetry service and begins the asynchronous GUI log-polling loop.",
         tags=["lifecycle", "event-loop"],
-        mode="async"
+        mode="async",
+        side_effects=["ui:update"]
     )
     def start(self):
         """Begins the GUI update loop."""
-        self.log_info("Telemetry Service starting...")
+        logger.info("Telemetry Service starting...")
         self._poll_queue()
 
     @service_endpoint(
         inputs={},
         outputs={"alive": "bool", "heartbeat": "int"},
         description="Verifies that the GUI polling loop is actively processing the log queue.",
-        tags=["diagnostic", "heartbeat"]
+        tags=["diagnostic", "heartbeat"],
+        side_effects=[]
     )
     def ping(self) -> Dict[str, Any]:
         """Allows an agent to verify the pulse of the UI loop."""
@@ -82,42 +107,46 @@ class TelemetryServiceMS(BaseService):
 
     def _poll_queue(self):
         """The heartbeat that drains the queue into the GUI."""
+        if not self.root or not self.panels:
+            return
+
         self._heartbeat_count += 1
         try:
             while True:
                 record = self.log_queue.get_nowait()
-                msg = f"[{record.levelname}] {record.message}" # Removed \n because .log() adds it
+                # record.message is populated by QueueHandler calling format()
+                msg = f"[{record.levelname}] {record.message}" 
                 
                 # Update the GUI
-                self.panels.log(msg)
+                if hasattr(self.panels, 'log'):
+                    self.panels.log(msg)
                 
         except queue.Empty:
             pass
         finally:
             # Check again in 100ms
-            self.root.after(100, self._poll_queue)
+            if hasattr(self.root, 'after'):
+                self.root.after(100, self._poll_queue)
 
-# Helper Class for the Queue
-class QueueHandler(logging.Handler):
-    def __init__(self, log_queue):
-        super().__init__()
-        self.log_queue = log_queue
 
-    def emit(self, record):
-        self.format(record)
-        self.log_queue.put(record)
-
-    if __name__ == "__main__":
+# --- Independent Test Block ---
+if __name__ == "__main__":
     # Mock objects for independent test
     class MockRoot: 
-        def after(self, ms, func): print(f"Loop scheduled for {ms}ms")
+        def after(self, ms, func): 
+            # Simulate a loop schedule
+            pass
+
     class MockPanels:
-        def log(self, msg): print(f"UI LOG: {msg}")
+        def log(self, msg): 
+            print(f"[UI LOG]: {msg}")
     
-    svc = TelemetryServiceMS(MockRoot(), MockPanels())
-    print("Service ready:", svc._service_info["name"])
-    svc.log_info("Internal test message")
+    # Initialize
+    svc = TelemetryServiceMS({"root": MockRoot(), "panels": MockPanels()})
+    print("Service ready:", svc)
+    
+    # Generate a log
+    logger.info("Internal test message")
+    
+    # Manually trigger one poll cycle to verify it picks up the log
     svc._poll_queue()
-
-
-

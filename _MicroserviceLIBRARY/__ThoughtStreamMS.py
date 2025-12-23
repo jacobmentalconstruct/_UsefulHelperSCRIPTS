@@ -1,27 +1,32 @@
-"""
-SERVICE_NAME: _ThoughtStreamMS
-ENTRY_POINT: __ThoughtStreamMS.py
-DEPENDENCIES: None
-"""
-
 import tkinter as tk
 from tkinter import ttk
 import datetime
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, List
+
 from microservice_std_lib import service_metadata, service_endpoint
 
+# ==============================================================================
+# MICROSERVICE CLASS
+# ==============================================================================
+
 @service_metadata(
-name="ThoughtStream",
-version="1.0.0",
-description="A UI widget for displaying a stream of AI thoughts/logs.",
-tags=["ui", "stream", "logs", "widget"],
-capabilities=["ui:gui"]
+    name="ThoughtStream",
+    version="1.0.0",
+    description="A UI widget for displaying a stream of AI thoughts/logs.",
+    tags=["ui", "stream", "logs", "widget"],
+    capabilities=["ui:gui"]
 )
 class ThoughtStreamMS(ttk.Frame):
+    """
+    The Neural Inspector: A UI widget for displaying a stream of AI thoughts/logs
+    visualized as 'bubbles' with sparklines.
+    """
+    
     def __init__(self, config: Optional[Dict[str, Any]] = None):
-self.config = config or {}
-parent = self.config.get("parent")
-super().__init__(parent)
+        self.config = config or {}
+        parent = self.config.get("parent")
+        # Initialize ttk.Frame
+        super().__init__(parent)
         
         # Header
         self.header = ttk.Label(self, text="NEURAL INSPECTOR", font=("Consolas", 10, "bold"))
@@ -44,17 +49,17 @@ super().__init__(parent)
         self.scrollbar.pack(side="right", fill="y")
 
     @service_endpoint(
-    inputs={"filename": "str", "chunk_id": "int", "content": "str", "vector_preview": "List[float]", "color": "str"},
-    outputs={},
-    description="Adds a new thought bubble to the visual stream.",
-    tags=["ui", "update"],
-    side_effects=["ui:update"]
+        inputs={"filename": "str", "chunk_id": "int", "content": "str", "vector_preview": "List[float]", "color": "str"},
+        outputs={},
+        description="Adds a new thought bubble to the visual stream.",
+        tags=["ui", "update"],
+        side_effects=["ui:update"]
     )
-    def add_thought_bubble(self, filename, chunk_id, content, vector_preview, color):
-    """
-    Mimics the 'InspectorFrame' from your React code.
-    """
-# Bubble Container
+    def add_thought_bubble(self, filename: str, chunk_id: int, content: str, vector_preview: List[float], color: str):
+        """
+        Mimics the 'InspectorFrame' from your React code.
+        """
+        # Bubble Container
         bubble = tk.Frame(self.scrollable_frame, bg="#1a1a25", highlightbackground="#444", highlightthickness=1)
         bubble.pack(fill="x", padx=5, pady=5)
         
@@ -73,7 +78,7 @@ super().__init__(parent)
         # Vector Sparkline (The Custom Draw)
         self._draw_sparkline(bubble, vector_preview, color)
 
-    def _draw_sparkline(self, parent, vector, color):
+    def _draw_sparkline(self, parent, vector: List[float], color: str):
         """
         Recreates the 'vector_preview' visual from React using a micro-canvas.
         """
@@ -82,6 +87,9 @@ super().__init__(parent)
         cv = tk.Canvas(parent, height=h, width=w, bg="#1a1a25", highlightthickness=0)
         cv.pack(padx=5, pady=2)
         
+        if not vector:
+            return
+
         bar_w = w / len(vector) if len(vector) > 0 else 0
         
         for i, val in enumerate(vector):
@@ -96,9 +104,13 @@ super().__init__(parent)
             # Draw bar
             cv.create_rectangle(x0, y0, x1, y1, fill=color, outline="")
 
-# --- Usage Example ---
+
+# --- Independent Test Block ---
 if __name__ == "__main__":
+    import random
+    
     root = tk.Tk()
+    root.title("Thought Stream Test")
     root.geometry("400x600")
     
     stream = ThoughtStreamMS({"parent": root})
@@ -106,8 +118,11 @@ if __name__ == "__main__":
     stream.pack(fill="both", expand=True)
     
     # Simulate an incoming "Microservice" event
-    import random
     fake_vector = [random.uniform(-1, 1) for _ in range(20)]
     stream.add_thought_bubble("ExplorerView.tsx", 1, "import React from 'react'...", fake_vector, "#FF00FF")
     
+    # Add another one for effect
+    fake_vector_2 = [random.uniform(-1, 1) for _ in range(20)]
+    stream.add_thought_bubble("Backend.py", 42, "def process_data(self): pass", fake_vector_2, "#00FF00")
+
     root.mainloop()

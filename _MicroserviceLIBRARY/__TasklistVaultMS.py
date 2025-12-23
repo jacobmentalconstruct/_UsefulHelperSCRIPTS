@@ -1,9 +1,3 @@
-"""
-SERVICE_NAME: _TasklistVaultMS
-ENTRY_POINT: __TasklistVaultMS.py
-DEPENDENCIES: None
-"""
-
 import sqlite3
 import uuid
 import logging
@@ -11,34 +5,38 @@ import datetime
 import json
 from pathlib import Path
 from typing import List, Optional, Dict, Any, Literal
+
 from microservice_std_lib import service_metadata, service_endpoint
 
 # ==============================================================================
 # CONFIGURATION
 # ==============================================================================
 DB_PATH = Path(__file__).parent / "task_vault.db"
-logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(message)s')
-log = logging.getLogger("TaskVault")
+logger = logging.getLogger("TaskVault")
 
 TaskStatus = Literal["Pending", "Running", "Complete", "Error", "Awaiting-Approval"]
+
+# ==============================================================================
+# MICROSERVICE CLASS
 # ==============================================================================
 
 @service_metadata(
-name="TaskVault",
-version="1.0.0",
-description="Persistent SQLite engine for hierarchical task management.",
-tags=["tasks", "db", "project-management"],
-capabilities=["db:sqlite", "filesystem:read", "filesystem:write"]
+    name="TaskVault",
+    version="1.0.0",
+    description="Persistent SQLite engine for hierarchical task management.",
+    tags=["tasks", "db", "project-management"],
+    capabilities=["db:sqlite", "filesystem:read", "filesystem:write"]
 )
 class TasklistVaultMS:
     """
-The Taskmaster: A persistent SQLite engine for hierarchical task management.
-Supports infinite nesting of sub-tasks and status tracking.
-"""
-def __init__(self, config: Optional[Dict[str, Any]] = None):
-self.config = config or {}
-self.db_path = self.config.get("db_path", DB_PATH)
-self._init_db()
+    The Taskmaster: A persistent SQLite engine for hierarchical task management.
+    Supports infinite nesting of sub-tasks and status tracking.
+    """
+    
+    def __init__(self, config: Optional[Dict[str, Any]] = None):
+        self.config = config or {}
+        self.db_path = self.config.get("db_path", DB_PATH)
+        self._init_db()
 
     def _get_conn(self):
         conn = sqlite3.connect(self.db_path)
@@ -74,14 +72,14 @@ self._init_db()
     # --- List Management ---
 
     @service_endpoint(
-    inputs={"name": "str"},
-    outputs={"list_id": "str"},
-    description="Creates a new task list and returns its ID.",
-    tags=["tasks", "create"],
-    side_effects=["db:write"]
+        inputs={"name": "str"},
+        outputs={"list_id": "str"},
+        description="Creates a new task list and returns its ID.",
+        tags=["tasks", "create"],
+        side_effects=["db:write"]
     )
     def create_list(self, name: str) -> str:
-    """Creates a new task list and returns its ID."""
+        """Creates a new task list and returns its ID."""
         list_id = str(uuid.uuid4())
         now = datetime.datetime.utcnow()
         with self._get_conn() as conn:
@@ -89,18 +87,18 @@ self._init_db()
                 "INSERT INTO task_lists (id, name, created_at) VALUES (?, ?, ?)",
                 (list_id, name, now)
             )
-        log.info(f"Created Task List: '{name}' ({list_id})")
+        logger.info(f"Created Task List: '{name}' ({list_id})")
         return list_id
 
     @service_endpoint(
-    inputs={},
-    outputs={"lists": "List[Dict]"},
-    description="Returns metadata for all task lists.",
-    tags=["tasks", "read"],
-    side_effects=["db:read"]
+        inputs={},
+        outputs={"lists": "List[Dict]"},
+        description="Returns metadata for all task lists.",
+        tags=["tasks", "read"],
+        side_effects=["db:read"]
     )
-    def get_lists(self) -> List[Dict]:
-    """Returns metadata for all task lists."""
+    def get_lists(self) -> List[Dict[str, Any]]:
+        """Returns metadata for all task lists."""
         with self._get_conn() as conn:
             rows = conn.execute("SELECT * FROM task_lists ORDER BY created_at DESC").fetchall()
             return [dict(r) for r in rows]
@@ -108,14 +106,14 @@ self._init_db()
     # --- Task Management ---
 
     @service_endpoint(
-    inputs={"list_id": "str", "content": "str", "parent_id": "Optional[str]"},
-    outputs={"task_id": "str"},
-    description="Adds a task (or sub-task) to a list.",
-    tags=["tasks", "write"],
-    side_effects=["db:write"]
+        inputs={"list_id": "str", "content": "str", "parent_id": "Optional[str]"},
+        outputs={"task_id": "str"},
+        description="Adds a task (or sub-task) to a list.",
+        tags=["tasks", "write"],
+        side_effects=["db:write"]
     )
     def add_task(self, list_id: str, content: str, parent_id: Optional[str] = None) -> str:
-    """Adds a task (or sub-task) to a list."""
+        """Adds a task (or sub-task) to a list."""
         task_id = str(uuid.uuid4())
         now = datetime.datetime.utcnow()
         with self._get_conn() as conn:
@@ -127,14 +125,14 @@ self._init_db()
         return task_id
 
     @service_endpoint(
-    inputs={"task_id": "str", "content": "str", "status": "str", "result": "str"},
-    outputs={},
-    description="Updates a task's details.",
-    tags=["tasks", "update"],
-    side_effects=["db:write"]
+        inputs={"task_id": "str", "content": "str", "status": "str", "result": "str"},
+        outputs={},
+        description="Updates a task's details.",
+        tags=["tasks", "update"],
+        side_effects=["db:write"]
     )
     def update_task(self, task_id: str, content: str = None, status: TaskStatus = None, result: str = None):
-    """Updates a task's details."""
+        """Updates a task's details."""
         updates = []
         params = []
         
@@ -158,25 +156,25 @@ self._init_db()
         
         with self._get_conn() as conn:
             conn.execute(sql, params)
-        log.info(f"Updated task {task_id}")
+        logger.info(f"Updated task {task_id}")
 
     # --- Tree Reconstruction ---
 
     @service_endpoint(
-    inputs={"list_id": "str"},
-    outputs={"tree": "Dict[str, Any]"},
-    description="Fetches a list and reconstructs the full hierarchy of tasks.",
-    tags=["tasks", "read"],
-    side_effects=["db:read"]
+        inputs={"list_id": "str"},
+        outputs={"tree": "Dict[str, Any]"},
+        description="Fetches a list and reconstructs the full hierarchy of tasks.",
+        tags=["tasks", "read"],
+        side_effects=["db:read"]
     )
     def get_full_tree(self, list_id: str) -> Dict[str, Any]:
-    """
-    Fetches a list and reconstructs the full hierarchy of tasks.
-    """
+        """
+        Fetches a list and reconstructs the full hierarchy of tasks.
+        """
         with self._get_conn() as conn:
-# 1. Get List Info
+            # 1. Get List Info
             list_row = conn.execute("SELECT * FROM task_lists WHERE id = ?", (list_id,)).fetchone()
-            if not list_row: return None
+            if not list_row: return {}
             
             # 2. Get All Tasks
             task_rows = conn.execute("SELECT * FROM tasks WHERE list_id = ?", (list_id,)).fetchall()
@@ -204,22 +202,31 @@ self._init_db()
         }
 
     @service_endpoint(
-    inputs={"list_id": "str"},
-    outputs={},
-    description="Deletes a task list and all its tasks.",
-    tags=["tasks", "delete"],
-    side_effects=["db:write"]
+        inputs={"list_id": "str"},
+        outputs={},
+        description="Deletes a task list and all its tasks.",
+        tags=["tasks", "delete"],
+        side_effects=["db:write"]
     )
     def delete_list(self, list_id: str):
         with self._get_conn() as conn:
             conn.execute("DELETE FROM task_lists WHERE id = ?", (list_id,))
-        log.info(f"Deleted list {list_id}")
+        logger.info(f"Deleted list {list_id}")
+
+
 # --- Independent Test Block ---
 if __name__ == "__main__":
     import os
-    if DB_PATH.exists(): os.remove(DB_PATH)
     
-    vault = TasklistVaultMS()
+    # Use a test DB
+    test_db = Path("test_task_vault.db")
+    if test_db.exists(): 
+        os.remove(test_db)
+    
+    # Setup logging
+    logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(message)s')
+
+    vault = TasklistVaultMS({"db_path": test_db})
     print("Service ready:", vault)
     
     # 1. Create a Plan
@@ -239,7 +246,7 @@ if __name__ == "__main__":
     
     # 5. Render Tree
     tree = vault.get_full_tree(plan_id)
-    print(f"\n--- {tree['name']} ---")
+    print(f"\n--- {tree.get('name')} ---")
     
     def print_node(node, indent=0):
         status_icon = "✓" if node['status'] == 'Complete' else "○"
@@ -247,8 +254,10 @@ if __name__ == "__main__":
         for child in node['sub_tasks']:
             print_node(child, indent + 1)
 
-    for task in tree['tasks']:
-        print_node(task)
+    if 'tasks' in tree:
+        for task in tree['tasks']:
+            print_node(task)
         
     # Cleanup
-    if DB_PATH.exists(): os.remove(DB_PATH)
+    if test_db.exists(): 
+        os.remove(test_db)

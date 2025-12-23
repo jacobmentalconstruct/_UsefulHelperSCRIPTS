@@ -1,79 +1,74 @@
-"""
-SERVICE_NAME: _TkinterUniButtonMS
-ENTRY_POINT: __TkinterUniButtonMS.py
-DEPENDENCIES: None
-"""
-
-## Locking Dual Button - Instructions
-# TO USE:
-# In your main app file
-# from components import UnifiedButtonGroup # assuming you saved the TkinterUniButtonMS there
-# 
-# def my_validation_logic():
-#     # do pandas stuff, etc
-#     pass
-# 
-# def my_apply_logic():
-#    # do database stuff
-#     pass
-# 
-# Drop the button group into your GUI
-# my_buttons = UnifiedButtonGroup(
-#     parent=my_frame, 
-#     on_validate=my_validation_logic, 
-#     on_apply=my_apply_logic
-# )
-# my_buttons.pack()
-## 
-
 import tkinter as tk
-from dataclasses import dataclass, field
-from typing import Any, Dict, Optional
+from dataclasses import dataclass
+from typing import Any, Dict, Optional, Callable
+
 from microservice_std_lib import service_metadata, service_endpoint
 
-@dataclass TkinterUniButtonMS ButtonConfig:
+# ==============================================================================
+# CONFIGURATION MODELS
+# ==============================================================================
+
+@dataclass
+class ButtonConfig:
     text: str
-    command: callable
+    command: Callable[[], None]
     bg_color: str
     active_bg_color: str
     fg_color: str = "#FFFFFF"
 
 @dataclass
-TkinterUniButtonMS LinkConfig:
+class LinkConfig:
     """Configuration for the 'Linked' state (The Trap)"""
     trap_bg: str = "#7C3AED"    # Deep Purple
     btn_bg: str = "#8B5CF6"     # Lighter Purple
     text_color: str = "#FFFFFF"
 
+# ==============================================================================
+# MICROSERVICE CLASS
+# ==============================================================================
+
 @service_metadata(
-name="LockingDualBtn",
-version="1.0.0",
-description="A unified button group (Left/Right/Link) where linking merges the actions.",
-tags=["ui", "widget", "button"],
-capabilities=["ui:gui"]
+    name="LockingDualBtn",
+    version="1.0.0",
+    description="A unified button group (Left/Right/Link) where linking merges the actions.",
+    tags=["ui", "widget", "button"],
+    capabilities=["ui:gui"]
 )
-TkinterUniButtonMS LockingDualBtnMS(tk.Frame):
-"""
-A generic button group that can merge ANY two actions.
-Pass the visual/functional definitions in via the config objects.
-"""
-def __init__(self, config: Optional[Dict[str, Any]] = None):
-self.config = config or {}
-parent = self.config.get("parent")
-super().__init__(parent)
+class TkinterUniButtonMS(tk.Frame):
+    """
+    A generic button group that can merge ANY two actions.
+    Pass the visual/functional definitions in via the config objects.
+    """
+    
+    def __init__(self, config: Optional[Dict[str, Any]] = None):
+        self.config = config or {}
+        parent = self.config.get("parent")
+        # Initialize tk.Frame
+        super().__init__(parent)
         
-self.left_cfg = self.config.get("left_btn")
-self.right_cfg = self.config.get("right_btn")
-self.link_cfg = self.config.get("link_config") or LinkConfig()
+        # Extract Button Configurations
+        self.left_cfg: Optional[ButtonConfig] = self.config.get("left_btn")
+        self.right_cfg: Optional[ButtonConfig] = self.config.get("right_btn")
+        self.link_cfg: LinkConfig = self.config.get("link_config") or LinkConfig()
         
         self.is_linked = False
-        self.default_bg = parent.cget("bg") # Fallback to parent background
+        
+        # Attempt to get parent background for seamless look
+        try:
+            self.default_bg = parent.cget("bg")
+        except AttributeError:
+            self.default_bg = "#f0f0f0"
+
+        if not self.left_cfg or not self.right_cfg:
+            # Fallback for safe init if configs are missing
+            print("Warning: TkinterUniButtonMS initialized without button configs.")
+            return
 
         self._setup_ui()
         self._update_state()
 
     def _setup_ui(self):
-        self.config(padx=4, pady=4)
+        self.configure(padx=4, pady=4)
         
         common_style = {"relief": "flat", "font": ("Segoe UI", 10, "bold"), "bd": 0, "cursor": "hand2"}
 
@@ -96,23 +91,25 @@ self.link_cfg = self.config.get("link_config") or LinkConfig()
     def _update_state(self):
         if self.is_linked:
             # --- LINKED STATE (The Trap) ---
-            self.config(bg=self.link_cfg.trap_bg)
+            self.configure(bg=self.link_cfg.trap_bg)
             
             # Both buttons look identical in the "Trap"
             for btn in (self.btn_left, self.btn_right, self.btn_link):
-                btn.config(bg=self.link_cfg.btn_bg, fg=self.link_cfg.text_color, activebackground=self.link_cfg.trap_bg)
+                btn.configure(bg=self.link_cfg.btn_bg, fg=self.link_cfg.text_color, activebackground=self.link_cfg.trap_bg)
             
             # Keep original text
-            self.btn_left.config(text=self.left_cfg.text)
-            self.btn_right.config(text=self.right_cfg.text)
+            self.btn_left.configure(text=self.left_cfg.text)
+            self.btn_right.configure(text=self.right_cfg.text)
 
         else:
             # --- INDEPENDENT STATE ---
-            try: self.config(bg=self.default_bg)
-            except: self.config(bg="#f0f0f0") 
+            try: 
+                self.configure(bg=self.default_bg)
+            except: 
+                self.configure(bg="#f0f0f0") 
 
             # Restore Left Button
-            self.btn_left.config(
+            self.btn_left.configure(
                 text=self.left_cfg.text, 
                 bg=self.left_cfg.bg_color, 
                 fg=self.left_cfg.fg_color,
@@ -120,7 +117,7 @@ self.link_cfg = self.config.get("link_config") or LinkConfig()
             )
 
             # Restore Right Button
-            self.btn_right.config(
+            self.btn_right.configure(
                 text=self.right_cfg.text, 
                 bg=self.right_cfg.bg_color, 
                 fg=self.right_cfg.fg_color,
@@ -128,7 +125,7 @@ self.link_cfg = self.config.get("link_config") or LinkConfig()
             )
 
             # Restore Link Button (Neutral Gray)
-            self.btn_link.config(bg="#E5E7EB", fg="#374151", activebackground="#D1D5DB")
+            self.btn_link.configure(bg="#E5E7EB", fg="#374151", activebackground="#D1D5DB")
 
     def _execute(self, source):
         if self.is_linked:
@@ -136,14 +133,33 @@ self.link_cfg = self.config.get("link_config") or LinkConfig()
             self.left_cfg.command()
             self.right_cfg.command()
         else:
-        if source == "left": self.left_cfg.command()
-        elif source == "right": self.right_cfg.command()
+            if source == "left": 
+                self.left_cfg.command()
+            elif source == "right": 
+                self.right_cfg.command()
 
-        if __name__ == "__main__":
-        root = tk.Tk()
-        btn1 = ButtonConfig("Save", lambda: print("Save"), "#444", "#555")
-        btn2 = ButtonConfig("Run", lambda: print("Run"), "#444", "#555")
-        svc = LockingDualBtnMS({"parent": root, "left_btn": btn1, "right_btn": btn2})
-        print("Service ready:", svc)
-        svc.pack(pady=20)
-        root.mainloop()
+
+# --- Independent Test Block ---
+if __name__ == "__main__":
+    root = tk.Tk()
+    root.title("UniButton Test")
+    root.geometry("300x100")
+    
+    # Define actions
+    def on_validate(): print("Validating Data...")
+    def on_apply(): print("Applying Changes...")
+    
+    # Create Configs
+    btn1 = ButtonConfig("Validate", on_validate, "#3b82f6", "#2563eb") # Blue
+    btn2 = ButtonConfig("Apply", on_apply, "#10b981", "#059669")       # Green
+    
+    # Init Service
+    svc = TkinterUniButtonMS({
+        "parent": root, 
+        "left_btn": btn1, 
+        "right_btn": btn2
+    })
+    print("Service ready:", svc)
+    svc.pack(pady=20)
+    
+    root.mainloop()
