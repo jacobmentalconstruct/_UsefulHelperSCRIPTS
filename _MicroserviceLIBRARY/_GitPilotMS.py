@@ -1,6 +1,6 @@
 """
 SERVICE_NAME: _GitPilotMS
-ENTRY_POINT: __GitPilotMS.py
+ENTRY_POINT: _GitPilotMS.py
 DEPENDENCIES: None
 """
 
@@ -19,7 +19,6 @@ from microservice_std_lib import service_metadata, service_endpoint
 # ==============================================================================
 # CONFIGURATION
 # ==============================================================================
-# Detect if GitHub CLI is available
 def which(cmd: str) -> Optional[str]:
     for p in os.environ.get("PATH", "").split(os.pathsep):
         f = Path(p) / cmd
@@ -32,13 +31,14 @@ def which(cmd: str) -> Optional[str]:
 USE_GH = which("gh") is not None
 # ==============================================================================
 
-@dataclass GitPilotMS GitStatusEntry:
+@dataclass
+class GitStatusEntry:
     path: str
     index: str
     workdir: str
 
 @dataclass
-GitPilotMS GitStatus:
+class GitStatus:
     repo_path: str
     branch: Optional[str]
     ahead: int
@@ -46,15 +46,15 @@ GitPilotMS GitStatus:
     entries: List[GitStatusEntry]
 
 # --- Backend: The Git Wrapper ---
-GitPilotMS GitCLI:
+class GitCLI:
     """
     A robust wrapper around the git command line executable.
     """
     def __init__(self, repo_path: Path):
         self.root = self._resolve_repo_root(repo_path)
-def _run(self, args: List[str], *, cwd: Optional[Path] = None) -> Tuple[str, str]:
+
+    def _run(self, args: List[str], *, cwd: Optional[Path] = None) -> Tuple[str, str]:
         cmd = ["git", *args]
-        # Prevent console window popping up on Windows
         startupinfo = None
         if os.name == 'nt':
             startupinfo = subprocess.STARTUPINFO()
@@ -172,7 +172,7 @@ def _run(self, args: List[str], *, cwd: Optional[Path] = None) -> Tuple[str, str
         args = ["push", remote]
         if branch: args.append(branch)
         out, _ = self._run(args)
-return out
+        return out
 
     def pull(self, remote: str = "origin", branch: Optional[str] = None) -> str:
         if branch: out, _ = self._run(["pull", remote, branch])
@@ -180,7 +180,7 @@ return out
         return out
 
 # --- Threading Helper ---
-GitPilotMS Worker:
+class Worker:
     def __init__(self, ui_callback):
         self.q = queue.Queue()
         self.ui_callback = ui_callback
@@ -210,9 +210,8 @@ GitPilotMS Worker:
     dependencies=["git", "subprocess", "tkinter"],
     side_effects=["filesystem:read", "filesystem:write", "network:outbound", "ui:update"]
 )
-class GitPilotMS(BaseService, ttk.Frame):
+class GitPilotMS(ttk.Frame):
     def __init__(self, config: Optional[Dict[str, Any]] = None):
-        super().__init__("GitPilotMS")
         self.config = config or {}
         parent = self.config.get("parent")
         ttk.Frame.__init__(self, parent)
@@ -226,35 +225,35 @@ class GitPilotMS(BaseService, ttk.Frame):
         if initial_path:
             self.set_repo(initial_path)
 
-@service_endpoint(
-inputs={"path": "Path"},
-outputs={},
-description="Sets the active repository path and refreshes status.",
-tags=["git", "config"],
-side_effects=["filesystem:read", "ui:update"]
-)
-def set_repo(self, path: Path):
-    try:
-        self.git = GitCLI(path)
-        self.repo_path = self.git.root
-        self.path_var.set(f"Repo: {self.repo_path}")
-        self._refresh()
-    except Exception as e:
-        self.path_var.set(f"Error: {e}")
+    @service_endpoint(
+        inputs={"path": "Path"},
+        outputs={},
+        description="Sets the active repository path and refreshes status.",
+        tags=["git", "config"],
+        side_effects=["filesystem:read", "ui:update"]
+    )
+    def set_repo(self, path: Path):
+        try:
+            self.git = GitCLI(path)
+            self.repo_path = self.git.root
+            self.path_var.set(f"Repo: {self.repo_path}")
+            self._refresh()
+        except Exception as e:
+            self.path_var.set(f"Error: {e}")
 
-def _build_ui(self):
-    self.columnconfigure(0, weight=1)
-    self.rowconfigure(1, weight=1)
+    def _build_ui(self):
+        self.columnconfigure(0, weight=1)
+        self.rowconfigure(1, weight=1)
 
-    # Status Bar
-    bar = ttk.Frame(self)
-    bar.grid(row=0, column=0, sticky="ew")
-    self.path_var = tk.StringVar(value="No Repo Selected")
-    self.busy_var = tk.StringVar()
-    ttk.Label(bar, textvariable=self.path_var).pack(side="left", padx=5)
-    ttk.Label(bar, textvariable=self.busy_var, foreground="blue").pack(side="right", padx=5)
+        # Status Bar
+        bar = ttk.Frame(self)
+        bar.grid(row=0, column=0, sticky="ew")
+        self.path_var = tk.StringVar(value="No Repo Selected")
+        self.busy_var = tk.StringVar()
+        ttk.Label(bar, textvariable=self.path_var).pack(side="left", padx=5)
+        ttk.Label(bar, textvariable=self.busy_var, foreground="blue").pack(side="right", padx=5)
 
-    # Tabs
+        # Tabs
         self.nb = ttk.Notebook(self)
         self.nb.grid(row=1, column=0, sticky="nsew")
         
@@ -402,4 +401,3 @@ if __name__ == "__main__":
     panel.pack(fill="both", expand=True)
     
     root.mainloop()
-

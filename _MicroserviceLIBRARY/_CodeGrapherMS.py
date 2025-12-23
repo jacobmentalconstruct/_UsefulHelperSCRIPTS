@@ -1,6 +1,6 @@
 """
 SERVICE_NAME: _CodeGrapherMS
-ENTRY_POINT: __CodeGrapherMS.py
+ENTRY_POINT: _CodeGrapherMS.py
 DEPENDENCIES: None
 """
 

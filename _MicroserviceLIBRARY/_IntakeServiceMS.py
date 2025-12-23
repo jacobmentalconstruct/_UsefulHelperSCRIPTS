@@ -1,6 +1,6 @@
 """
 SERVICE_NAME: _IntakeServiceMS
-ENTRY_POINT: __IntakeServiceMS.py
+ENTRY_POINT: _IntakeServiceMS.py
 DEPENDENCIES: None
 """
 

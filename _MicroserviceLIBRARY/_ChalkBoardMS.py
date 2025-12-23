@@ -1,6 +1,6 @@
 """
 SERVICE_NAME: _ChalkBoardMS
-ENTRY_POINT: __ChalkBoardMS.py
+ENTRY_POINT: _ChalkBoardMS.py
 DEPENDENCIES: None
 """
 

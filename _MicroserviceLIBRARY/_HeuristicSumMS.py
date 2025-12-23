@@ -1,6 +1,6 @@
 """
 SERVICE_NAME: _HeuristicSumMS
-ENTRY_POINT: __HeuristicSumMS.py
+ENTRY_POINT: _HeuristicSumMS.py
 DEPENDENCIES: None
 """
 

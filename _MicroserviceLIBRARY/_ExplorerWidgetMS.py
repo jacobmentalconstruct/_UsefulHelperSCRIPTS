@@ -1,6 +1,6 @@
 """
 SERVICE_NAME: _ExplorerWidgetMS
-ENTRY_POINT: __ExplorerWidgetMS.py
+ENTRY_POINT: _ExplorerWidgetMS.py
 DEPENDENCIES: microservice-std-lib>=1.0.0
 """
 

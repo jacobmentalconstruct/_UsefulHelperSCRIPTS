@@ -1,6 +1,6 @@
 """
 SERVICE_NAME: _FingerprintScannerMS
-ENTRY_POINT: __FingerprintScannerMS.py
+ENTRY_POINT: _FingerprintScannerMS.py
 DEPENDENCIES: None
 """
 
@@ -14,7 +14,6 @@ from microservice_std_lib import service_metadata, service_endpoint
 # ==============================================================================
 # CONFIGURATION
 # ==============================================================================
-# Folders to ignore during the scan (Standard developer noise)
 DEFAULT_IGNORE_DIRS = {
     "node_modules", ".git", "__pycache__", ".venv", "venv", "env",
     ".mypy_cache", ".pytest_cache", ".idea", ".vscode", 
@@ -22,7 +21,6 @@ DEFAULT_IGNORE_DIRS = {
     "_project_library", "_sandbox", "_logs"
 }
 
-# Files to ignore
 DEFAULT_IGNORE_FILES = {
     ".DS_Store", "Thumbs.db", "*.log", "*.tmp", "*.lock"
 }
@@ -40,32 +38,25 @@ log = logging.getLogger("Fingerprint")
     dependencies=["hashlib", "os"],
     side_effects=["filesystem:read"]
 )
-class FingerprintScannerMS(BaseService):
+class FingerprintScannerMS:
     """
     The Detective: Scans a directory tree and generates a deterministic
     'Fingerprint' (SHA-256 Merkle Root) representing its exact state.
     """
 
     def __init__(self, config: Optional[Dict[str, Any]] = None):
-        super().__init__("FingerprintScannerMS")
         self.config = config or {}
 
     @service_endpoint(
-    inputs={"root_path": "str"},
-    outputs={"state": "Dict[str, Any]"},
-    description="Scans the project and returns a comprehensive state object (hashes + Merkle root).",
-    tags=["scanning", "read"],
-    side_effects=["filesystem:read"]
+        inputs={"root_path": "str"},
+        outputs={"state": "Dict[str, Any]"},
+        description="Scans the project and returns a comprehensive state object (hashes + Merkle root).",
+        tags=["scanning", "read"],
+        side_effects=["filesystem:read"]
     )
-def scan_project(self, root_path: str) -> Dict[str, Any]:
+    def scan_project(self, root_path: str) -> Dict[str, Any]:
         """
         Scans the project and returns a comprehensive state object.
-            output = {
-                "root": str,
-                "project_fingerprint": str (The global hash),
-                "file_hashes": {rel_path: sha256},
-                "file_count": int
-            }
         """
         root = Path(root_path).resolve()
         if not root.exists():
@@ -74,7 +65,6 @@ def scan_project(self, root_path: str) -> Dict[str, Any]:
         file_map = {}
         
         # 1. Walk and Hash
-        # Use sorted() to ensure iteration order doesn't affect the final hash
         for path in sorted(root.rglob("*")):
             if path.is_file():
                 if self._should_ignore(path, root):
@@ -86,8 +76,7 @@ def scan_project(self, root_path: str) -> Dict[str, Any]:
                 if file_hash:
                     file_map[rel_path] = file_hash
 
-        # 2. Calculate Merkle Root (Global Fingerprint)
-        # We sort by relative path to ensure deterministic ordering
+        # 2. Calculate Merkle Root
         sorted_hashes = [file_map[p] for p in sorted(file_map.keys())]
         combined_data = "".join(sorted_hashes).encode('utf-8')
         project_fingerprint = hashlib.sha256(combined_data).hexdigest()
@@ -105,29 +94,20 @@ def scan_project(self, root_path: str) -> Dict[str, Any]:
         """Checks path against exclusion lists."""
         try:
             rel_parts = path.relative_to(root).parts
-            
-            # Check directories
-            # If any parent directory is in the ignore list, skip
             for part in rel_parts[:-1]: 
-                if part in DEFAULT_IGNORE_DIRS:
-                    return True
+                if part in DEFAULT_IGNORE_DIRS: return True
             
-            # Check filename
             import fnmatch
             name = path.name
-            if name in DEFAULT_IGNORE_FILES:
-                return True
-            if any(fnmatch.fnmatch(name, pat) for pat in DEFAULT_IGNORE_FILES):
-                return True
+            if name in DEFAULT_IGNORE_FILES: return True
+            if any(fnmatch.fnmatch(name, pat) for pat in DEFAULT_IGNORE_FILES): return True
                 
             return False
         except ValueError:
             return True
 
     def _hash_file(self, path: Path) -> Optional[str]:
-        """Reads file bytes and returns SHA256 hash."""
         try:
-            # Read binary to avoid encoding issues and to hash exact content
             content = path.read_bytes()
             return hashlib.sha256(content).hexdigest()
         except (PermissionError, OSError):
@@ -138,7 +118,6 @@ def scan_project(self, root_path: str) -> Dict[str, Any]:
 if __name__ == "__main__":
     import time
     
-    # 1. Create a dummy project
     test_dir = Path("test_fingerprint_proj")
     if test_dir.exists():
         import shutil
@@ -146,38 +125,14 @@ if __name__ == "__main__":
     test_dir.mkdir()
     
     (test_dir / "main.py").write_text("print('hello')")
-    (test_dir / "utils.py").write_text("def add(a,b): return a+b")
     
     scanner = FingerprintScannerMS()
     print("Service ready:", scanner)
     
-    # 2. Initial Scan
     print("--- Scan 1 (Initial) ---")
     state_1 = scanner.scan_project(str(test_dir))
     print(f"Fingerprint 1: {state_1['project_fingerprint']}")
     
-    # 3. Modify a file
-    print("\n--- Modifying 'main.py' ---")
-    time.sleep(0.1) # Ensure filesystem timestamp tick (though we hash content)
-    (test_dir / "main.py").write_text("print('hello world')")
-    
-    # 4. Scan again
-    print("--- Scan 2 (After Modification) ---")
-    state_2 = scanner.scan_project(str(test_dir))
-    print(f"Fingerprint 2: {state_2['project_fingerprint']}")
-    
-    # 5. Compare
-    if state_1['project_fingerprint'] != state_2['project_fingerprint']:
-        print("\n✅ SUCCESS: Fingerprint changed as expected.")
-        # Find the diff
-        for path, h in state_2['file_hashes'].items():
-            if state_1['file_hashes'].get(path) != h:
-                print(f"   Changed File: {path}")
-    else:
-        print("\n❌ FAILURE: Fingerprint did not change.")
-
-    # Cleanup
-if test_dir.exists():
-    import shutil
-    shutil.rmtree(test_dir)
-
+    if test_dir.exists():
+        import shutil
+        shutil.rmtree(test_dir)

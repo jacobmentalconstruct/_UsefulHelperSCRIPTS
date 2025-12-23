@@ -1,6 +1,6 @@
 """
 SERVICE_NAME: _DiffEngineMS
-ENTRY_POINT: __DiffEngineMS.py
+ENTRY_POINT: _DiffEngineMS.py
 DEPENDENCIES: None
 """
 
@@ -30,7 +30,7 @@ log = logging.getLogger("DiffEngine")
     dependencies=["sqlite3", "difflib", "uuid", "datetime"],
     side_effects=["db:read", "db:write"]
 )
-class DiffEngineMS(BaseService):
+class DiffEngineMS:
     """
     The Timekeeper: Implements a 'Hybrid' versioning architecture.
     1. HEAD: Stores full current content for fast read access (UI/RAG).
@@ -38,7 +38,6 @@ class DiffEngineMS(BaseService):
     """
 
     def __init__(self, config: Optional[Dict[str, Any]] = None):
-        super().__init__("DiffEngineMS")
         self.config = config or {}
         self.db_path = Path(self.config.get("db_path", DB_PATH))
         self._init_db()
@@ -76,21 +75,19 @@ class DiffEngineMS(BaseService):
     # --- Core Workflow ---
 
     @service_endpoint(
-    inputs={"path": "str", "new_content": "str", "author": "str"},
-    outputs={"status": "str", "file_id": "str"},
-    description="Updates a file, creating a diff history entry and updating the head state.",
-    tags=["version-control", "write"],
-    side_effects=["db:write"]
+        inputs={"path": "str", "new_content": "str", "author": "str"},
+        outputs={"status": "str", "file_id": "str"},
+        description="Updates a file, creating a diff history entry and updating the head state.",
+        tags=["version-control", "write"],
+        side_effects=["db:write"]
     )
     def update_file(self, path: str, new_content: str, author: str = "agent") -> Dict[str, Any]:
-    """
-    The Atomic Update Operation:
-    1. Checks current state.
+        """
+        The Atomic Update Operation:
+        1. Checks current state.
         2. Calculates Diff.
         3. Writes Diff to History.
         4. Updates Head to New Content.
-        
-        Returns: Dict with status (changed/unchanged), file_id, and diff_summary.
         """
         path = str(Path(path).as_posix()) # Normalize path
         now = datetime.datetime.utcnow()
@@ -98,7 +95,8 @@ class DiffEngineMS(BaseService):
         with self._get_conn() as conn:
             # 1. Fetch Head
             row = conn.execute("SELECT id, content FROM files WHERE path = ?", (path,)).fetchone()
-if not row:
+            
+            if not row:
                 # --- CASE: NEW FILE ---
                 file_id = str(uuid.uuid4())
                 conn.execute(
@@ -114,11 +112,9 @@ if not row:
             old_content = row['content'] or ""
 
             # 2. Calculate Diff
-            # difflib needs lists of lines
             old_lines = old_content.splitlines(keepends=True)
             new_lines = new_content.splitlines(keepends=True)
 
-            # Standard unified diff
             diff_gen = difflib.unified_diff(
                 old_lines, new_lines, 
                 fromfile=f"a/{path}", tofile=f"b/{path}",
@@ -150,27 +146,27 @@ if not row:
     # --- Retrieval ---
 
     @service_endpoint(
-    inputs={"path": "str"},
-    outputs={"content": "Optional[str]"},
-    description="Fast retrieval of current content.",
-    tags=["version-control", "read"],
-    side_effects=["db:read"]
+        inputs={"path": "str"},
+        outputs={"content": "Optional[str]"},
+        description="Fast retrieval of current content.",
+        tags=["version-control", "read"],
+        side_effects=["db:read"]
     )
     def get_head(self, path: str) -> Optional[str]:
-    """Fast retrieval of current content."""
+        """Fast retrieval of current content."""
         with self._get_conn() as conn:
             row = conn.execute("SELECT content FROM files WHERE path = ?", (path,)).fetchone()
             return row['content'] if row else None
 
     @service_endpoint(
-    inputs={"path": "str"},
-    outputs={"history": "List[Dict]"},
-    description="Retrieves the full evolution history of a file.",
-    tags=["version-control", "read"],
-    side_effects=["db:read"]
+        inputs={"path": "str"},
+        outputs={"history": "List[Dict]"},
+        description="Retrieves the full evolution history of a file.",
+        tags=["version-control", "read"],
+        side_effects=["db:read"]
     )
     def get_history(self, path: str) -> List[Dict]:
-    """Retrieves the full evolution history of a file."""
+        """Retrieves the full evolution history of a file."""
         with self._get_conn() as conn:
             row = conn.execute("SELECT id FROM files WHERE path = ?", (path,)).fetchone()
             if not row: return []
@@ -184,17 +180,16 @@ if not row:
 
 # --- Independent Test Block ---
 if __name__ == "__main__":
-import os
-if DB_PATH.exists(): os.remove(DB_PATH)
+    import os
+    if DB_PATH.exists(): os.remove(DB_PATH)
     
-engine = DiffEngineMS()
-print("Service ready:", engine)
+    engine = DiffEngineMS()
+    print("Service ready:", engine)
     
     print("--- 1. Creating File ---")
     engine.update_file("notes.txt", "Todo List:\n1. Buy Milk\n")
     
     print("\n--- 2. Updating File (The Rising Edge) ---")
-    # Change: Add 'Buy Eggs', Remove 'Buy Milk' (Simulating a replacement)
     new_text = "Todo List:\n1. Buy Eggs\n2. Code Python\n"
     res = engine.update_file("notes.txt", new_text, author="Jacob")
     
@@ -209,7 +204,4 @@ print("Service ready:", engine)
     print("\n--- 4. Inspecting Head (Cache) ---")
     print(engine.get_head("notes.txt"))
     
-    # Cleanup
     if DB_PATH.exists(): os.remove(DB_PATH)
-
-

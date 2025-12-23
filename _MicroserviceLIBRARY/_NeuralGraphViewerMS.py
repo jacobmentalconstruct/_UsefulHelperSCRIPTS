@@ -1,6 +1,6 @@
 """
 SERVICE_NAME: _NeuralGraphViewerMS
-ENTRY_POINT: __NeuralGraphViewerMS.py
+ENTRY_POINT: _NeuralGraphViewerMS.py
 DEPENDENCIES: None
 """
 

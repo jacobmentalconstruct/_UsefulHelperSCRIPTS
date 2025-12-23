@@ -1,226 +1,197 @@
+"""
+SERVICE_NAME: _LibrarianMS
+ENTRY_POINT: _LibrarianMS.py
+DEPENDENCIES: pip install requests
+"""
+
+# --- RUNTIME DEPENDENCY CHECK ---
+import importlib.util
+if importlib.util.find_spec("requests") is None:
+    print("! MISSING DEPENDENCY: pip install requests")
+
+import ast
 import os
-import shutil
-import sqlite3
-import time
+import datetime
+import logging
+import requests
+import concurrent.futures
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Dict, List, Any, Optional
 
 from microservice_std_lib import service_metadata, service_endpoint
 
 # ==============================================================================
-# MICROSERVICE CLASS
+# ⚙️ SWARM CONFIGURATION
+# ==============================================================================
+ENABLE_AI = True
+OLLAMA_URL = "http://localhost:11434/api/generate"
+
+# 1. The Worker Drone (Fast, CPU-Optimized)
+MODEL_WORKER = "qwen2.5-coder:1.5b-cpu"
+
+# 2. The Architect (Smarter, Slower)
+MODEL_ARCHITECT = "qwen2.5-coder:3b-cpu"
+
+# 3. Swarm Size (4 workers for Ryzen 3800x)
+MAX_WORKERS = 4 
+
+MAX_CONTEXT_CHARS = 16000 
 # ==============================================================================
 
+logger = logging.getLogger("Librarian")
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(message)s')
+
 @service_metadata(
-    name="LibrarianService",
-    version="1.0.0",
-    description="Manages the lifecycle (create, list, delete) of Knowledge Base files.",
-    tags=["kb", "management", "filesystem"],
-    capabilities=["filesystem:read", "filesystem:write", "db:sqlite"]
+    name="Librarian",
+    version="3.0.0",
+    description="Uses a swarm of local AI models to generate a 'Card Catalogue'.",
+    tags=["documentation", "ai", "catalog", "swarm"],
+    capabilities=["filesystem:read", "filesystem:write", "network:outbound", "compute:parallel"]
 )
-class LibrarianServiceMS:
-    """
-    The Librarian: Manages the physical creation, deletion, and listing
-    of Knowledge Base (KB) files.
-    """
-    
+class LibrarianMS:
     def __init__(self, config: Optional[Dict[str, Any]] = None):
         self.config = config or {}
-        storage_dir = self.config.get("storage_dir", "./cortex_dbs")
-        self.storage_dir = Path(storage_dir)
-        self.storage_dir.mkdir(parents=True, exist_ok=True)
+        self.root = Path(self.config.get("root_path", ".")).resolve()
 
     @service_endpoint(
-        inputs={},
-        outputs={"kbs": "List[str]"},
-        description="Lists available Knowledge Base files.",
-        tags=["kb", "read"],
-        side_effects=["filesystem:read"]
+        inputs={"output_file": "str"},
+        outputs={"path": "str", "service_count": "int"},
+        description="Unleashes the AI swarm to generate a catalog.",
+        tags=["catalog", "generate"]
     )
-    def list_kbs(self) -> List[str]:
-        """
-        Scans the storage directory for .db files.
-        Equivalent to api.listKBs() in Sidebar.tsx.
-        """
-        if not self.storage_dir.exists():
-            return []
-        
-        # Return simple filenames sorted by modification time (newest first)
-        files = list(self.storage_dir.glob("*.db"))
-        files.sort(key=os.path.getmtime, reverse=True)
-        return [f.name for f in files]
+    def generate_catalog(self, output_file: str = "LIBRARY_CATALOGUE.md") -> Dict[str, Any]:
+        services = []
+        print(f"\n🚀 LAUNCHING SWARM (Workers: {MAX_WORKERS} | Model: {MODEL_WORKER})...")
 
-    @service_endpoint(
-        inputs={"name": "str"},
-        outputs={"status": "Dict"},
-        description="Creates a new Knowledge Base with the standard schema.",
-        tags=["kb", "create"],
-        side_effects=["filesystem:write", "db:write"]
-    )
-    def create_kb(self, name: str) -> Dict[str, str]:
-        """
-        Creates a new SQLite database and initializes the Cortex Schema.
-        """
-        safe_name = self._sanitize_name(name)
-        db_path = self.storage_dir / safe_name
-        
-        if db_path.exists():
-            raise FileExistsError(f"Knowledge Base '{safe_name}' already exists.")
+        # 1. Identify Targets
+        ms_files = list(self.root.glob("*MS.py"))
+        targets = [f for f in ms_files if f.name.startswith("_")]
+        print(f"🎯 Targets acquired: {len(targets)} microservices.\n")
 
+        # 2. Parallel Processing
+        with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
+            future_to_file = {executor.submit(self._inspect_file, f): f for f in targets}
+            
+            for future in concurrent.futures.as_completed(future_to_file):
+                f_path = future_to_file[future]
+                try:
+                    info = future.result()
+                    if info:
+                        services.append(info)
+                        print(f"  ✨ Indexed: {f_path.name}")
+                except Exception as e:
+                    print(f"  ❌ Failed: {f_path.name} - {e}")
+
+        # 3. Sort
+        services.sort(key=lambda x: x['name'])
+
+        # 4. Generate Summary
+        system_summary = self._generate_system_summary(services)
+
+        # 5. Write Disk
+        content = self._format_markdown(services, system_summary)
+        out_path = self.root / output_file
+        out_path.write_text(content, encoding="utf-8")
+        
+        print(f"\n✅ CATALOG GENERATED: {out_path}")
+        return {"path": str(out_path), "service_count": len(services)}
+
+    def _inspect_file(self, file_path: Path) -> Optional[Dict[str, Any]]:
         try:
-            conn = sqlite3.connect(db_path)
-            cursor = conn.cursor()
+            source = file_path.read_text(encoding="utf-8")
+            tree = ast.parse(source)
             
-            # --- THE CORTEX SCHEMA ---
-            # 1. System Config: Stores version and global metadata
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS config (
-                    key TEXT PRIMARY KEY,
-                    value TEXT
-                )
-            """)
-            
-            # 2. Files: Tracks scanned files to avoid re-ingesting unchanged ones
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS files (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    path TEXT UNIQUE NOT NULL,
-                    checksum TEXT,
-                    last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    status TEXT DEFAULT 'indexed'
-                )
-            """)
-            
-            # 3. Chunks: The actual atomic units of knowledge
-            # Note: 'embedding' is stored as a BLOB (bytes) for raw vector data
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS chunks (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    file_id INTEGER,
-                    chunk_index INTEGER,
-                    content TEXT,
-                    embedding BLOB, 
-                    FOREIGN KEY(file_id) REFERENCES files(id)
-                )
-            """)
-            
-            # 4. Graph Nodes: For the GraphView visualization
-            # Distinguishes between 'file' nodes and 'concept' nodes
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS graph_nodes (
-                    id TEXT PRIMARY KEY,
-                    type TEXT,  -- 'file' or 'concept'
-                    label TEXT,
-                    data_json TEXT -- Flexible JSON for positions/colors
-                )
-            """)
-            
-            # 5. Graph Edges: The connections
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS graph_edges (
-                    source TEXT,
-                    target TEXT,
-                    weight REAL DEFAULT 1.0,
-                    FOREIGN KEY(source) REFERENCES graph_nodes(id),
-                    FOREIGN KEY(target) REFERENCES graph_nodes(id)
-                )
-            """)
-            
-            # Timestamp creation
-            cursor.execute("INSERT INTO config (key, value) VALUES (?, ?)", 
-                           ("created_at", str(time.time())))
-            
-            conn.commit()
-            conn.close()
-            return {"status": "success", "path": str(db_path), "name": safe_name}
-            
-        except Exception as e:
-            # Cleanup on failure
-            if db_path.exists():
-                os.remove(db_path)
-            raise e
+            meta = {
+                "filename": file_path.name,
+                "name": file_path.stem,
+                "description": "",
+                "endpoints": [],
+                "ai_enriched": False
+            }
 
-    @service_endpoint(
-        inputs={"name": "str"},
-        outputs={"success": "bool"},
-        description="Deletes a Knowledge Base file.",
-        tags=["kb", "delete"],
-        side_effects=["filesystem:write"]
-    )
-    def delete_kb(self, name: str) -> bool:
-        """
-        Physically removes the database file.
-        """
-        safe_name = self._sanitize_name(name)
-        db_path = self.storage_dir / safe_name
+            target_node = None
+            for node in ast.walk(tree):
+                if isinstance(node, ast.ClassDef) and "MS" in node.name:
+                    target_node = node
+                    break
+            
+            if not target_node: return None
+
+            meta["name"] = target_node.name
+            meta["description"] = ast.get_docstring(target_node) or ""
+            
+            # AI Enrichment
+            if ENABLE_AI and len(meta["description"]) < 10:
+                prompt = (f"Read this Python class. Write a 1-sentence technical description.\n\nCode:\n{source[:2000]}")
+                ai_desc = self._query_ollama(MODEL_WORKER, prompt)
+                if ai_desc:
+                    meta["description"] = f"✨ {ai_desc}"
+                    meta["ai_enriched"] = True
+
+            # Endpoints
+            for item in target_node.body:
+                if isinstance(item, ast.FunctionDef) and not item.name.startswith("_"):
+                    args = [a.arg for a in item.args.args if a.arg != 'self']
+                    doc = ast.get_docstring(item) or ""
+                    meta["endpoints"].append({
+                        "name": item.name,
+                        "args": args,
+                        "doc": doc.split("\n")[0]
+                    })
+            return meta
+        except Exception:
+            return None
+
+    def _generate_system_summary(self, services: List[Dict]) -> str:
+        if not ENABLE_AI: return "Auto-generated catalog."
+        print(f"\n🧠 Architect ({MODEL_ARCHITECT}) is analyzing system structure...")
         
-        if db_path.exists():
-            os.remove(db_path)
-            return True
-        return False
+        service_list = "\n".join([f"- {s['name']}: {s['description']}" for s in services])
+        if len(service_list) > MAX_CONTEXT_CHARS:
+            service_list = service_list[:MAX_CONTEXT_CHARS] + "\n...(truncated)..."
 
-    @service_endpoint(
-        inputs={"source_name": "str"},
-        outputs={"status": "Dict"},
-        description="Creates a copy of an existing KB.",
-        tags=["kb", "copy"],
-        side_effects=["filesystem:write"]
-    )
-    def duplicate_kb(self, source_name: str) -> Dict[str, str]:
-        """
-        Creates a copy of an existing KB.
-        """
-        safe_source = self._sanitize_name(source_name)
-        source_path = self.storage_dir / safe_source
+        prompt = (
+            f"You are a System Architect. Analyze this microservice library. "
+            f"Write a brief 'Executive Summary' (max 150 words) grouping capabilities.\n\n"
+            f"Services:\n{service_list}"
+        )
+        return self._query_ollama(MODEL_ARCHITECT, prompt) or "Analysis failed."
+
+    def _query_ollama(self, model: str, prompt: str) -> str:
+        try:
+            res = requests.post(OLLAMA_URL, json={
+                "model": model, "prompt": prompt, "stream": False, 
+                "options": {"temperature": 0.2, "num_ctx": 4096}
+            }, timeout=60)
+            if res.status_code == 200: return res.json().get("response", "").strip()
+        except: pass
+        return ""
+
+    def _format_markdown(self, services: List[Dict], summary: str) -> str:
+        timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
+        md = [
+            f"# 📚 Microservice Library Codex",
+            f"> **Generated**: {timestamp}",
+            f"> **Services**: {len(services)}",
+            "",
+            "## 🧠 System Architecture",
+            summary,
+            "",
+            "## 📇 Index"
+        ]
+        for s in services:
+            md.append(f"- **[{s['name']}](#{s['name'].lower()})**: {s['description'].split(chr(10))[0][:80]}")
         
-        if not source_path.exists():
-            raise FileNotFoundError(f"Source KB '{safe_source}' not found.")
+        md.append("\n---\n")
+        for s in services:
+            md.append(f"### {s['name']}\n**File**: `{s['filename']}`\n\n{s['description']}\n")
+            if s['endpoints']:
+                md.append("| Endpoint | Inputs | Summary |\n|---|---|---|")
+                for ep in s['endpoints']:
+                    md.append(f"| `{ep['name']}` | `{', '.join(ep['args'])}` | {ep['doc']} |")
+            md.append("\n---\n")
+        return "\n".join(md)
 
-        # Generate new name
-        base = safe_source.replace('.db', '')
-        new_name = f"{base}_copy.db"
-        dest_path = self.storage_dir / new_name
-
-        # Handle collision if copy already exists
-        counter = 1
-        while dest_path.exists():
-            new_name = f"{base}_copy_{counter}.db"
-            dest_path = self.storage_dir / new_name
-            counter += 1
-
-        shutil.copy2(source_path, dest_path)
-        return {"status": "success", "name": new_name}
-
-    def _sanitize_name(self, name: str) -> str:
-        """Ensures the filename ends in .db and has no illegal chars."""
-        clean = "".join(c for c in name if c.isalnum() or c in (' ', '_', '-')).strip()
-        clean = clean.replace(' ', '_')
-        if not clean.endswith('.db'):
-            clean += '.db'
-        return clean
-
-
-# --- Independent Test Block ---
 if __name__ == "__main__":
-    print("Initializing Librarian Service...")
-    lib = LibrarianServiceMS({"storage_dir": "./test_brains"})
-    print("Service ready:", lib)
-    
-    # 1. Create
-    print("Creating 'Project_Alpha'...")
-    try:
-        lib.create_kb("Project Alpha")
-    except FileExistsError:
-        print("Project Alpha already exists.")
-        
-    # 2. List
-    kbs = lib.list_kbs()
-    print(f"Available Brains: {kbs}")
-
-    # 3. Duplicate
-    if "Project_Alpha.db" in kbs:
-        print("Duplicating Alpha...")
-        lib.duplicate_kb("Project_Alpha.db")
-
-    # 4. Final List
-    print(f"Final Brains: {lib.list_kbs()}")
+    lib = LibrarianMS()
+    lib.generate_catalog()

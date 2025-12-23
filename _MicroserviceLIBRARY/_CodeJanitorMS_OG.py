@@ -1,6 +1,6 @@
 """
 SERVICE_NAME: _CodeJanitorMS
-ENTRY_POINT: __CodeJanitorMS.py
+ENTRY_POINT: _CodeJanitorMS.py
 DEPENDENCIES: None
 """
 
@@ -102,7 +102,7 @@ class CodeJanitorMS:
         """
         The Migration Logic.
         1. Renames __Name.py -> _Name.py
-        2. Patches imports (from __Name import) -> (from _Name import)
+        2. Patches imports (from _Name import) -> (from _Name import)
         """
         renamed_files = []
         patched_files = []
@@ -121,9 +121,9 @@ class CodeJanitorMS:
                 original_content = file_path.read_text(encoding="utf-8")
                 new_content = original_content
                 
-                # Fix imports: "from __Auth" -> "from _Auth"
+                # Fix imports: "from _Auth" -> "from _Auth"
                 new_content = import_pattern.sub(r'\1 _\2', new_content)
-                # Fix strings: "__AuthMS" -> "_AuthMS"
+                # Fix strings: "_AuthMS" -> "_AuthMS"
                 new_content = string_pattern.sub(r'"_\1"', new_content)
                 
                 # Special fix for Registry logic if it exists

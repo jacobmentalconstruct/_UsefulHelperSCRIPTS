@@ -1,6 +1,6 @@
 """
 SERVICE_NAME: _CognitiveMemoryMS
-ENTRY_POINT: __CognitiveMemoryMS.py
+ENTRY_POINT: _CognitiveMemoryMS.py
 DEPENDENCIES: pip install pydantic
 """
 

@@ -1,6 +1,6 @@
 """
 SERVICE_NAME: _AuthMS
-ENTRY_POINT: __AuthMS.py
+ENTRY_POINT: _AuthMS.py
 DEPENDENCIES: None
 """
 

@@ -1,6 +1,6 @@
 """
 SERVICE_NAME: _ContextPackerMS
-ENTRY_POINT: __ContextPackerMS.py
+ENTRY_POINT: _ContextPackerMS.py
 DEPENDENCIES: None
 """
 

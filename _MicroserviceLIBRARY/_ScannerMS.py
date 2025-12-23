@@ -1,6 +1,6 @@
 """
 SERVICE_NAME: _ScannerMS
-ENTRY_POINT: __ScannerMS.py
+ENTRY_POINT: _ScannerMS.py
 DEPENDENCIES: None
 """
 

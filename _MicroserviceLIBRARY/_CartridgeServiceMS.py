@@ -1,6 +1,6 @@
 """
 SERVICE_NAME: _CartridgeServiceMS
-ENTRY_POINT: __CartridgeServiceMS.py
+ENTRY_POINT: _CartridgeServiceMS.py
 DEPENDENCIES: None
 """
 

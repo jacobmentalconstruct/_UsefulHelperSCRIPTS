@@ -1,6 +1,6 @@
 """
 SERVICE_NAME: _ChunkingRouterMS
-ENTRY_POINT: __ChunkingRouterMS.py
+ENTRY_POINT: _ChunkingRouterMS.py
 DEPENDENCIES: None
 """
 

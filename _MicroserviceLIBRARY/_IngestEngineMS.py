@@ -1,6 +1,6 @@
 """
 SERVICE_NAME: _IngestEngineMS
-ENTRY_POINT: __IngestEngineMS.py
+ENTRY_POINT: _IngestEngineMS.py
 DEPENDENCIES: requests
 """
 

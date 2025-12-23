@@ -1,6 +1,6 @@
 """
 SERVICE_NAME: _ArchiveBotMS
-ENTRY_POINT: __ArchiveBotMS.py
+ENTRY_POINT: _ArchiveBotMS.py
 DEPENDENCIES: None
 """
 

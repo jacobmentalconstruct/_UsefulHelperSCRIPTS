@@ -1,6 +1,6 @@
 """
 SERVICE_NAME: _ContentExtractorMS
-ENTRY_POINT: __ContentExtractorMS.py
+ENTRY_POINT: _ContentExtractorMS.py
 DEPENDENCIES: None
 """
 

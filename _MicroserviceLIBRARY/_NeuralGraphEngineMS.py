@@ -1,6 +1,6 @@
 """
 SERVICE_NAME: _NeuralGraphEngineMS
-ENTRY_POINT: __NeuralGraphEngineMS.py
+ENTRY_POINT: _NeuralGraphEngineMS.py
 DEPENDENCIES: None
 """
 

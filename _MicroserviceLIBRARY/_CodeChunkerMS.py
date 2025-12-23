@@ -1,6 +1,6 @@
 """
 SERVICE_NAME: _CodeChunkerMS
-ENTRY_POINT: __CodeChunkerMS.py
+ENTRY_POINT: _CodeChunkerMS.py
 DEPENDENCIES: None
 """
 

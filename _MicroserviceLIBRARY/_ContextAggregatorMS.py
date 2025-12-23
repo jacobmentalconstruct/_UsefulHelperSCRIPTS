@@ -1,12 +1,13 @@
 """
 SERVICE_NAME: _ContextAggregatorMS
-ENTRY_POINT: __ContextAggregatorMS.py
+ENTRY_POINT: _ContextAggregatorMS.py
 DEPENDENCIES: None
 """
 
 import os
 import fnmatch
 import datetime
+import logging
 from pathlib import Path
 from typing import Set, Optional, Dict, Any
 from microservice_std_lib import service_metadata, service_endpoint
@@ -28,10 +29,13 @@ DEFAULT_IGNORE_DIRS = {
     "node_modules", ".git", "__pycache__", ".venv", ".env", 
     "dist", "build", "coverage", ".idea", ".vscode"
 }
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(message)s')
+log = logging.getLogger("ContextAggregator")
 # ==============================================================================
 
 @service_metadata(
-    name="ContextAggregatorMS",
+    name="ContextAggregator",
     version="1.0.0",
     description="Flattens a project folder into a single readable text file.",
     tags=["filesystem", "context", "compilation"],
@@ -39,29 +43,28 @@ DEFAULT_IGNORE_DIRS = {
     dependencies=["os", "fnmatch", "datetime"],
     side_effects=["filesystem:read", "filesystem:write"]
 )
-class ContextAggregatorMS(BaseService):
+class ContextAggregatorMS:
     """
     The Context Builder: Flattens a project folder into a single readable text file.
     """
 
     def __init__(self, config: Optional[Dict[str, Any]] = None):
-        super().__init__("ContextAggregatorMS")
         self.config = config or {}
         max_file_size_mb = self.config.get("max_file_size_mb", 1)
         self.max_file_size_bytes = max_file_size_mb * 1024 * 1024
 
     @service_endpoint(
-    inputs={"root_path": "str", "output_file": "str", "extra_exclusions": "Set[str]", "use_default_exclusions": "bool"},
-    outputs={"file_count": "int"},
-    description="Aggregates project files into a single text dump.",
-    tags=["filesystem", "dump"],
-    side_effects=["filesystem:read", "filesystem:write"]
+        inputs={"root_path": "str", "output_file": "str", "extra_exclusions": "Set[str]", "use_default_exclusions": "bool"},
+        outputs={"file_count": "int"},
+        description="Aggregates project files into a single text dump.",
+        tags=["filesystem", "dump"],
+        side_effects=["filesystem:read", "filesystem:write"]
     )
-def aggregate(self, 
-    root_path: str, 
-    output_file: str, 
-    extra_exclusions: Optional[Set[str]] = None,
-    use_default_exclusions: bool = True) -> int:
+    def aggregate(self, 
+                  root_path: str, 
+                  output_file: str, 
+                  extra_exclusions: Optional[Set[str]] = None,
+                  use_default_exclusions: bool = True) -> int:
         
         project_root = Path(root_path).resolve()
         out_path = Path(output_file).resolve()
@@ -74,7 +77,7 @@ def aggregate(self,
             exclusions.update(extra_exclusions)
 
         # Build Binary List
-        binary_exts = DEFAULT_BINARY_EXTENSIONS.copy() # Always keep binaries as base unless manually cleared
+        binary_exts = DEFAULT_BINARY_EXTENSIONS.copy()
         
         file_count = 0
         timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -84,6 +87,7 @@ def aggregate(self,
                 out_f.write(f"File Dump from Project: {project_root.name}\nGenerated: {timestamp}\n{'='*60}\n\n")
 
                 for root, dirs, files in os.walk(project_root):
+                    # In-place filtering of directories
                     dirs[:] = [d for d in dirs if d not in exclusions]
                     
                     for filename in files:
@@ -95,8 +99,10 @@ def aggregate(self,
                         if self._is_safe_to_dump(file_path, binary_exts):
                             self._write_file_content(out_f, file_path, project_root)
                             file_count += 1                            
-        except IOError as e: print(f"Error writing dump: {e}")
-return file_count
+        except IOError as e:
+            log.error(f"Error writing dump: {e}")
+            
+        return file_count
 
     def _should_exclude(self, filename: str, exclusions: Set[str]) -> bool:
         return any(fnmatch.fnmatch(filename, pattern) for pattern in exclusions)
@@ -122,4 +128,3 @@ return file_count
 if __name__ == "__main__":
     svc = ContextAggregatorMS()
     print("Service ready:", svc)
-
