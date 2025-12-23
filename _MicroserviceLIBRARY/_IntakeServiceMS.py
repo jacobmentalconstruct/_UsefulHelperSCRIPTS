@@ -12,8 +12,8 @@ import json
 from pathlib import Path
 from typing import Dict, Set, List, Any
 from base_service import BaseService
-from __CartridgeServiceMS import CartridgeServiceMS
-from __ScannerMS import ScannerMS
+from _CartridgeServiceMS import CartridgeServiceMS
+from _ScannerMS import ScannerMS
 import document_utils
 from microservice_std_lib import service_metadata, service_endpoint
 
@@ -339,7 +339,7 @@ class IntakeServiceMS(BaseService):
 
         if __name__ == "__main__":
             # Manual test setup requires a CartridgeService instance
-            from __CartridgeServiceMS import CartridgeService
+            from _CartridgeServiceMS import CartridgeService
             mock_cartridge = CartridgeService(":memory:")
             svc = IntakeServiceMS(mock_cartridge)
             print("Service ready:", svc._service_info["name"])

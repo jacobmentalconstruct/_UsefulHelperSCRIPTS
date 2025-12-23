@@ -57,7 +57,7 @@ class ServiceRegistryMS:
                 if item.is_dir() and item.name.startswith("_") and item.name.endswith("MS"):
                     self._process_folder(item)
                 # Check for Service Files (e.g. __AuthMS.py)
-                elif item.is_file() and item.name.startswith("__") and item.name.endswith("MS.py"):
+                elif item.is_file() and item.name.startswith("_") and item.name.endswith("MS.py"):
                     token = self._tokenize_file(item)
                     if token:
                         self.registry.append(token)

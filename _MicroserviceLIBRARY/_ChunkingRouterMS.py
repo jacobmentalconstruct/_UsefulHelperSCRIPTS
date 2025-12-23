@@ -10,7 +10,7 @@ from microservice_std_lib import service_metadata, service_endpoint, BaseService
 
 # Attempt to import the specialist. If missing, we will fallback or warn.
 try:
-    from __PythonChunkerMS import PythonChunkerMS, CodeChunk
+    from _PythonChunkerMS import PythonChunkerMS, CodeChunk
 except ImportError:
     # Fallback mock for standalone testing if dependency is missing
     class CodeChunk:

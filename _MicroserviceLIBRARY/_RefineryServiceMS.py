@@ -9,9 +9,9 @@ from typing import Dict, List, Any, Optional, Tuple
 
 # Assume these are available in the local environment
 try:
-    from __CartridgeServiceMS import CartridgeServiceMS
-    from __NeuralServiceMS import NeuralServiceMS
-    from __ChunkingRouterMS import ChunkingRouterMS
+    from _CartridgeServiceMS import CartridgeServiceMS
+    from _NeuralServiceMS import NeuralServiceMS
+    from _ChunkingRouterMS import ChunkingRouterMS
 except ImportError:
     # Fallbacks for static analysis or isolation
     CartridgeServiceMS = Any
@@ -437,8 +437,8 @@ class RefineryServiceMS:
 if __name__ == "__main__":
     # Requires Cartridge and Neural services for testing
     try:
-        from __CartridgeServiceMS import CartridgeServiceMS
-        from __NeuralServiceMS import NeuralServiceMS
+        from _CartridgeServiceMS import CartridgeServiceMS
+        from _NeuralServiceMS import NeuralServiceMS
         
         print("Initializing Dependencies...")
         c = CartridgeServiceMS({"db_path": ":memory:"})

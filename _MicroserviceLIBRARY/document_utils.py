@@ -1,4 +1,4 @@
-from __ContentExtractorMS import ContentExtractorMS
+from _ContentExtractorMS import ContentExtractorMS
 
 # Singleton instance to reuse the extractor logic
 _extractor = ContentExtractorMS()

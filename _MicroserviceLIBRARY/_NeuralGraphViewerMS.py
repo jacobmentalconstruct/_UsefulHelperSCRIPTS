@@ -10,7 +10,7 @@ from PIL import Image, ImageTk
 import sqlite3
 import json
 import os
-from __NeuralGraphEngineMS import GraphRenderer
+from _NeuralGraphEngineMS import GraphRenderer
 from microservice_std_lib import service_metadata, service_endpoint
 
 @service_metadata(
