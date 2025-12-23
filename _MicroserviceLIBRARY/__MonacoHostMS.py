@@ -1,36 +1,34 @@
-"""
-SERVICE_NAME: _MonacoHostMS
-ENTRY_POINT: __MonacoHostMS.py
-DEPENDENCIES: pywebview
-"""
+import importlib.util
+import sys
+import threading
+import json
+import logging
+from typing import Any, Dict, Optional, Callable
 
 # --- RUNTIME DEPENDENCY CHECK ---
-import importlib.util, sys
-REQUIRED = ["pywebview"]
+# We check this early so the service fails gracefully if dependencies are missing.
+REQUIRED = ["webview"] # 'pywebview' package import name is 'webview'
 MISSING = []
-for lib in REQUIRED:
-    # Clean version numbers for check (e.g., pygame==2.0 -> pygame)
-    clean_lib = lib.split('>=')[0].split('==')[0].split('>')[0].replace('-', '_')
-    if importlib.util.find_spec(clean_lib) is None:
-        if clean_lib == 'pywebview': clean_lib = 'webview' # Common alias
-        if importlib.util.find_spec(clean_lib) is None:
-            MISSING.append(lib)
+
+if importlib.util.find_spec("webview") is None:
+    MISSING.append("pywebview")
 
 if MISSING:
     print('\n' + '!'*60)
     print(f'MISSING DEPENDENCIES for _MonacoHostMS:')
     print(f'Run:  pip install {" ".join(MISSING)}')
     print('!'*60 + '\n')
-    # sys.exit(1) # Uncomment to force stop if missing
+    # We don't exit here to allow the class to load, but launch() will likely fail.
 
-import webview
-import threading
-import json
-from pathlib import Path
-from typing import Any, Dict, Optional, Callable
+import webview  # type: ignore
 from microservice_std_lib import service_metadata, service_endpoint
 
-# --- EMBEDDED MONACO HTML ---
+logger = logging.getLogger("MonacoHost")
+
+# ==============================================================================
+# EMBEDDED HTML/JS
+# ==============================================================================
+
 MONACO_HTML = """
 <!DOCTYPE html>
 <html>
@@ -118,7 +116,15 @@ MONACO_HTML = """
 </html>
 """
 
-class MonacoHostMS:
+# ==============================================================================
+# HELPER CLASS (JS API Bridge)
+# ==============================================================================
+
+class MonacoApiBridge:
+    """
+    Acts as the bridge between Python and the JavaScript running inside the webview.
+    Methods here are callable from JS via `window.pywebview.api.methodName()`.
+    """
     def __init__(self):
         self._window = None
         self._ready_event = threading.Event()
@@ -128,53 +134,96 @@ class MonacoHostMS:
         self._window = window
 
     def signal_editor_ready(self):
+        """Called by JS when Monaco is fully loaded."""
         self._ready_event.set()
-        print("Monaco Editor is ready.")
+        logger.info("Monaco Editor reported ready.")
 
     def save_file(self, filepath: str, content: str):
+        """Called by JS when Ctrl+S is pressed."""
         if self.on_save_callback:
             self.on_save_callback(filepath, content)
         else:
-            print(f"Saved {filepath} (No callback registered)")
+            logger.warning(f"Saved {filepath} (No callback registered)")
 
-    def open_file(self, filepath: str, content: str):
+    def open_file_in_js(self, filepath: str, content: str):
+        """Python helper to push data to JS."""
         self._ready_event.wait(timeout=10)
-        if not self._window: return
-        # Using json.dumps for both handles escaping perfectly
+        if not self._window: 
+            return
+        # Using json.dumps ensures strings are properly escaped for JS
         js = f"window.pywebview.api.open_in_tab({json.dumps(filepath)}, {json.dumps(content)})"
         self._window.evaluate_js(js)
+
+
+# ==============================================================================
+# MICROSERVICE CLASS
+# ==============================================================================
 
 @service_metadata(
     name="MonacoHost",
     version="1.1.0",
-    description="Hosts an embedded Monaco Editor instance.",
+    description="Hosts an embedded Monaco Editor instance using PyWebview.",
     tags=["ui", "editor", "webview"],
     capabilities=["ui:gui"]
 )
 class MonacoHostMS:
+    """
+    Hosts the Monaco Editor.
+    This service spawns a GUI window and cannot be run in headless environments.
+    """
     def __init__(self, config: Optional[Dict[str, Any]] = None):
         self.config = config or {}
-        self.api = MonacoHostMS()
+        # Instantiate the Bridge class, NOT this service class (avoids recursion/error)
+        self.api = MonacoApiBridge()
         self.window = None
 
-    @service_endpoint(mode="sync")
+    @service_endpoint(
+        inputs={"title": "str", "width": "int", "height": "int"},
+        outputs={},
+        description="Launches the editor window. Blocking call.",
+        tags=["ui", "launch"],
+        side_effects=["ui:window"]
+    )
     def launch(self, title="Monaco Editor", width=1000, height=700, func=None):
+        """
+        Create and launch the window.
+        :param func: Optional function to run in a separate thread after launch.
+        """
         self.window = webview.create_window(
             title, 
-            html=MONACO_HTML, # Pass the string directly here
+            html=MONACO_HTML, 
             js_api=self.api,
             width=width, 
             height=height
         )
         self.api.set_window(self.window)
+        
+        # Start the GUI loop
         webview.start(func, debug=True) if func else webview.start(debug=True)
 
+    def set_save_callback(self, callback: Callable[[str, str], None]):
+        """Sets the function to trigger when Ctrl+S is pressed in the editor."""
+        self.api.on_save_callback = callback
+
+    def open_file(self, filepath: str, content: str):
+        """Opens a file in the editor (must be called from a background thread or callback)."""
+        self.api.open_file_in_js(filepath, content)
+
+
+# --- Independent Test Block ---
 if __name__ == "__main__":
     host = MonacoHostMS()
     
     def background_actions():
+        # Wait for the JS to signal it's ready
         host.api._ready_event.wait()
-        host.api.open_file("demo.py", "print('Hello World')\\n# Try Ctrl+S")
-        host.api.on_save_callback = lambda p, c: print(f"File: {p} was saved with {len(c)} chars.")
+        
+        # Open a demo file
+        print("Opening demo file...")
+        host.open_file("demo.py", "print('Hello World')\n# Try Ctrl+S to save!")
+        
+        # Register what happens when user saves
+        host.set_save_callback(lambda p, c: print(f"File: {p} was saved with {len(c)} chars."))
 
+    print("Launching Monaco Host...")
     host.launch(func=background_actions)

@@ -1,49 +1,41 @@
-"""
-SERVICE_NAME: _PromptVaultMS
-ENTRY_POINT: __PromptVaultMS.py
-DEPENDENCIES: pydantic, jinja2
-"""
-
-# --- RUNTIME DEPENDENCY CHECK ---
-import importlib.util, sys
-REQUIRED = ["pydantic", "jinja2"]
-MISSING = []
-for lib in REQUIRED:
-    # Clean version numbers for check (e.g., pygame==2.0 -> pygame)
-    clean_lib = lib.split('>=')[0].split('==')[0].split('>')[0].replace('-', '_')
-    if importlib.util.find_spec(clean_lib) is None:
-        if clean_lib == 'pywebview': clean_lib = 'webview' # Common alias
-        if importlib.util.find_spec(clean_lib) is None:
-            MISSING.append(lib)
-
-if MISSING:
-    print('\n' + '!'*60)
-    print(f'MISSING DEPENDENCIES for _PromptVaultMS:')
-    print(f'Run:  pip install {" ".join(MISSING)}')
-    print('!'*60 + '\n')
-    # sys.exit(1) # Uncomment to force stop if missing
-
+import importlib.util
+import sys
 import sqlite3
 import json
 import uuid
 import logging
 import datetime
 from pathlib import Path
-from typing import List, Optional, Dict, Any, Callable
-from pydantic import BaseModel, Field, ValidationError
+from typing import List, Optional, Dict, Any
+
+# --- RUNTIME DEPENDENCY CHECK ---
+REQUIRED = ["pydantic", "jinja2"]
+MISSING = []
+
+for lib in REQUIRED:
+    if importlib.util.find_spec(lib) is None:
+        MISSING.append(lib)
+
+if MISSING:
+    print('\n' + '!'*60)
+    print(f'MISSING DEPENDENCIES for _PromptVaultMS:')
+    print(f'Run:  pip install {" ".join(MISSING)}')
+    print('!'*60 + '\n')
+    # We proceed so the class loads, but methods will likely fail if deps are missing.
+
+from pydantic import BaseModel
 from jinja2 import Environment, BaseLoader
 
+from microservice_std_lib import service_metadata, service_endpoint
+
 # ==============================================================================
-# CONFIGURATION
+# CONFIGURATION & MODELS
 # ==============================================================================
+
 DB_PATH = Path(__file__).parent / "prompt_vault.db"
-logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(message)s')
-log = logging.getLogger("PromptVault")
-# ==============================================================================
+logger = logging.getLogger("PromptVault")
 
-# --- Data Models ---
-
-class PromptVaultMS(BaseModel):
+class PromptVersion(BaseModel):
     """A specific historical version of a prompt."""
     version_num: int
     content: str
@@ -59,25 +51,37 @@ class PromptTemplate(BaseModel):
     description: Optional[str] = ""
     tags: List[str] = []
     latest_version_num: int
-    versions: List[PromptVaultMS] = []
+    versions: List[PromptVersion] = []
     
     @property
-    def latest(self) -> PromptVaultMS:
+    def latest(self) -> PromptVersion:
         """Helper to get the most recent content."""
         if not self.versions:
             raise ValueError("No versions found.")
-        # versions are stored sorted by DB insertion usually, but let's be safe
+        # Sort by version number to be safe
         return sorted(self.versions, key=lambda v: v.version_num)[-1]
 
-# --- Database Management ---
 
+# ==============================================================================
+# MICROSERVICE CLASS
+# ==============================================================================
+
+@service_metadata(
+    name="PromptVault",
+    version="1.0.0",
+    description="A persistent SQLite store for managing, versioning, and rendering AI prompts.",
+    tags=["prompt", "database", "versioning", "jinja"],
+    capabilities=["db:sqlite", "filesystem:read", "filesystem:write"]
+)
 class PromptVaultMS:
     """
     The Vault: A persistent SQLite store for managing, versioning, 
     and rendering AI prompts.
     """
-    def __init__(self, db_path: Path = DB_PATH):
-        self.db_path = db_path
+
+    def __init__(self, config: Optional[Dict[str, Any]] = None):
+        self.config = config or {}
+        self.db_path = Path(self.config.get("db_path", DB_PATH))
         self._init_db()
         self.jinja_env = Environment(loader=BaseLoader())
 
@@ -113,9 +117,15 @@ class PromptVaultMS:
                     FOREIGN KEY(template_id) REFERENCES templates(id)
                 )
             """)
-# --- CRUD Operations ---
 
-    def create_template(self, slug: str, title: str, content: str, author: str = "system", tags: List[str] = None) -> PromptTemplate:
+    @service_endpoint(
+        inputs={"slug": "str", "title": "str", "content": "str", "author": "str", "tags": "List[str]"},
+        outputs={"template": "Dict"},
+        description="Creates a new prompt template with an initial version.",
+        tags=["prompt", "create"],
+        side_effects=["db:write"]
+    )
+    def create_template(self, slug: str, title: str, content: str, author: str = "system", tags: List[str] = None) -> Dict[str, Any]:
         """Creates a new prompt template with an initial version 1."""
         tags = tags or []
         now = datetime.datetime.utcnow()
@@ -132,12 +142,21 @@ class PromptVaultMS:
                     "INSERT INTO versions (id, template_id, version_num, content, author, timestamp) VALUES (?, ?, ?, ?, ?, ?)",
                     (v_id, t_id, 1, content, author, now)
                 )
-            log.info(f"Created template: {slug}")
-            return self.get_template(slug)
+            logger.info(f"Created template: {slug}")
+            # Return dict representation
+            tpl = self.get_template(slug)
+            return tpl.dict() if tpl else {}
         except sqlite3.IntegrityError:
             raise ValueError(f"Template '{slug}' already exists.")
 
-    def add_version(self, slug: str, content: str, author: str = "user") -> PromptTemplate:
+    @service_endpoint(
+        inputs={"slug": "str", "content": "str", "author": "str"},
+        outputs={"template": "Dict"},
+        description="Adds a new version to an existing template.",
+        tags=["prompt", "update"],
+        side_effects=["db:write"]
+    )
+    def add_version(self, slug: str, content: str, author: str = "user") -> Dict[str, Any]:
         """Adds a new version to an existing template."""
         current = self.get_template(slug)
         if not current:
@@ -152,13 +171,22 @@ class PromptVaultMS:
                 "INSERT INTO versions (id, template_id, version_num, content, author, timestamp) VALUES (?, ?, ?, ?, ?, ?)",
                 (v_id, current.id, new_ver, content, author, now)
             )
-conn.execute(
+            conn.execute(
                 "UPDATE templates SET latest_version = ?, updated_at = ? WHERE id = ?",
                 (new_ver, now, current.id)
             )
-        log.info(f"Updated {slug} to v{new_ver}")
-        return self.get_template(slug)
+        logger.info(f"Updated {slug} to v{new_ver}")
+        
+        tpl = self.get_template(slug)
+        return tpl.dict() if tpl else {}
 
+    @service_endpoint(
+        inputs={"slug": "str"},
+        outputs={"template": "Optional[PromptTemplate]"},
+        description="Retrieves a full template with all history.",
+        tags=["prompt", "read"],
+        side_effects=["db:read"]
+    )
     def get_template(self, slug: str) -> Optional[PromptTemplate]:
         """Retrieves a full template with all history."""
         with self._get_conn() as conn:
@@ -171,7 +199,7 @@ conn.execute(
 
             versions = []
             for v in v_rows:
-                versions.append(PromptVaultMS(
+                versions.append(PromptVersion(
                     version_num=v['version_num'],
                     content=v['content'],
                     author=v['author'],
@@ -189,16 +217,30 @@ conn.execute(
                 versions=versions
             )
 
-    def render(self, slug: str, context: Dict[str, Any] = None) -> str:
+    @service_endpoint(
+        inputs={"slug": "str", "context": "Dict"},
+        outputs={"rendered_text": "str"},
+        description="Fetches the latest version and renders it with Jinja2.",
+        tags=["prompt", "render"],
+        side_effects=["db:read"]
+    )
+    def render(self, slug: str, context: Optional[Dict[str, Any]] = None) -> str:
         """Fetches the latest version and renders it with Jinja2."""
         template = self.get_template(slug)
-if not template:
+        if not template:
             raise ValueError(f"Template '{slug}' not found.")
         
         raw_text = template.latest.content
         jinja_template = self.jinja_env.from_string(raw_text)
         return jinja_template.render(**(context or {}))
 
+    @service_endpoint(
+        inputs={},
+        outputs={"slugs": "List[str]"},
+        description="Lists all available prompt slugs.",
+        tags=["prompt", "list"],
+        side_effects=["db:read"]
+    )
     def list_slugs(self) -> List[str]:
         with self._get_conn() as conn:
             rows = conn.execute("SELECT slug FROM templates").fetchall()
@@ -208,9 +250,12 @@ if not template:
 if __name__ == "__main__":
     import os
     
+    db_file = Path("test_prompt_vault.db")
+    
     # 1. Setup
-    if DB_PATH.exists(): os.remove(DB_PATH)
-    vault = PromptVaultMS()
+    if db_file.exists(): os.remove(db_file)
+    vault = PromptVaultMS({"db_path": db_file})
+    print("Service ready:", vault)
     
     # 2. Create
     print("--- Creating Prompt ---")
@@ -232,7 +277,9 @@ if __name__ == "__main__":
     
     # 5. Inspection
     tpl = vault.get_template("greet_user")
-print(f"Current Version: v{tpl.latest_version_num}")
-print(f"History: {[v.content for v in tpl.versions]}")
-# Cleanup
-if DB_PATH.exists(): os.remove(DB_PATH)
+    if tpl:
+        print(f"Current Version: v{tpl.latest_version_num}")
+        print(f"History: {[v.content for v in tpl.versions]}")
+        
+    # Cleanup
+    if db_file.exists(): os.remove(db_file)

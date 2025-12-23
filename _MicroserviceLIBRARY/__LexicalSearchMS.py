@@ -1,36 +1,37 @@
-"""
-SERVICE_NAME: _LexicalSearchMS
-ENTRY_POINT: __LexicalSearchMS.py
-DEPENDENCIES: None
-"""
-
 import sqlite3
 import json
 import os
+from pathlib import Path
 from typing import List, Dict, Any, Optional
+
 from microservice_std_lib import service_metadata, service_endpoint
 
+# ==============================================================================
+# MICROSERVICE CLASS
+# ==============================================================================
+
 @service_metadata(
-name="LexicalSearch",
-version="1.0.0",
-description="Lightweight BM25 keyword search using SQLite FTS5 (No AI required).",
-tags=["search", "index", "sqlite"],
-capabilities=["db:sqlite", "filesystem:read", "filesystem:write"]
+    name="LexicalSearch",
+    version="1.0.0",
+    description="Lightweight BM25 keyword search using SQLite FTS5 (No AI required).",
+    tags=["search", "index", "sqlite"],
+    capabilities=["db:sqlite", "filesystem:read", "filesystem:write"]
 )
 class LexicalSearchMS:
     """
-The Librarian's Index: A lightweight, AI-free search engine.
+    The Librarian's Index: A lightweight, AI-free search engine.
     
-Uses SQLite's FTS5 extension to provide fast, ranked keyword search (BM25).
-Ideal for environments where installing PyTorch/Transformers is impossible
-or overkill.
-"""
+    Uses SQLite's FTS5 extension to provide fast, ranked keyword search (BM25).
+    Ideal for environments where installing PyTorch/Transformers is impossible
+    or overkill.
+    """
 
-def __init__(self, config: Optional[Dict[str, Any]] = None):
-self.config = config or {}
-default_db = str(Path(__file__).parent / "lexical_index.db")
-self.db_path = self.config.get("db_path", default_db)
-self._init_db()
+    def __init__(self, config: Optional[Dict[str, Any]] = None):
+        self.config = config or {}
+        # Ensure 'pathlib' is imported for this line to work
+        default_db = str(Path(__file__).parent / "lexical_index.db")
+        self.db_path = self.config.get("db_path", default_db)
+        self._init_db()
 
     def _init_db(self):
         """
@@ -81,16 +82,16 @@ self._init_db()
         conn.close()
 
     @service_endpoint(
-    inputs={"doc_id": "str", "text": "str", "metadata": "Dict"},
-    outputs={},
-    description="Adds or updates a document in the FTS index.",
-    tags=["search", "write"],
-    side_effects=["db:write"]
+        inputs={"doc_id": "str", "text": "str", "metadata": "Dict"},
+        outputs={},
+        description="Adds or updates a document in the FTS index.",
+        tags=["search", "write"],
+        side_effects=["db:write"]
     )
-    def add_document(self, doc_id: str, text: str, metadata: Dict[str, Any] = None):
-    """
-    Adds or updates a document in the index.
-    """
+    def add_document(self, doc_id: str, text: str, metadata: Optional[Dict[str, Any]] = None):
+        """
+        Adds or updates a document in the index.
+        """
         conn = sqlite3.connect(self.db_path)
         cur = conn.cursor()
         
@@ -106,16 +107,16 @@ self._init_db()
         conn.close()
 
     @service_endpoint(
-    inputs={"query": "str", "top_k": "int"},
-    outputs={"results": "List[Dict]"},
-    description="Performs a BM25 ranked keyword search.",
-    tags=["search", "read"],
-    side_effects=["db:read"]
+        inputs={"query": "str", "top_k": "int"},
+        outputs={"results": "List[Dict]"},
+        description="Performs a BM25 ranked keyword search.",
+        tags=["search", "read"],
+        side_effects=["db:read"]
     )
-    def search(self, query: str, top_k: int = 20) -> List[Dict]:
-    """
-    Performs a BM25 Ranked Search.
-    """
+    def search(self, query: str, top_k: int = 20) -> List[Dict[str, Any]]:
+        """
+        Performs a BM25 Ranked Search.
+        """
         conn = sqlite3.connect(self.db_path)
         conn.row_factory = sqlite3.Row # Allows dict-like access
         cur = conn.cursor()
@@ -158,6 +159,7 @@ self._init_db()
         finally:
             conn.close()
 
+
 # --- Independent Test Block ---
 if __name__ == "__main__":
     import os
@@ -174,15 +176,15 @@ if __name__ == "__main__":
     engine.add_document("doc2", "The snake python is a reptile found in jungles.", {"category": "biology"})
     engine.add_document("doc3", "Data science involves python, pandas, and SQL.", {"category": "coding"})
     
-# 3. Search
-query = "python data"
-print(f"\nSearching for: '{query}'")
-hits = engine.search(query)
-    
-for hit in hits:
-    print(f"[{hit['score']:.4f}] {hit['id']} ({hit['metadata']['category']})")
-    print(f"   Preview: {hit['preview']}")
+    # 3. Search
+    query = "python data"
+    print(f"\nSearching for: '{query}'")
+    hits = engine.search(query)
         
-# Cleanup
-if os.path.exists(db_name):
-    os.remove(db_name)
+    for hit in hits:
+        print(f"[{hit['score']:.4f}] {hit['id']} ({hit['metadata']['category']})")
+        print(f"   Preview: {hit['preview']}")
+            
+    # Cleanup
+    if os.path.exists(db_name):
+        os.remove(db_name)

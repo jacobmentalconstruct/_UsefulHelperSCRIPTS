@@ -1,8 +1,0 @@
-Project Tree: C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_BoilerPlatePythonTEMPLATE
-Generated: 2025-12-13 14:43:03.595131
-
-├── 📁 src/
-│   ├── 📄 __init__.py
-│   └── 📄 app.py
-├── 📄 requirements.txt
-└── 📄 setup_env.bat

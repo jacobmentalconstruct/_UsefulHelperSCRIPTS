@@ -1,28 +1,32 @@
-"""
-SERVICE_NAME: _SpinnerThingyMaBobberMS
-ENTRY_POINT: __SpinnerThingyMaBobberMS.py
-DEPENDENCIES: None
-"""
-
 import tkinter as tk
 import math
 import colorsys
 import time
 from typing import Optional, Dict, Any
+
 from microservice_std_lib import service_metadata, service_endpoint
 
+# ==============================================================================
+# MICROSERVICE CLASS
+# ==============================================================================
+
 @service_metadata(
-name="SpinnerTHINGYMABOBBER",
-version="1.0.0",
-description="Interactive visual spinner widget for OBS/UI overlays.",
-tags=["ui", "widget", "visuals"],
-capabilities=["ui:gui"]
+    name="SpinnerTHINGYMABOBBER",
+    version="1.0.0",
+    description="Interactive visual spinner widget for OBS/UI overlays.",
+    tags=["ui", "widget", "visuals"],
+    capabilities=["ui:gui"]
 )
 class SpinnerThingyMaBobberMS:
+    """
+    The Visualizer: An interactive spinner widget.
+    Useful for "Processing..." screens or OBS overlays.
+    """
+    
     def __init__(self, config: Optional[Dict[str, Any]] = None):
-self.config = config or {}
-self.root = tk.Tk()
-self.root.title("OBS Interactive Spinner")
+        self.config = config or {}
+        self.root = tk.Tk()
+        self.root.title("OBS Interactive Spinner")
         self.root.configure(bg="black")
         
         # Default size
@@ -50,89 +54,91 @@ self.root.title("OBS Interactive Spinner")
         # Bind keyboard events to the window
         self.root.bind("<Key>", self.handle_keypress)
         
-        # Start animation
+        # Start animation immediately
         self.animate()
 
-        @service_endpoint(
-@service_endpoint(
-    inputs={},
-    outputs={},
-    description="Launches the GUI main loop.",
-    tags=["ui", "execution"],
-    mode="sync",
-    side_effects=["ui:block"]
-)
-def launch(self):
-    self.root.mainloop()
-
-def handle_keypress(self, event):
-    # Handle Backspace
-    if event.keysym == "BackSpace":
-        self.user_text = self.user_text[:-1]
-    # Handle Escape (Reset to default)
-    elif event.keysym == "Escape":
-        self.user_text = "PROCESSING"
-    # Ignore special keys (Shift, Ctrl, Alt, F-keys, etc.)
-    elif len(event.char) == 1 and ord(event.char) >= 32:
-        # Limit length to prevent chaos (optional, but 20 is a safe max)
-        if len(self.user_text) < 25: 
-            self.user_text += event.char.upper()
-
-def get_neon_color(self, offset=0):
-    h = (self.hue + offset) % 1.0
-    r, g, b = colorsys.hsv_to_rgb(h, 1.0, 1.0)
-    return f'#{int(r*255):02x}{int(g*255):02x}{int(b*255):02x}'
-
-def draw_arc(self, cx, cy, radius, width, start, extent, color):
-    x0 = cx - radius
-    y0 = cy - radius
-    x1 = cx + radius
-    y1 = cy + radius
-    
-    self.canvas.create_arc(
-        x0, y0, x1, y1,
-        start=start, extent=extent,
-        outline=color, width=width, style="arc"
+    @service_endpoint(
+        inputs={},
+        outputs={},
+        description="Launches the GUI main loop.",
+        tags=["ui", "execution"],
+        mode="sync",
+        side_effects=["ui:block"]
     )
-def animate(self):
-    self.canvas.delete("all")
-    
-    # Window Dimensions
-    w = self.canvas.winfo_width()
-    h = self.canvas.winfo_height()
-    
-    if w < 10 or h < 10:
-        self.root.after(50, self.animate)
-        return
+    def launch(self):
+        """Starts the Tkinter main event loop."""
+        self.root.mainloop()
 
-    cx, cy = w / 2, h / 2
-    base_size = min(w, h) / 2
-    
-    # Update Hue
-    self.hue += 0.005
-    if self.hue > 1: self.hue = 0
-    c1 = self.get_neon_color(0.0)
-    c2 = self.get_neon_color(0.3)
-    c3 = self.get_neon_color(0.6)
+    def handle_keypress(self, event):
+        # Handle Backspace
+        if event.keysym == "BackSpace":
+            self.user_text = self.user_text[:-1]
+        # Handle Escape (Reset to default)
+        elif event.keysym == "Escape":
+            self.user_text = "PROCESSING"
+        # Ignore special keys (Shift, Ctrl, Alt, F-keys, etc.)
+        elif len(event.char) == 1 and ord(event.char) >= 32:
+            # Limit length to prevent chaos (optional, but 20 is a safe max)
+            if len(self.user_text) < 25: 
+                self.user_text += event.char.upper()
 
-    # --- RINGS ---
+    def get_neon_color(self, offset=0):
+        h = (self.hue + offset) % 1.0
+        r, g, b = colorsys.hsv_to_rgb(h, 1.0, 1.0)
+        return f'#{int(r*255):02x}{int(g*255):02x}{int(b*255):02x}'
+
+    def draw_arc(self, cx, cy, radius, width, start, extent, color):
+        x0 = cx - radius
+        y0 = cy - radius
+        x1 = cx + radius
+        y1 = cy + radius
         
-    # Ring 1
-    r1 = base_size * 0.85
-    self.angle_1 -= 3
-    for i in range(3):
-        self.draw_arc(cx, cy, r1, base_size*0.08, self.angle_1 + (i*120), 80, c1)
+        self.canvas.create_arc(
+            x0, y0, x1, y1,
+            start=start, extent=extent,
+            outline=color, width=width, style="arc"
+        )
 
-    # Ring 2
-    r2 = base_size * 0.65
-    self.angle_2 += 5
-    self.draw_arc(cx, cy, r2, base_size*0.05, self.angle_2, 160, c2)
-    self.draw_arc(cx, cy, r2, base_size*0.05, self.angle_2 + 180, 160, c2)
+    def animate(self):
+        self.canvas.delete("all")
+        
+        # Window Dimensions
+        w = self.canvas.winfo_width()
+        h = self.canvas.winfo_height()
+        
+        if w < 10 or h < 10:
+            self.root.after(50, self.animate)
+            return
 
-    # Ring 3
-    r3 = base_size * 0.45
-    self.angle_3 -= 8
-    self.draw_arc(cx, cy, r3, base_size*0.04, self.angle_3, 300, c3)
+        cx, cy = w / 2, h / 2
+        base_size = min(w, h) / 2
+        
+        # Update Hue
+        self.hue += 0.005
+        if self.hue > 1: self.hue = 0
+        c1 = self.get_neon_color(0.0)
+        c2 = self.get_neon_color(0.3)
+        c3 = self.get_neon_color(0.6)
+
+        # --- RINGS ---
+            
+        # Ring 1
+        r1 = base_size * 0.85
+        self.angle_1 -= 3
+        for i in range(3):
+            self.draw_arc(cx, cy, r1, base_size*0.08, self.angle_1 + (i*120), 80, c1)
+
+        # Ring 2
+        r2 = base_size * 0.65
+        self.angle_2 += 5
+        self.draw_arc(cx, cy, r2, base_size*0.05, self.angle_2, 160, c2)
+        self.draw_arc(cx, cy, r2, base_size*0.05, self.angle_2 + 180, 160, c2)
+
+        # Ring 3
+        r3 = base_size * 0.45
+        self.angle_3 -= 8
+        self.draw_arc(cx, cy, r3, base_size*0.04, self.angle_3, 300, c3)
+        
         # --- TEXT LOGIC ---
         
         # Toggle cursor every 0.5 seconds
@@ -163,6 +169,9 @@ def animate(self):
 
         self.root.after(30, self.animate)
 
+
+# --- Independent Test Block ---
 if __name__ == "__main__":
-svc = SpinnerThingyMaBobberMS()
-svc.launch()
+    print("Launching Spinner ThingyMaBobber...")
+    svc = SpinnerThingyMaBobberMS()
+    svc.launch()

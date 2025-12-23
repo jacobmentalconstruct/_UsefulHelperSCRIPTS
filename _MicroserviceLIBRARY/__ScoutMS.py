@@ -1,14 +1,10 @@
-"""
-SERVICE_NAME: _ScoutMS
-ENTRY_POINT: __ScoutMS.py
-DEPENDENCIES: None
-"""
-
 import os
 import time
 import requests
 from urllib.parse import urljoin, urlparse
 from typing import Dict, List, Any, Optional
+
+from microservice_std_lib import service_metadata, service_endpoint
 
 # Try imports for Web/PDF support
 try:
@@ -17,7 +13,7 @@ except ImportError:
     BeautifulSoup = None
 
 @service_metadata(
-    name="ScoutMS",
+    name="Scout",
     version="1.0.0",
     description="The Scout: A depth-aware utility for recursively walking local file systems or crawling websites.",
     tags=["utility", "scanner", "crawler"],
@@ -50,7 +46,8 @@ class ScoutMS:
         inputs={"root_path": "str", "web_depth": "int"},
         outputs={"tree": "dict"},
         description="Main entry point to perform a recursive scan of a directory or a web crawl.",
-        tags=["discovery", "recursive"]
+        tags=["discovery", "recursive"],
+        side_effects=["filesystem:read", "network:read"]
     )
     def scan_directory(self, root_path: str, web_depth: int = 0) -> Optional[Dict[str, Any]]:
         """
@@ -173,14 +170,13 @@ class ScoutMS:
                 files.extend(self.flatten_tree(child))
         return files
 
-    if __name__ == "__main__":
-        svc = ScoutMS()
-        print("Service ready:", svc._service_info["name"])
+
+if __name__ == "__main__":
+    svc = ScoutMS()
+    print("Service ready:", svc)
+    
     # Basic local test
     current_dir = os.path.dirname(os.path.abspath(__file__))
     tree = svc.scan_directory(current_dir)
     if tree:
         print(f"Scanned {len(svc.flatten_tree(tree))} files in current directory.")
-
-
-

@@ -1,48 +1,47 @@
-"""
-SERVICE_NAME: _LibrarianServiceMS
-ENTRY_POINT: __LibrarianServiceMS.py
-DEPENDENCIES: None
-"""
-
 import os
 import shutil
 import sqlite3
 import time
 from pathlib import Path
 from typing import Any, Dict, List, Optional
+
 from microservice_std_lib import service_metadata, service_endpoint
 
+# ==============================================================================
+# MICROSERVICE CLASS
+# ==============================================================================
+
 @service_metadata(
-name="LibrarianService",
-version="1.0.0",
-description="Manages the lifecycle (create, list, delete) of Knowledge Base files.",
-tags=["kb", "management", "filesystem"],
-capabilities=["filesystem:read", "filesystem:write", "db:sqlite"]
+    name="LibrarianService",
+    version="1.0.0",
+    description="Manages the lifecycle (create, list, delete) of Knowledge Base files.",
+    tags=["kb", "management", "filesystem"],
+    capabilities=["filesystem:read", "filesystem:write", "db:sqlite"]
 )
 class LibrarianServiceMS:
     """
-The Librarian: Manages the physical creation, deletion, and listing
-of Knowledge Base (KB) files.
-"""
+    The Librarian: Manages the physical creation, deletion, and listing
+    of Knowledge Base (KB) files.
+    """
     
-def __init__(self, config: Optional[Dict[str, Any]] = None):
-self.config = config or {}
-storage_dir = self.config.get("storage_dir", "./cortex_dbs")
-self.storage_dir = Path(storage_dir)
-self.storage_dir.mkdir(parents=True, exist_ok=True)
+    def __init__(self, config: Optional[Dict[str, Any]] = None):
+        self.config = config or {}
+        storage_dir = self.config.get("storage_dir", "./cortex_dbs")
+        self.storage_dir = Path(storage_dir)
+        self.storage_dir.mkdir(parents=True, exist_ok=True)
 
     @service_endpoint(
-    inputs={},
-    outputs={"kbs": "List[str]"},
-    description="Lists available Knowledge Base files.",
-    tags=["kb", "read"],
-    side_effects=["filesystem:read"]
+        inputs={},
+        outputs={"kbs": "List[str]"},
+        description="Lists available Knowledge Base files.",
+        tags=["kb", "read"],
+        side_effects=["filesystem:read"]
     )
     def list_kbs(self) -> List[str]:
-    """
-    Scans the storage directory for .db files.
-    Equivalent to api.listKBs() in Sidebar.tsx.
-    """
+        """
+        Scans the storage directory for .db files.
+        Equivalent to api.listKBs() in Sidebar.tsx.
+        """
         if not self.storage_dir.exists():
             return []
         
@@ -52,16 +51,16 @@ self.storage_dir.mkdir(parents=True, exist_ok=True)
         return [f.name for f in files]
 
     @service_endpoint(
-    inputs={"name": "str"},
-    outputs={"status": "Dict"},
-    description="Creates a new Knowledge Base with the standard schema.",
-    tags=["kb", "create"],
-    side_effects=["filesystem:write", "db:write"]
+        inputs={"name": "str"},
+        outputs={"status": "Dict"},
+        description="Creates a new Knowledge Base with the standard schema.",
+        tags=["kb", "create"],
+        side_effects=["filesystem:write", "db:write"]
     )
     def create_kb(self, name: str) -> Dict[str, str]:
-    """
-    Creates a new SQLite database and initializes the Cortex Schema.
-    """
+        """
+        Creates a new SQLite database and initializes the Cortex Schema.
+        """
         safe_name = self._sanitize_name(name)
         db_path = self.storage_dir / safe_name
         
@@ -94,7 +93,7 @@ self.storage_dir.mkdir(parents=True, exist_ok=True)
             
             # 3. Chunks: The actual atomic units of knowledge
             # Note: 'embedding' is stored as a BLOB (bytes) for raw vector data
-cursor.execute("""
+            cursor.execute("""
                 CREATE TABLE IF NOT EXISTS chunks (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     file_id INTEGER,
@@ -142,16 +141,16 @@ cursor.execute("""
             raise e
 
     @service_endpoint(
-    inputs={"name": "str"},
-    outputs={"success": "bool"},
-    description="Deletes a Knowledge Base file.",
-    tags=["kb", "delete"],
-    side_effects=["filesystem:write"]
+        inputs={"name": "str"},
+        outputs={"success": "bool"},
+        description="Deletes a Knowledge Base file.",
+        tags=["kb", "delete"],
+        side_effects=["filesystem:write"]
     )
     def delete_kb(self, name: str) -> bool:
-    """
-    Physically removes the database file.
-    """
+        """
+        Physically removes the database file.
+        """
         safe_name = self._sanitize_name(name)
         db_path = self.storage_dir / safe_name
         
@@ -161,50 +160,51 @@ cursor.execute("""
         return False
 
     @service_endpoint(
-    inputs={"source_name": "str"},
-    outputs={"status": "Dict"},
-    description="Creates a copy of an existing KB.",
-    tags=["kb", "copy"],
-    side_effects=["filesystem:write"]
+        inputs={"source_name": "str"},
+        outputs={"status": "Dict"},
+        description="Creates a copy of an existing KB.",
+        tags=["kb", "copy"],
+        side_effects=["filesystem:write"]
     )
     def duplicate_kb(self, source_name: str) -> Dict[str, str]:
-    """
-    Creates a copy of an existing KB.
-    """
+        """
+        Creates a copy of an existing KB.
+        """
         safe_source = self._sanitize_name(source_name)
         source_path = self.storage_dir / safe_source
         
-if not source_path.exists():
+        if not source_path.exists():
             raise FileNotFoundError(f"Source KB '{safe_source}' not found.")
 
-# Generate new name
-base = safe_source.replace('.db', '')
-new_name = f"{base}_copy.db"
-dest_path = self.storage_dir / new_name
+        # Generate new name
+        base = safe_source.replace('.db', '')
+        new_name = f"{base}_copy.db"
+        dest_path = self.storage_dir / new_name
 
-# Handle collision if copy already exists
-counter = 1
-while dest_path.exists():
-    new_name = f"{base}_copy_{counter}.db"
-    dest_path = self.storage_dir / new_name
-    counter += 1
+        # Handle collision if copy already exists
+        counter = 1
+        while dest_path.exists():
+            new_name = f"{base}_copy_{counter}.db"
+            dest_path = self.storage_dir / new_name
+            counter += 1
 
-shutil.copy2(source_path, dest_path)
-return {"status": "success", "name": new_name}
+        shutil.copy2(source_path, dest_path)
+        return {"status": "success", "name": new_name}
 
-def _sanitize_name(self, name: str) -> str:
-    """Ensures the filename ends in .db and has no illegal chars."""
-    clean = "".join(c for c in name if c.isalnum() or c in (' ', '_', '-')).strip()
-    clean = clean.replace(' ', '_')
-    if not clean.endswith('.db'):
-        clean += '.db'
-    return clean
+    def _sanitize_name(self, name: str) -> str:
+        """Ensures the filename ends in .db and has no illegal chars."""
+        clean = "".join(c for c in name if c.isalnum() or c in (' ', '_', '-')).strip()
+        clean = clean.replace(' ', '_')
+        if not clean.endswith('.db'):
+            clean += '.db'
+        return clean
+
 
 # --- Independent Test Block ---
 if __name__ == "__main__":
-print("Initializing Librarian Service...")
-lib = LibrarianServiceMS({"storage_dir": "./test_brains"})
-print("Service ready:", lib)
+    print("Initializing Librarian Service...")
+    lib = LibrarianServiceMS({"storage_dir": "./test_brains"})
+    print("Service ready:", lib)
     
     # 1. Create
     print("Creating 'Project_Alpha'...")
@@ -214,13 +214,13 @@ print("Service ready:", lib)
         print("Project Alpha already exists.")
         
     # 2. List
-kbs = lib.list_kbs()
-print(f"Available Brains: {kbs}")
+    kbs = lib.list_kbs()
+    print(f"Available Brains: {kbs}")
 
-# 3. Duplicate
-if "Project_Alpha.db" in kbs:
-    print("Duplicating Alpha...")
-    lib.duplicate_kb("Project_Alpha.db")
+    # 3. Duplicate
+    if "Project_Alpha.db" in kbs:
+        print("Duplicating Alpha...")
+        lib.duplicate_kb("Project_Alpha.db")
 
-# 4. Final List
-print(f"Final Brains: {lib.list_kbs()}")
+    # 4. Final List
+    print(f"Final Brains: {lib.list_kbs()}")

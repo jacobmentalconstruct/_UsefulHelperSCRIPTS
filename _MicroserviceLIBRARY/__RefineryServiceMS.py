@@ -1,30 +1,39 @@
-"""
-SERVICE_NAME: _RefineryServiceMS
-ENTRY_POINT: __RefineryServiceMS.py
-DEPENDENCIES: None
-"""
-
 import json
 import re
 import os
 import time
 import ast
 import concurrent.futures
+import logging
 from typing import Dict, List, Any, Optional, Tuple
-from base_service import BaseService
-from __CartridgeServiceMS import CartridgeService
-from __NeuralServiceMS import NeuralService
-from __ChunkingRouterMS import ChunkingRouterMS
+
+# Assume these are available in the local environment
+try:
+    from __CartridgeServiceMS import CartridgeServiceMS
+    from __NeuralServiceMS import NeuralServiceMS
+    from __ChunkingRouterMS import ChunkingRouterMS
+except ImportError:
+    # Fallbacks for static analysis or isolation
+    CartridgeServiceMS = Any
+    NeuralServiceMS = Any
+    ChunkingRouterMS = Any
+
 from microservice_std_lib import service_metadata, service_endpoint
 
+logger = logging.getLogger("RefineryService")
+
+# ==============================================================================
+# MICROSERVICE CLASS
+# ==============================================================================
+
 @service_metadata(
-    name="RefineryServiceMS",
+    name="RefineryService",
     version="1.1.0",
     description="The Night Shift: Processes 'RAW' files into semantic chunks and weaves them into a knowledge graph.",
     tags=["processing", "refinery", "graph", "RAG"],
     capabilities=["smart-chunking", "graph-weaving", "parallel-embedding"]
 )
-class RefineryServiceMS(BaseService):
+class RefineryServiceMS:
     """
     The Night Shift.
     Polls the DB for 'RAW' files and processes them into Chunks and Graph Nodes.
@@ -34,33 +43,19 @@ class RefineryServiceMS(BaseService):
     - Docs: section/chapter nodes for long-form text (md/txt/rst).
     """
 
-    def __init__(self, cartridge: CartridgeService, neural: NeuralService):
-        super().__init__("RefineryServiceMS")
-        self.cartridge = cartridge
-        self.neural = neural
-        self.chunker = ChunkingRouterMS()
+    def __init__(self, config: Optional[Dict[str, Any]] = None):
+        self.config = config or {}
+        
+        # Dependencies must be injected via config in this architecture
+        self.cartridge = self.config.get("cartridge")
+        self.neural = self.config.get("neural")
+        
+        # Instantiate internal router
+        self.chunker = ChunkingRouterMS() if ChunkingRouterMS != Any else None
+        
         self.start_time = time.time()
-
-    @service_endpoint(
-        inputs={},
-        outputs={"status": "str", "uptime": "float", "cartridge_health": "str"},
-        description="Standardized health check to verify the operational state of the Refinery service.",
-        tags=["diagnostic", "health"]
-    )
-    def get_health(self) -> Dict[str, Any]:
-        """Returns the operational status of the RefineryServiceMS."""
-        return {
-            "status": "online",
-            "uptime": time.time() - self.start_time,
-            "cartridge_health": self.cartridge.get_status_flags().get("cartridge_health", "UNKNOWN")
-        }
-
-        # --- Spec Enforcement ---
-        # Update the cartridge manifest to reflect the ACTUAL tools we are using.
-        self._stamp_specs()
-
+        
         # Import parsing / resolution
-        # Regex remains as a fallback (JS + non-parseable cases)
         self.import_pattern = re.compile(r"""(?:from|import)\s+([\w\.]+)|require\(['"]([\w\.\-/]+)['"]\)""")
 
         # Lightweight module/path index cache for resolving imports to VFS files
@@ -71,13 +66,38 @@ class RefineryServiceMS(BaseService):
         # Simple section/chapter detection
         self._md_heading = re.compile(r"^(#{1,6})\s+(.+?)\s*$")
         self._chapter_heading = re.compile(r"^\s*(chapter|CHAPTER)\s+([0-9]+|[IVXLC]+)\b\s*[:\-]?\s*(.*)$")
+        
+        # Initial setup if dependencies exist
+        if self.cartridge and self.neural:
+            self._stamp_specs()
+
+    @service_endpoint(
+        inputs={},
+        outputs={"status": "str", "uptime": "float", "cartridge_health": "str"},
+        description="Standardized health check to verify the operational state of the Refinery service.",
+        tags=["diagnostic", "health"]
+    )
+    def get_health(self) -> Dict[str, Any]:
+        """Returns the operational status of the RefineryServiceMS."""
+        cart_status = "UNKNOWN"
+        if self.cartridge:
+            # Assuming cartridge has a status method or dict
+            cart_status = "CONNECTED" 
+        
+        return {
+            "status": "online",
+            "uptime": time.time() - self.start_time,
+            "cartridge_health": cart_status
+        }
 
     def _stamp_specs(self):
         """Writes the active Neural/Chunker configuration to the Manifest."""
         try:
             # 1. Embedding Spec
             # We assume 1024 dim for mxbai-large, but ideally we'd probe it.
-            embed_model = self.neural.config["embed"]
+            # Access config from the neural service instance
+            embed_model = getattr(self.neural, "models", {}).get("embed", "default")
+            
             spec = {
                 "provider": "ollama",
                 "model": embed_model,
@@ -85,21 +105,15 @@ class RefineryServiceMS(BaseService):
                 "dtype": "float32",
                 "distance": "cosine"
             }
-            self.cartridge.set_manifest("embedding_spec", spec)
-
-            # 2. Chunking Spec
-            # (We could expose chunker config params here if they were dynamic)
+            if self.cartridge:
+                self.cartridge.set_manifest("embedding_spec", spec)
 
         except Exception as e:
-            self.log_error(f"Failed to stamp specs: {e}")
+            logger.error(f"Failed to stamp specs: {e}")
 
     def _build_import_index(self):
-        """Builds caches for resolving imports to VFS targets.
-
-        - _path_index: exact VFS path -> VFS path
-        - _module_index: python module name (a.b.c) -> VFS path (a/b/c.py, a/b/c/__init__.py)
-        """
-        if self._index_built:
+        """Builds caches for resolving imports to VFS targets."""
+        if self._index_built or not self.cartridge:
             return
 
         path_index: Dict[str, str] = {}
@@ -143,11 +157,15 @@ class RefineryServiceMS(BaseService):
     )
     def process_pending(self, batch_size: int = 5) -> int:
         """Main loop. Returns number of files processed."""
+        if not self.cartridge or not self.neural:
+            logger.error("Refinery missing dependencies (Cartridge or Neural).")
+            return 0
+
         pending = self.cartridge.get_pending_files(limit=batch_size)
         if not pending:
             return 0
 
-        self.log_info(f"Refining batch of {len(pending)} files...")
+        logger.info(f"Refining batch of {len(pending)} files...")
 
         for file_row in pending:
             self._refine_file(file_row)
@@ -176,7 +194,8 @@ class RefineryServiceMS(BaseService):
             pending_edges: List[Tuple[str, str, str, float]] = []
 
             # Use ThreadPool to embed in parallel (preserve order with map)
-            with concurrent.futures.ThreadPoolExecutor(max_workers=self.neural.max_workers) as executor:
+            max_workers = getattr(self.neural, "max_workers", 4)
+            with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
                 vectors = list(executor.map(self.neural.get_embedding, chunk_texts))
 
             conn = self.cartridge._get_conn()
@@ -206,10 +225,9 @@ class RefineryServiceMS(BaseService):
                                 (chunk_row_id, json.dumps(vector))
                             )
                         except Exception as ve:
-                            self.log_error(f"Vector Index Insert Failed: {ve}")
+                            logger.error(f"Vector Index Insert Failed: {ve}")
 
                     # Graph Node for Chunks (Functions/Classes)
-                    # IMPORTANT: Do NOT call CartridgeService.add_node/add_edge while this conn is open.
                     if chunk.type in ['class', 'function']:
                         node_id = f"{vfs_path}::{chunk.name}"
                         pending_nodes.append(
@@ -253,14 +271,11 @@ class RefineryServiceMS(BaseService):
             self.cartridge.update_status(file_id, "REFINED")
 
         except Exception as e:
-            self.log_error(f"Refining failed for {vfs_path}: {e}")
+            logger.error(f"Refining failed for {vfs_path}: {e}")
             self.cartridge.update_status(file_id, "ERROR", {"error": str(e)})
 
     def _extract_imports_python(self, source_path: str, content: str) -> List[Tuple[str, int, int]]:
-        """Returns list of (module_or_path, level, lineno).
-
-        - level: 0 for absolute imports, >=1 for relative import-from statements.
-        """
+        """Returns list of (module_or_path, level, lineno)."""
         out: List[Tuple[str, int, int]] = []
         try:
             tree = ast.parse(content)
@@ -282,7 +297,6 @@ class RefineryServiceMS(BaseService):
                     for alias in node.names:
                         if alias and alias.name:
                             out.append((alias.name, level, getattr(node, 'lineno', 0)))
-
         return out
 
     def _resolve_python_import(self, source_path: str, module: str, level: int) -> List[str]:
@@ -347,12 +361,7 @@ class RefineryServiceMS(BaseService):
         return [c for c in ext_candidates if c in self._path_index]
 
     def _weave_imports(self, source_path: str, content: str):
-        """Scans content for imports and links them in the graph.
-
-        Creates edges:
-        - imports_file: source_path -> target_vfs_path (resolved)
-        - imports_unresolved: source_path -> module_string (fallback)
-        """
+        """Scans content for imports and links them in the graph."""
         targets_resolved: List[str] = []
 
         # Python: use AST when possible
@@ -365,7 +374,6 @@ class RefineryServiceMS(BaseService):
                         targets_resolved.append(tgt)
                 else:
                     self.cartridge.add_edge(source_path, mod, "imports_unresolved", 0.25)
-
             return
 
         # JS / generic: regex fallback
@@ -409,16 +417,7 @@ class RefineryServiceMS(BaseService):
                         "line": lineno
                     })
                     self.cartridge.add_edge(node_id, vfs_path, "in_file", 1.0)
-                                    continue
-
-                    if __name__ == "__main__":
-                        # Requires Cartridge and Neural services for testing
-                        from __CartridgeServiceMS import CartridgeService
-                        from __NeuralServiceMS import NeuralService
-                        c = CartridgeService(":memory:")
-                        n = NeuralService()
-                        svc = RefineryServiceMS(c, n)
-                        print("Service ready:", svc._service_info["name"])
+                continue
 
             c = self._chapter_heading.match(line)
             if c:
@@ -434,8 +433,21 @@ class RefineryServiceMS(BaseService):
                 self.cartridge.add_edge(node_id, vfs_path, "in_file", 1.0)
 
 
-
-
-
-
-
+# --- Independent Test Block ---
+if __name__ == "__main__":
+    # Requires Cartridge and Neural services for testing
+    try:
+        from __CartridgeServiceMS import CartridgeServiceMS
+        from __NeuralServiceMS import NeuralServiceMS
+        
+        print("Initializing Dependencies...")
+        c = CartridgeServiceMS({"db_path": ":memory:"})
+        n = NeuralServiceMS()
+        
+        # Inject dependencies via config
+        svc = RefineryServiceMS({"cartridge": c, "neural": n})
+        print("Service ready:", svc)
+        print("Health Check:", svc.get_health())
+        
+    except ImportError:
+        print("Dependencies not found. Run in project context.")

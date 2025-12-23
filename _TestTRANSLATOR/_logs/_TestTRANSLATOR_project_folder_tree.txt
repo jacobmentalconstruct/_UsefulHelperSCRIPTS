@@ -1,0 +1,15 @@
+Project Tree: C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_TestTRANSLATOR
+Generated: 2025-12-22 21:38:21.125786
+
+├── 📁 _boilerplates/
+│   └── 📄 microservice_boiler_plate.py
+├── 📁 src/
+│   ├── 📄 __init__.py
+│   └── 📄 app.py
+├── 📄 _TestTRANSLATOR_PreMadLIBS.7z
+├── 📄 injector_prompt.txt
+├── 📄 injector_prompt_v2.txt
+├── 📄 LICENSE.md
+├── 📄 README.md
+├── 📄 requirements.txt
+└── 📄 setup_env.bat

@@ -1,15 +1,11 @@
-"""
-SERVICE_NAME: _SandboxManagerMS
-ENTRY_POINT: __SandboxManagerMS.py
-DEPENDENCIES: None
-"""
-
 import shutil
 import hashlib
 import os
 import logging
 from pathlib import Path
-from typing import List, Dict, Set, Optional, Tuple
+from typing import List, Dict, Set, Optional, Tuple, Any
+
+from microservice_std_lib import service_metadata, service_endpoint
 
 # ==============================================================================
 # CONFIGURATION
@@ -19,19 +15,39 @@ DEFAULT_EXCLUDES = {
     "node_modules", ".git", "__pycache__", ".venv", ".mypy_cache",
     "_logs", "dist", "build", ".vscode", ".idea", "_sandbox", "_project_library"
 }
-logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(message)s')
-log = logging.getLogger("SandboxMgr")
+
+logger = logging.getLogger("SandboxMgr")
+
+# ==============================================================================
+# MICROSERVICE CLASS
 # ==============================================================================
 
+@service_metadata(
+    name="SandboxManager",
+    version="1.0.0",
+    description="The Safety Harness: Manages a 'Sandbox' mirror of a 'Live' project for safe experimentation.",
+    tags=["filesystem", "safety", "versioning"],
+    capabilities=["filesystem:read", "filesystem:write"]
+)
 class SandboxManagerMS:
     """
     The Safety Harness: Manages a 'Sandbox' mirror of a 'Live' project.
     Allows for safe experimentation, diffing, and atomic promotion of changes.
     """
-    def __init__(self, live_path: str, sandbox_path: str):
-        self.live_root = Path(live_path).resolve()
-        self.sandbox_root = Path(sandbox_path).resolve()
+    
+    def __init__(self, config: Optional[Dict[str, Any]] = None):
+        self.config = config or {}
+        # In a real microservice usage, paths might come from config
+        self.live_root = Path(self.config.get("live_path", "./project")).resolve()
+        self.sandbox_root = Path(self.config.get("sandbox_path", "./_sandbox")).resolve()
 
+    @service_endpoint(
+        inputs={"force": "bool"},
+        outputs={},
+        description="Creates or resets the sandbox by mirroring the live project.",
+        tags=["sandbox", "reset"],
+        side_effects=["filesystem:write"]
+    )
     def init_sandbox(self, force: bool = False):
         """
         Creates or resets the sandbox by mirroring the live project.
@@ -39,20 +55,35 @@ class SandboxManagerMS:
         if self.sandbox_root.exists():
             if not force:
                 raise FileExistsError(f"Sandbox already exists at {self.sandbox_root}")
-            log.info("Wiping existing sandbox...")
+            logger.info("Wiping existing sandbox...")
             shutil.rmtree(self.sandbox_root)
         
-        log.info(f"Cloning {self.live_root} -> {self.sandbox_root}...")
+        logger.info(f"Cloning {self.live_root} -> {self.sandbox_root}...")
         self._mirror_tree(self.live_root, self.sandbox_root)
-        log.info("Sandbox initialized.")
+        logger.info("Sandbox initialized.")
 
+    @service_endpoint(
+        inputs={},
+        outputs={},
+        description="Discards all sandbox changes and re-syncs from live.",
+        tags=["sandbox", "reset"],
+        side_effects=["filesystem:write"]
+    )
     def reset_sandbox(self):
         """
         Discards all sandbox changes and re-syncs from live.
         """
         self.init_sandbox(force=True)
 
+    @service_endpoint(
+        inputs={},
+        outputs={"diff": "Dict[str, List[str]]"},
+        description="Compares Sandbox vs Live. Returns added, modified, and deleted files.",
+        tags=["sandbox", "diff"],
+        side_effects=["filesystem:read"]
+    )
     def get_diff(self) -> Dict[str, List[str]]:
+        """
         Compares Sandbox vs Live. Returns added, modified, and deleted files.
         """
         sandbox_files = self._scan_files(self.sandbox_root)
@@ -81,6 +112,13 @@ class SandboxManagerMS:
             "deleted": deleted
         }
 
+    @service_endpoint(
+        inputs={},
+        outputs={"added": "int", "modified": "int", "deleted": "int"},
+        description="Applies changes from Sandbox to Live.",
+        tags=["sandbox", "promote"],
+        side_effects=["filesystem:write"]
+    )
     def promote_changes(self) -> Tuple[int, int, int]:
         """
         Applies changes from Sandbox to Live.
@@ -101,15 +139,21 @@ class SandboxManagerMS:
             if target.exists():
                 os.remove(target)
                 
-        log.info(f"Promoted: {len(diff['added'])} added, {len(diff['modified'])} modified, {len(diff['deleted'])} deleted.")
+        logger.info(f"Promoted: {len(diff['added'])} added, {len(diff['modified'])} modified, {len(diff['deleted'])} deleted.")
         return len(diff['added']), len(diff['modified']), len(diff['deleted'])
 
-    # --- Internal Helpers ---
+    # --------------------------------------------------------------------- #
+    # Internal Helpers
+    # --------------------------------------------------------------------- #
 
     def _mirror_tree(self, src_root: Path, dst_root: Path):
         """Recursive copy that respects the exclusion list."""
         if not dst_root.exists():
             dst_root.mkdir(parents=True, exist_ok=True)
+
+        # Handle case where live root doesn't exist yet
+        if not src_root.exists():
+            return
 
         for item in src_root.iterdir():
             if item.name in DEFAULT_EXCLUDES:
@@ -152,6 +196,7 @@ class SandboxManagerMS:
         except Exception:
             return "read_error"
 
+
 # --- Independent Test Block ---
 if __name__ == "__main__":
     # Setup test environment
@@ -169,26 +214,26 @@ if __name__ == "__main__":
     (live / "node_modules" / "junk.js").write_text("junk")
     
     print("--- Initializing Sandbox ---")
-    mgr = SandboxManagerMS(str(live), str(box))
+    mgr = SandboxManagerMS({"live_path": str(live), "sandbox_path": str(box)})
     mgr.init_sandbox()
     
     # 2. Make Changes in Sandbox
-print("\n--- Modifying Sandbox ---")
-(box / "main.py").write_text("print('v2')")  # Modify
-(box / "new_feature.py").write_text("print('new')")  # Add
-os.remove(box / "utils.py")  # Delete
+    print("\n--- Modifying Sandbox ---")
+    (box / "main.py").write_text("print('v2')")  # Modify
+    (box / "new_feature.py").write_text("print('new')")  # Add
+    os.remove(box / "utils.py")  # Delete
 
-# 3. Check Diff
-diff = mgr.get_diff()
-print(f"Diff Analysis:\n Added: {diff['added']}\n Modified: {diff['modified']}\n Deleted: {diff['deleted']}")
+    # 3. Check Diff
+    diff = mgr.get_diff()
+    print(f"Diff Analysis:\n Added: {diff['added']}\n Modified: {diff['modified']}\n Deleted: {diff['deleted']}")
 
-# 4. Promote
-print("\n--- Promoting Changes ---")
-mgr.promote_changes()
+    # 4. Promote
+    print("\n--- Promoting Changes ---")
+    mgr.promote_changes()
 
-# Verify Live
-print(f"Live 'main.py' content: {(live / 'main.py').read_text()}")
-print(f"Live 'utils.py' exists? {(live / 'utils.py').exists()})
+    # Verify Live
+    print(f"Live 'main.py' content: {(live / 'main.py').read_text()}")
+    print(f"Live 'utils.py' exists? {(live / 'utils.py').exists()}")
 
-# Cleanup
-if base.exists(): shutil.rmtree(base)
+    # Cleanup
+    if base.exists(): shutil.rmtree(base)

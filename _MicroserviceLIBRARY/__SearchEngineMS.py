@@ -1,38 +1,50 @@
-"""
-SERVICE_NAME: _SearchEngineMS
-ENTRY_POINT: __SearchEngineMS.py
-DEPENDENCIES: requests, sqlite-vec
-"""
+import importlib.util
+import sys
+import sqlite3
+import json
+import struct
+import requests
+import os
+import logging
+from typing import List, Dict, Any, Optional
 
 # --- RUNTIME DEPENDENCY CHECK ---
-import importlib.util, sys
-REQUIRED = ["requests", "sqlite-vec"]
+REQUIRED = ["requests", "sqlite_vec"] # 'sqlite-vec' package name is often 'sqlite_vec' in pip/import
 MISSING = []
+
 for lib in REQUIRED:
-    # Clean version numbers for check (e.g., pygame==2.0 -> pygame)
-    clean_lib = lib.split('>=')[0].split('==')[0].split('>')[0].replace('-', '_')
-    if importlib.util.find_spec(clean_lib) is None:
-        if clean_lib == 'pywebview': clean_lib = 'webview' # Common alias
-        if importlib.util.find_spec(clean_lib) is None:
-            MISSING.append(lib)
+    # Handle hyphenated package names for import check vs pip name
+    import_name = lib.replace("-", "_")
+    if importlib.util.find_spec(import_name) is None:
+        MISSING.append(lib)
 
 if MISSING:
     print('\n' + '!'*60)
     print(f'MISSING DEPENDENCIES for _SearchEngineMS:')
     print(f'Run:  pip install {" ".join(MISSING)}')
     print('!'*60 + '\n')
-    # sys.exit(1) # Uncomment to force stop if missing
+    # We proceed so the class loads, but methods will likely fail.
 
-import sqlite3
-import json
-import struct
-import requests
-import os
-from typing import List, Dict, Any, Optional
+from microservice_std_lib import service_metadata, service_endpoint
 
-# Configuration
-OLLAMA_API_URL = "http://localhost:11434/api"
+# ==============================================================================
+# CONFIGURATION
+# ==============================================================================
 
+DEFAULT_OLLAMA_URL = "http://localhost:11434/api"
+logger = logging.getLogger("SearchEngine")
+
+# ==============================================================================
+# MICROSERVICE CLASS
+# ==============================================================================
+
+@service_metadata(
+    name="SearchEngine",
+    version="1.0.0",
+    description="The Oracle: Performs Hybrid Search (Vector Similarity + Keyword Matching) on SQLite databases.",
+    tags=["search", "vector", "hybrid", "rag"],
+    capabilities=["db:sqlite", "network:outbound", "compute"]
+)
 class SearchEngineMS:
     """
     The Oracle: Performs Hybrid Search (Vector Similarity + Keyword Matching).
@@ -43,29 +55,34 @@ class SearchEngineMS:
     3. Reranking: Combines scores using Reciprocal Rank Fusion (RRF).
     """
 
-    def __init__(self, model_name: str = "phi3:mini-128k"):
-        self.model = model_name
+    def __init__(self, config: Optional[Dict[str, Any]] = None):
+        self.config = config or {}
+        self.model_name = self.config.get("model_name", "phi3:mini-128k")
+        self.ollama_url = self.config.get("ollama_url", DEFAULT_OLLAMA_URL)
 
-    def search(self, db_path: str, query: str, limit: int = 10) -> List[Dict]:
+    @service_endpoint(
+        inputs={"db_path": "str", "query": "str", "limit": "int"},
+        outputs={"results": "List[Dict]"},
+        description="Main entry point. Returns a list of results sorted by relevance (RRF).",
+        tags=["search", "query"],
+        side_effects=["db:read", "network:outbound"]
+    )
+    def search(self, db_path: str, query: str, limit: int = 10) -> List[Dict[str, Any]]:
         """
         Main entry point. Returns a list of results sorted by relevance.
         """
         if not os.path.exists(db_path):
+            logger.warning(f"Database not found at: {db_path}")
             return []
 
         conn = sqlite3.connect(db_path)
-        # Enable sqlite-vec extension if needed, though standard connect might miss it 
-        # depending on system install. For now, we assume the DB is pre-populated 
-        # and standard SQL queries work if the extension is loaded globally or unnecessary 
-        # for simple selects (standard SQLite can read vec0 tables usually, just not query them efficiently without ext).
-        # Note: If sqlite-vec is not loaded, the vec0 MATCH queries below will fail.
-        # We try to load it here just in case.
-        conn.enable_load_extension(True)
+        # Enable sqlite-vec extension
         try:
+            conn.enable_load_extension(True)
             import sqlite_vec
             sqlite_vec.load(conn)
-        except:
-            print("Warning: sqlite_vec not loaded in Search Engine. Vector search may fail.")
+        except Exception as e:
+            logger.warning(f"Warning: sqlite_vec not loaded. Vector search may fail. Error: {e}")
 
         cursor = conn.cursor()
 
@@ -73,13 +90,19 @@ class SearchEngineMS:
         query_vec = self._get_query_embedding(query)
         if not query_vec:
             # Fallback to keyword only if embedding fails
-            return self._keyword_search_only(cursor, query, limit)
+            logger.info("Vectorization failed. Falling back to keyword-only search.")
+            conn.close()
+            # Re-open connection is not strictly necessary for fallback logic, 
+            # but we return early. Note: _keyword_search_only expects a cursor.
+            # We reopen/reuse properly:
+            return self._keyword_search_only(db_path, query, limit)
 
         # Pack vector for sqlite-vec (Float32 Little Endian)
         vec_bytes = struct.pack(f'{len(query_vec)}f', *query_vec)
 
         # 2. HYBRID QUERY (The "Magic" SQL)
-        # We use CTEs to get top 50 from Vector and top 50 from Keyword, then merge.
+        # Note: This SQL assumes a specific schema ('knowledge_vectors', 'documents_fts', 'knowledge_chunks').
+        # Ensure your database setup (e.g. Refinery/Librarian) matches these table names.
         sql = """
         WITH 
         vec_matches AS (
@@ -118,8 +141,10 @@ class SearchEngineMS:
             fts_query = f'"{query}"' 
             rows = cursor.execute(sql, (vec_bytes, fts_query, limit)).fetchall()
         except sqlite3.OperationalError as e:
-            print(f"Search Error (likely missing sqlite-vec): {e}")
+            logger.error(f"Search Error (likely missing schema or sqlite-vec): {e}")
             return []
+        finally:
+            conn.close()
 
         results = []
         for r in rows:
@@ -129,14 +154,16 @@ class SearchEngineMS:
                 "path": path,
                 "score": round(score, 4),
                 "snippet": snippet,
-                "full_content": content # Keeping this for "Reconstruct" later
+                # "full_content": content # Optional: Uncomment if full content is needed
             })
 
-        conn.close()
         return results
 
-    def _keyword_search_only(self, cursor, query: str, limit: int) -> List[Dict]:
+    def _keyword_search_only(self, db_path: str, query: str, limit: int) -> List[Dict[str, Any]]:
         """Fallback if embeddings are offline."""
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+        
         sql = """
             SELECT file_path, content
             FROM documents_fts
@@ -144,32 +171,42 @@ class SearchEngineMS:
             ORDER BY rank
             LIMIT ?
         """
-        rows = cursor.execute(sql, (f'"{query}"', limit)).fetchall()
-        return [{
-            "path": r[0], 
-            "score": 0.0, 
-            "snippet": self._extract_snippet(r[1], query),
-            "full_content": r[1]
-        } for r in rows]
+        try:
+            rows = cursor.execute(sql, (f'"{query}"', limit)).fetchall()
+            return [{
+                "path": r[0], 
+                "score": 0.0, 
+                "snippet": self._extract_snippet(r[1], query)
+            } for r in rows]
+        except sqlite3.OperationalError as e:
+            logger.error(f"Keyword Search Error: {e}")
+            return []
+        finally:
+            conn.close()
 
     def _get_query_embedding(self, text: str) -> Optional[List[float]]:
         """Call Ollama to get the vector for the search query."""
         try:
             res = requests.post(
-                f"{OLLAMA_API_URL}/embeddings",
-                json={"model": self.model, "prompt": text},
+                f"{self.ollama_url}/embeddings",
+                json={"model": self.model_name, "prompt": text},
                 timeout=5
             )
             if res.status_code == 200:
                 return res.json().get("embedding")
-        except:
+        except Exception as e:
+            logger.error(f"Embedding request failed: {e}")
             return None
         return None
 
     def _extract_snippet(self, content: str, query: str) -> str:
         """Finds the best window of text around the keyword."""
+        if not content:
+            return ""
+            
         lower_content = content.lower()
-        lower_query = query.lower().split()[0] # Take first word for simple centering
+        parts = query.lower().split()
+        lower_query = parts[0] if parts else "" 
         
         idx = lower_content.find(lower_query)
         if idx == -1:
@@ -180,9 +217,14 @@ class SearchEngineMS:
         snippet = content[start:end].replace('\n', ' ')
         return f"...{snippet}..."
 
+
 # --- Independent Test Block ---
 if __name__ == "__main__":
-    # Note: Requires a real DB path to work
+    # Note: Requires a real DB path to work effectively
     print("Initializing Search Engine...")
-    engine = SearchEngineMS()
-    # Test would go here
+    engine = SearchEngineMS({"model_name": "phi3:mini-128k"})
+    print("Service ready:", engine)
+    
+    # Example usage:
+    # results = engine.search("my_knowledge.db", "python error handling")
+    # print(results)

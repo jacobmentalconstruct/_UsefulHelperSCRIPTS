@@ -1,40 +1,42 @@
-"""
-SERVICE_NAME: _SysInspectorMS
-ENTRY_POINT: __SysInspectorMS.py
-DEPENDENCIES: None
-"""
-
 import platform
 import subprocess
 import sys
 import datetime
+import logging
 from typing import Any, Dict, List, Optional
+
 from microservice_std_lib import service_metadata, service_endpoint
 
+logger = logging.getLogger("SysInspector")
+
+# ==============================================================================
+# MICROSERVICE CLASS
+# ==============================================================================
+
 @service_metadata(
-name="SysInspector",
-version="1.0.0",
-description="Gathers hardware and environment statistics via shell commands.",
-tags=["system", "audit", "hardware"],
-capabilities=["os:shell", "compute"]
+    name="SysInspector",
+    version="1.0.0",
+    description="Gathers hardware and environment statistics via shell commands.",
+    tags=["system", "audit", "hardware"],
+    capabilities=["os:shell", "compute"]
 )
 class SysInspectorMS:
     """
-The Auditor: Gathers hardware and environment statistics.
-Supports: Windows (WMIC), Linux (lscpu/lspci), and macOS (sysctl/system_profiler).
-"""
+    The Auditor: Gathers hardware and environment statistics.
+    Supports: Windows (WMIC), Linux (lscpu/lspci), and macOS (sysctl/system_profiler).
+    """
 
-def __init__(self, config: Optional[Dict[str, Any]] = None):
-self.config = config or {}
+    def __init__(self, config: Optional[Dict[str, Any]] = None):
+        self.config = config or {}
 
-@service_endpoint(
-inputs={},
-outputs={"report": "str"},
-description="Runs the full audit and returns a formatted string report.",
-tags=["system", "report"],
-side_effects=["os:read"]
-)
-def generate_report(self) -> str:
+    @service_endpoint(
+        inputs={},
+        outputs={"report": "str"},
+        description="Runs the full audit and returns a formatted string report.",
+        tags=["system", "report"],
+        side_effects=["os:read"]
+    )
+    def generate_report(self) -> str:
         """
         Runs the full audit and returns a formatted string report.
         """
@@ -89,7 +91,7 @@ def generate_report(self) -> str:
 
     # --- OS Specific Implementations ---
 
-    def _audit_windows(self) -> list[str]:
+    def _audit_windows(self) -> List[str]:
         data = []
         # CPU
         data.append("CPU: " + self._run_cmd("wmic cpu get name"))
@@ -107,7 +109,7 @@ def generate_report(self) -> str:
         data.append(self._run_cmd("wmic diskdrive get model,size"))
         return data
 
-    def _audit_linux(self) -> list[str]:
+    def _audit_linux(self) -> List[str]:
         data = []
         # CPU
         data.append("CPU: " + self._run_cmd("lscpu | grep 'Model name'"))
@@ -119,7 +121,7 @@ def generate_report(self) -> str:
         data.append("\nDisks:\n" + self._run_cmd("lsblk -o NAME,SIZE,MODEL"))
         return data
 
-    def _audit_mac(self) -> list[str]:
+    def _audit_mac(self) -> List[str]:
         data = []
         # CPU
         data.append("CPU: " + self._run_cmd("sysctl -n machdep.cpu.brand_string"))
@@ -134,8 +136,9 @@ def generate_report(self) -> str:
         except: 
             pass
         # Disk
-data.append("\nDisks:\n" + self._run_cmd("diskutil list physical"))
+        data.append("\nDisks:\n" + self._run_cmd("diskutil list physical"))
         return data
+
 
 # --- Independent Test Block ---
 if __name__ == "__main__":
