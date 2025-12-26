@@ -1,5 +1,5 @@
 # --- Core UI & Graphics ---
-pygame          # For _NeuralGraphEngineMS (Physics/Rendering)
+pygame-ce          # For _NeuralGraphEngineMS (Physics/Rendering)
 Pillow          # For _NeuralGraphViewerMS (Tkinter Image integration)
 
 # --- Network & Neural ---

@@ -10,8 +10,11 @@ from PIL import Image, ImageTk
 import sqlite3
 import json
 import os
-from _NeuralGraphEngineMS import GraphRenderer
+# [FIX] Import correct class name
+from _NeuralGraphEngineMS import NeuralGraphEngineMS
 from microservice_std_lib import service_metadata, service_endpoint
+# [FIX] Add BaseService
+from base_service import BaseService
 
 @service_metadata(
     name="NeuralGraphViewerMS",
@@ -47,8 +50,8 @@ class NeuralGraphViewerMS(BaseService, ttk.Frame):
         self.cartridge = None
         self.neural = None
         
-        # Engine Init
-        self.engine = GraphRenderer(800, 600)
+        # [FIX] Use correct class name
+        self.engine = NeuralGraphEngineMS(800, 600)
         self.photo = None 
         
         # Input State
@@ -124,10 +127,10 @@ class NeuralGraphViewerMS(BaseService, ttk.Frame):
             conn = sqlite3.connect(db_path)
             cursor = conn.cursor()
             
-            # [cite_start]Fetch Nodes [cite: 198]
+            # Fetch Nodes
             db_nodes = cursor.execute("SELECT id, type, label, data_json FROM graph_nodes").fetchall()
             
-            # [cite_start]Fetch Edges [cite: 198]
+            # Fetch Edges
             db_edges = cursor.execute("SELECT source, target FROM graph_edges").fetchall()
             
             conn.close()
@@ -239,12 +242,9 @@ class NeuralGraphViewerMS(BaseService, ttk.Frame):
         # 4. Loop
         self.after(30, self.animate)
 
-        if __name__ == "__main__":
-            root = tk.Tk()
-            root.title("NeuralGraphViewerMS Test")
-            view = NeuralGraphViewerMS(root)
-            print("Service ready:", view._service_info['name'])
-            # Note: Requires a valid DB and Pygame environment to fully render
-            root.mainloop()
-
-
+if __name__ == "__main__":
+    root = tk.Tk()
+    root.title("NeuralGraphViewerMS Test")
+    view = NeuralGraphViewerMS(root)
+    print("Service ready:", view._service_info['name'])
+    root.mainloop()

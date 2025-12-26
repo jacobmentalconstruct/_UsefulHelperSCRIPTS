@@ -8,11 +8,14 @@ import pygame
 import math
 import random
 import time
+from typing import Dict, Any
 
 # Initialize font module globally once
 pygame.font.init()
 
 from microservice_std_lib import service_metadata, service_endpoint
+# --- FIX: IMPORT THE BASE CLASS ---
+from base_service import BaseService 
 
 @service_metadata(
     name="NeuralGraphEngineMS",
@@ -336,18 +339,3 @@ class NeuralGraphEngineMS(BaseService):
                 self.surface.blit(text, (sx + rad + 4, sy - 6))
 
         return pygame.image.tostring(self.surface, 'RGB')
-
-        if __name__ == "__main__":
-            # Manual test setup
-            engine = NeuralGraphEngineMS(400, 300)
-            print("Service ready:", engine._service_info['name'])
-            test_nodes = [{'id': 'A', 'type': 'file', 'label': 'Node A'}, {'id': 'B', 'type': 'chunk', 'label': 'Node B'}]
-            test_links = [(0, 1)]
-            engine.set_data(test_nodes, test_links)
-            engine.step_physics()
-            print("Physics step completed.")
-
-
-
-
-

@@ -1,5 +1,5 @@
 Project Tree: C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_RAGcartridgeFACTORY
-Generated: 2025-12-26 10:41:56.580290
+Generated: 2025-12-26 11:36:27.800377
 
 ├── 📁 src/
 │   ├── 📁 microservices/
@@ -26,9 +26,13 @@ Generated: 2025-12-26 10:41:56.580290
 │   │   ├── 📄 _TkinterSmartExplorerMS.py
 │   │   ├── 📄 _TkinterThemeManagerMS.py
 │   │   ├── 📄 _TreeMapperMS.py
+│   │   ├── 📄 _WorkbenchLayoutMS.py
+│   │   ├── 📄 base_service.py
+│   │   ├── 📄 document_utils.py
 │   │   └── 📄 microservice_std_lib.py
 │   ├── 📄 __init__.py
-│   └── 📄 app.py
+│   ├── 📄 app.py
+│   └── 📄 orchestrator.py
 ├── 📄 LICENSE.md
 ├── 📄 README.md
 ├── 📄 requirements.txt

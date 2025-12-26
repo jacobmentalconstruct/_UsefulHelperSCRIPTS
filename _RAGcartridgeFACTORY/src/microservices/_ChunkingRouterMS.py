@@ -6,7 +6,9 @@ DEPENDENCIES: None
 
 import re
 from typing import Any, Dict, List, Optional
-from microservice_std_lib import service_metadata, service_endpoint, BaseService
+# [FIX] Import BaseService correctly
+from microservice_std_lib import service_metadata, service_endpoint
+from base_service import BaseService
 
 # Attempt to import the specialist. If missing, we will fallback or warn.
 try:
@@ -46,7 +48,7 @@ class ChunkingRouterMS(BaseService):
         self.config = config or {}
         self.python_specialist = PythonChunkerMS()
         # Separators for the Prose Specialist logic
-        self.separators = ["\n\n", "\n", "(?<=[.?!])\s+", " ", ""]
+        self.separators = ["\n\n", "\n", r"(?<=[.?!])\s+", " ", ""]
 
     @service_endpoint(
         inputs={"text": "str", "filename": "str", "max_size": "int", "overlap": "int"},
@@ -162,13 +164,14 @@ if __name__ == "__main__":
     # Example: A technical document with structure
     doc = """
     # Intro to AI
-    Artificial Intelligence is great. It helps us code.
+    Artificial Intelligence is great.
+    It helps us code.
     
     ## How it works
     1. Ingestion: Reading data.
     2. Processing: Thinking about data.
-    
-    This is a very long paragraph that effectively serves as a stress test for the sentence splitter. It should hopefully not break in the middle of a thought! We want to keep sentences whole.
+    This is a very long paragraph that effectively serves as a stress test for the sentence splitter.
+    It should hopefully not break in the middle of a thought! We want to keep sentences whole.
     """
     
     print("--- Testing Smart Chunking (Max 60 chars) ---")

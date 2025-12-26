@@ -1,11 +1,19 @@
+"""
+SERVICE_NAME: _LogViewMS
+ENTRY_POINT: _LogViewMS.py
+DEPENDENCIES: tkinter
+"""
+
 import tkinter as tk
-from tkinter import scrolledtext, filedialog
+from tkinter import ttk, filedialog
 import queue
 import logging
 import datetime
 from typing import Any, Dict, Optional
 
 from microservice_std_lib import service_metadata, service_endpoint
+# [FIX] Added BaseService for consistency
+from base_service import BaseService
 
 # ==============================================================================
 # HELPER CLASS (Logging Handler)
@@ -30,30 +38,32 @@ class QueueHandler(logging.Handler):
 
 @service_metadata(
     name="LogView",
-    version="1.0.0",
+    version="1.1.0",
     description="A thread-safe log viewer widget for Tkinter.",
     tags=["ui", "logs", "widget"],
     capabilities=["ui:gui", "filesystem:write"]
 )
-class LogViewMS(tk.Frame):
+class LogViewMS(BaseService, tk.Frame):
     """
     The Console: A professional log viewer widget.
     Features:
     - Thread-safe (consumes from a Queue).
     - Message Consolidation ("Error occurred (x5)").
     - Level Filtering (Toggle INFO/DEBUG/ERROR).
+    - Dark Mode Compliant (uses ttk.Scrollbar).
     """
 
     def __init__(self, config: Optional[Dict[str, Any]] = None):
         self.config = config or {}
         parent = self.config.get("parent")
-        # Initialize tk.Frame
-        super().__init__(parent)
+        
+        # [FIX] Initialize BaseService AND tk.Frame
+        BaseService.__init__(self, "LogViewMS")
+        tk.Frame.__init__(self, parent)
         
         # Ensure we have a queue to pull from
         self.log_queue: queue.Queue = self.config.get("log_queue")
         if self.log_queue is None:
-            # Fallback for safe instantiation if no queue provided
             self.log_queue = queue.Queue()
 
         # State for consolidation
@@ -88,12 +98,28 @@ class LogViewMS(tk.Frame):
         tk.Button(toolbar, text="Clear", command=self.clear, bg="#444", fg="white", relief="flat").pack(side="right", padx=5)
         tk.Button(toolbar, text="Save", command=self.save, bg="#444", fg="white", relief="flat").pack(side="right")
 
-        # Text Area
-        self.text = scrolledtext.ScrolledText(
-            self, state="disabled", bg="#1e1e1e", fg="#d4d4d4", 
-            font=("Consolas", 10), insertbackground="white"
+        # [FIX] Replaced ScrolledText with Text + ttk.Scrollbar 
+        # This allows the ThemeManager to style the scrollbar dark.
+        
+        # 1. The Scrollbar (Themed)
+        self.vsb = ttk.Scrollbar(self, orient="vertical")
+        self.vsb.pack(side="right", fill="y")
+        
+        # 2. The Text Area
+        self.text = tk.Text(
+            self, 
+            state="disabled", 
+            bg="#1e1e1e", 
+            fg="#d4d4d4", 
+            font=("Consolas", 10), 
+            insertbackground="white",
+            relief="flat",
+            yscrollcommand=self.vsb.set # Link to scrollbar
         )
-        self.text.pack(fill="both", expand=True)
+        self.text.pack(side="left", fill="both", expand=True)
+        
+        # 3. Link Scrollbar to Text
+        self.vsb.config(command=self.text.yview)
         
         # Color Tags
         self.text.tag_config("INFO", foreground="#d4d4d4")
@@ -165,7 +191,7 @@ class LogViewMS(tk.Frame):
                 with open(path, "w", encoding="utf-8") as f:
                     f.write(self.text.get("1.0", "end"))
             except Exception as e:
-                print(f"Save failed: {e}")
+                self.log_error(f"Save failed: {e}")
 
 
 # --- Independent Test Block ---
@@ -178,24 +204,21 @@ if __name__ == "__main__":
     q = queue.Queue()
     
     # 2. Setup Logger
-    # Use the separated QueueHandler class
     logger = logging.getLogger("TestApp")
     logger.setLevel(logging.DEBUG)
     logger.addHandler(QueueHandler(q))
     
     # 3. Mount View
-    # Pass the queue into the config
     log_view = LogViewMS({"parent": root, "log_queue": q})
-    print("Service ready:", log_view)
+    print("Service ready:", log_view._service_info)
     log_view.pack(fill="both", expand=True)
     
-    # 4. Generate Logs
+    # 4. Generate Noise
     def generate_noise():
         logger.info("System initializing...")
         logger.debug("Checking sensors...")
         logger.warning("Sensor 4 response slow.")
         logger.error("Connection failed!")
-        # Keep generating noise to test the polling
         root.after(2000, generate_noise)
         
     generate_noise()

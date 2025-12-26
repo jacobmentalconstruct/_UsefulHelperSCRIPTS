@@ -20,7 +20,9 @@ try:
 except ImportError:
     sqlite_vec = None
 
-from microservice_std_lib import service_metadata, service_endpoint, BaseService
+from microservice_std_lib import service_metadata, service_endpoint
+# [FIX] Import BaseService correctly
+from base_service import BaseService
 
 # ==============================================================================
 # SERVICE DEFINITION
@@ -345,7 +347,7 @@ class CartridgeServiceMS(BaseService):
 
     def store_file(self, vfs_path: str, origin_path: str, content: str = None, blob: bytes = None, mime_type: str = "text/plain", origin_type: str = "filesystem"):
         """
-        The Universal Input Method. 
+        The Universal Input Method.
         Stores raw data. If file exists, updates it and resets status to 'RAW' for re-refining.
         """
         conn = self._get_conn()

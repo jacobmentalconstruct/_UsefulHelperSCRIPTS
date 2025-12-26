@@ -29,14 +29,204 @@ SOFTWARE.
 --------------------------------------------------------------------------------
 FILE: README.md
 --------------------------------------------------------------------------------
+# RAGcartridgeFACTORY
 
+**A Deterministic Datasource Compiler for Local AI**
+
+### Executive Summary
+
+**RAGcartridgeFACTORY** is not a conversational agent. It is a strict *datasource compiler* that converts arbitrary client datasets (Filesystem, Web) into a portable, self-contained **Neural Cartridge** (SQLite).
+
+The factory analyzes a source, compiles a human-checkable ingestion plan (Registry), and executes that plan to produce a cartridge containing verbatim data, structured hunks, vector indices, and a knowledge-graph projection. It adheres to the **Unified Neural Cartridge Format (UNCF)**.
+
+---
+
+### Core Principles (Non-Negotiable)
+
+* **Factory, Not Agent:** This system does not "figure out" what to do. It executes a rigid State Machine: `Analyze`  `Plan`  `Commit`  `Refine`. 
+
+
+* **Registry-Centered:** The Plan (Registry) is the source of truth. We never write to the database until the Plan is approved. 
+
+
+* **Determinism First:** Verbatim truth is preserved. All derived artifacts (vectors, graph nodes) must reference a verbatim hunk. 
+
+
+* **HITL by Design:** Human-In-The-Loop. Operators inspect the Registry before ingestion begins. 
+
+
+
+---
+
+### Architecture
+
+The system is built on a modular Microservice architecture using Python and Tkinter.
+
+* **The Spine (`src/orchestrator.py`):** Owns the State Machine, sequencing, and service delegation. It contains no UI code.
+* **The Glue (`src/app.py`):** Bootstraps the application, initializes the Orchestrator, and wires the UI components.
+* **The Organs (Microservices):**
+* 
+**Memory:** `_CartridgeServiceMS` (SQLite + sqlite-vec) 
+
+
+* 
+**Brain:** `_NeuralServiceMS` (Ollama Interface) 
+
+
+* 
+**Hands:** `_IntakeServiceMS` (Scanning) & `_RefineryServiceMS` (Processing) 
+
+
+* 
+**Eyes:** `_NeuralGraphViewerMS` (Physics-based visualization) 
+
+
+
+
+
+---
+
+### Quick Start
+
+#### Prerequisites
+
+* **Python 3.10+**
+* **Ollama** running locally (default: `http://localhost:11434`) with `mxbai-embed-large` and `qwen2.5` (or similar models) pulled.
+
+#### Installation
+
+1. **Clone the repository:**
+```bash
+git clone <repo_url>
+cd _RAGcartridgeFACTORY
+
+```
+
+
+2. **Initialize Environment:**
+```bash
+# Windows (using included script)
+setup_env.bat
+
+# Manual (Linux/Mac)
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+
+```
+
+
+3. **Launch the Factory:**
+```bash
+python src/app.py
+
+```
+
+
+
+---
+
+### Workflow (The Assembly Line)
+
+The UI exposes a strict 3-stage assembly line managed by the Orchestrator:
+
+#### 1. SCAN (Analyze)
+
+* **Input:** A source directory or URL.
+* **Process:** The `_ScoutMS` recursively walks the target, identifying files and ignoring binary clutter.
+* **Output:** An in-memory **Registry Plan**. This is visualized in the "Explorer" panel. No database writes occur yet.
+
+#### 2. INGEST (Commit)
+
+* **Input:** The approved Registry Plan.
+* **Process:** The `_IntakeServiceMS` copies selected files into the Cartridge `files` table.
+* **Output:** **Verbatim Storage**. Files are safely stored in the `sqlite` container with "RAW" status.
+
+#### 3. REFINE (Process)
+
+* **Input:** "RAW" files in the Cartridge.
+* **Process:**
+* 
+**Chunking:** `_ChunkingRouterMS` routes files to specialists (AST for Python, Recursive for prose).
+
+
+* **Embedding:** `_NeuralServiceMS` generates vectors for chunks.
+* 
+**Weaving:** `_RefineryServiceMS` builds graph nodes for classes, functions, and imports.
+
+
+
+
+* **Output:** A fully refined Cartridge with searchable vectors and navigable graph topology.
+
+---
+
+### Directory Structure
+
+```text
+C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_RAGcartridgeFACTORY
+├── src/
+│   ├── app.py                  # Entry Point & UI Glue
+│   ├── orchestrator.py         # State Machine & Logic Spine
+│   └── microservices/
+│       ├── _CartridgeServiceMS.py   # UNCF Schema Manager
+│       ├── _IntakeServiceMS.py      # Scanner & Ingester
+│       ├── _RefineryServiceMS.py    # Chunking & Graph Weaving
+│       ├── _NeuralServiceMS.py      # Ollama Interface
+│       ├── _NeuralGraphEngineMS.py  # Physics Visualization
+│       ├── _WorkbenchLayoutMS.py    # UI Layout Engine
+│       └── ... (Helper Services)
+├── requirements.txt            # Dependencies (pygame, requests, sqlite-vec, etc.)
+├── setup_env.bat               # Windows Quick-Start
+└── README.md                   # This file
+
+```
+
+### Artifact Contracts
+
+**The Cartridge (Output Artifact)**
+A single `.sqlite` file containing:
+
+1. 
+**Manifest:** JSON metadata defining schema version, provenance, and embedding specs. 
+
+
+2. 
+**Files:** Verbatim content with VFS paths. 
+
+
+3. 
+**Chunks:** Semantic segments linked to parent files. 
+
+
+4. 
+**Vectors:** `sqlite-vec` embeddings for similarity search. 
+
+
+5. 
+**Graph:** Nodes and edges representing code structure and relationships. 
+
+
+
+**License**
+MIT License. Determinism is free.
 --------------------------------------------------------------------------------
 FILE: requirements.txt
 --------------------------------------------------------------------------------
-# Standard Library dependencies only:
-# tkinter, argparse, json, ast, threading, os, sys
-#
-# No external pip packages required.
+# --- Core UI & Graphics ---
+pygame-ce          # For _NeuralGraphEngineMS (Physics/Rendering)
+Pillow          # For _NeuralGraphViewerMS (Tkinter Image integration)
+
+# --- Network & Neural ---
+requests        # For _NeuralServiceMS (Ollama API) and _ScoutMS (Web Crawling)
+
+# --- Data Parsing & Ingestion ---
+beautifulsoup4  # For _ContentExtractorMS (HTML parsing)
+pypdf           # For _ContentExtractorMS (PDF parsing)
+
+# --- Vector Database ---
+# Note: This provides the 'vec0' extension for SQLite
+sqlite-vec      # For _CartridgeServiceMS and _SearchEngineMS
 --------------------------------------------------------------------------------
 FILE: setup_env.bat
 --------------------------------------------------------------------------------
@@ -63,114 +253,420 @@ pause
 --------------------------------------------------------------------------------
 FILE: src\app.py
 --------------------------------------------------------------------------------
-import sys
+import tkinter as tk
+from tkinter import ttk, filedialog, messagebox
+import logging
 import os
-# Add src to path so imports work cleanly
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+import sys
 
-# --- Microservice Imports ---
-from src.microservices._PythonChunkerMS import PythonChunkerMS
-from src.microservices._NeuralGraphEngineMS import NeuralGraphEngineMS
-from src.microservices._RefineryServiceMS import RefineryServiceMS
-from src.microservices._TasklistVaultMS import TasklistVaultMS
-from src.microservices._ThoughtStreamMS import ThoughtStreamMS
-from src.microservices._LogViewMS import LogViewMS
-from src.microservices._LexicalSearchMS import LexicalSearchMS
-from src.microservices._ScoutMS import ScoutMS
-from src.microservices._ContentExtractorMS import ContentExtractorMS
-from src.microservices._ChunkingRouterMS import ChunkingRouterMS
-from src.microservices._TkinterThemeManagerMS import TkinterThemeManagerMS
-from src.microservices._TkinterAppShellMS import TkinterAppShellMS
-from src.microservices._TkinterSmartExplorerMS import TkinterSmartExplorerMS
-from src.microservices._NeuralGraphViewerMS import NeuralGraphViewerMS
-from src.microservices._IntakeServiceMS import IntakeServiceMS
-from src.microservices._ServiceRegistryMS import ServiceRegistryMS
-from src.microservices._TelemetryServiceMS import TelemetryServiceMS
-from src.microservices._RegexWeaverMS import RegexWeaverMS
-from src.microservices._SearchEngineMS import SearchEngineMS
-from src.microservices._NeuralServiceMS import NeuralServiceMS
-from src.microservices._CartridgeServiceMS import CartridgeServiceMS
-from src.microservices._TreeMapperMS import TreeMapperMS
-from src.microservices._ContextAggregatorMS import ContextAggregatorMS
+# --- PATH SETUP ---
+# Get the absolute path to the 'src' folder
+current_dir = os.path.dirname(os.path.abspath(__file__))
+microservices_dir = os.path.join(current_dir, "microservices")
 
-def main():
-    print('--- Booting Microservice App ---')
-    # PythonChunkerMS initialized
-    pythonchunkerms = PythonChunkerMS()
-    print('Service Loaded:', pythonchunkerms)
-    # NeuralGraphEngineMS initialized
-    neuralgraphenginems = NeuralGraphEngineMS()
-    print('Service Loaded:', neuralgraphenginems)
-    # RefineryServiceMS initialized
-    refineryservicems = RefineryServiceMS()
-    print('Service Loaded:', refineryservicems)
-    # TasklistVaultMS initialized
-    tasklistvaultms = TasklistVaultMS()
-    print('Service Loaded:', tasklistvaultms)
-    # ThoughtStreamMS initialized
-    thoughtstreamms = ThoughtStreamMS()
-    print('Service Loaded:', thoughtstreamms)
-    # LogViewMS initialized
-    logviewms = LogViewMS()
-    print('Service Loaded:', logviewms)
-    # LexicalSearchMS initialized
-    lexicalsearchms = LexicalSearchMS()
-    print('Service Loaded:', lexicalsearchms)
-    # ScoutMS initialized
-    scoutms = ScoutMS()
-    print('Service Loaded:', scoutms)
-    # ContentExtractorMS initialized
-    contentextractorms = ContentExtractorMS()
-    print('Service Loaded:', contentextractorms)
-    # ChunkingRouterMS initialized
-    chunkingrouterms = ChunkingRouterMS()
-    print('Service Loaded:', chunkingrouterms)
-    # TkinterThemeManagerMS initialized
-    tkinterthememanagerms = TkinterThemeManagerMS()
-    print('Service Loaded:', tkinterthememanagerms)
-    # TkinterAppShellMS initialized
-    tkinterappshellms = TkinterAppShellMS()
-    print('Service Loaded:', tkinterappshellms)
-    # TkinterSmartExplorerMS initialized
-    tkintersmartexplorerms = TkinterSmartExplorerMS()
-    print('Service Loaded:', tkintersmartexplorerms)
-    # NeuralGraphViewerMS initialized
-    neuralgraphviewerms = NeuralGraphViewerMS()
-    print('Service Loaded:', neuralgraphviewerms)
-    # IntakeServiceMS initialized
-    intakeservicems = IntakeServiceMS()
-    print('Service Loaded:', intakeservicems)
-    # ServiceRegistryMS initialized
-    serviceregistryms = ServiceRegistryMS()
-    print('Service Loaded:', serviceregistryms)
-    # TelemetryServiceMS initialized
-    telemetryservicems = TelemetryServiceMS()
-    print('Service Loaded:', telemetryservicems)
-    # RegexWeaverMS initialized
-    regexweaverms = RegexWeaverMS()
-    print('Service Loaded:', regexweaverms)
-    # SearchEngineMS initialized
-    searchenginems = SearchEngineMS()
-    print('Service Loaded:', searchenginems)
-    # NeuralServiceMS initialized
-    neuralservicems = NeuralServiceMS()
-    print('Service Loaded:', neuralservicems)
-    # CartridgeServiceMS initialized
-    cartridgeservicems = CartridgeServiceMS()
-    print('Service Loaded:', cartridgeservicems)
-    # TreeMapperMS initialized
-    treemapperms = TreeMapperMS()
-    print('Service Loaded:', treemapperms)
-    # ContextAggregatorMS initialized
-    contextaggregatorms = ContextAggregatorMS()
-    print('Service Loaded:', contextaggregatorms)
-    print('--- System Ready ---')
+# Add both to sys.path so Python can "see" files in both locations
+sys.path.append(current_dir)
+sys.path.append(microservices_dir) 
 
-if __name__ == '__main__':
-    main()
+# --- Imports ---
+# Now these imports will work, and the internal imports inside them will also work
+from microservices._TkinterAppShellMS import TkinterAppShellMS
+from microservices._WorkbenchLayoutMS import WorkbenchLayoutMS
+from microservices._TkinterSmartExplorerMS import TkinterSmartExplorerMS
+from microservices._LogViewMS import LogViewMS
+from microservices._ThoughtStreamMS import ThoughtStreamMS
+from microservices._NeuralGraphViewerMS import NeuralGraphViewerMS
+from microservices._TelemetryServiceMS import TelemetryServiceMS
+from microservices._ScoutMS import ScoutMS
+from orchestrator import ForgeOrchestrator, ForgeState
+
+class RAGFactoryApp:
+    def __init__(self):
+        # 1. Boot Shell
+        self.shell = TkinterAppShellMS({"title": "RAGcartridge FACTORY", "geometry": "1400x900"})
+        self.root = self.shell.root
+        
+        # 2. Boot Services
+        self.telemetry = TelemetryServiceMS({"root": self.root})
+        self.orchestrator = ForgeOrchestrator(self.telemetry)
+        
+        # 3. Define The Layout Manifest (Declarative!)
+        # "I want a 3-column layout. The middle is widest."
+        layout_config = {
+            "type": "col", 
+            "children": [
+                {"type": "panel", "id": "pnl_left", "weight": 1},   # Source/Explorer
+                {"type": "panel", "id": "pnl_center", "weight": 3}, # Workflow/Graph
+                {"type": "panel", "id": "pnl_right", "weight": 1}   # Logs
+            ]
+        }
+        
+        # 4. Build Layout
+        self.layout_engine = WorkbenchLayoutMS({"parent": self.shell.get_main_container()})
+        self.layout_engine.pack(fill="both", expand=True)
+        self.layout_engine.build_from_manifest(layout_config)
+        
+        # 5. Inject Content into Panels
+        self._setup_left_panel(self.layout_engine.get_panel("pnl_left"))
+        self._setup_center_panel(self.layout_engine.get_panel("pnl_center"))
+        self._setup_right_panel(self.layout_engine.get_panel("pnl_right"))
+
+        # 6. Start
+        self.telemetry.start()
+        self._update_loop()
+
+    def _setup_left_panel(self, parent):
+        # Standard Tkinter packing inside the clean panel
+        ttk.Label(parent, text="SOURCE", font="bold").pack(fill="x")
+        ttk.Button(parent, text="📂 Load Cartridge", command=self.action_load_cartridge).pack(fill="x")
+        ttk.Button(parent, text="🔍 Select Source", command=self.action_select_source).pack(fill="x", pady=5)
+        
+        ttk.Separator(parent, orient="horizontal").pack(fill="x", pady=10)
+        
+        self.explorer = TkinterSmartExplorerMS({"parent": parent})
+        self.explorer.pack(fill="both", expand=True)
+
+    def _setup_center_panel(self, parent):
+        self.lbl_status = ttk.Label(parent, text="STATUS: IDLE", background="#333", foreground="#0f0", anchor="center")
+        self.lbl_status.pack(fill="x", ipady=5)
+        
+        # Workflow Bar
+        bar = ttk.Frame(parent)
+        bar.pack(fill="x", pady=5)
+        self.btn_scan = ttk.Button(bar, text="SCAN", command=self.action_scan, state="disabled")
+        self.btn_scan.pack(side="left", fill="x", expand=True)
+        self.btn_ingest = ttk.Button(bar, text="INGEST", command=self.action_ingest, state="disabled")
+        self.btn_ingest.pack(side="left", fill="x", expand=True)
+        self.btn_refine = ttk.Button(bar, text="REFINE", command=self.action_refine, state="disabled")
+        self.btn_refine.pack(side="left", fill="x", expand=True)
+        self.btn_stop = ttk.Button(bar, text="STOP", command=self.action_stop, state="disabled")
+        self.btn_stop.pack(side="left")
+
+        self.graph_viewer = NeuralGraphViewerMS(parent) # Auto-packs itself
+        
+    def _setup_right_panel(self, parent):
+        self.thought_stream = ThoughtStreamMS({"parent": parent})
+        self.thought_stream.pack(fill="x", height=200)
+        
+        self.log_view = LogViewMS({"parent": parent, "log_queue": self.telemetry.log_queue})
+        self.log_view.pack(fill="both", expand=True)
+
+    # ... [Rest of the Action/Loop methods remain exactly the same as previous step] ...
+    # (Let me know if you need me to repeat them, but they just copy/paste over)
+    
+    # --- Placeholders for methods to ensure code runs ---
+    def action_load_cartridge(self): self.orchestrator.select_cartridge(filedialog.asksaveasfilename())
+    def action_select_source(self): 
+        self.source_path = filedialog.askdirectory()
+        if self.source_path: self.btn_scan.config(state="normal")
+    def action_scan(self): self.orchestrator.scan(self.source_path)
+    def action_ingest(self): self.orchestrator.ingest(ScoutMS().flatten_tree(self.orchestrator.get_last_scan_tree()), self.source_path)
+    def action_refine(self): self.orchestrator.refine_until_idle()
+    def action_stop(self): self.orchestrator.cancel()
+
+    def _update_loop(self):
+        # [Same logic as before]
+        self.root.after(100, self._update_loop)
+
+    def launch(self):
+        self.shell.launch()
+
+if __name__ == "__main__":
+    app = RAGFactoryApp()
+    app.launch()
+--------------------------------------------------------------------------------
+FILE: src\orchestrator.py
+--------------------------------------------------------------------------------
+import time
+import threading
+import enum
+import queue
+import logging
+from typing import Dict, List, Any, Optional
+
+# --- Import Microservices ---
+# We assume these are available in the path as per your tree
+from microservices._CartridgeServiceMS import CartridgeServiceMS
+from microservices._IntakeServiceMS import IntakeServiceMS
+from microservices._RefineryServiceMS import RefineryServiceMS
+from microservices._NeuralServiceMS import NeuralServiceMS
+from microservices._TelemetryServiceMS import TelemetryServiceMS
+
+# --- State Machine Definitions ---
+class ForgeState(enum.Enum):
+    EMPTY = "EMPTY"                     # No cartridge loaded
+    CARTRIDGE_SELECTED = "CARTRIDGE_SELECTED" # DB file valid
+    SCANNING = "SCANNING"               # Scout is looking at files
+    SCANNED = "SCANNED"                 # Tree built, waiting for selection
+    INGESTING = "INGESTING"             # Copying raw data to DB
+    INGESTED = "INGESTED"               # Raw data ready
+    REFINING = "REFINING"               # Chunking/Embedding in progress
+    READY = "READY"                     # Idle, ready for query/export
+    ERROR = "ERROR"                     # Something broke
+    CANCELLED = "CANCELLED"             # User stopped operation
+
+class ForgeEvent:
+    """Standardized Event Payload for the UI"""
+    def __init__(self, event_type: str, data: Any = None):
+        self.type = event_type
+        self.data = data
+        self.timestamp = time.time()
+
+# --- The Orchestrator ---
+class ForgeOrchestrator:
+    """
+    The Spine of the Factory.
+    Owns sequencing, state, events, cancellation, and retries.
+    Does NOT contain widget code.
+    """
+    
+    def __init__(self, telemetry_svc: TelemetryServiceMS):
+        self.telemetry = telemetry_svc
+        self.logger = logging.getLogger("ForgeOrchestrator")
+        
+        # State
+        self._state = ForgeState.EMPTY
+        self._stop_event = threading.Event()
+        self._current_plan: Optional[Dict] = None # The Registry/Plan
+        
+        # Services (Lazy loaded or Init here)
+        self.cartridge: Optional[CartridgeServiceMS] = None
+        self.intake: Optional[IntakeServiceMS] = None
+        self.refinery: Optional[RefineryServiceMS] = None
+        
+        # We initialize Neural service immediately as it doesn't depend on a specific DB
+        self.neural = NeuralServiceMS()
+
+        # Emit initial state
+        self._emit_state()
+
+    # --- State Management ---
+    
+    def get_state(self) -> str:
+        return self._state.value
+
+    def _set_state(self, new_state: ForgeState):
+        self._state = new_state
+        self._emit_state()
+        self.logger.info(f"State Transition -> {new_state.value}")
+
+    def _emit_state(self):
+        # We push a state change event to the log queue which Telemetry picks up
+        # Ideally, Telemetry service might have a dedicated event bus, 
+        # but for now we log it structurally.
+        self.logger.info(f"STATE_CHANGED::{self._state.value}")
+
+    # --- Public API (As defined in ORCHESTRATION_LAYER.md) ---
+
+    def select_cartridge(self, db_path: str):
+        """Initializes the Cartridge Service with a specific DB file."""
+        try:
+            self.logger.info(f"Selecting Cartridge: {db_path}")
+            self.cartridge = CartridgeServiceMS(db_path)
+            
+            # Check if it's new or existing
+            stats = self.cartridge.get_status_summary()
+            
+            # Init dependent services
+            self.intake = IntakeServiceMS(self.cartridge)
+            
+            # Refinery needs Cartridge AND Neural
+            self.refinery = RefineryServiceMS({
+                "cartridge": self.cartridge,
+                "neural": self.neural
+            })
+            
+            self._set_state(ForgeState.CARTRIDGE_SELECTED)
+            
+            # If cartridge has data, we might auto-advance state
+            if stats['files'] > 0:
+                self._set_state(ForgeState.INGESTED)
+            if stats['chunks'] > 0:
+                self._set_state(ForgeState.READY)
+                
+            return stats
+            
+        except Exception as e:
+            self.logger.error(f"Failed to load cartridge: {e}")
+            self._set_state(ForgeState.ERROR)
+            raise e
+
+    def scan(self, source_path: str, web_depth: int = 0):
+        """
+        Phase 1: Analyze.
+        Scans source, returns a tree, does NOT write to DB.
+        """
+        if self._state not in [ForgeState.CARTRIDGE_SELECTED, ForgeState.READY, ForgeState.SCANNED]:
+            self.logger.warning("Invalid state for SCAN command.")
+            return
+
+        self._set_state(ForgeState.SCANNING)
+        self._stop_event.clear()
+
+        def _worker():
+            try:
+                self.logger.info(f"Scanning source: {source_path}")
+                tree = self.intake.scan_path(source_path, web_depth)
+                
+                if self._stop_event.is_set():
+                    self._set_state(ForgeState.CANCELLED)
+                    return
+
+                # Store the plan in memory (The Registry)
+                self._current_plan = tree
+                
+                self.logger.info("Scan Complete. Waiting for user approval.")
+                self._set_state(ForgeState.SCANNED)
+                
+                # Emit result for UI to render
+                # In a real event bus, we'd emit the object. 
+                # For now, the UI will likely pull `orchestrator.get_last_scan_tree()`
+                
+            except Exception as e:
+                self.logger.error(f"Scan failed: {e}")
+                self._set_state(ForgeState.ERROR)
+
+        threading.Thread(target=_worker, daemon=True).start()
+
+    def get_last_scan_tree(self):
+        """UI calls this to render the tree after SCAN_COMPLETE."""
+        return self._current_plan
+
+    def ingest(self, selected_files: List[str], root_path: str):
+        """
+        Phase 2: Commit.
+        Writes the user-approved list of files into the Cartridge (RAW storage).
+        """
+        if self._state != ForgeState.SCANNED:
+            self.logger.warning("Must SCAN before INGEST.")
+            return
+
+        self._set_state(ForgeState.INGESTING)
+        self._stop_event.clear()
+
+        def _worker():
+            try:
+                self.logger.info(f"Ingesting {len(selected_files)} files...")
+                stats = self.intake.ingest_selected(selected_files, root_path)
+                
+                if self._stop_event.is_set():
+                    self._set_state(ForgeState.CANCELLED)
+                    return
+
+                self.logger.info(f"Ingest Complete. Stats: {stats}")
+                self._set_state(ForgeState.INGESTED)
+                
+            except Exception as e:
+                self.logger.error(f"Ingest failed: {e}")
+                self._set_state(ForgeState.ERROR)
+
+        threading.Thread(target=_worker, daemon=True).start()
+
+    def refine_until_idle(self, batch_size=5):
+        """
+        Phase 3: Refine.
+        Loops through pending files and processes them until done.
+        """
+        if self._state not in [ForgeState.INGESTED, ForgeState.READY]:
+            self.logger.warning("Invalid state for REFINE command.")
+            return
+
+        self._set_state(ForgeState.REFINING)
+        self._stop_event.clear()
+
+        def _worker():
+            total_processed = 0
+            while not self._stop_event.is_set():
+                try:
+                    # 1. Process a batch
+                    count = self.refinery.process_pending(batch_size=batch_size)
+                    
+                    if count == 0:
+                        # Done!
+                        self.logger.info(f"Refinery finished. Total processed: {total_processed}")
+                        self._set_state(ForgeState.READY)
+                        break
+                    
+                    total_processed += count
+                    self.logger.info(f"Refined batch of {count}. Total so far: {total_processed}")
+                    
+                except Exception as e:
+                    self.logger.error(f"Refinery error: {e}")
+                    self._set_state(ForgeState.ERROR)
+                    break
+            
+            if self._stop_event.is_set():
+                self.logger.warning("Refinery CANCELLED by user.")
+                self._set_state(ForgeState.CANCELLED)
+
+        threading.Thread(target=_worker, daemon=True).start()
+
+    def cancel(self):
+        """Signals background threads to stop safely."""
+        self.logger.warning("Cancellation requested...")
+        self._stop_event.set()
+
+    # --- Validation / Export ---
+
+    def validate(self):
+        """Runs the validation suite on the cartridge."""
+        if not self.cartridge: return {}
+        report = self.cartridge.validate_cartridge()
+        self.logger.info(f"Validation Report: {report}")
+        return report
 --------------------------------------------------------------------------------
 FILE: src\__init__.py
 --------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+FILE: src\microservices\base_service.py
+--------------------------------------------------------------------------------
+import logging
+from typing import Dict, Any
+
+class BaseService:
+    """
+    Standard parent class for all microservices. 
+    Provides consistent logging and identity management.
+    """
+    def __init__(self, name: str):
+        self._service_info = {
+            "name": name, 
+            "id": name.lower().replace(" ", "_")
+        }
+        
+        # Setup standard logging
+        logging.basicConfig(
+            level=logging.INFO, 
+            format='%(asctime)s [%(levelname)s] %(message)s',
+            datefmt='%H:%M:%S'
+        )
+        self.logger = logging.getLogger(name)
+
+    def log_info(self, message: str):
+        self.logger.info(message)
+
+    def log_error(self, message: str):
+        self.logger.error(message)
+
+    def log_warning(self, message: str):
+        self.logger.warning(message)
+
+--------------------------------------------------------------------------------
+FILE: src\microservices\document_utils.py
+--------------------------------------------------------------------------------
+from _ContentExtractorMS import ContentExtractorMS
+
+# Singleton instance to reuse the extractor logic
+_extractor = ContentExtractorMS()
+
+def extract_text_from_pdf(blob: bytes) -> str:
+    """Proxy to ContentExtractorMS PDF logic."""
+    return _extractor._extract_pdf(blob)
+
+def extract_text_from_html(html_text: str) -> str:
+    """Proxy to ContentExtractorMS HTML logic."""
+    return _extractor._extract_html(html_text)
 
 --------------------------------------------------------------------------------
 FILE: src\microservices\microservice_std_lib.py
@@ -5177,3 +5673,102 @@ if __name__ == "__main__":
     print("\n--- Map of Current Dir ---")
     tree = svc.generate_tree(".", additional_exclusions={"__pycache__"})
     print(tree)
+--------------------------------------------------------------------------------
+FILE: src\microservices\_WorkbenchLayoutMS.py
+--------------------------------------------------------------------------------
+"""
+SERVICE_NAME: _WorkbenchLayoutMS
+ENTRY_POINT: _WorkbenchLayoutMS.py
+DEPENDENCIES: tkinter
+"""
+import tkinter as tk
+from tkinter import ttk
+from typing import Dict, Any, Optional, Callable
+
+from microservice_std_lib import service_metadata, service_endpoint
+
+@service_metadata(
+    name="WorkbenchLayout",
+    version="1.0.0",
+    description="A declarative layout engine that builds resizable, nested Workbenches (Rows/Cols) from a config dictionary.",
+    tags=["ui", "layout", "framework"],
+    capabilities=["ui:construct"]
+)
+class WorkbenchLayoutMS(tk.Frame):
+    """
+    The Architect.
+    Recursively builds a UI based on a 'Layout Manifest'.
+    Uses ttk.PanedWindow to allow user resizing of areas.
+    """
+    def __init__(self, config: Optional[Dict[str, Any]] = None):
+        parent = config.get("parent")
+        super().__init__(parent)
+        self.config = config or {}
+        
+        # Registry to hold references to created panels so app.py can find them
+        self.panel_registry: Dict[str, tk.Widget] = {}
+
+    @service_endpoint(
+        inputs={"manifest": "Dict"},
+        outputs={},
+        description="Builds the UI structure based on the provided dictionary layout.",
+        tags=["ui", "build"]
+    )
+    def build_from_manifest(self, manifest: Dict[str, Any]):
+        """
+        Manifest Schema:
+        {
+            "type": "row" | "col",
+            "weight": int,  # 1 = expands, 0 = fixed
+            "children": [
+                { "type": "panel", "id": "my_panel_id", "weight": 1 },
+                { "type": "row", "weight": 2, "children": [...] }
+            ]
+        }
+        """
+        # Clear previous
+        for widget in self.winfo_children():
+            widget.destroy()
+        
+        # Build Root
+        self._build_recursive(self, manifest)
+        
+    def get_panel(self, panel_id: str) -> Optional[tk.Widget]:
+        """Retrieve a specific container by ID to pack widgets into."""
+        return self.panel_registry.get(panel_id)
+
+    def _build_recursive(self, parent_widget, node: Dict[str, Any]):
+        node_type = node.get("type", "panel")
+        weight = node.get("weight", 1)
+        
+        # A. Container Nodes (Row/Col) -> PanedWindow
+        if node_type in ["row", "col"]:
+            orient = tk.HORIZONTAL if node_type == "col" else tk.VERTICAL
+            
+            # Create the splitter
+            container = ttk.PanedWindow(parent_widget, orient=orient)
+            
+            # Pack/Add to parent
+            # If parent is a PanedWindow, we use .add(), else .pack()
+            if isinstance(parent_widget, ttk.PanedWindow):
+                parent_widget.add(container, weight=weight)
+            else:
+                container.pack(fill="both", expand=True)
+
+            # Recurse for children
+            for child in node.get("children", []):
+                self._build_recursive(container, child)
+
+        # B. Leaf Nodes (Panel) -> Frame
+        elif node_type == "panel":
+            p_id = node.get("id", "unknown")
+            
+            # Create the content frame
+            frame = ttk.Frame(parent_widget, padding=2)
+            # Register it so we can put stuff in it later
+            self.panel_registry[p_id] = frame
+            
+            if isinstance(parent_widget, ttk.PanedWindow):
+                parent_widget.add(frame, weight=weight)
+            else:
+                frame.pack(fill="both", expand=True)

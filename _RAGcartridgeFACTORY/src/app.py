@@ -4,12 +4,20 @@ import logging
 import os
 import sys
 
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+# --- PATH SETUP ---
+# Get the absolute path to the 'src' folder
+current_dir = os.path.dirname(os.path.abspath(__file__))
+microservices_dir = os.path.join(current_dir, "microservices")
+
+# Add both to sys.path so Python can "see" files in both locations
+sys.path.append(current_dir)
+sys.path.append(microservices_dir) 
 
 # --- Imports ---
 from microservices._TkinterAppShellMS import TkinterAppShellMS
-from microservices._WorkbenchLayoutMS import WorkbenchLayoutMS  # <--- NEW ENGINE
+from microservices._WorkbenchLayoutMS import WorkbenchLayoutMS
 from microservices._TkinterSmartExplorerMS import TkinterSmartExplorerMS
+from microservices._TkinterThemeManagerMS import TkinterThemeManagerMS
 from microservices._LogViewMS import LogViewMS
 from microservices._ThoughtStreamMS import ThoughtStreamMS
 from microservices._NeuralGraphViewerMS import NeuralGraphViewerMS
@@ -20,15 +28,22 @@ from orchestrator import ForgeOrchestrator, ForgeState
 class RAGFactoryApp:
     def __init__(self):
         # 1. Boot Shell
-        self.shell = TkinterAppShellMS({"title": "RAGcartridge FACTORY", "geometry": "1400x900"})
+        self.theme_mgr = TkinterThemeManagerMS() # Initialize first
+        self.shell = TkinterAppShellMS({
+            "title": "RAGcartridge FACTORY", 
+            "geometry": "1400x900",
+            "theme_manager": self.theme_mgr
+        })
         self.root = self.shell.root
         
+        # [NEW] APPLY THE DARK THEME NOW
+        self.theme_mgr.apply_theme(self.root) 
+                
         # 2. Boot Services
         self.telemetry = TelemetryServiceMS({"root": self.root})
         self.orchestrator = ForgeOrchestrator(self.telemetry)
         
         # 3. Define The Layout Manifest (Declarative!)
-        # "I want a 3-column layout. The middle is widest."
         layout_config = {
             "type": "col", 
             "children": [
@@ -53,7 +68,6 @@ class RAGFactoryApp:
         self._update_loop()
 
     def _setup_left_panel(self, parent):
-        # Standard Tkinter packing inside the clean panel
         ttk.Label(parent, text="SOURCE", font="bold").pack(fill="x")
         ttk.Button(parent, text="📂 Load Cartridge", command=self.action_load_cartridge).pack(fill="x")
         ttk.Button(parent, text="🔍 Select Source", command=self.action_select_source).pack(fill="x", pady=5)
@@ -83,26 +97,54 @@ class RAGFactoryApp:
         
     def _setup_right_panel(self, parent):
         self.thought_stream = ThoughtStreamMS({"parent": parent})
-        self.thought_stream.pack(fill="x", height=200)
+        # [FIXED] Removed invalid 'height=200', replaced with 'ipady=10'
+        self.thought_stream.pack(fill="x", pady=(0, 10), ipady=10)
         
         self.log_view = LogViewMS({"parent": parent, "log_queue": self.telemetry.log_queue})
         self.log_view.pack(fill="both", expand=True)
 
-    # ... [Rest of the Action/Loop methods remain exactly the same as previous step] ...
-    # (Let me know if you need me to repeat them, but they just copy/paste over)
-    
-    # --- Placeholders for methods to ensure code runs ---
-    def action_load_cartridge(self): self.orchestrator.select_cartridge(filedialog.asksaveasfilename())
+    # --- Actions ---
+    def action_load_cartridge(self): 
+        path = filedialog.asksaveasfilename(title="Create/Open Cartridge", defaultextension=".sqlite")
+        if path: self.orchestrator.select_cartridge(path)
+
     def action_select_source(self): 
         self.source_path = filedialog.askdirectory()
         if self.source_path: self.btn_scan.config(state="normal")
-    def action_scan(self): self.orchestrator.scan(self.source_path)
-    def action_ingest(self): self.orchestrator.ingest(ScoutMS().flatten_tree(self.orchestrator.get_last_scan_tree()), self.source_path)
-    def action_refine(self): self.orchestrator.refine_until_idle()
-    def action_stop(self): self.orchestrator.cancel()
 
+    def action_scan(self): 
+        self.orchestrator.scan(self.source_path)
+
+    def action_ingest(self): 
+        # Use ScannerMS/ScoutMS logic to flatten tree
+        scout = ScoutMS()
+        file_list = scout.flatten_tree(self.orchestrator.get_last_scan_tree())
+        self.orchestrator.ingest(file_list, self.source_path)
+
+    def action_refine(self): 
+        self.orchestrator.refine_until_idle()
+
+    def action_stop(self): 
+        self.orchestrator.cancel()
+
+    # --- Loop ---
     def _update_loop(self):
-        # [Same logic as before]
+        current_state = self.orchestrator.get_state()
+        
+        if current_state != self.orchestrator.get_state():
+             self.lbl_status.config(text=f"STATUS: {current_state}")
+
+        # Update Explorer if Scanned
+        if current_state == ForgeState.SCANNED.value and not self.explorer.tree_data:
+             self.explorer.load_data(self.orchestrator.get_last_scan_tree())
+        
+        # Bind Graph if ready
+        if current_state in [ForgeState.CARTRIDGE_SELECTED.value, ForgeState.READY.value] and not getattr(self, 'graph_bound', False):
+             if self.orchestrator.cartridge and self.orchestrator.neural:
+                 self.graph_viewer.bind_services(self.orchestrator.cartridge, self.orchestrator.neural)
+                 self.graph_viewer.load_from_db(self.orchestrator.cartridge.db_path)
+                 self.graph_bound = True
+
         self.root.after(100, self._update_loop)
 
     def launch(self):
