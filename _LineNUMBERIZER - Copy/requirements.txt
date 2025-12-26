@@ -1,4 +1,0 @@
-# Standard Library dependencies only:
-# tkinter, argparse, json, ast, threading, os, sys
-#
-# No external pip packages required.

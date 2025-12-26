@@ -1,6 +1,6 @@
 {
   "folder_states": {
-    ".": "unchecked",
+    ".": "checked",
     "cartridges": "checked",
     "src": "checked",
     "src\\microservices": "checked",
@@ -34,7 +34,7 @@
     "setup_env.bat": "checked"
   },
   "dynamic_exclusions": [
-    ".venv",
-    "venv"
+    "venv",
+    ".venv"
   ]
 }

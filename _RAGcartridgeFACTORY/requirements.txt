@@ -1,0 +1,14 @@
+# --- Core UI & Graphics ---
+pygame          # For _NeuralGraphEngineMS (Physics/Rendering)
+Pillow          # For _NeuralGraphViewerMS (Tkinter Image integration)
+
+# --- Network & Neural ---
+requests        # For _NeuralServiceMS (Ollama API) and _ScoutMS (Web Crawling)
+
+# --- Data Parsing & Ingestion ---
+beautifulsoup4  # For _ContentExtractorMS (HTML parsing)
+pypdf           # For _ContentExtractorMS (PDF parsing)
+
+# --- Vector Database ---
+# Note: This provides the 'vec0' extension for SQLite
+sqlite-vec      # For _CartridgeServiceMS and _SearchEngineMS

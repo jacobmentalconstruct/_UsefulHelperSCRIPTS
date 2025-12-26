@@ -16,24 +16,6 @@ from tkinter import ttk, messagebox, simpledialog
 # Path to your Microservice Library
 MICROSERVICE_LIB_PATH = Path(r"C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_MicroserviceLIBRARY")
 
-# Centralized "No-Fly Zone" for documentation generation
-# These patterns will be ignored by the Tree Mapper and File Dumper.
-GLOBAL_IGNORE_PATTERNS = [
-    # System & Git
-    ".git", ".gitignore", ".gitattributes", ".vscode", ".idea",
-    "__pycache__", "*.pyc", "*.pyo", ".DS_Store", "Thumbs.db",
-    
-    # Virtual Environments
-    ".venv", "venv", "env", "node_modules",
-    
-    # Logs & Artifacts
-    "_logs", "*.log", "*.tmp", "dist", "build",
-    
-    # Specific huge files to avoid dumping
-    "*.exe", "*.dll", "*.so", "*.bin", "*.iso", "*.zip", "*.tar", "*.gz",
-    "package-lock.json", "yarn.lock" 
-]
-
 # ---------- Data model ----------
 
 @dataclass
@@ -179,45 +161,23 @@ class MicroserviceSelector(tk.Toplevel):
     def __init__(self, parent):
         super().__init__(parent)
         self.title("Select Microservices to Inject")
-        self.geometry("600x750")  # Taller for the text input
+        self.geometry("600x600")
         self.confirmed = False
-        self.selected_files = []  # List of Path objects
-        self.available_files = {}  # Map "NameMS" -> Path object
-
-        # Index available files
-        if MICROSERVICE_LIB_PATH.exists():
-            for f in MICROSERVICE_LIB_PATH.glob("*MS.py"):
-                # Key: "AuthMS" (derived from _AuthMS.py)
-                key = f.stem.lstrip("_")
-                self.available_files[key] = f
-                self.available_files[f.name] = f  # Handle raw filename input too
-
+        self.selected_files = [] # List of Path objects
+        
         self._build_ui()
         self.transient(parent)
         self.grab_set()
-
+        
     def _build_ui(self):
         # 1. Header
-        lbl = ttk.Label(self, text="Select capabilities to add:", font=("Segoe UI", 10, "bold"))
-        lbl.pack(pady=(10, 5))
-
-        # --- NEW: Batch Input Area ---
-        frame_batch = ttk.LabelFrame(self, text="Quick Paste (Comma Separated)", padding=10)
-        frame_batch.pack(fill="x", padx=10, pady=5)
-
-        lbl_hint = ttk.Label(frame_batch, text="e.g.: AuthMS, TreeMapperMS, ContextAggregatorMS", foreground="gray")
-        lbl_hint.pack(anchor="w")
-
-        self.txt_batch = tk.Text(frame_batch, height=3, font=("Consolas", 9))
-        self.txt_batch.pack(fill="x", pady=5)
-        # -----------------------------
-
-        ttk.Label(self, text="Or select from library:", font=("Segoe UI", 9)).pack(anchor="w", padx=15, pady=(10, 0))
-
+        lbl = ttk.Label(self, text="Select capabilities to add to your new app:", font=("Segoe UI", 10, "bold"))
+        lbl.pack(pady=10)
+        
         # 2. Scrollable Checkbox List
         frame_list = ttk.Frame(self)
         frame_list.pack(fill="both", expand=True, padx=10, pady=5)
-
+        
         canvas = tk.Canvas(frame_list, bg="#f0f0f0")
         scrollbar = ttk.Scrollbar(frame_list, orient="vertical", command=canvas.yview)
         scrollable_frame = ttk.Frame(canvas)
@@ -228,81 +188,32 @@ class MicroserviceSelector(tk.Toplevel):
         )
         canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
         canvas.configure(yscrollcommand=scrollbar.set)
-
+        
         canvas.pack(side="left", fill="both", expand=True)
         scrollbar.pack(side="right", fill="y")
-
-        # 3. Populate Checkboxes
-        self.check_vars = {}  # Path -> BooleanVar
-
-        sorted_files = sorted(self.available_files.values(), key=lambda p: p.name)
-        # Deduplicate paths (since we keyed by both Name and _Name.py)
-        unique_paths = sorted(list(set(sorted_files)), key=lambda p: p.name)
-
-        for f in unique_paths:
-            var = tk.BooleanVar()
-            cb = ttk.Checkbutton(scrollable_frame, text=f.name, variable=var)
-            cb.pack(anchor="w", padx=5, pady=2)
-            self.check_vars[f] = var
+        
+        # 3. Populate
+        self.check_vars = {} # name -> BooleanVar
+        
+        if MICROSERVICE_LIB_PATH.exists():
+            files = sorted([f for f in MICROSERVICE_LIB_PATH.glob("*MS.py")])
+            for f in files:
+                var = tk.BooleanVar()
+                cb = ttk.Checkbutton(scrollable_frame, text=f.name, variable=var)
+                cb.pack(anchor="w", padx=5, pady=2)
+                self.check_vars[f] = var
+        else:
+            ttk.Label(scrollable_frame, text=f"Library not found at:\n{MICROSERVICE_LIB_PATH}").pack()
 
         # 4. Buttons
         btn_frame = ttk.Frame(self)
         btn_frame.pack(fill="x", pady=10, padx=10)
-
+        
         ttk.Button(btn_frame, text="Create App", command=self._on_confirm).pack(side="right", padx=5)
         ttk.Button(btn_frame, text="Cancel", command=self.destroy).pack(side="right")
-
+        
     def _on_confirm(self):
-        final_selection = set()
-
-        # A. Collect Checkbox selections
-        for f, var in self.check_vars.items():
-            if var.get():
-                final_selection.add(f)
-
-        # B. Parse Text Input
-        raw_text = self.txt_batch.get("1.0", tk.END).strip()
-        if raw_text:
-            tokens = [t.strip() for t in raw_text.split(",") if t.strip()]
-            unknowns = []
-
-            for token in tokens:
-                found = None
-
-                # Check 1: Direct Key Match (AuthMS or _AuthMS.py)
-                if token in self.available_files:
-                    found = self.available_files[token]
-
-                # Check 2: Case-insensitive scan
-                if not found:
-                    for key, path in self.available_files.items():
-                        if key.lower() == token.lower():
-                            found = path
-                            break
-
-                if found:
-                    final_selection.add(found)
-                else:
-                    unknowns.append(token)
-
-            # C. Validation Logic
-            if unknowns:
-                msg = (
-                    f"The following microservices were not found:\n\n"
-                    f"{', '.join(unknowns)}\n\n"
-                    f"Do you want to continue ignoring these?"
-                )
-
-                # Yes = Continue, No = Fix (Stay), Cancel = Abort everything
-                choice = messagebox.askyesnocancel("Missing Services", msg)
-
-                if choice is None:  # Cancel
-                    return
-                if choice is False:  # No (Fix)
-                    return
-                # choice is True -> Continue (Ignore bad ones)
-
-        self.selected_files = list(final_selection)
+        self.selected_files = [f for f, var in self.check_vars.items() if var.get()]
         self.confirmed = True
         self.destroy()
 
@@ -386,7 +297,7 @@ class AppLauncherUI:
         # 1. Ask for Name
         name = simpledialog.askstring("New App", "Enter name for new app (Folder Name):")
         if not name: return
-
+        
         safe_name = "".join(c for c in name if c.isalnum() or c in ('_', '-')).strip()
         if not safe_name:
             messagebox.showerror("Error", "Invalid name.")
@@ -400,37 +311,17 @@ class AppLauncherUI:
         # 2. Ask for Microservices
         selector = MicroserviceSelector(self.root)
         self.root.wait_window(selector)
-
+        
         if not selector.confirmed:
-            return  # User cancelled
+            return # User cancelled
 
         # 3. Create
         try:
-            # --- AUTO-INJECT DOC SERVICES ---
-            # Enforce adding TreeMapper and ContextAggregator so the project can
-            # emit its own tree/dump artifacts immediately.
-            required_services = ["_TreeMapperMS.py", "_ContextAggregatorMS.py"]
-            selected_paths = list(selector.selected_files)
-
-            existing_names = [p.name for p in selected_paths]
-            for req in required_services:
-                if req not in existing_names:
-                    req_path = MICROSERVICE_LIB_PATH / req
-                    if req_path.exists():
-                        selected_paths.append(req_path)
-            # -------------------------------
-
-            self._write_boilerplate(target_dir, selected_paths)
-
-            # --- NEW: GENERATE INITIAL DOCS ---
-            self._generate_project_docs(target_dir, safe_name)
-            # ----------------------------------
-
+            self._write_boilerplate(target_dir, selector.selected_files)
             self._on_refresh_clicked()
-            messagebox.showinfo("Success", f"Created {safe_name} with {len(selected_paths)} services.")
+            messagebox.showinfo("Success", f"Created {safe_name} with {len(selector.selected_files)} services.")
         except Exception as e:
             messagebox.showerror("Error", f"Failed to create app: {e}")
-            print(e)  # Console visibility
 
     def _write_boilerplate(self, root_path: Path, services: List[Path] = None):
         # A. Copy Template if exists
@@ -519,126 +410,6 @@ class AppLauncherUI:
         
         with open(app_py, "w", encoding="utf-8") as f:
             f.write("\n".join(content))
-
-    def _generate_project_docs(self, project_path: Path, project_name: str):
-        """
-        Generates initial artifacts for the new project.
-        Creates a _logs folder containing:
-          - _<project>_project-root-directory-tree.txt
-          - _<project>_project-file-dump.txt
-
-        Uses importlib to dynamically load tools from the Microservice Library.
-        RESPECTS GLOBAL_IGNORE_PATTERNS defined at top of script.
-        """
-        import importlib.util
-
-        logs_dir = project_path / "_logs"
-        logs_dir.mkdir(exist_ok=True)
-
-        # Clear old logs if they came from a template copy
-        for item in logs_dir.glob("*"):
-            if item.is_file():
-                item.unlink()
-
-        tree_out = logs_dir / f"_{project_name}_project-root-directory-tree.txt"
-        dump_out = logs_dir / f"_{project_name}_project-file-dump.txt"
-
-        try:
-            # 1. Load TreeMapperMS
-            tree_path = MICROSERVICE_LIB_PATH / "_TreeMapperMS.py"
-            if not tree_path.is_file():
-                raise FileNotFoundError(f"Missing required microservice: {tree_path}")
-
-            spec_tree = importlib.util.spec_from_file_location("TreeMapperMS", tree_path)
-            mod_tree = importlib.util.module_from_spec(spec_tree)
-            spec_tree.loader.exec_module(mod_tree)
-            tree_mapper = mod_tree.TreeMapperMS()
-
-            # Generate Tree with Exclusions
-            # Note: Checking your registry.json, the arg is 'additional_exclusions'
-            tree_content = tree_mapper.generate_tree(
-                str(project_path), 
-                additional_exclusions=GLOBAL_IGNORE_PATTERNS
-            )
-            with open(tree_out, "w", encoding="utf-8") as f:
-                f.write(tree_content)
-
-            # 2. Load ContextAggregatorMS
-            agg_path = MICROSERVICE_LIB_PATH / "_ContextAggregatorMS.py"
-            if not agg_path.is_file():
-                raise FileNotFoundError(f"Missing required microservice: {agg_path}")
-
-            spec_agg = importlib.util.spec_from_file_location("ContextAggregatorMS", agg_path)
-            mod_agg = importlib.util.module_from_spec(spec_agg)
-            spec_agg.loader.exec_module(mod_agg)
-            aggregator = mod_agg.ContextAggregatorMS()
-
-            # Generate Dump with Exclusions
-            # Note: Checking your registry.json, the arg is 'extra_exclusions'
-            aggregator.aggregate(
-                str(project_path), 
-                str(dump_out), 
-                extra_exclusions=GLOBAL_IGNORE_PATTERNS
-            )
-
-            print(f"[Info] Generated docs in {logs_dir} using Global Ignore patterns.")
-
-        except Exception as e:
-            print(f"[Warn] Failed to generate initial docs: {e}")
-        """
-        Generates initial artifacts for the new project.
-        Creates a _logs folder containing:
-          - _<project>_project-root-directory-tree.txt
-          - _<project>_project-file-dump.txt
-
-        Uses importlib to dynamically load tools from the Microservice Library.
-        Non-fatal if generation fails.
-        """
-        import importlib.util
-
-        logs_dir = project_path / "_logs"
-        logs_dir.mkdir(exist_ok=True)
-
-        # Clear old logs if they came from a template copy
-        for item in logs_dir.glob("*"):
-            if item.is_file():
-                item.unlink()
-
-        tree_out = logs_dir / f"_{project_name}_project-root-directory-tree.txt"
-        dump_out = logs_dir / f"_{project_name}_project-file-dump.txt"
-
-        try:
-            # 1. Load TreeMapperMS
-            tree_path = MICROSERVICE_LIB_PATH / "_TreeMapperMS.py"
-            if not tree_path.is_file():
-                raise FileNotFoundError(f"Missing required microservice: {tree_path}")
-
-            spec_tree = importlib.util.spec_from_file_location("TreeMapperMS", tree_path)
-            mod_tree = importlib.util.module_from_spec(spec_tree)
-            spec_tree.loader.exec_module(mod_tree)
-            tree_mapper = mod_tree.TreeMapperMS()
-
-            tree_content = tree_mapper.generate_tree(str(project_path))
-            with open(tree_out, "w", encoding="utf-8") as f:
-                f.write(tree_content)
-
-            # 2. Load ContextAggregatorMS
-            agg_path = MICROSERVICE_LIB_PATH / "_ContextAggregatorMS.py"
-            if not agg_path.is_file():
-                raise FileNotFoundError(f"Missing required microservice: {agg_path}")
-
-            spec_agg = importlib.util.spec_from_file_location("ContextAggregatorMS", agg_path)
-            mod_agg = importlib.util.module_from_spec(spec_agg)
-            spec_agg.loader.exec_module(mod_agg)
-            aggregator = mod_agg.ContextAggregatorMS()
-
-            # Generate Dump
-            aggregator.aggregate(str(project_path), str(dump_out))
-
-            print(f"[Info] Generated docs in {logs_dir}")
-
-        except Exception as e:
-            print(f"[Warn] Failed to generate initial docs: {e}")
 
     def _on_refresh_clicked(self):
         self.apps = sorted(discover_apps(), key=lambda a: a.name.lower())
