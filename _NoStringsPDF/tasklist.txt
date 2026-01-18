@@ -1,0 +1,32 @@
+[x] PHASE 1: SCAFFOLD & VIEWING
+    [x] Initialize Project Structure (Microservice Architecture)
+    [x] Install Requirements (pymupdf, Pillow)
+    [x] Service: RenderOps (_PdfEngineMS.py - PDF -> Pixmap -> ImageTk)
+    [x] Service: Standard Button (_TkinterButtonMS.py)
+    [x] UI: Main Window Layout (PanedWindow: Left vs Right)
+    [x] UI: ViewerPanel (Canvas with Scrollbars & Zoom Logic)
+    [x] Logic: Connect "Open File" -> RenderOps -> UI Display
+    [x] Logic: Basic Navigation (Next/Prev) and Zoom (+/-)
+
+[ ] PHASE 2: THUMBNAILS & NAVIGATION ( <--- CURRENT FOCUS )
+    [ ] Service Update: _PdfEngineMS - Add `render_thumbnail(page_num)` (Low-res, fast)
+    [ ] UI: ThumbnailPanel - Create Grid/List view in Left Panel
+    [ ] Interaction: Click thumbnail -> Jump to Page in Main View
+    [ ] Optimization: Lazy loading (only render thumbnails currently visible?)
+
+[ ] PHASE 3: BASIC MANIPULATION
+    [ ] Service: FileOps (Save, Save As)
+    [ ] Guardrail: "File exists" warning
+    [ ] Service: ReorderOps (Backend logic for swapping pages)
+    [ ] UI: Drag-and-drop on ThumbnailPanel (The tricky Tkinter part)
+
+[ ] PHASE 4: ADVANCED FEATURES
+    [ ] Service: InterleaveOps (Merge 2 files or ranges)
+    [ ] UI: Interleave Dialog
+    [ ] Service: MultiUpOps (N-Up Grid generation)
+    [ ] Service: PrintOps (OS Print Dialog wrapper)
+
+[ ] PHASE 5: POLISH & TEXT
+    [ ] Service: TextOps (Search string -> Return Page/Coords)
+    [ ] UI: Highlight search results
+    [ ] UI: "Industrial" Styling (Clean up borders/colors)

@@ -1,0 +1,21 @@
+Project Tree: C:\Users\petya\Documents\Jacob's BIN\_UsefulHelperSCRIPTS\_NoStringsPDF
+Generated: 2026-01-12 06:50:16.587678
+
+├── 📁 src/
+│   ├── 📁 microservices/
+│   │   ├── 📄 _ContextAggregatorMS.py
+│   │   ├── 📄 _PdfEngineMS.py
+│   │   ├── 📄 _SpinnerThingyMaBobberMS.py
+│   │   ├── 📄 _TkinterAppShellMS.py
+│   │   ├── 📄 _TkinterThemeManagerMS.py
+│   │   ├── 📄 _TkinterUniButtonMS.py
+│   │   ├── 📄 _TreeMapperMS.py
+│   │   ├── 📄 base_service.py
+│   │   ├── 📄 document_utils.py
+│   │   └── 📄 microservice_std_lib.py
+│   ├── 📄 __init__.py
+│   └── 📄 app.py
+├── 📄 LICENSE.md
+├── 📄 README.md
+├── 📄 requirements.txt
+└── 📄 setup_env.bat

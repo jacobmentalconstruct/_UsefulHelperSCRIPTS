@@ -43,6 +43,739 @@ from typing import Dict, List, Optional
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog
 
+# ==============================================================================
+# CONFIGURATION
+# ==============================================================================
+# Path to your Microservice Library
+MICROSERVICE_LIB_PATH = Path(r"C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_MicroserviceLIBRARY")
+
+# Centralized "No-Fly Zone" for documentation generation
+# These patterns will be ignored by the Tree Mapper and File Dumper.
+GLOBAL_IGNORE_PATTERNS = [
+    # System & Git
+    ".git", ".gitignore", ".gitattributes", ".vscode", ".idea",
+    "__pycache__", "*.pyc", "*.pyo", ".DS_Store", "Thumbs.db",
+    
+    # Virtual Environments
+    ".venv", "venv", "env", "node_modules",
+    
+    # Logs & Artifacts
+    "_logs", "*.log", "*.tmp", "dist", "build",
+    
+    # Specific huge files to avoid dumping
+    "*.exe", "*.dll", "*.so", "*.bin", "*.iso", "*.zip", "*.tar", "*.gz",
+    "package-lock.json", "yarn.lock" 
+]
+
+# ---------- Data model ----------
+
+@dataclass
+class AppConfig:
+    name: str
+    folder: Path              # absolute
+    python_cmd: Optional[str] = None  # interpreter or "py"
+    env: Dict[str, str] = field(default_factory=dict)
+
+    @property
+    def has_src_app(self) -> bool:
+        return (self.folder / "src" / "app.py").is_file()
+
+    def resolve_python(self) -> List[str]:
+        """
+        Determine the Python command list to run for this app.
+        Priority:
+        1. Explicit python_cmd (absolute or relative to folder, or just 'py').
+        2. .venv inside app folder.
+        3. 'py' (on Windows) or sys.executable elsewhere.
+        """
+        # 1. Explicit config
+        if self.python_cmd:
+            cmd = self.python_cmd
+            if os.path.sep in cmd or "/" in cmd:
+                python_path = (self.folder / cmd).resolve()
+                return [str(python_path)]
+            else:
+                return [cmd]
+
+        # 2. Local venv
+        win_candidate = self.folder / ".venv" / "Scripts" / "pythonw.exe"
+        win_fallback = self.folder / ".venv" / "Scripts" / "python.exe"
+        nix_candidate = self.folder / ".venv" / "bin" / "python"
+
+        if win_candidate.is_file():
+            return [str(win_candidate.resolve())]
+        if win_fallback.is_file():
+            return [str(win_fallback.resolve())]
+        if nix_candidate.is_file():
+            return [str(nix_candidate.resolve())]
+
+        # 3. Fallback to system
+        if os.name == "nt":
+            return ["pyw"]
+        return [sys.executable]
+
+
+# ---------- Config discovery ----------
+
+# Go up 3 levels: src -> _UsefulHelperScriptsMENU -> _UsefulHelperSCRIPTS (Root)
+ROOT_DIR = Path(__file__).resolve().parent.parent.parent
+CONFIG_FILE = ROOT_DIR / "helper_apps.json"
+
+
+def load_config_file() -> Dict[str, AppConfig]:
+    configs: Dict[str, AppConfig] = {}
+    if not CONFIG_FILE.is_file():
+        return configs
+
+    try:
+        raw = json.load(CONFIG_FILE.open("r", encoding="utf-8"))
+    except Exception as e:
+        print(f"[WARN] Failed to load {CONFIG_FILE}: {e}")
+        return configs
+
+    for entry in raw:
+        folder = ROOT_DIR / entry["folder"]
+        name = entry.get("name", folder.name)
+        python_cmd = entry.get("python")
+        env = entry.get("env", {})
+
+        cfg = AppConfig(
+            name=name,
+            folder=folder,
+            python_cmd=python_cmd,
+            env=env,
+        )
+        configs[str(folder.resolve())] = cfg
+
+    return configs
+
+
+def discover_apps() -> List[AppConfig]:
+    configs_by_folder = load_config_file()
+    apps: Dict[str, AppConfig] = {}
+
+    # 1. From config
+    for folder_key, cfg in configs_by_folder.items():
+        apps[folder_key] = cfg
+
+    # 2. Auto-discover
+    for child in ROOT_DIR.iterdir():
+        if not child.is_dir():
+            continue
+        candidate = child / "src" / "app.py"
+        if candidate.is_file():
+            key = str(child.resolve())
+            if key not in apps:
+                apps[key] = AppConfig(name=child.name, folder=child)
+
+    return list(apps.values())
+
+
+# ---------- Launcher logic ----------
+
+def launch_app(app_cfg: AppConfig):
+    if not app_cfg.has_src_app:
+        messagebox.showerror(
+            "Missing app.py",
+            f"Could not find src/app.py in:\n{app_cfg.folder}",
+        )
+        return
+
+    python_cmd = app_cfg.resolve_python()
+    cmd = python_cmd + ["-m", "src.app"]
+    env = os.environ.copy()
+    env.update(app_cfg.env)
+
+    try:
+        if os.name == "nt":
+            subprocess.Popen(
+                cmd,
+                cwd=str(app_cfg.folder),
+                env=env,
+            )
+        else:
+            subprocess.Popen(
+                cmd,
+                cwd=str(app_cfg.folder),
+                env=env,
+            )
+    except Exception as e:
+        messagebox.showerror(
+            "Launch failed",
+            f"Failed to launch {app_cfg.name}:\n\n{e}",
+        )
+
+# ==============================================================================
+# NEW: MICROSERVICE SELECTOR MODAL
+# ==============================================================================
+class MicroserviceSelector(tk.Toplevel):
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.title("Select Microservices to Inject")
+        self.geometry("600x750")  # Taller for the text input
+        self.confirmed = False
+        self.selected_files = []  # List of Path objects
+        self.available_files = {}  # Map "NameMS" -> Path object
+
+        # Index available files
+        if MICROSERVICE_LIB_PATH.exists():
+            for f in MICROSERVICE_LIB_PATH.glob("*MS.py"):
+                # Key: "AuthMS" (derived from _AuthMS.py)
+                key = f.stem.lstrip("_")
+                self.available_files[key] = f
+                self.available_files[f.name] = f  # Handle raw filename input too
+
+        self._build_ui()
+        self.transient(parent)
+        self.grab_set()
+
+    def _build_ui(self):
+        # 1. Header
+        lbl = ttk.Label(self, text="Select capabilities to add:", font=("Segoe UI", 10, "bold"))
+        lbl.pack(pady=(10, 5))
+
+        # --- NEW: Batch Input Area ---
+        frame_batch = ttk.LabelFrame(self, text="Quick Paste (Comma Separated)", padding=10)
+        frame_batch.pack(fill="x", padx=10, pady=5)
+
+        lbl_hint = ttk.Label(frame_batch, text="e.g.: AuthMS, TreeMapperMS, ContextAggregatorMS", foreground="gray")
+        lbl_hint.pack(anchor="w")
+
+        self.txt_batch = tk.Text(frame_batch, height=3, font=("Consolas", 9))
+        self.txt_batch.pack(fill="x", pady=5)
+        # -----------------------------
+
+        ttk.Label(self, text="Or select from library:", font=("Segoe UI", 9)).pack(anchor="w", padx=15, pady=(10, 0))
+
+        # 2. Scrollable Checkbox List
+        frame_list = ttk.Frame(self)
+        frame_list.pack(fill="both", expand=True, padx=10, pady=5)
+
+        canvas = tk.Canvas(frame_list, bg="#f0f0f0")
+        scrollbar = ttk.Scrollbar(frame_list, orient="vertical", command=canvas.yview)
+        scrollable_frame = ttk.Frame(canvas)
+
+        scrollable_frame.bind(
+            "<Configure>",
+            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+        )
+        canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+        canvas.configure(yscrollcommand=scrollbar.set)
+
+        canvas.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
+
+        # 3. Populate Checkboxes
+        self.check_vars = {}  # Path -> BooleanVar
+
+        sorted_files = sorted(self.available_files.values(), key=lambda p: p.name)
+        # Deduplicate paths (since we keyed by both Name and _Name.py)
+        unique_paths = sorted(list(set(sorted_files)), key=lambda p: p.name)
+
+        for f in unique_paths:
+            var = tk.BooleanVar()
+            cb = ttk.Checkbutton(scrollable_frame, text=f.name, variable=var)
+            cb.pack(anchor="w", padx=5, pady=2)
+            self.check_vars[f] = var
+
+        # 4. Buttons
+        btn_frame = ttk.Frame(self)
+        btn_frame.pack(fill="x", pady=10, padx=10)
+
+        ttk.Button(btn_frame, text="Create App", command=self._on_confirm).pack(side="right", padx=5)
+        ttk.Button(btn_frame, text="Cancel", command=self.destroy).pack(side="right")
+
+    def _on_confirm(self):
+        final_selection = set()
+
+        # A. Collect Checkbox selections
+        for f, var in self.check_vars.items():
+            if var.get():
+                final_selection.add(f)
+
+        # B. Parse Text Input
+        raw_text = self.txt_batch.get("1.0", tk.END).strip()
+        if raw_text:
+            tokens = [t.strip() for t in raw_text.split(",") if t.strip()]
+            unknowns = []
+
+            for token in tokens:
+                found = None
+
+                # Check 1: Direct Key Match (AuthMS or _AuthMS.py)
+                if token in self.available_files:
+                    found = self.available_files[token]
+
+                # Check 2: Case-insensitive scan
+                if not found:
+                    for key, path in self.available_files.items():
+                        if key.lower() == token.lower():
+                            found = path
+                            break
+
+                if found:
+                    final_selection.add(found)
+                else:
+                    unknowns.append(token)
+
+            # C. Validation Logic
+            if unknowns:
+                msg = (
+                    f"The following microservices were not found:\n\n"
+                    f"{', '.join(unknowns)}\n\n"
+                    f"Do you want to continue ignoring these?"
+                )
+
+                # Yes = Continue, No = Fix (Stay), Cancel = Abort everything
+                choice = messagebox.askyesnocancel("Missing Services", msg)
+
+                if choice is None:  # Cancel
+                    return
+                if choice is False:  # No (Fix)
+                    return
+                # choice is True -> Continue (Ignore bad ones)
+
+        self.selected_files = list(final_selection)
+        self.confirmed = True
+        self.destroy()
+
+# ---------- Tkinter UI ----------
+
+class AppLauncherUI:
+    def __init__(self, root: tk.Tk, apps: List[AppConfig]):
+        self.root = root
+        self.apps = sorted(apps, key=lambda a: a.name.lower())
+        self.app_by_name = {a.name: a for a in self.apps}
+
+        self.root.title("Useful Helper Apps Launcher")
+        self.root.geometry("800x500") # Slightly wider
+
+        self._build_widgets()
+
+    def _build_widgets(self):
+        main_frame = ttk.Frame(self.root, padding=10)
+        main_frame.pack(fill=tk.BOTH, expand=True)
+
+        # Left: app list
+        left_frame = ttk.Frame(main_frame)
+        left_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=False)
+
+        ttk.Label(left_frame, text="Available Apps").pack(anchor="w")
+
+        self.app_listbox = tk.Listbox(left_frame, height=20, width=40)
+        self.app_listbox.pack(fill=tk.BOTH, expand=True)
+        self.app_listbox.bind("<Double-1>", self._on_double_click)
+
+        for app in self.apps:
+            suffix = "" if app.has_src_app else " (missing src/app.py)"
+            self.app_listbox.insert(tk.END, f"{app.name}{suffix}")
+
+        # Right: details + launch
+        right_frame = ttk.Frame(main_frame, padding=(10, 0))
+        right_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+        self.details_text = tk.Text(
+            right_frame, height=10, wrap="word", state="disabled"
+        )
+        self.details_text.pack(fill=tk.BOTH, expand=True)
+
+        btn_frame = ttk.Frame(right_frame)
+        btn_frame.pack(fill=tk.X, pady=(10, 0))
+
+        self.launch_button = ttk.Button(
+            btn_frame, text="Launch", command=self._on_launch_clicked
+        )
+        self.launch_button.pack(side=tk.LEFT)
+
+        self.create_button = ttk.Button(
+            btn_frame, text="Create New App...", command=self._on_create_clicked
+        )
+        self.create_button.pack(side=tk.LEFT, padx=(5, 0))
+
+        self.refresh_button = ttk.Button(
+            btn_frame, text="Refresh", command=self._on_refresh_clicked
+        )
+        self.refresh_button.pack(side=tk.LEFT, padx=(5, 0))
+
+        # --- New Tools (Right Aligned) ---
+        self.btn_ps = ttk.Button(
+            btn_frame, text="PS", width=3, command=self._on_open_powershell
+        )
+        self.btn_ps.pack(side=tk.RIGHT, padx=(5, 0))
+
+        self.btn_cmd = ttk.Button(
+            btn_frame, text="CMD", width=4, command=self._on_open_cmd
+        )
+        self.btn_cmd.pack(side=tk.RIGHT, padx=(5, 0))
+
+        self.btn_explore = ttk.Button(
+            btn_frame, text="Folder", command=self._on_open_folder
+        )
+        self.btn_explore.pack(side=tk.RIGHT, padx=(5, 0))
+
+        self.app_listbox.bind("<<ListboxSelect>>", self._on_select)
+
+    def _on_create_clicked(self):
+        # 1. Ask for Name
+        name = simpledialog.askstring("New App", "Enter name for new app (Folder Name):")
+        if not name: return
+
+        safe_name = "".join(c for c in name if c.isalnum() or c in ('_', '-')).strip()
+        if not safe_name:
+            messagebox.showerror("Error", "Invalid name.")
+            return
+
+        target_dir = ROOT_DIR / safe_name
+        if target_dir.exists():
+            messagebox.showerror("Error", f"Folder '{safe_name}' already exists.")
+            return
+
+        # 2. Ask for Microservices
+        selector = MicroserviceSelector(self.root)
+        self.root.wait_window(selector)
+
+        if not selector.confirmed:
+            return  # User cancelled
+
+        # 3. Create
+        try:
+            # --- AUTO-INJECT DOC SERVICES ---
+            # Enforce adding TreeMapper and ContextAggregator so the project can
+            # emit its own tree/dump artifacts immediately.
+            required_services = ["_TreeMapperMS.py", "_ContextAggregatorMS.py"]
+            selected_paths = list(selector.selected_files)
+
+            existing_names = [p.name for p in selected_paths]
+            for req in required_services:
+                if req not in existing_names:
+                    req_path = MICROSERVICE_LIB_PATH / req
+                    if req_path.exists():
+                        selected_paths.append(req_path)
+            # -------------------------------
+
+            self._write_boilerplate(target_dir, selected_paths)
+
+            # --- NEW: GENERATE INITIAL DOCS ---
+            self._generate_project_docs(target_dir, safe_name)
+            # ----------------------------------
+
+            self._on_refresh_clicked()
+            messagebox.showinfo("Success", f"Created {safe_name} with {len(selected_paths)} services.")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to create app: {e}")
+            print(e)  # Console visibility
+
+    def _write_boilerplate(self, root_path: Path, services: List[Path] = None):
+        # A. Copy Template if exists
+        launcher_folder = Path(__file__).resolve().parent.parent
+        template_source = launcher_folder / "_BoilerPlatePythonTEMPLATE"
+
+        if template_source.is_dir():
+            try:
+                shutil.copytree(template_source, root_path, dirs_exist_ok=True)
+                print(f"[Info] Cloned template from {template_source}")
+            except Exception as e:
+                messagebox.showerror("Template Error", f"Failed to copy template:\n{e}")
+                return
+        else:
+            # Fallback structure
+            root_path.mkdir(parents=True, exist_ok=True)
+            (root_path / "src").mkdir(exist_ok=True)
+            (root_path / "requirements.txt").touch()
+            (root_path / "src" / "__init__.py").touch()
+            
+            # Basic app.py fallback
+            with (root_path / "src" / "app.py").open("w", encoding="utf-8") as f:
+                f.write("def main():\n    print('Hello World')\n\nif __name__ == '__main__':\n    main()")
+
+        # B. Inject Microservices
+        if services:
+            ms_dir = root_path / "src" / "microservices"
+            ms_dir.mkdir(exist_ok=True)
+            
+            # 1. Copy microservice_std_lib.py (Required dependency)
+            std_lib = MICROSERVICE_LIB_PATH / "microservice_std_lib.py"
+            if std_lib.exists():
+                shutil.copy2(std_lib, ms_dir / "microservice_std_lib.py")
+            
+            # 2. Copy Selected Files
+            for svc_path in services:
+                shutil.copy2(svc_path, ms_dir / svc_path.name)
+            
+            # 3. Generate a 'Smart' app.py that imports them
+            self._overwrite_app_py_with_imports(root_path, services)
+
+    def _overwrite_app_py_with_imports(self, root_path: Path, services: List[Path]):
+        """Overwrites src/app.py with a version that imports the selected services."""
+        app_py = root_path / "src" / "app.py"
+        
+        imports = []
+        inits = []
+        
+        for svc in services:
+            # Filename: _AuthMS.py -> Class: AuthMS (Assuming convention)
+            module_name = svc.stem # _AuthMS
+            class_name = svc.stem.replace("_", "") # AuthMS
+            
+            # Correction: Your files define classes like 'AuthMS' inside '_AuthMS.py'
+            # But wait, some might be '_TkinterAppShellMS' -> 'TkinterAppShellMS'
+            # Let's assume class name matches filename without underscore for now, 
+            # or just import the module to be safe.
+            
+            # Logic: from src.microservices._AuthMS import AuthMS
+            # Note: We need to handle the underscore correctly. 
+            # If file is _AuthMS.py, class is usually AuthMS.
+            clean_class_name = module_name[1:] if module_name.startswith("_") else module_name
+            
+            imports.append(f"from src.microservices.{module_name} import {clean_class_name}")
+            inits.append(f"    # {clean_class_name} initialized")
+            inits.append(f"    {clean_class_name.lower()} = {clean_class_name}()")
+            inits.append(f"    print('Service Loaded:', {clean_class_name.lower()})")
+
+        content = [
+            "import sys",
+            "import os",
+            "# Add src to path so imports work cleanly",
+            "sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))",
+            "",
+            "# --- Microservice Imports ---"
+        ]
+        content.extend(imports)
+        content.append("")
+        content.append("def main():")
+        content.append("    print('--- Booting Microservice App ---')")
+        content.extend(inits)
+        content.append("    print('--- System Ready ---')")
+        content.append("")
+        content.append("if __name__ == '__main__':")
+        content.append("    main()")
+        
+        with open(app_py, "w", encoding="utf-8") as f:
+            f.write("\n".join(content))
+
+    def _generate_project_docs(self, project_path: Path, project_name: str):
+        """
+        Generates initial artifacts for the new project.
+        Creates a _logs folder containing:
+          - _<project>_project-root-directory-tree.txt
+          - _<project>_project-file-dump.txt
+
+        Uses importlib to dynamically load tools from the Microservice Library.
+        RESPECTS GLOBAL_IGNORE_PATTERNS defined at top of script.
+        """
+        import importlib.util
+
+        logs_dir = project_path / "_logs"
+        logs_dir.mkdir(exist_ok=True)
+
+        # Clear old logs if they came from a template copy
+        for item in logs_dir.glob("*"):
+            if item.is_file():
+                item.unlink()
+
+        tree_out = logs_dir / f"_{project_name}_project-root-directory-tree.txt"
+        dump_out = logs_dir / f"_{project_name}_project-file-dump.txt"
+
+        try:
+            # 1. Load TreeMapperMS
+            tree_path = MICROSERVICE_LIB_PATH / "_TreeMapperMS.py"
+            if not tree_path.is_file():
+                raise FileNotFoundError(f"Missing required microservice: {tree_path}")
+
+            spec_tree = importlib.util.spec_from_file_location("TreeMapperMS", tree_path)
+            mod_tree = importlib.util.module_from_spec(spec_tree)
+            spec_tree.loader.exec_module(mod_tree)
+            tree_mapper = mod_tree.TreeMapperMS()
+
+            # Generate Tree with Exclusions
+            # Note: Checking your registry.json, the arg is 'additional_exclusions'
+            tree_content = tree_mapper.generate_tree(
+                str(project_path), 
+                additional_exclusions=GLOBAL_IGNORE_PATTERNS
+            )
+            with open(tree_out, "w", encoding="utf-8") as f:
+                f.write(tree_content)
+
+            # 2. Load ContextAggregatorMS
+            agg_path = MICROSERVICE_LIB_PATH / "_ContextAggregatorMS.py"
+            if not agg_path.is_file():
+                raise FileNotFoundError(f"Missing required microservice: {agg_path}")
+
+            spec_agg = importlib.util.spec_from_file_location("ContextAggregatorMS", agg_path)
+            mod_agg = importlib.util.module_from_spec(spec_agg)
+            spec_agg.loader.exec_module(mod_agg)
+            aggregator = mod_agg.ContextAggregatorMS()
+
+            # Generate Dump with Exclusions
+            # Note: Checking your registry.json, the arg is 'extra_exclusions'
+            aggregator.aggregate(
+                str(project_path), 
+                str(dump_out), 
+                extra_exclusions=GLOBAL_IGNORE_PATTERNS
+            )
+
+            print(f"[Info] Generated docs in {logs_dir} using Global Ignore patterns.")
+
+        except Exception as e:
+            print(f"[Warn] Failed to generate initial docs: {e}")
+        """
+        Generates initial artifacts for the new project.
+        Creates a _logs folder containing:
+          - _<project>_project-root-directory-tree.txt
+          - _<project>_project-file-dump.txt
+
+        Uses importlib to dynamically load tools from the Microservice Library.
+        Non-fatal if generation fails.
+        """
+        import importlib.util
+
+        logs_dir = project_path / "_logs"
+        logs_dir.mkdir(exist_ok=True)
+
+        # Clear old logs if they came from a template copy
+        for item in logs_dir.glob("*"):
+            if item.is_file():
+                item.unlink()
+
+        tree_out = logs_dir / f"_{project_name}_project-root-directory-tree.txt"
+        dump_out = logs_dir / f"_{project_name}_project-file-dump.txt"
+
+        try:
+            # 1. Load TreeMapperMS
+            tree_path = MICROSERVICE_LIB_PATH / "_TreeMapperMS.py"
+            if not tree_path.is_file():
+                raise FileNotFoundError(f"Missing required microservice: {tree_path}")
+
+            spec_tree = importlib.util.spec_from_file_location("TreeMapperMS", tree_path)
+            mod_tree = importlib.util.module_from_spec(spec_tree)
+            spec_tree.loader.exec_module(mod_tree)
+            tree_mapper = mod_tree.TreeMapperMS()
+
+            tree_content = tree_mapper.generate_tree(str(project_path))
+            with open(tree_out, "w", encoding="utf-8") as f:
+                f.write(tree_content)
+
+            # 2. Load ContextAggregatorMS
+            agg_path = MICROSERVICE_LIB_PATH / "_ContextAggregatorMS.py"
+            if not agg_path.is_file():
+                raise FileNotFoundError(f"Missing required microservice: {agg_path}")
+
+            spec_agg = importlib.util.spec_from_file_location("ContextAggregatorMS", agg_path)
+            mod_agg = importlib.util.module_from_spec(spec_agg)
+            spec_agg.loader.exec_module(mod_agg)
+            aggregator = mod_agg.ContextAggregatorMS()
+
+            # Generate Dump
+            aggregator.aggregate(str(project_path), str(dump_out))
+
+            print(f"[Info] Generated docs in {logs_dir}")
+
+        except Exception as e:
+            print(f"[Warn] Failed to generate initial docs: {e}")
+
+    def _on_refresh_clicked(self):
+        self.apps = sorted(discover_apps(), key=lambda a: a.name.lower())
+        self.app_by_name = {a.name: a for a in self.apps}
+        self.app_listbox.delete(0, tk.END)
+        for app in self.apps:
+            suffix = "" if app.has_src_app else " (missing src/app.py)"
+            self.app_listbox.insert(tk.END, f"{app.name}{suffix}")
+        
+        self.details_text.config(state="normal")
+        self.details_text.delete("1.0", tk.END)
+        self.details_text.insert("1.0", "Refreshed app list.")
+        self.details_text.config(state="disabled")
+
+    def _on_open_folder(self):
+        app = self._get_selected_app()
+        if app and app.folder.is_dir():
+            if os.name == "nt":
+                os.startfile(app.folder)
+            else:
+                subprocess.Popen(["xdg-open", str(app.folder)])
+
+    def _on_open_cmd(self):
+        app = self._get_selected_app()
+        if app and app.folder.is_dir():
+            if os.name == "nt":
+                subprocess.Popen(["start", "cmd"], shell=True, cwd=app.folder)
+
+    def _on_open_powershell(self):
+        app = self._get_selected_app()
+        if app and app.folder.is_dir():
+            if os.name == "nt":
+                subprocess.Popen(["start", "powershell"], shell=True, cwd=app.folder)
+
+    def _get_selected_app(self) -> Optional[AppConfig]:
+        selection = self.app_listbox.curselection()
+        if not selection:
+            return None
+        idx = selection[0]
+        name_with_suffix = self.app_listbox.get(idx)
+        name = name_with_suffix.split(" (missing")[0]
+        return self.app_by_name.get(name)
+
+    def _on_select(self, event=None):
+        app = self._get_selected_app()
+        if not app: return
+        self._update_details(app)
+
+    def _update_details(self, app: AppConfig):
+        folder_display = str(app.folder)
+        python_cmd = " ".join(app.resolve_python())
+        has_app = "Yes" if app.has_src_app else "No"
+        env_lines = "\n".join([f"  {k}={v}" for k, v in app.env.items()]) or "  (none)"
+
+        text = (
+            f"Name: {app.name}\n"
+            f"Folder: {folder_display}\n"
+            f"Has src/app.py: {has_app}\n"
+            f"Python command: {python_cmd}\n"
+            f"Extra env vars:\n{env_lines}\n"
+        )
+        self.details_text.config(state="normal")
+        self.details_text.delete("1.0", tk.END)
+        self.details_text.insert("1.0", text)
+        self.details_text.config(state="disabled")
+
+    def _on_launch_clicked(self):
+        app = self._get_selected_app()
+        if not app:
+            messagebox.showinfo("No selection", "Please select an app to launch.")
+            return
+        launch_app(app)
+
+    def _on_double_click(self, event=None):
+        self._on_launch_clicked()
+
+
+def main():
+    apps = discover_apps()
+    root = tk.Tk()
+    if not apps:
+        messagebox.showinfo("No Apps Found", "No apps found. Create one!")
+    AppLauncherUI(root, apps)
+    root.mainloop()
+
+
+if __name__ == "__main__":
+    main()
+
+--------------------------------------------------------------------------------
+FILE: src\app_OG_worksGREAT_KEEP.pyw
+--------------------------------------------------------------------------------
+import json
+import os
+import shutil
+import subprocess
+import sys
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Dict, List, Optional
+
+import tkinter as tk
+from tkinter import ttk, messagebox, simpledialog
+
 
 # ---------- Data model ----------
 
@@ -304,7 +1037,8 @@ class AppLauncherUI:
 
     def _write_boilerplate(self, root_path: Path):
         # Define the master template path
-        template_source = ROOT_DIR / "_BoilerPlatePythonTEMPLATE"
+        launcher_folder = Path(__file__).resolve().parent.parent
+        template_source = launcher_folder / "_BoilerPlatePythonTEMPLATE"
 
         if template_source.is_dir():
             # OPTION A: Copy from your existing template folder
@@ -452,264 +1186,752 @@ if __name__ == "__main__":
 
 
 --------------------------------------------------------------------------------
+FILE: src\app_v2_worksGREAT_KEEP.pyw
+--------------------------------------------------------------------------------
+import json
+import os
+import shutil
+import subprocess
+import sys
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Dict, List, Optional
+
+import tkinter as tk
+from tkinter import ttk, messagebox, simpledialog
+
+# ==============================================================================
+# CONFIGURATION
+# ==============================================================================
+# Path to your Microservice Library
+MICROSERVICE_LIB_PATH = Path(r"C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_MicroserviceLIBRARY")
+
+# ---------- Data model ----------
+
+@dataclass
+class AppConfig:
+    name: str
+    folder: Path              # absolute
+    python_cmd: Optional[str] = None  # interpreter or "py"
+    env: Dict[str, str] = field(default_factory=dict)
+
+    @property
+    def has_src_app(self) -> bool:
+        return (self.folder / "src" / "app.py").is_file()
+
+    def resolve_python(self) -> List[str]:
+        """
+        Determine the Python command list to run for this app.
+        Priority:
+        1. Explicit python_cmd (absolute or relative to folder, or just 'py').
+        2. .venv inside app folder.
+        3. 'py' (on Windows) or sys.executable elsewhere.
+        """
+        # 1. Explicit config
+        if self.python_cmd:
+            cmd = self.python_cmd
+            if os.path.sep in cmd or "/" in cmd:
+                python_path = (self.folder / cmd).resolve()
+                return [str(python_path)]
+            else:
+                return [cmd]
+
+        # 2. Local venv
+        win_candidate = self.folder / ".venv" / "Scripts" / "pythonw.exe"
+        win_fallback = self.folder / ".venv" / "Scripts" / "python.exe"
+        nix_candidate = self.folder / ".venv" / "bin" / "python"
+
+        if win_candidate.is_file():
+            return [str(win_candidate.resolve())]
+        if win_fallback.is_file():
+            return [str(win_fallback.resolve())]
+        if nix_candidate.is_file():
+            return [str(nix_candidate.resolve())]
+
+        # 3. Fallback to system
+        if os.name == "nt":
+            return ["pyw"]
+        return [sys.executable]
+
+
+# ---------- Config discovery ----------
+
+# Go up 3 levels: src -> _UsefulHelperScriptsMENU -> _UsefulHelperSCRIPTS (Root)
+ROOT_DIR = Path(__file__).resolve().parent.parent.parent
+CONFIG_FILE = ROOT_DIR / "helper_apps.json"
+
+
+def load_config_file() -> Dict[str, AppConfig]:
+    configs: Dict[str, AppConfig] = {}
+    if not CONFIG_FILE.is_file():
+        return configs
+
+    try:
+        raw = json.load(CONFIG_FILE.open("r", encoding="utf-8"))
+    except Exception as e:
+        print(f"[WARN] Failed to load {CONFIG_FILE}: {e}")
+        return configs
+
+    for entry in raw:
+        folder = ROOT_DIR / entry["folder"]
+        name = entry.get("name", folder.name)
+        python_cmd = entry.get("python")
+        env = entry.get("env", {})
+
+        cfg = AppConfig(
+            name=name,
+            folder=folder,
+            python_cmd=python_cmd,
+            env=env,
+        )
+        configs[str(folder.resolve())] = cfg
+
+    return configs
+
+
+def discover_apps() -> List[AppConfig]:
+    configs_by_folder = load_config_file()
+    apps: Dict[str, AppConfig] = {}
+
+    # 1. From config
+    for folder_key, cfg in configs_by_folder.items():
+        apps[folder_key] = cfg
+
+    # 2. Auto-discover
+    for child in ROOT_DIR.iterdir():
+        if not child.is_dir():
+            continue
+        candidate = child / "src" / "app.py"
+        if candidate.is_file():
+            key = str(child.resolve())
+            if key not in apps:
+                apps[key] = AppConfig(name=child.name, folder=child)
+
+    return list(apps.values())
+
+
+# ---------- Launcher logic ----------
+
+def launch_app(app_cfg: AppConfig):
+    if not app_cfg.has_src_app:
+        messagebox.showerror(
+            "Missing app.py",
+            f"Could not find src/app.py in:\n{app_cfg.folder}",
+        )
+        return
+
+    python_cmd = app_cfg.resolve_python()
+    cmd = python_cmd + ["-m", "src.app"]
+    env = os.environ.copy()
+    env.update(app_cfg.env)
+
+    try:
+        if os.name == "nt":
+            subprocess.Popen(
+                cmd,
+                cwd=str(app_cfg.folder),
+                env=env,
+            )
+        else:
+            subprocess.Popen(
+                cmd,
+                cwd=str(app_cfg.folder),
+                env=env,
+            )
+    except Exception as e:
+        messagebox.showerror(
+            "Launch failed",
+            f"Failed to launch {app_cfg.name}:\n\n{e}",
+        )
+
+# ==============================================================================
+# NEW: MICROSERVICE SELECTOR MODAL
+# ==============================================================================
+class MicroserviceSelector(tk.Toplevel):
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.title("Select Microservices to Inject")
+        self.geometry("600x600")
+        self.confirmed = False
+        self.selected_files = [] # List of Path objects
+        
+        self._build_ui()
+        self.transient(parent)
+        self.grab_set()
+        
+    def _build_ui(self):
+        # 1. Header
+        lbl = ttk.Label(self, text="Select capabilities to add to your new app:", font=("Segoe UI", 10, "bold"))
+        lbl.pack(pady=10)
+        
+        # 2. Scrollable Checkbox List
+        frame_list = ttk.Frame(self)
+        frame_list.pack(fill="both", expand=True, padx=10, pady=5)
+        
+        canvas = tk.Canvas(frame_list, bg="#f0f0f0")
+        scrollbar = ttk.Scrollbar(frame_list, orient="vertical", command=canvas.yview)
+        scrollable_frame = ttk.Frame(canvas)
+
+        scrollable_frame.bind(
+            "<Configure>",
+            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+        )
+        canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+        canvas.configure(yscrollcommand=scrollbar.set)
+        
+        canvas.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
+        
+        # 3. Populate
+        self.check_vars = {} # name -> BooleanVar
+        
+        if MICROSERVICE_LIB_PATH.exists():
+            files = sorted([f for f in MICROSERVICE_LIB_PATH.glob("*MS.py")])
+            for f in files:
+                var = tk.BooleanVar()
+                cb = ttk.Checkbutton(scrollable_frame, text=f.name, variable=var)
+                cb.pack(anchor="w", padx=5, pady=2)
+                self.check_vars[f] = var
+        else:
+            ttk.Label(scrollable_frame, text=f"Library not found at:\n{MICROSERVICE_LIB_PATH}").pack()
+
+        # 4. Buttons
+        btn_frame = ttk.Frame(self)
+        btn_frame.pack(fill="x", pady=10, padx=10)
+        
+        ttk.Button(btn_frame, text="Create App", command=self._on_confirm).pack(side="right", padx=5)
+        ttk.Button(btn_frame, text="Cancel", command=self.destroy).pack(side="right")
+        
+    def _on_confirm(self):
+        self.selected_files = [f for f, var in self.check_vars.items() if var.get()]
+        self.confirmed = True
+        self.destroy()
+
+# ---------- Tkinter UI ----------
+
+class AppLauncherUI:
+    def __init__(self, root: tk.Tk, apps: List[AppConfig]):
+        self.root = root
+        self.apps = sorted(apps, key=lambda a: a.name.lower())
+        self.app_by_name = {a.name: a for a in self.apps}
+
+        self.root.title("Useful Helper Apps Launcher")
+        self.root.geometry("800x500") # Slightly wider
+
+        self._build_widgets()
+
+    def _build_widgets(self):
+        main_frame = ttk.Frame(self.root, padding=10)
+        main_frame.pack(fill=tk.BOTH, expand=True)
+
+        # Left: app list
+        left_frame = ttk.Frame(main_frame)
+        left_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=False)
+
+        ttk.Label(left_frame, text="Available Apps").pack(anchor="w")
+
+        self.app_listbox = tk.Listbox(left_frame, height=20, width=40)
+        self.app_listbox.pack(fill=tk.BOTH, expand=True)
+        self.app_listbox.bind("<Double-1>", self._on_double_click)
+
+        for app in self.apps:
+            suffix = "" if app.has_src_app else " (missing src/app.py)"
+            self.app_listbox.insert(tk.END, f"{app.name}{suffix}")
+
+        # Right: details + launch
+        right_frame = ttk.Frame(main_frame, padding=(10, 0))
+        right_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+        self.details_text = tk.Text(
+            right_frame, height=10, wrap="word", state="disabled"
+        )
+        self.details_text.pack(fill=tk.BOTH, expand=True)
+
+        btn_frame = ttk.Frame(right_frame)
+        btn_frame.pack(fill=tk.X, pady=(10, 0))
+
+        self.launch_button = ttk.Button(
+            btn_frame, text="Launch", command=self._on_launch_clicked
+        )
+        self.launch_button.pack(side=tk.LEFT)
+
+        self.create_button = ttk.Button(
+            btn_frame, text="Create New App...", command=self._on_create_clicked
+        )
+        self.create_button.pack(side=tk.LEFT, padx=(5, 0))
+
+        self.refresh_button = ttk.Button(
+            btn_frame, text="Refresh", command=self._on_refresh_clicked
+        )
+        self.refresh_button.pack(side=tk.LEFT, padx=(5, 0))
+
+        # --- New Tools (Right Aligned) ---
+        self.btn_ps = ttk.Button(
+            btn_frame, text="PS", width=3, command=self._on_open_powershell
+        )
+        self.btn_ps.pack(side=tk.RIGHT, padx=(5, 0))
+
+        self.btn_cmd = ttk.Button(
+            btn_frame, text="CMD", width=4, command=self._on_open_cmd
+        )
+        self.btn_cmd.pack(side=tk.RIGHT, padx=(5, 0))
+
+        self.btn_explore = ttk.Button(
+            btn_frame, text="Folder", command=self._on_open_folder
+        )
+        self.btn_explore.pack(side=tk.RIGHT, padx=(5, 0))
+
+        self.app_listbox.bind("<<ListboxSelect>>", self._on_select)
+
+    def _on_create_clicked(self):
+        # 1. Ask for Name
+        name = simpledialog.askstring("New App", "Enter name for new app (Folder Name):")
+        if not name: return
+        
+        safe_name = "".join(c for c in name if c.isalnum() or c in ('_', '-')).strip()
+        if not safe_name:
+            messagebox.showerror("Error", "Invalid name.")
+            return
+
+        target_dir = ROOT_DIR / safe_name
+        if target_dir.exists():
+            messagebox.showerror("Error", f"Folder '{safe_name}' already exists.")
+            return
+
+        # 2. Ask for Microservices
+        selector = MicroserviceSelector(self.root)
+        self.root.wait_window(selector)
+        
+        if not selector.confirmed:
+            return # User cancelled
+
+        # 3. Create
+        try:
+            self._write_boilerplate(target_dir, selector.selected_files)
+            self._on_refresh_clicked()
+            messagebox.showinfo("Success", f"Created {safe_name} with {len(selector.selected_files)} services.")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to create app: {e}")
+
+    def _write_boilerplate(self, root_path: Path, services: List[Path] = None):
+        # A. Copy Template if exists
+        launcher_folder = Path(__file__).resolve().parent.parent
+        template_source = launcher_folder / "_BoilerPlatePythonTEMPLATE"
+
+        if template_source.is_dir():
+            try:
+                shutil.copytree(template_source, root_path, dirs_exist_ok=True)
+                print(f"[Info] Cloned template from {template_source}")
+            except Exception as e:
+                messagebox.showerror("Template Error", f"Failed to copy template:\n{e}")
+                return
+        else:
+            # Fallback structure
+            root_path.mkdir(parents=True, exist_ok=True)
+            (root_path / "src").mkdir(exist_ok=True)
+            (root_path / "requirements.txt").touch()
+            (root_path / "src" / "__init__.py").touch()
+            
+            # Basic app.py fallback
+            with (root_path / "src" / "app.py").open("w", encoding="utf-8") as f:
+                f.write("def main():\n    print('Hello World')\n\nif __name__ == '__main__':\n    main()")
+
+        # B. Inject Microservices
+        if services:
+            ms_dir = root_path / "src" / "microservices"
+            ms_dir.mkdir(exist_ok=True)
+            
+            # 1. Copy microservice_std_lib.py (Required dependency)
+            std_lib = MICROSERVICE_LIB_PATH / "microservice_std_lib.py"
+            if std_lib.exists():
+                shutil.copy2(std_lib, ms_dir / "microservice_std_lib.py")
+            
+            # 2. Copy Selected Files
+            for svc_path in services:
+                shutil.copy2(svc_path, ms_dir / svc_path.name)
+            
+            # 3. Generate a 'Smart' app.py that imports them
+            self._overwrite_app_py_with_imports(root_path, services)
+
+    def _overwrite_app_py_with_imports(self, root_path: Path, services: List[Path]):
+        """Overwrites src/app.py with a version that imports the selected services."""
+        app_py = root_path / "src" / "app.py"
+        
+        imports = []
+        inits = []
+        
+        for svc in services:
+            # Filename: _AuthMS.py -> Class: AuthMS (Assuming convention)
+            module_name = svc.stem # _AuthMS
+            class_name = svc.stem.replace("_", "") # AuthMS
+            
+            # Correction: Your files define classes like 'AuthMS' inside '_AuthMS.py'
+            # But wait, some might be '_TkinterAppShellMS' -> 'TkinterAppShellMS'
+            # Let's assume class name matches filename without underscore for now, 
+            # or just import the module to be safe.
+            
+            # Logic: from src.microservices._AuthMS import AuthMS
+            # Note: We need to handle the underscore correctly. 
+            # If file is _AuthMS.py, class is usually AuthMS.
+            clean_class_name = module_name[1:] if module_name.startswith("_") else module_name
+            
+            imports.append(f"from src.microservices.{module_name} import {clean_class_name}")
+            inits.append(f"    # {clean_class_name} initialized")
+            inits.append(f"    {clean_class_name.lower()} = {clean_class_name}()")
+            inits.append(f"    print('Service Loaded:', {clean_class_name.lower()})")
+
+        content = [
+            "import sys",
+            "import os",
+            "# Add src to path so imports work cleanly",
+            "sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))",
+            "",
+            "# --- Microservice Imports ---"
+        ]
+        content.extend(imports)
+        content.append("")
+        content.append("def main():")
+        content.append("    print('--- Booting Microservice App ---')")
+        content.extend(inits)
+        content.append("    print('--- System Ready ---')")
+        content.append("")
+        content.append("if __name__ == '__main__':")
+        content.append("    main()")
+        
+        with open(app_py, "w", encoding="utf-8") as f:
+            f.write("\n".join(content))
+
+    def _on_refresh_clicked(self):
+        self.apps = sorted(discover_apps(), key=lambda a: a.name.lower())
+        self.app_by_name = {a.name: a for a in self.apps}
+        self.app_listbox.delete(0, tk.END)
+        for app in self.apps:
+            suffix = "" if app.has_src_app else " (missing src/app.py)"
+            self.app_listbox.insert(tk.END, f"{app.name}{suffix}")
+        
+        self.details_text.config(state="normal")
+        self.details_text.delete("1.0", tk.END)
+        self.details_text.insert("1.0", "Refreshed app list.")
+        self.details_text.config(state="disabled")
+
+    def _on_open_folder(self):
+        app = self._get_selected_app()
+        if app and app.folder.is_dir():
+            if os.name == "nt":
+                os.startfile(app.folder)
+            else:
+                subprocess.Popen(["xdg-open", str(app.folder)])
+
+    def _on_open_cmd(self):
+        app = self._get_selected_app()
+        if app and app.folder.is_dir():
+            if os.name == "nt":
+                subprocess.Popen(["start", "cmd"], shell=True, cwd=app.folder)
+
+    def _on_open_powershell(self):
+        app = self._get_selected_app()
+        if app and app.folder.is_dir():
+            if os.name == "nt":
+                subprocess.Popen(["start", "powershell"], shell=True, cwd=app.folder)
+
+    def _get_selected_app(self) -> Optional[AppConfig]:
+        selection = self.app_listbox.curselection()
+        if not selection:
+            return None
+        idx = selection[0]
+        name_with_suffix = self.app_listbox.get(idx)
+        name = name_with_suffix.split(" (missing")[0]
+        return self.app_by_name.get(name)
+
+    def _on_select(self, event=None):
+        app = self._get_selected_app()
+        if not app: return
+        self._update_details(app)
+
+    def _update_details(self, app: AppConfig):
+        folder_display = str(app.folder)
+        python_cmd = " ".join(app.resolve_python())
+        has_app = "Yes" if app.has_src_app else "No"
+        env_lines = "\n".join([f"  {k}={v}" for k, v in app.env.items()]) or "  (none)"
+
+        text = (
+            f"Name: {app.name}\n"
+            f"Folder: {folder_display}\n"
+            f"Has src/app.py: {has_app}\n"
+            f"Python command: {python_cmd}\n"
+            f"Extra env vars:\n{env_lines}\n"
+        )
+        self.details_text.config(state="normal")
+        self.details_text.delete("1.0", tk.END)
+        self.details_text.insert("1.0", text)
+        self.details_text.config(state="disabled")
+
+    def _on_launch_clicked(self):
+        app = self._get_selected_app()
+        if not app:
+            messagebox.showinfo("No selection", "Please select an app to launch.")
+            return
+        launch_app(app)
+
+    def _on_double_click(self, event=None):
+        self._on_launch_clicked()
+
+
+def main():
+    apps = discover_apps()
+    root = tk.Tk()
+    if not apps:
+        messagebox.showinfo("No Apps Found", "No apps found. Create one!")
+    AppLauncherUI(root, apps)
+    root.mainloop()
+
+
+if __name__ == "__main__":
+    main()
+--------------------------------------------------------------------------------
 FILE: src\__init__.py
 --------------------------------------------------------------------------------
 
 --------------------------------------------------------------------------------
-FILE: _BoilerPlatePythonTEMPLATE\LICENSE.md
+FILE: src\microservices\_ContextAggregatorMS.py
 --------------------------------------------------------------------------------
-MIT License
-
-Copyright (c) 2025 Jacob Lambert
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-
---------------------------------------------------------------------------------
-FILE: _BoilerPlatePythonTEMPLATE\README.md
---------------------------------------------------------------------------------
-
---------------------------------------------------------------------------------
-FILE: _BoilerPlatePythonTEMPLATE\requirements.txt
---------------------------------------------------------------------------------
-# Standard Library dependencies only:
-# tkinter, argparse, json, ast, threading, os, sys
-#
-# No external pip packages required.
---------------------------------------------------------------------------------
-FILE: _BoilerPlatePythonTEMPLATE\setup_env.bat
---------------------------------------------------------------------------------
-@echo off
-echo [SYSTEM] Initializing new project environment...
-
-:: 1. Create the venv if it doesn't exist
-if not exist .venv (
-    echo [SYSTEM] Creating .venv...
-    py -m venv .venv
-)
-
-:: 2. Upgrade pip and install requirements
-echo [SYSTEM] Installing dependencies...
-.venv\Scripts\python.exe -m pip install --upgrade pip
-if exist requirements.txt (
-    .venv\Scripts\pip install -r requirements.txt
-)
-
-echo.
-echo [SUCCESS] Environment ready!
-echo You can now open this folder in VS Code or launch via scripts_menu.py
-pause
---------------------------------------------------------------------------------
-FILE: _BoilerPlatePythonTEMPLATE\src\app.py
---------------------------------------------------------------------------------
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-
 """
-== Generic Python Module/CLI Boilerplate ==
-
-This is a generic template for a Python file that can be:
-1.  Imported as a module by other scripts (e.g., `import generic_module`).
-2.  Run as a standalone command-line script (e.g., `$ python generic_module.py --input data.txt`).
-
-How to use this template:
-1.  Rename this file to match your new tool (e.g., `my_data_processor.py`).
-2.  Update this docstring to describe what your tool does.
-3.  Fill in the "CORE FUNCTIONALITY" section with your app's logic.
-4.  Go to the `main()` function to define your CLI arguments.
-5.  In `main()`, add the code to call your core functions using the parsed arguments.
+SERVICE_NAME: _ContextAggregatorMS
+ENTRY_POINT: _ContextAggregatorMS.py
+DEPENDENCIES: None
 """
 
-# 1. IMPORTS
-# Standard library imports
-import sys
 import os
-import argparse  # For parsing command-line arguments
+import fnmatch
+import datetime
+import logging
+from pathlib import Path
+from typing import Set, Optional, Dict, Any
+from microservice_std_lib import service_metadata, service_endpoint
 
-# Third-party imports (if any)
-# e.g., import requests
+# ==============================================================================
+# USER CONFIGURATION: DEFAULTS
+# ==============================================================================
+# Extensions known to be binary/non-text (Images, Archives, Executables)
+DEFAULT_BINARY_EXTENSIONS = {
+    ".tar.gz", ".gz", ".zip", ".rar", ".7z", ".bz2", ".xz", ".tgz",
+    ".png", ".jpg", ".jpeg", ".gif", ".bmp", ".ico", ".webp", ".tif", ".tiff",
+    ".mp3", ".wav", ".ogg", ".flac", ".mp4", ".mkv", ".avi", ".mov", ".webm",
+    ".pdf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx", ".exe", ".dll", ".so",
+    ".db", ".sqlite", ".mdb", ".pyc", ".pyo", ".class", ".jar", ".wasm"
+}
 
-# Local/application imports (if any)
-# e.g., from . import my_other_module
+# Folders to ignore by default
+DEFAULT_IGNORE_DIRS = {
+    "node_modules", ".git", "__pycache__", ".venv", ".env", 
+    "dist", "build", "coverage", ".idea", ".vscode"
+}
 
+logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(message)s')
+log = logging.getLogger("ContextAggregator")
+# ==============================================================================
 
-# 2. CONSTANTS
-# TODO: Define any constants your application needs.
-SOME_DEFAULT_SETTING = "default_value"
-
-
-# 3. CORE FUNCTIONALITY (The "Importable" Module)
-#
-# These functions make up the "core logic" of your application.
-# They can be imported and used by other Python scripts.
-# They should be self-contained and not rely on command-line arguments.
-
-def core_logic_function(data: any, setting: str = SOME_DEFAULT_SETTING) -> any:
+@service_metadata(
+    name="ContextAggregator",
+    version="1.0.0",
+    description="Flattens a project folder into a single readable text file.",
+    tags=["filesystem", "context", "compilation"],
+    capabilities=["filesystem:read", "filesystem:write"],
+    dependencies=["os", "fnmatch", "datetime"],
+    side_effects=["filesystem:read", "filesystem:write"]
+)
+class ContextAggregatorMS:
     """
-    TODO: Replace this with your main logic function.
-    
-    This function should perform the primary task of your module.
-    
-    Args:
-        data (any): The input data to process.
-        setting (str, optional): An example of an optional setting.
-                                 Defaults to SOME_DEFAULT_SETTING.
-
-    Returns:
-        any: The processed data.
+    The Context Builder: Flattens a project folder into a single readable text file.
     """
-    print(f"[Core Logic] Processing data with setting: {setting}")
-    
-    # --- TODO: Your actual logic goes here ---
-    # Example:
-    try:
-        processed_data = f"Processed data: {str(data).upper()}"
-        print("[Core Logic] Processing complete.")
-        return processed_data
-    except Exception as e:
-        print(f"[Core Logic] Error during processing: {e}", file=sys.stderr)
-        # Re-raise the exception to be handled by the caller
-        raise
 
+    def __init__(self, config: Optional[Dict[str, Any]] = None):
+        self.config = config or {}
+        max_file_size_mb = self.config.get("max_file_size_mb", 1)
+        self.max_file_size_bytes = max_file_size_mb * 1024 * 1024
 
-def helper_function(value: int) -> str:
-    """
-    TODO: Add any helper functions your core logic needs.
-    
-    This is an example of a helper that might be called by
-    core_logic_function or also be importable.
-    
-    Args:
-        value (int): An input value.
-
-    Returns:
-        str: A formatted string.
-    """
-    return f"Helper processed value: {value * 2}"
-
-
-# 4. CLI (Command-Line Interface) LOGIC
-#
-# This code only runs when the script is executed directly.
-# It should handle parsing arguments and calling the core functions.
-
-def main():
-    """
-    Main function to run the script from the command line.
-    
-    It parses arguments, calls core functions, and handles CLI-specific
-    input/output and error handling.
-    """
-    
-    # --- Argument Parsing ---
-    # Set up the argument parser
-    # TODO: Update the description to match your tool.
-    parser = argparse.ArgumentParser(
-        description="A generic CLI tool. TODO: Describe your tool here.",
-        epilog="Example: python generic_module.py my_input.txt -o my_output.txt -v"
+    @service_endpoint(
+        inputs={"root_path": "str", "output_file": "str", "extra_exclusions": "Set[str]", "use_default_exclusions": "bool"},
+        outputs={"file_count": "int"},
+        description="Aggregates project files into a single text dump.",
+        tags=["filesystem", "dump"],
+        side_effects=["filesystem:read", "filesystem:write"]
     )
-    
-    # --- TODO: Define your arguments ---
-    
-    # Example of a required positional argument
-    parser.add_argument(
-        "input_path",  # The name of the argument
-        type=str,
-        help="TODO: Describe this required input (e.g., path to an input file)."
-    )
-    
-    # Example of an optional argument (e.g., -o or --output)
-    parser.add_argument(
-        "-o", "--output",
-        type=str,
-        default=None,  # Default to None if not provided
-        help="TODO: Describe this optional argument (e.g., path to an output file)."
-    )
-    
-    # Example of a "flag" argument (stores True if present)
-    parser.add_argument(
-        "-v", "--verbose",
-        action="store_true",  # This makes it a boolean flag
-        help="Enable verbose output."
-    )
-    
-    # Parse the arguments from the command line (e.g., sys.argv)
-    args = parser.parse_args()
-
-    # --- Main Application Flow ---
-    
-    # Use the 'verbose' flag to control print statements
-    if args.verbose:
-        print("Verbose mode enabled.", file=sys.stderr)
-        print(f"Arguments received: {args}", file=sys.stderr)
-
-    try:
-        # 1. Load data (CLI-specific task)
-        #    TODO: Replace this with your actual data loading
-        if args.verbose:
-            print(f"Loading data from {args.input_path}...", file=sys.stderr)
-        # This is just an example. You'd likely load a file here.
-        input_data = f"Content of {args.input_path}" 
-
-        # 2. Call core logic (the "importable" part)
-        if args.verbose:
-            print("Calling core logic...", file=sys.stderr)
+    def aggregate(self, 
+                  root_path: str, 
+                  output_file: str, 
+                  extra_exclusions: Optional[Set[str]] = None,
+                  use_default_exclusions: bool = True) -> int:
         
-        # Here we pass the CLI arguments to the core function
-        processed_data = core_logic_function(input_data)
+        project_root = Path(root_path).resolve()
+        out_path = Path(output_file).resolve()
         
-        # 3. Handle output (CLI-specific task)
-        if args.output:
-            # Save to a file
-            if args.verbose:
-                print(f"Saving processed data to {args.output}...", file=sys.stderr)
-            # TODO: Add file-saving logic here
-            # with open(args.output, 'w') as f:
-            #     f.write(processed_data)
-            print(f"Success: Output saved to {args.output}")
-        else:
-            # Print to standard output
-            if args.verbose:
-                print("Printing processed data to stdout:", file=sys.stderr)
-            print(processed_data)
+        # Build Exclusions
+        exclusions = set()
+        if use_default_exclusions:
+            exclusions.update(DEFAULT_IGNORE_DIRS)
+        if extra_exclusions:
+            exclusions.update(extra_exclusions)
+
+        # Build Binary List
+        binary_exts = DEFAULT_BINARY_EXTENSIONS.copy()
         
-        # Exit with a success code
-        sys.exit(0)
+        file_count = 0
+        timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
-    except FileNotFoundError as e:
-        print(f"\nError: Input file not found.", file=sys.stderr)
-        print(f"Details: {e}", file=sys.stderr)
-        sys.exit(1) # Exit with a non-zero error code
-    except Exception as e:
-        print(f"\nAn unexpected error occurred: {e}", file=sys.stderr)
-        sys.exit(1)
+        try:
+            with open(out_path, "w", encoding="utf-8") as out_f:
+                out_f.write(f"File Dump from Project: {project_root.name}\nGenerated: {timestamp}\n{'='*60}\n\n")
 
+                for root, dirs, files in os.walk(project_root):
+                    # In-place filtering of directories
+                    dirs[:] = [d for d in dirs if d not in exclusions]
+                    
+                    for filename in files:
+                        if self._should_exclude(filename, exclusions): continue
 
-# This "magic" line is the key to the whole pattern:
-#
-# - If you run `python generic_module.py ...`, Python sets
-#   __name__ = "__main__", and the main() function is called.
-#
-# - If you `import generic_module` in another script, __name__
-#   is "generic_module", so this block is SKIPPED.
-#
+                        file_path = Path(root) / filename
+                        if file_path.resolve() == out_path: continue
+
+                        if self._is_safe_to_dump(file_path, binary_exts):
+                            self._write_file_content(out_f, file_path, project_root)
+                            file_count += 1                            
+        except IOError as e:
+            log.error(f"Error writing dump: {e}")
+            
+        return file_count
+
+    def _should_exclude(self, filename: str, exclusions: Set[str]) -> bool:
+        return any(fnmatch.fnmatch(filename, pattern) for pattern in exclusions)
+
+    def _is_safe_to_dump(self, file_path: Path, binary_exts: Set[str]) -> bool:
+        if "".join(file_path.suffixes).lower() in binary_exts: return False
+        try:
+            if file_path.stat().st_size > self.max_file_size_bytes: return False
+            with open(file_path, 'rb') as f:
+                if b'\0' in f.read(1024): return False
+        except (IOError, OSError): return False
+        return True
+
+    def _write_file_content(self, out_f, file_path: Path, project_root: Path):
+        relative_path = file_path.relative_to(project_root)
+        header = f"\n{'-'*20} FILE: {relative_path} {'-'*20}\n"
+        try:
+            with open(file_path, "r", encoding="utf-8", errors="ignore") as in_f:
+                out_f.write(header + in_f.read() + f"\n{'-'*60}\n")
+        except Exception as e:
+            out_f.write(f"\n[Error reading file: {e}]\n")
+
 if __name__ == "__main__":
-    main()
+    svc = ContextAggregatorMS()
+    print("Service ready:", svc)
 --------------------------------------------------------------------------------
-FILE: _BoilerPlatePythonTEMPLATE\src\__init__.py
+FILE: src\microservices\_TreeMapperMS.py
 --------------------------------------------------------------------------------
+import os
+import datetime
+import logging
+from pathlib import Path
+from typing import Any, Dict, List, Set, Optional
+
+from microservice_std_lib import service_metadata, service_endpoint
+
+# ==============================================================================
+# CONFIGURATION
+# ==============================================================================
+DEFAULT_EXCLUDES = {
+    '.git', '__pycache__', '.idea', '.vscode', 'node_modules', 
+    '.venv', 'env', 'venv', 'dist', 'build', '.DS_Store'
+}
+logger = logging.getLogger("TreeMapper")
+
+# ==============================================================================
+# MICROSERVICE CLASS
+# ==============================================================================
+
+@service_metadata(
+    name="TreeMapper",
+    version="1.0.0",
+    description="Generates ASCII-art style directory maps of the file system.",
+    tags=["filesystem", "map", "visualization"],
+    capabilities=["filesystem:read"]
+)
+class TreeMapperMS:
+    """
+    The Cartographer: Generates ASCII-art style directory maps.
+    Useful for creating context snapshots for LLMs.
+    """
+    
+    def __init__(self, config: Optional[Dict[str, Any]] = None):
+        self.config = config or {}
+
+    @service_endpoint(
+        inputs={"root_path": "str", "additional_exclusions": "Set[str]", "use_default_exclusions": "bool"},
+        outputs={"tree_map": "str"},
+        description="Generates an ASCII tree map of the directory.",
+        tags=["filesystem", "visualization"],
+        side_effects=["filesystem:read"]
+    )
+    def generate_tree(self, 
+                      root_path: str, 
+                      additional_exclusions: Optional[Set[str]] = None,
+                      use_default_exclusions: bool = True) -> str:
+        
+        start_path = Path(root_path).resolve()
+        if not start_path.exists(): 
+            return f"Error: Path '{root_path}' does not exist."
+
+        exclusions = set()
+        if use_default_exclusions:
+            exclusions.update(DEFAULT_EXCLUDES)
+        if additional_exclusions:
+            exclusions.update(additional_exclusions)
+
+        timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        lines = [
+            f"Project Map: {start_path.name}",
+            f"Generated: {timestamp}",
+            "-" * 40,
+            f"📁 {start_path.name}/"
+        ]
+
+        logger.info(f"Mapping directory: {start_path}")
+        self._walk(start_path, "", lines, exclusions)
+        return "\n".join(lines)
+
+    def _walk(self, directory: Path, prefix: str, lines: List[str], exclusions: Set[str]):
+        try:
+            # Sort: Directories first, then files (alphabetical)
+            children = sorted(
+                [p for p in directory.iterdir() if p.name not in exclusions],
+                key=lambda x: (not x.is_dir(), x.name.lower())
+            )
+        except PermissionError:
+            lines.append(f"{prefix}└── 🚫 [Permission Denied]")
+            return
+
+        count = len(children)
+        for index, path in enumerate(children):
+            is_last = (index == count - 1)
+            connector = "└── " if is_last else "├── "
+            
+            if path.is_dir():
+                lines.append(f"{prefix}{connector}📁 {path.name}/")
+                extension = "    " if is_last else "│   "
+                self._walk(path, prefix + extension, lines, exclusions)
+            else:
+                lines.append(f"{prefix}{connector}📄 {path.name}")
+
+
+# --- Independent Test Block ---
+if __name__ == "__main__":
+    # Setup logging
+    logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(message)s')
+
+    svc = TreeMapperMS()
+    print("Service ready:", svc)
+    
+    # Map the current directory
+    print("\n--- Map of Current Dir ---")
+    tree = svc.generate_tree(".", additional_exclusions={"__pycache__"})
+    print(tree)

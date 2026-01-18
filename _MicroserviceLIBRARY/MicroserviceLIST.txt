@@ -1,0 +1,506 @@
+# TOOL DEFINITIONS (STRICT INTERFACE)
+
+## Tool: NetworkLayoutMS
+Description: The Topologist: Calculates visual coordinates for graph nodes using
+Functions:
+  - calculate_layout(nodes, edges, algorithm)
+    # Computes (x, y) coordinates for the given graph
+
+## Tool: ChunkingRouterMS
+Description: The Editor: A 'Recursive' text splitter.
+Functions:
+  - chunk_file(text, filename, max_size, overlap)
+    # Extension-aware router
+
+## Tool: FingerprintScannerMS
+Description: The Detective: Scans a directory tree and generates a deterministic
+Functions:
+  - scan_project(root_path)
+    # Scans the project and returns a comprehensive state object
+
+## Tool: TasklistVaultMS
+Description: The Taskmaster: A persistent SQLite engine for hierarchical task management.
+Functions:
+  - create_list(name)
+    # Creates a new task list and returns its ID
+  - get_lists()
+    # Returns metadata for all task lists
+  - add_task(list_id, content, parent_id)
+    # Adds a task (or sub-task) to a list
+  - update_task(task_id, content, status, result)
+    # Updates a task's details
+  - get_full_tree(list_id)
+    # Fetches a list and reconstructs the full hierarchy of tasks
+  - delete_list(list_id)
+
+## Tool: IngestEngineMS
+Description: The Heavy Lifter: Reads files, chunks text, fetches embeddings,
+Functions:
+  - abort()
+  - check_ollama_connection()
+  - get_available_models()
+  - process_files(file_paths, model_name)
+
+## Tool: RegexWeaverMS
+Description: The Weaver: A fault-tolerant dependency extractor.
+Functions:
+  - extract_dependencies(content, language)
+    # Scans code content for import statements
+
+## Tool: SysInspectorMS
+Description: The Auditor: Gathers hardware and environment statistics.
+Functions:
+  - generate_report()
+    # Runs the full audit and returns a formatted string report
+
+## Tool: ChalkBoardMS
+Description: No description.
+Functions:
+  - loaded()
+    # Called by JS when the page is ready
+  - log_action(action_name)
+    # Called by JS when user interacts
+  - update_sign(text, theme)
+    # Updates the embedded HTML via JS injection
+  - trigger_effect(effect)
+    # Triggers CSS animations like 'shake'
+
+## Tool: ScannerMS
+Description: The Scanner: Walks the file system, filters junk, and detects binary files.
+Functions:
+  - scan_directory(path, depth)
+    # Recursively scans a directory, building a tree
+  - flatten_tree(tree_node)
+    # Helper to extract all valid file paths from a tree node 
+(e
+
+## Tool: TelemetryServiceMS
+Description: The Nervous System.
+Functions:
+  - get_health()
+    # Returns the operational status of the TelemetryServiceMS
+  - start()
+    # Begins the GUI update loop
+  - ping()
+    # Allows an agent to verify the pulse of the UI loop
+
+## Tool: ExplorerWidgetMS
+Description: A standalone file system tree viewer.
+Functions:
+  - refresh_tree()
+  - get_selected_paths()
+  - process_gui_queue()
+
+## Tool: ContextAggregatorMS
+Description: The Context Builder: Flattens a project folder into a single readable text file.
+Functions:
+  - aggregate(root_path, output_file, extra_exclusions, use_default_exclusions)
+
+## Tool: EnvironmentManagerMS
+Description: The Operator.
+Functions:
+  - resolve_python(project_path, config_override)
+    # Priority:
+1
+  - launch_script(project_path, script_rel_path, env_vars)
+
+## Tool: LibrarianMS
+Description: The Swarm Librarian.
+Functions:
+  - generate_catalog(output_file)
+    # Main entry point
+
+## Tool: LexicalSearchMS
+Description: The Librarian's Index: A lightweight, AI-free search engine.
+Functions:
+  - add_document(doc_id, text, metadata)
+    # Adds or updates a document in the index
+  - search(query, top_k)
+    # Performs a BM25 Ranked Search
+
+## Tool: DiffEngineMS
+Description: The Timekeeper: Implements a 'Hybrid' versioning architecture.
+Functions:
+  - update_file(path, new_content, author)
+    # The Atomic Update Operation:
+1
+  - get_head(path)
+    # Fast retrieval of current content
+  - get_history(path)
+    # Retrieves the full evolution history of a file
+
+## Tool: CodeJanitorMS
+Description: No description.
+Functions:
+  - enforce_standards(dry_run)
+
+## Tool: PythonChunkerMS
+Description: Specialized Python AST Chunker.
+Functions:
+  - get_health()
+    # Returns the operational status of the PythonChunkerMS
+  - chunk(content)
+    # Parses Python source into semantic CodeChunks
+
+## Tool: CodeFormatterMS
+Description: The Architect.
+Functions:
+  - normalize_code(content, use_tabs, spaces)
+    # Pure logic endpoint: Takes string, returns string + patch
+  - format_file(file_path, use_tabs, spaces)
+    # Filesystem endpoint: In-place repair of a file
+
+## Tool: IsoProcessMS
+Description: The Safety Valve: Spawns isolated processes with real-time logging feedback.
+Functions:
+  - execute(payload, config)
+
+## Tool: SandboxManagerMS
+Description: The Safety Harness: Manages a 'Sandbox' mirror of a 'Live' project.
+Functions:
+  - init_sandbox(force)
+    # Creates or resets the sandbox by mirroring the live project
+  - reset_sandbox()
+    # Discards all sandbox changes and re-syncs from live
+  - get_diff()
+    # Compares Sandbox vs Live
+  - promote_changes()
+    # Applies changes from Sandbox to Live
+
+## Tool: WebScraperMS
+Description: The Reader: Fetches URLs and extracts the main content using Readability.
+Functions:
+  - scrape(url)
+    # Synchronous wrapper for fetching and cleaning a URL
+
+## Tool: NeuralServiceMS
+Description: The Brain Interface: Orchestrates local AI operations via Ollama for inference and embeddings.
+Functions:
+  - update_models(fast_model, smart_model, embed_model)
+    # Called by the UI Settings Modal to change models on the fly
+  - get_available_models()
+    # Fetches list from Ollama for the UI dropdown
+  - check_connection()
+    # Pings Ollama to see if it's alive
+  - get_embedding(text)
+    # Generates a vector using the configured embedding model
+  - request_inference(prompt, tier, format_json)
+    # Synchronous inference request
+  - process_parallel(items, worker_func)
+    # Helper to run a function across many items using a ThreadPool
+
+## Tool: LibrarianMS
+Description: No description.
+Functions:
+  - generate_catalog(output_file)
+
+## Tool: TkinterAppShellMS
+Description: The Mother Ship.
+Functions:
+  - launch()
+    # Ignition sequence start
+  - get_main_container()
+    # Other services call this to know where to
+  - shutdown()
+
+## Tool: MonacoHostMS
+Description: Hosts the Monaco Editor.
+Functions:
+  - launch(title, width, height, func)
+    # Create and launch the window
+  - set_save_callback(callback)
+    # Sets the function to trigger when Ctrl+S is pressed in the editor
+  - open_file(filepath, content)
+    # Opens a file in the editor (must be called from a background thread or callback)
+
+## Tool: SearchEngineMS
+Description: The Oracle: Performs Hybrid Search (Vector Similarity + Keyword Matching).
+Functions:
+  - search(db_path, query, limit)
+    # Main entry point
+
+## Tool: IntakeServiceMS
+Description: The Vacuum. 
+Functions:
+  - get_health()
+    # Returns the operational status of the IntakeServiceMS
+  - ingest_source(source_path)
+    # Headless/CLI Entry point: Scans and Ingests in one go
+  - scan_path(root_path, web_depth)
+    # Unified Scanner Interface
+  - ingest_selected(file_list, root_path)
+    # Ingests only the specific files passed in the list
+  - save_persistence(root_path, checked_map)
+    # Saves user selections into the Cartridge Manifest (Portable)
+
+## Tool: ThoughtStreamMS
+Description: The Neural Inspector: A UI widget for displaying a stream of AI thoughts/logs
+Functions:
+  - add_thought_bubble(filename, chunk_id, content, vector_preview, color)
+    # Mimics the 'InspectorFrame' from your React code
+
+## Tool: LogViewMS
+Description: The Console: A professional log viewer widget.
+Functions:
+  - clear()
+  - save()
+
+## Tool: HeuristicSumMS
+Description: The Skimmer: Generates quick summaries of code/text files without AI.
+Functions:
+  - summarize(text, filename, max_chars)
+    # Generates a summary string from the provided text
+
+## Tool: ScoutMS
+Description: The Scanner: Walks file systems OR crawls websites (Depth-Aware).
+Functions:
+  - is_binary(file_path)
+  - scan_directory(root_path, web_depth)
+    # Main Entry Point
+  - flatten_tree(tree_node)
+
+## Tool: TreeMapperMS
+Description: The Cartographer: Generates ASCII-art style directory maps.
+Functions:
+  - generate_tree(root_path, additional_exclusions, use_default_exclusions)
+
+## Tool: TextChunkerMS
+Description: The Butcher: A unified service for splitting text into digestible chunks
+Functions:
+  - chunk_by_chars(text, chunk_size, chunk_overlap)
+    # Standard Sliding Window
+  - chunk_by_lines(text, max_lines, max_chars)
+    # Line-Preserving Chunker
+
+## Tool: PromptVaultMS
+Description: The Vault: A persistent SQLite store for managing, versioning, 
+Functions:
+  - create_template(slug, title, content, author, tags)
+    # Creates a new prompt template with an initial version 1
+  - add_version(slug, content, author)
+    # Adds a new version to an existing template
+  - get_template(slug)
+    # Retrieves a full template with all history
+  - render(slug, context)
+    # Fetches the latest version and renders it with Jinja2
+  - list_slugs()
+
+## Tool: ProjectForgeMS
+Description: The Blacksmith.
+Functions:
+  - forge_project(parent_path, project_name, dependencies, project_type)
+    # Stamps out a new project folder
+
+## Tool: VectorFactoryMS
+Description: The Switchboard: Returns the appropriate VectorStore implementation
+Functions:
+  - create(backend, config)
+    # :param backend: 'faiss' or 'chroma'
+:param config: Dict containing 'path', 'dim' (for FAISS), or 'collection' (for Chroma)
+
+## Tool: TkinterThemeManagerMS
+Description: No description.
+Functions:
+  - get_theme()
+  - apply_theme(root)
+
+## Tool: TkinterUniButtonMS
+Description: A generic button group that can merge ANY two actions.
+Functions:
+
+## Tool: CognitiveMemoryMS
+Description: The Hippocampus: Manages Short-Term (Working) Memory and orchestrates 
+Functions:
+  - add_entry(role, content, metadata)
+    # Adds an item to working memory and persists it
+  - get_context(limit)
+    # Returns the most recent conversation history formatted for an LLM
+  - get_full_history()
+    # Returns the raw list of memory objects
+  - commit_turn()
+    # Signal that a "Turn" (User + AI response) is complete
+
+## Tool: CartridgeServiceMS
+Description: The Source of Truth.
+Functions:
+  - get_vector_dim()
+    # Retrieves the expected vector dimension from the manifest spec
+  - initialize_manifest()
+    # Populates the boot sector with strict RagFORGE Cartridge Schema (UNCF) v1
+  - set_manifest(key, value)
+    # Upsert metadata key
+  - get_manifest(key)
+    # Retrieve metadata key
+  - validate_cartridge()
+    # Quality Control: Checks if the cartridge is Agent-Safe
+  - store_file(vfs_path, origin_path, content, blob, mime_type, origin_type)
+    # The Universal Input Method
+  - get_pending_files(limit)
+    # Fetches files waiting for the Refinery
+  - update_status(file_id, status, metadata)
+  - ensure_directory(vfs_path)
+    # Idempotent insert for VFS directories
+  - get_status_flags()
+    # Returns key manifest status flags in a single call
+  - list_files(prefix, status, limit)
+    # Enumerate files in the cartridge (optionally filtered by VFS prefix and/or status)
+  - get_file_record(vfs_path)
+    # Fetch a single file record by VFS path
+  - list_directories(prefix)
+    # Enumerate directories in the cartridge VFS
+  - get_directory_tree(root)
+    # Builds a nested directory tree starting at `root` ("" for full tree)
+  - get_status_summary()
+    # Counts files by status and provides a quick cartridge overview
+  - add_node(node_id, node_type, label, data)
+  - add_edge(source, target, relation, weight)
+  - search_embeddings(query_vector, limit)
+    # Performs semantic search using sqlite-vec
+
+## Tool: SemanticChunkerMS
+Description: Intelligent Code Splitter.
+Functions:
+  - chunk_file(content, filename)
+    # Splits file content into chunks
+
+## Tool: TkinterSmartExplorerMS
+Description: The Navigator.
+Functions:
+  - load_data(data)
+    # Ingests a dictionary tree (like from _ScoutMS or _TreeMapperMS)
+
+## Tool: AuthMS
+Description: ROLE: Simple authentication microservice providing username/password login
+Functions:
+  - login(username, password)
+    # Attempt to log in with the provided username and password
+  - validate_session(token)
+    # Check if a serialized token is valid and not expired
+
+## Tool: PromptOptimizerMS
+Description: The Tuner: Uses an LLM to refine prompts or generate variations.
+Functions:
+  - refine_prompt(draft_prompt, feedback)
+    # Rewrites a prompt based on feedback
+  - generate_variations(draft_prompt, num_variations, context_data)
+    # Generates multiple versions of a prompt for testing
+
+## Tool: WorkbenchLayoutMS
+Description: The Architect.
+Functions:
+  - build_from_manifest(manifest)
+    # Manifest Schema:
+{
+    "type": "row" | "col",
+    "weight": int,  # 1 = expands, 0 = fixed
+    "children": [
+        { "type": "panel", "id": "my_panel_id", "weight": 1 },
+        { "type": "row", "weight": 2, "children": [
+  - get_panel(panel_id)
+    # Retrieve a specific container by ID to pack widgets into
+
+## Tool: NeuralGraphEngineMS
+Description: No description.
+Functions:
+  - get_health()
+    # Returns the operational status of the NeuralGraphEngineMS
+  - resize(width, height)
+  - set_data(nodes, links)
+  - screen_to_world(sx, sy)
+  - get_node_at(sx, sy)
+  - handle_mouse_down(x, y)
+  - handle_mouse_move(x, y, is_dragging)
+  - handle_mouse_up()
+  - pan(dx, dy)
+  - zoom_camera(amount, mouse_x, mouse_y)
+  - highlight_nodes(node_ids)
+    # Highlights specific nodes by ID
+  - step_physics()
+  - get_image_bytes()
+
+## Tool: GitPilotMS
+Description: No description.
+Functions:
+  - set_repo(path)
+
+## Tool: NeuralGraphViewerMS
+Description: No description.
+Functions:
+  - bind_services(cartridge, neural)
+  - run_search(event)
+  - load_from_db(db_path)
+    # Loads graph data from SQLite
+  - on_resize(event)
+  - on_double_click(event)
+  - on_click(event)
+  - on_release(event)
+  - on_drag(event)
+  - on_hover(event)
+  - on_zoom(amount)
+  - on_windows_scroll(event)
+  - animate()
+    # The Heartbeat Loop
+
+## Tool: ServiceRegistryMS
+Description: The Tokenizer (v2): Scans a library of Python microservices and generates
+Functions:
+  - scan(save_to)
+
+## Tool: ContentExtractorMS
+Description: The Decoder.
+Functions:
+  - get_health()
+    # Returns the operational status and library availability
+  - extract_text(blob, mime_type)
+    # Main routing logic for extraction
+
+## Tool: SpinnerThingyMaBobberMS
+Description: The Visualizer: An interactive spinner widget.
+Functions:
+  - launch()
+    # Starts the Tkinter main event loop
+  - handle_keypress(event)
+  - get_neon_color(offset)
+  - draw_arc(cx, cy, radius, width, start, extent, color)
+  - animate()
+
+## Tool: CodeChunkerMS
+Description: The Surgeon (Pure Python Edition): Splits code into semantic blocks
+Functions:
+  - chunk_file(file_path, max_chars)
+    # Reads a file and breaks it into logical blocks based on indentation
+
+## Tool: ArchiveBotMS
+Description: No description.
+Functions:
+  - create_backup(source_path, output_dir, extra_exclusions, use_default_exclusions)
+
+## Tool: ContextPackerMS
+Description: The Packer: Walks a directory and dumps all text-readable files 
+Functions:
+  - pack_directory(root_path, output_filename, additional_excludes)
+    # Walks the directory and writes file contents to the output file
+
+## Tool: RoleManagerMS
+Description: The Casting Director: Manages Agent Personas (Roles).
+Functions:
+  - create_role(name, system_prompt, description, kbs)
+    # Creates a new Agent Persona
+  - get_role(name_or_id)
+    # Retrieves a role by Name or ID
+  - list_roles()
+  - delete_role(name)
+
+## Tool: CodeGrapherMS
+Description: The Cartographer of Logic: Parses Python code to extract high-level 
+Functions:
+  - scan_directory(root_path)
+    # Recursively scans a directory for
+
+## Tool: RefineryServiceMS
+Description: The Night Shift.
+Functions:
+  - get_health()
+    # Returns the operational status of the RefineryServiceMS
+  - process_pending(batch_size)
+    # Main loop

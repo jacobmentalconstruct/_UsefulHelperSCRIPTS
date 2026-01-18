@@ -1,0 +1,5 @@
+requests
+pydantic
+beautifulsoup4
+pypdf
+sqlite-vec

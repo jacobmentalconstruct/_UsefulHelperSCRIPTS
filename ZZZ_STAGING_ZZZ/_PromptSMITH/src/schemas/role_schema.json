@@ -1,0 +1,38 @@
+{
+  "name": "Role",
+  "title": "Role",
+  "display_field": "role_name",
+  "template": "### ROLE: {role_name}\n\n{role_description}\n\n---\nSYSTEM:\n{system_prompt}\n",
+  "fields": [
+    {
+      "key": "role_name",
+      "label": "Role Name",
+      "type": "text",
+      "required": true,
+      "help": "Short identifier for this role (used as the sidebar name)."
+    },
+    {
+      "key": "role_description",
+      "label": "Role Description",
+      "type": "text_multiline",
+      "required": false,
+      "help": "High-level description of what this role is for."
+    },
+    {
+      "key": "system_prompt",
+      "label": "System Prompt",
+      "type": "text_multiline",
+      "required": true,
+      "help": "The system-level instruction block."
+    },
+    {
+      "key": "tone",
+      "label": "Tone",
+      "type": "enum",
+      "required": false,
+      "options": ["Neutral", "Concise", "Playful", "Formal", "Hard-nosed"],
+      "help": "Optional. Used to guide the style."
+    }
+  ]
+}
+

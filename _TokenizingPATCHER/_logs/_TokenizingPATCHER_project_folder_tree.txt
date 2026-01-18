@@ -1,12 +1,14 @@
 Project Tree: C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_TokenizingPATCHER
-Generated: 2025-12-13 21:23:00.540703
+Generated: 2026-01-07 18:53:55.380169
 
 ├── 📁 assets/
 │   └── 📁 icons/
 │       └── 📄 tokenizing-patcher.png
 ├── 📁 src/
+│   ├── 📁 microservices/
 │   ├── 📄 __init__.py
-│   └── 📄 app.py
+│   ├── 📄 app.py
+│   └── 📄 Patcher-app-python-code-insde.txt
 ├── 📄 LICENSE.md
 ├── 📄 README.md
 ├── 📄 requirements.txt

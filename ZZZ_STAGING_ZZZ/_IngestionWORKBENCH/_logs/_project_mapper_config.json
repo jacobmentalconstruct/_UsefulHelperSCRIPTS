@@ -1,0 +1,29 @@
+{
+  "folder_states": {
+    ".": "checked",
+    "src": "checked",
+    "src\\microservices": "checked",
+    "src\\microservices\\_ContentExtractorMS.py": "checked",
+    "src\\microservices\\_ContextAggregatorMS.py": "checked",
+    "src\\microservices\\_ExplorerWidgetMS.py": "checked",
+    "src\\microservices\\_FingerprintScannerMS.py": "checked",
+    "src\\microservices\\_HeuristicSumMS.py": "checked",
+    "src\\microservices\\_LogViewMS.py": "checked",
+    "src\\microservices\\_ScoutMS.py": "checked",
+    "src\\microservices\\_SpinnerThingyMaBobberMS.py": "checked",
+    "src\\microservices\\_TextChunkerMS.py": "checked",
+    "src\\microservices\\_TkinterAppShellMS.py": "checked",
+    "src\\microservices\\_TkinterThemeManagerMS.py": "checked",
+    "src\\microservices\\_TreeMapperMS.py": "checked",
+    "src\\microservices\\base_service.py": "checked",
+    "src\\microservices\\document_utils.py": "checked",
+    "src\\microservices\\microservice_std_lib.py": "checked",
+    "src\\__init__.py": "checked",
+    "src\\app.py": "checked",
+    "LICENSE.md": "checked",
+    "README.md": "checked",
+    "requirements.txt": "checked",
+    "setup_env.bat": "checked"
+  },
+  "dynamic_exclusions": []
+}

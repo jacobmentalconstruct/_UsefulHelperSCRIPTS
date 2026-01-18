@@ -48,7 +48,7 @@ class ChunkingRouterMS(BaseService):
         self.config = config or {}
         self.python_specialist = PythonChunkerMS()
         # Separators for the Prose Specialist logic
-        self.separators = ["\n\n", "\n", "(?<=[.?!])\s+", " ", ""]
+        self.separators = ["\n\n", "\n", r"(?<=[.?!])\s+", " ", ""]
 
     @service_endpoint(
         inputs={"text": "str", "filename": "str", "max_size": "int", "overlap": "int"},

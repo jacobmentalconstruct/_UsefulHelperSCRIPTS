@@ -136,11 +136,26 @@
     ".venv\\Lib\\site-packages\\pip-25.3.dist-info\\licenses\\src\\pip\\_vendor\\truststore": "checked",
     ".venv\\Lib\\site-packages\\pip-25.3.dist-info\\licenses\\src\\pip\\_vendor\\urllib3": "checked",
     ".venv\\Scripts": "checked",
-    "_BoilerPlatePythonTEMPLATE": "checked",
+    "_BoilerPlatePythonTEMPLATE": "unchecked",
     "_BoilerPlatePythonTEMPLATE\\_logs": "unchecked",
     "_BoilerPlatePythonTEMPLATE\\src": "checked",
     "_logs": "unchecked",
-    "src": "checked"
+    "src": "checked",
+    "_BoilerPlatePythonTEMPLATE\\src\\__init__.py": "checked",
+    "_BoilerPlatePythonTEMPLATE\\src\\app.py": "checked",
+    "_BoilerPlatePythonTEMPLATE\\LICENSE.md": "checked",
+    "_BoilerPlatePythonTEMPLATE\\README.md": "checked",
+    "_BoilerPlatePythonTEMPLATE\\requirements.txt": "checked",
+    "_BoilerPlatePythonTEMPLATE\\setup_env.bat": "checked",
+    "src\\microservices": "checked",
+    "src\\microservices\\_ContextAggregatorMS.py": "checked",
+    "src\\microservices\\_TreeMapperMS.py": "checked",
+    "src\\__init__.py": "checked",
+    "src\\app.pyw": "checked",
+    "src\\app_OG_worksGREAT_KEEP.pyw": "checked",
+    "src\\app_v2_worksGREAT_KEEP.pyw": "checked",
+    "requirements.txt": "checked",
+    "setup_env.bat": "checked"
   },
   "dynamic_exclusions": []
 }

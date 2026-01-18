@@ -1,0 +1,36 @@
+Project Tree: C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_LocalContextSHELL
+Generated: 2026-01-17 05:32:16.147947
+
+├── 📁 sessions/
+│   ├── 📄 session_1d91b5a3-b96e-4111-b8dd-a700334e92a5.jsonl
+│   ├── 📄 session_21098622-da75-45b1-9ad1-a91f36631f7a.jsonl
+│   └── 📄 sessions_index.json
+├── 📁 src/
+│   ├── 📁 microservices/
+│   │   ├── 📄 _CartridgeServiceMS.py
+│   │   ├── 📄 _CognitiveMemoryMS.py
+│   │   ├── 📄 _ContentExtractorMS.py
+│   │   ├── 📄 _ContextAggregatorMS.py
+│   │   ├── 📄 _IngestEngineMS.py
+│   │   ├── 📄 _NeuralServiceMS.py
+│   │   ├── 📄 _RoleManagerMS.py
+│   │   ├── 📄 _SearchEngineMS.py
+│   │   ├── 📄 _TasklistVaultMS.py
+│   │   ├── 📄 _TextChunkerMS.py
+│   │   ├── 📄 _ThoughtStreamMS.py
+│   │   ├── 📄 _TkinterAppShellMS.py
+│   │   ├── 📄 _TkinterThemeManagerMS.py
+│   │   ├── 📄 _TkinterUniButtonMS.py
+│   │   ├── 📄 _TreeMapperMS.py
+│   │   ├── 📄 base_service.py
+│   │   ├── 📄 document_utils.py
+│   │   └── 📄 microservice_std_lib.py
+│   ├── 📄 __init__.py
+│   ├── 📄 app.py
+│   └── 📄 orchestrator.py
+├── 📄 knowledge_base.db
+├── 📄 LICENSE.md
+├── 📄 README.md
+├── 📄 requirements.txt
+├── 📄 roles.db
+└── 📄 setup_env.bat

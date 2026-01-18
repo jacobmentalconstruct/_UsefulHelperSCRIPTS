@@ -1,0 +1,18 @@
+Project Tree: C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_MicroserviceBROWSER
+Generated: 2025-12-27 07:26:12.198738
+
+├── 📁 src/
+│   ├── 📁 microservices/
+│   │   ├── 📄 _ContextPackerMS.py
+│   │   ├── 📄 _ServiceRegistryMS.py
+│   │   ├── 📄 _TkinterAppShellMS.py
+│   │   ├── 📄 _TkinterThemeManagerMS.py
+│   │   └── 📄 microservice_std_lib.py
+│   ├── 📄 __init__.py
+│   ├── 📄 app.py
+│   └── 📄 manifest-summary.txt
+├── 📄 .txt
+├── 📄 AgentSpec_list-of-tools.txt
+├── 📄 README.md
+├── 📄 requirements.txt
+└── 📄 setup_env.bat

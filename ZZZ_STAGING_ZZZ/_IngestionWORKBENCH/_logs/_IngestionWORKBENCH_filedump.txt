@@ -1,0 +1,2323 @@
+Dump: C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_IngestionWORKBENCH
+
+
+--------------------------------------------------------------------------------
+FILE: LICENSE.md
+--------------------------------------------------------------------------------
+MIT License
+
+Copyright (c) 2025 Jacob Lambert
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+--------------------------------------------------------------------------------
+FILE: README.md
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+FILE: requirements.txt
+--------------------------------------------------------------------------------
+# --- UI & Core Framework ---
+ttkbootstrap>=1.10.1      # Required for TkinterAppShellMS and ThemeManagerMS
+Pillow>=10.0.0            # Required for image handling (SpinnerMS, Icon loading)
+pyperclip>=1.8.2          # Standard for "Copy to Clipboard" features
+
+# --- Ingestion & Parsing (The "Decoder" Stack) ---
+beautifulsoup4>=4.12.0    # Essential for _ContentExtractorMS (HTML cleaning)
+lxml>=4.9.0               # High-speed parser for BeautifulSoup
+readability-lxml>=0.8.1   # Required for _WebScraperMS / Content Extraction
+requests>=2.31.0          # Required for fetching URL data
+
+# --- Data & Analysis ---
+tiktoken>=0.5.0           # (Optional) Good to have for accurate Token Counting tools
+psutil>=5.9.0             # Required for _SysInspectorMS (Hardware stats)
+--------------------------------------------------------------------------------
+FILE: setup_env.bat
+--------------------------------------------------------------------------------
+@echo off
+echo [SYSTEM] Initializing new project environment...
+
+:: 1. Create the venv if it doesn't exist
+if not exist .venv (
+    echo [SYSTEM] Creating .venv...
+    py -m venv .venv
+)
+
+:: 2. Upgrade pip and install requirements
+echo [SYSTEM] Installing dependencies...
+.venv\Scripts\python.exe -m pip install --upgrade pip
+if exist requirements.txt (
+    .venv\Scripts\pip install -r requirements.txt
+)
+
+echo.
+echo [SUCCESS] Environment ready!
+echo You can now open this folder in VS Code or launch via scripts_menu.py
+pause
+--------------------------------------------------------------------------------
+FILE: src\app.py
+--------------------------------------------------------------------------------
+import tkinter as tk
+import ttkbootstrap as ttk
+from ttkbootstrap.constants import *
+import os
+
+# --- MICROSERVICE IMPORTS ---
+# (Logic)
+import _ScoutMS as Scout
+import _ContentExtractorMS as Extractor
+import _TextChunkerMS as Chunker
+import _HeuristicSumMS as Summarizer
+
+# (UI)
+from _TkinterAppShellMS import TkinterAppShellMS
+from _LogViewMS import LogViewMS
+from _ExplorerWidgetMS import ExplorerWidgetMS
+from _SpinnerThingyMaBobberMS import SpinnerThingyMaBobberMS
+
+class IngestionWorkbench:
+    def __init__(self):
+        # 1. IGNITION: Boot the Mother Ship
+        self.app_shell = TkinterAppShellMS()
+        self.root = self.app_shell.get_main_container()
+        self.root.title("_IngestionWORKBENCH // Service Linked")
+        self.root.geometry("1400x900")
+        
+        # 2. STATE
+        self.selected_file_path = None
+
+        # 3. LAYOUT
+        self.build_ui()
+        
+        # 4. LAUNCH
+        self.log_component.log("System Online. Services mounted.", "success")
+        self.app_shell.launch() # This starts the mainloop
+
+    def build_ui(self):
+        """Constructs the Workbench using your UI Microservices."""
+        
+        # --- A. TOOLBAR (Top) ---
+        toolbar_frame = ttk.Labelframe(self.root, text="Active Toolset", padding=10)
+        toolbar_frame.pack(fill=X, side=TOP, pady=(0, 10))
+        
+        self.setup_toolbar(toolbar_frame)
+
+        # --- B. SPLITTER (Main Body) ---
+        paned_window = ttk.PanedWindow(self.root, orient=HORIZONTAL)
+        paned_window.pack(fill=BOTH, expand=YES)
+
+        # --- C. LEFT PANEL: ExplorerWidgetMS ---
+        # We wrap it in a frame to give it a border/title
+        explorer_container = ttk.Labelframe(paned_window, text="Source Explorer", padding=5)
+        paned_window.add(explorer_container, weight=1)
+        
+        # Initialize your Explorer Service
+        self.explorer = ExplorerWidgetMS(explorer_container) 
+        self.explorer.pack(fill=BOTH, expand=YES) # Assuming it inherits from Frame
+        
+        # Bind Selection Event (You might need to check your ExplorerWidgetMS source for the exact event name)
+        # Assuming standard virtual event or callback setter:
+        if hasattr(self.explorer, 'bind_selection'):
+            self.explorer.bind_selection(self.on_file_select)
+
+        # --- D. RIGHT PANEL: LogViewMS ---
+        log_container = ttk.Labelframe(paned_window, text="Process Log", padding=5)
+        paned_window.add(log_container, weight=2)
+        
+        # Initialize your Log Service
+        self.log_component = LogViewMS(log_container)
+        self.log_component.pack(fill=BOTH, expand=YES)
+
+        # --- E. SPINNER (Overlay/Status) ---
+        self.spinner = SpinnerThingyMaBobberMS(self.root) 
+
+    def setup_toolbar(self, parent):
+        """Buttons that trigger Logic Microservices."""
+        
+        # 1. SCOUT
+        ttk.Button(parent, text="🕵️ Scout Scan", 
+                   command=lambda: self.run_tool(self.tool_scout_check), 
+                   bootstyle="info").pack(side=LEFT, padx=5)
+
+        # 2. EXTRACTOR
+        ttk.Button(parent, text="📄 Extract Text", 
+                   command=lambda: self.run_tool(self.tool_extract_text), 
+                   bootstyle="success").pack(side=LEFT, padx=5)
+        
+        # 3. CHUNKER
+        ttk.Button(parent, text="🔪 Test Split", 
+                   command=lambda: self.run_tool(self.tool_chunk_test), 
+                   bootstyle="warning").pack(side=LEFT, padx=5)
+
+        # 4. SUMMARIZER
+        ttk.Button(parent, text="🧠 Heuristic Sum", 
+                   command=lambda: self.run_tool(self.tool_summarize), 
+                   bootstyle="primary").pack(side=LEFT, padx=5)
+                   
+        # Clear Log (Using LogViewMS method)
+        ttk.Button(parent, text="Clear Log", 
+                   command=self.log_component.clear, 
+                   bootstyle="light-outline").pack(side=RIGHT, padx=5)
+
+    # --- GLUE CODE ---
+
+    def on_file_select(self, filepath):
+        """Bridge between ExplorerMS and Workbench."""
+        self.selected_file_path = filepath
+        self.log_component.log(f"Target Acquired: {filepath}")
+
+    def run_tool(self, tool_function):
+        if not self.selected_file_path:
+            self.log_component.log("No file selected.", "error")
+            return
+            
+        self.spinner.animate(True) # Turn on visualizer
+        try:
+            tool_function(self.selected_file_path)
+        except Exception as e:
+            self.log_component.log(f"Tool Crash: {e}", "error")
+        finally:
+            self.spinner.animate(False) # Turn off visualizer
+
+    # --- TOOLS (Logic unchanged) ---
+    
+    def tool_scout_check(self, filepath):
+        is_bin = Scout.is_binary(filepath)
+        self.log_component.log(f"Scout Result: {'Binary' if is_bin else 'Text'}")
+
+    def tool_extract_text(self, filepath):
+        with open(filepath, 'rb') as f: blob = f.read()
+        text = Extractor.extract_text(blob, "text/plain")
+        self.log_component.log(f"Extracted {len(text)} chars.\nHead: {text[:200]}")
+
+    def tool_chunk_test(self, filepath):
+        # (Assuming your ChunkingRouterMS or TextChunkerMS is used here)
+        self.log_component.log("Chunking test initiated...")
+        
+    def tool_summarize(self, filepath):
+        with open(filepath, 'r') as f: text = f.read()
+        summary = Summarizer.summarize(text, os.path.basename(filepath), 200)
+        self.log_component.log(f"Summary:\n{summary}")
+
+if __name__ == "__main__":
+    IngestionWorkbench()
+--------------------------------------------------------------------------------
+FILE: src\__init__.py
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+FILE: src\microservices\base_service.py
+--------------------------------------------------------------------------------
+import logging
+from typing import Dict, Any
+
+class BaseService:
+    """
+    Standard parent class for all microservices. 
+    Provides consistent logging and identity management.
+    """
+    def __init__(self, name: str):
+        self._service_info = {
+            "name": name, 
+            "id": name.lower().replace(" ", "_")
+        }
+        
+        # Setup standard logging
+        logging.basicConfig(
+            level=logging.INFO, 
+            format='%(asctime)s [%(levelname)s] %(message)s',
+            datefmt='%H:%M:%S'
+        )
+        self.logger = logging.getLogger(name)
+
+    def log_info(self, message: str):
+        self.logger.info(message)
+
+    def log_error(self, message: str):
+        self.logger.error(message)
+
+    def log_warning(self, message: str):
+        self.logger.warning(message)
+
+--------------------------------------------------------------------------------
+FILE: src\microservices\document_utils.py
+--------------------------------------------------------------------------------
+from _ContentExtractorMS import ContentExtractorMS
+
+# Singleton instance to reuse the extractor logic
+_extractor = ContentExtractorMS()
+
+def extract_text_from_pdf(blob: bytes) -> str:
+    """Proxy to ContentExtractorMS PDF logic."""
+    return _extractor._extract_pdf(blob)
+
+def extract_text_from_html(html_text: str) -> str:
+    """Proxy to ContentExtractorMS HTML logic."""
+    return _extractor._extract_html(html_text)
+
+--------------------------------------------------------------------------------
+FILE: src\microservices\microservice_std_lib.py
+--------------------------------------------------------------------------------
+"""
+LIBRARY: Microservice Standard Lib
+VERSION: 2.0.0
+ROLE: Provides decorators for tagging Python classes as AI-discoverable services.
+"""
+
+import functools
+import inspect
+from typing import Dict, List, Any, Optional, Type
+
+# ==============================================================================
+# DECORATORS (The "Writer" Tools)
+# ==============================================================================
+
+def service_metadata(name: str, version: str, description: str, tags: List[str], capabilities: List[str] = None, dependencies: List[str] = None, side_effects: List[str] = None):
+    """
+    Class Decorator.
+    Labels a Microservice class with high-level metadata for the Catalog.
+    """
+    def decorator(cls):
+        cls._is_microservice = True
+        cls._service_info = {
+            "name": name,
+            "version": version,
+            "description": description,
+            "tags": tags,
+            "capabilities": capabilities or [],
+            "dependencies": dependencies or [],
+            "side_effects": side_effects or []
+        }
+        return cls
+    return decorator
+
+def service_endpoint(inputs: Dict[str, str], outputs: Dict[str, str], description: str, tags: List[str] = None, side_effects: List[str] = None, mode: str = "sync"):
+    """
+    Method Decorator.
+    Defines the 'Socket' that the AI Architect can plug into.
+    
+    :param inputs: Dict of {arg_name: type_string} (e.g. {"query": "str"})
+    :param outputs: Dict of {return_name: type_string} (e.g. {"results": "List[Dict]"})
+    :param description: What this specific function does.
+    :param tags: Keywords for searching (e.g. ["search", "read-only"])
+    :param side_effects: List of impact types (e.g. ["network:outbound", "disk:write"])
+    :param mode: 'sync', 'async', or 'ui_event'
+    """
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            return func(*args, **kwargs)
+        
+        # Attach metadata to the function object itself
+        wrapper._endpoint_info = {
+            "name": func.__name__,
+            "inputs": inputs,
+            "outputs": outputs,
+            "description": description,
+            "tags": tags or [],
+            "side_effects": side_effects or [],
+            "mode": mode
+        }
+        return wrapper
+    return decorator
+
+# ==============================================================================
+# INTROSPECTION (The "Reader" Tools)
+# ==============================================================================
+
+def extract_service_schema(service_cls: Type) -> Dict[str, Any]:
+    """
+    Scans a decorated Service Class and returns a JSON-serializable schema 
+    of its metadata and all its exposed endpoints.
+    
+    This is what the AI Agent uses to 'read' the manual.
+    """
+    if not getattr(service_cls, "_is_microservice", False):
+        raise ValueError(f"Class {service_cls.__name__} is not decorated with @service_metadata")
+
+    schema = {
+        "meta": getattr(service_cls, "_service_info", {}),
+        "endpoints": []
+    }
+
+    # Inspect all methods of the class
+    for name, method in inspect.getmembers(service_cls, predicate=inspect.isfunction):
+        # Unwrap decorators if necessary to find our tags
+        # (Though usually the wrapper has the tag attached)
+        endpoint_info = getattr(method, "_endpoint_info", None)
+        
+        if endpoint_info:
+            schema["endpoints"].append(endpoint_info)
+
+    return schema
+
+--------------------------------------------------------------------------------
+FILE: src\microservices\_ContentExtractorMS.py
+--------------------------------------------------------------------------------
+"""
+SERVICE_NAME: _ContentExtractorMS
+ENTRY_POINT: _ContentExtractorMS.py
+DEPENDENCIES: None
+"""
+
+import io
+import re
+import time
+from typing import Dict, Any, Optional
+from microservice_std_lib import service_metadata, service_endpoint
+
+# Configuration for the Graph Mapper
+@service_metadata(
+    name="ContentExtractorMS",
+    version="1.0.0",
+    description="The Decoder: A specialist service for extracting clean text from complex formats like PDF and HTML.",
+    tags=["utility", "extraction", "nlp"],
+    capabilities=["pdf-to-text", "html-cleaning"],
+    dependencies=["pypdf", "beautifulsoup4"],
+    side_effects=["filesystem:read"]
+)
+class ContentExtractorMS:
+    """
+    The Decoder.
+    A standalone utility microservice that separates the concern of 
+    document parsing from ingestion logic.
+    """
+    
+    def __init__(self):
+        self.start_time = time.time()
+        
+        # Lazy load imports to prevent service crash if dependencies are missing
+        self._pdf_ready = False
+        try:
+            from pypdf import PdfReader
+            self._pdf_ready = True
+        except ImportError:
+            pass
+            
+        self._html_ready = False
+        try:
+            from bs4 import BeautifulSoup
+            self._html_ready = True
+        except ImportError:
+            pass
+
+    @service_endpoint(
+        inputs={},
+        outputs={"status": "str", "pdf_support": "bool", "html_support": "bool"},
+        description="Health check to verify which extraction backends are installed.",
+        tags=["diagnostic", "health"]
+    )
+    def get_health(self) -> Dict[str, Any]:
+        """Returns the operational status and library availability."""
+        return {
+            "status": "online",
+            "uptime": time.time() - self.start_time,
+            "pdf_support": self._pdf_ready,
+            "html_support": self._html_ready
+        }
+
+    @service_endpoint(
+        inputs={"blob": "bytes", "mime_type": "str"},
+        outputs={"text": "str"},
+        description="Unified entry point for text extraction. Routes to the correct parser based on mime_type.",
+        tags=["processing", "extraction"]
+    )
+    def extract_text(self, blob: bytes, mime_type: str) -> str:
+        """
+        Main routing logic for extraction. 
+         logic is internalized here.
+        """
+        if "pdf" in mime_type.lower():
+            return self._extract_pdf(blob)
+        elif "html" in mime_type.lower():
+            # Decode bytes to string for HTML parser
+            try:
+                html_content = blob.decode('utf-8', errors='ignore')
+                return self._extract_html(html_content)
+            except:
+                return ""
+        return ""
+
+    def _extract_pdf(self, file_bytes: bytes) -> str:
+        """Extracts text from a PDF blob using pypdf. [cite: 96-97]"""
+        if not self._pdf_ready:
+            return ""
+        
+        from pypdf import PdfReader
+        text_content = []
+        try:
+            stream = io.BytesIO(file_bytes)
+            reader = PdfReader(stream)
+            for page in reader.pages:
+                extracted = page.extract_text()
+                if extracted:
+                    text_content.append(extracted)
+            return "\n".join(text_content)
+        except Exception as e:
+            return f"PDF Extraction Error: {e}"
+
+    def _extract_html(self, html_content: str) -> str:
+        """Cleans HTML to raw text using BeautifulSoup. [cite: 98-99]"""
+        if not self._html_ready:
+            return self._strip_tags_regex(html_content)
+        
+        from bs4 import BeautifulSoup
+        try:
+            soup = BeautifulSoup(html_content, 'html.parser')
+            for script in soup(["script", "style", "meta", "noscript"]):
+                script.decompose()
+                
+            text = soup.get_text()
+            lines = (line.strip() for line in text.splitlines())
+            chunks = (phrase.strip() for line in lines for phrase in line.split("  "))
+            return '\n'.join(chunk for chunk in chunks if chunk)
+        except Exception:
+            return self._strip_tags_regex(html_content)
+
+    def _strip_tags_regex(self, html: str) -> str:
+        """Fallback if BS4 is missing. [cite: 100]"""
+        clean = re.compile('<.*?>')
+        return re.sub(clean, '', html)
+
+if __name__ == "__main__":
+    svc = ContentExtractorMS()
+    print("Service ready:", svc._service_info["name"])
+    print("Health:", svc.get_health())
+
+--------------------------------------------------------------------------------
+FILE: src\microservices\_ContextAggregatorMS.py
+--------------------------------------------------------------------------------
+"""
+SERVICE_NAME: _ContextAggregatorMS
+ENTRY_POINT: _ContextAggregatorMS.py
+DEPENDENCIES: None
+"""
+
+import os
+import fnmatch
+import datetime
+import logging
+from pathlib import Path
+from typing import Set, Optional, Dict, Any
+from microservice_std_lib import service_metadata, service_endpoint
+
+# ==============================================================================
+# USER CONFIGURATION: DEFAULTS
+# ==============================================================================
+# Extensions known to be binary/non-text (Images, Archives, Executables)
+DEFAULT_BINARY_EXTENSIONS = {
+    ".tar.gz", ".gz", ".zip", ".rar", ".7z", ".bz2", ".xz", ".tgz",
+    ".png", ".jpg", ".jpeg", ".gif", ".bmp", ".ico", ".webp", ".tif", ".tiff",
+    ".mp3", ".wav", ".ogg", ".flac", ".mp4", ".mkv", ".avi", ".mov", ".webm",
+    ".pdf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx", ".exe", ".dll", ".so",
+    ".db", ".sqlite", ".mdb", ".pyc", ".pyo", ".class", ".jar", ".wasm"
+}
+
+# Folders to ignore by default
+DEFAULT_IGNORE_DIRS = {
+    "node_modules", ".git", "__pycache__", ".venv", ".env", 
+    "dist", "build", "coverage", ".idea", ".vscode"
+}
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(message)s')
+log = logging.getLogger("ContextAggregator")
+# ==============================================================================
+
+@service_metadata(
+    name="ContextAggregator",
+    version="1.0.0",
+    description="Flattens a project folder into a single readable text file.",
+    tags=["filesystem", "context", "compilation"],
+    capabilities=["filesystem:read", "filesystem:write"],
+    dependencies=["os", "fnmatch", "datetime"],
+    side_effects=["filesystem:read", "filesystem:write"]
+)
+class ContextAggregatorMS:
+    """
+    The Context Builder: Flattens a project folder into a single readable text file.
+    """
+
+    def __init__(self, config: Optional[Dict[str, Any]] = None):
+        self.config = config or {}
+        max_file_size_mb = self.config.get("max_file_size_mb", 1)
+        self.max_file_size_bytes = max_file_size_mb * 1024 * 1024
+
+    @service_endpoint(
+        inputs={"root_path": "str", "output_file": "str", "extra_exclusions": "Set[str]", "use_default_exclusions": "bool"},
+        outputs={"file_count": "int"},
+        description="Aggregates project files into a single text dump.",
+        tags=["filesystem", "dump"],
+        side_effects=["filesystem:read", "filesystem:write"]
+    )
+    def aggregate(self, 
+                  root_path: str, 
+                  output_file: str, 
+                  extra_exclusions: Optional[Set[str]] = None,
+                  use_default_exclusions: bool = True) -> int:
+        
+        project_root = Path(root_path).resolve()
+        out_path = Path(output_file).resolve()
+        
+        # Build Exclusions
+        exclusions = set()
+        if use_default_exclusions:
+            exclusions.update(DEFAULT_IGNORE_DIRS)
+        if extra_exclusions:
+            exclusions.update(extra_exclusions)
+
+        # Build Binary List
+        binary_exts = DEFAULT_BINARY_EXTENSIONS.copy()
+        
+        file_count = 0
+        timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+        try:
+            with open(out_path, "w", encoding="utf-8") as out_f:
+                out_f.write(f"File Dump from Project: {project_root.name}\nGenerated: {timestamp}\n{'='*60}\n\n")
+
+                for root, dirs, files in os.walk(project_root):
+                    # In-place filtering of directories
+                    dirs[:] = [d for d in dirs if d not in exclusions]
+                    
+                    for filename in files:
+                        if self._should_exclude(filename, exclusions): continue
+
+                        file_path = Path(root) / filename
+                        if file_path.resolve() == out_path: continue
+
+                        if self._is_safe_to_dump(file_path, binary_exts):
+                            self._write_file_content(out_f, file_path, project_root)
+                            file_count += 1                            
+        except IOError as e:
+            log.error(f"Error writing dump: {e}")
+            
+        return file_count
+
+    def _should_exclude(self, filename: str, exclusions: Set[str]) -> bool:
+        return any(fnmatch.fnmatch(filename, pattern) for pattern in exclusions)
+
+    def _is_safe_to_dump(self, file_path: Path, binary_exts: Set[str]) -> bool:
+        if "".join(file_path.suffixes).lower() in binary_exts: return False
+        try:
+            if file_path.stat().st_size > self.max_file_size_bytes: return False
+            with open(file_path, 'rb') as f:
+                if b'\0' in f.read(1024): return False
+        except (IOError, OSError): return False
+        return True
+
+    def _write_file_content(self, out_f, file_path: Path, project_root: Path):
+        relative_path = file_path.relative_to(project_root)
+        header = f"\n{'-'*20} FILE: {relative_path} {'-'*20}\n"
+        try:
+            with open(file_path, "r", encoding="utf-8", errors="ignore") as in_f:
+                out_f.write(header + in_f.read() + f"\n{'-'*60}\n")
+        except Exception as e:
+            out_f.write(f"\n[Error reading file: {e}]\n")
+
+if __name__ == "__main__":
+    svc = ContextAggregatorMS()
+    print("Service ready:", svc)
+--------------------------------------------------------------------------------
+FILE: src\microservices\_ExplorerWidgetMS.py
+--------------------------------------------------------------------------------
+"""
+SERVICE_NAME: _ExplorerWidgetMS
+ENTRY_POINT: _ExplorerWidgetMS.py
+DEPENDENCIES: microservice-std-lib>=1.0.0
+"""
+
+# --- RUNTIME DEPENDENCY CHECK ---
+import importlib.util, sys
+REQUIRED = ["microservice-std-lib>=1.0.0"]
+MISSING = []
+for lib in REQUIRED:
+    # Clean version numbers for check (e.g., pygame==2.0 -> pygame)
+    clean_lib = lib.split('>=')[0].split('==')[0].split('>')[0].replace('-', '_')
+    if importlib.util.find_spec(clean_lib) is None:
+        if clean_lib == 'pywebview': clean_lib = 'webview' # Common alias
+        if importlib.util.find_spec(clean_lib) is None:
+            MISSING.append(lib)
+
+if MISSING:
+    print('\n' + '!'*60)
+    print(f'MISSING DEPENDENCIES for _ExplorerWidgetMS:')
+    print(f'Run:  pip install {" ".join(MISSING)}')
+    print('!'*60 + '\n')
+    # sys.exit(1) # Uncomment to force stop if missing
+
+import os
+import queue
+import threading
+from pathlib import Path
+from typing import Any, Dict, List, Optional
+
+import tkinter as tk
+from tkinter import ttk
+
+from microservice_std_lib import service_metadata, service_endpoint
+
+# ==============================================================================
+# USER CONFIGURATION: DEFAULTS
+# ==============================================================================
+DEFAULT_EXCLUDED_FOLDERS = {
+    "node_modules",
+    ".git",
+    "__pycache__",
+    ".venv",
+    ".mypy_cache",
+    "_logs",
+    "dist",
+    "build",
+    ".vscode",
+    ".idea",
+    "target",
+    "out",
+    "bin",
+    "obj",
+    "Debug",
+    "Release",
+    "logs",
+}
+# ==============================================================================
+
+
+@service_metadata(
+    name="ExplorerWidgetMS",
+    version="1.0.0",
+    description="A standalone file system tree viewer widget.",
+    tags=["ui", "filesystem", "widget"],
+    capabilities=["ui:gui", "filesystem:read"],
+    dependencies=["tkinter", "ttk"],
+    side_effects=["ui:update", "ui:read", "filesystem:read"]
+)
+class ExplorerWidgetMS(BaseService):
+    """
+    A standalone file system tree viewer.
+    """
+
+    GLYPH_CHECKED = "[X]"
+    GLYPH_UNCHECKED = "[ ]"
+
+    def __init__(self, config: Optional[Dict[str, Any]] = None):
+        super().__init__("ExplorerWidgetMS")
+        self.config_data: Dict[str, Any] = config or {}
+        parent = self.config_data.get("parent")
+        # Note: UI parent handling remains, but BaseService provides logging/identity.
+
+        self.root_path: Path = Path(
+            self.config_data.get("root_path", ".")
+        ).resolve()
+        self.use_defaults: bool = self.config_data.get(
+            "use_default_exclusions", True
+        )
+
+        # GUI coordination
+        self.gui_queue: queue.Queue = queue.Queue()
+        self.folder_item_states: Dict[str, str] = {}
+        self.state_lock = threading.RLock()
+
+        self._setup_styles()
+        self._build_ui()
+        self.process_gui_queue()
+        self.refresh_tree()
+
+    # ------------------------------------------------------------------ UI SETUP
+
+    def _setup_styles(self) -> None:
+        style = ttk.Style()
+        if "clam" in style.theme_names():
+            style.theme_use("clam")
+
+        style.configure(
+            "Explorer.Treeview",
+            background="#252526",
+            foreground="lightgray",
+            fieldbackground="#252526",
+            borderwidth=0,
+            font=("Consolas", 10),
+        )
+        style.map(
+            "Explorer.Treeview",
+            background=[("selected", "#007ACC")],
+            foreground=[("selected", "white")],
+        )
+
+    def _build_ui(self) -> None:
+        self.columnconfigure(0, weight=1)
+        self.rowconfigure(0, weight=1)
+
+        self.tree = ttk.Treeview(
+            self,
+            show="tree",
+            columns=("size",),
+            selectmode="none",
+            style="Explorer.Treeview",
+        )
+        self.tree.column("size", width=80, anchor="e")
+
+        ysb = ttk.Scrollbar(self, orient="vertical", command=self.tree.yview)
+        xsb = ttk.Scrollbar(self, orient="horizontal", command=self.tree.xview)
+
+        self.tree.configure(yscrollcommand=ysb.set, xscrollcommand=xsb.set)
+
+        self.tree.grid(row=0, column=0, sticky="nsew")
+        ysb.grid(row=0, column=1, sticky="ns")
+        xsb.grid(row=1, column=0, sticky="ew")
+
+        self.tree.bind("<ButtonRelease-1>", self._on_click)
+
+    # ----------------------------------------------------------------- SERVICE API
+
+    @service_endpoint(
+        inputs={},
+        outputs={},
+        description="Rescans the directory and refreshes the tree view.",
+        tags=["ui", "refresh"],
+        side_effects=["filesystem:read", "ui:update"],
+    )
+    def refresh_tree(self) -> None:
+        # Clear the tree view
+        for item in self.tree.get_children():
+            self.tree.delete(item)
+
+        # Reset state
+        with self.state_lock:
+            self.folder_item_states.clear()
+            self.folder_item_states[str(self.root_path)] = "checked"
+
+        # Build a flat list of tree items for insertion
+        root_id = str(self.root_path)
+        tree_data: List[Dict[str, Any]] = [
+            {
+                "parent": "",
+                "iid": root_id,
+                "text": f" {self.root_path.name} (Root)",
+                "open": True,
+            }
+        ]
+
+        self._scan_recursive(self.root_path, root_id, tree_data)
+
+        # Insert into Treeview
+        for item in tree_data:
+            self.tree.insert(
+                item["parent"],
+                "end",
+                iid=item["iid"],
+                text=item["text"],
+                open=item.get("open", False),
+            )
+            self.tree.set(item["iid"], "size", "...")
+
+        # Update glyphs
+        self._refresh_visuals(root_id)
+
+        # Kick off background size calculation (currently stubbed)
+        threading.Thread(
+            target=self._calc_sizes_thread,
+            args=(root_id,),
+            daemon=True,
+        ).start()
+
+    # ----------------------------------------------------------------- INTERNALS
+
+    def _scan_recursive(
+        self, current_path: Path, parent_id: str, data_list: List[Dict[str, Any]]
+    ) -> None:
+        try:
+            items = sorted(
+                current_path.iterdir(),
+                key=lambda x: (not x.is_dir(), x.name.lower()),
+            )
+            for item in items:
+                if not item.is_dir():
+                    continue
+
+                path_str = str(item.resolve())
+
+                state = "checked"
+                if self.use_defaults and item.name in DEFAULT_EXCLUDED_FOLDERS:
+                    state = "unchecked"
+
+                with self.state_lock:
+                    self.folder_item_states[path_str] = state
+
+                data_list.append(
+                    {"parent": parent_id, "iid": path_str, "text": f" {item.name}"}
+                )
+                self._scan_recursive(item, path_str, data_list)
+        except (PermissionError, OSError):
+            # Skip directories we can't read
+            pass
+
+    def _on_click(self, event: tk.Event) -> None:
+        item_id = self.tree.identify_row(event.y)
+        if not item_id:
+            return
+
+        with self.state_lock:
+            curr = self.folder_item_states.get(item_id, "unchecked")
+            self.folder_item_states[item_id] = (
+                "checked" if curr == "unchecked" else "unchecked"
+            )
+
+        self._refresh_visuals(str(self.root_path))
+
+    def _refresh_visuals(self, start_node: str) -> None:
+        def _update(node_id: str) -> None:
+            if not self.tree.exists(node_id):
+                return
+
+            with self.state_lock:
+                state = self.folder_item_states.get(node_id, "unchecked")
+
+            glyph = (
+                self.GLYPH_CHECKED if state == "checked" else self.GLYPH_UNCHECKED
+            )
+
+            name = Path(node_id).name
+            if node_id == str(self.root_path):
+                name += " (Root)"
+
+            self.tree.item(node_id, text=f"{glyph} {name}")
+
+            for child in self.tree.get_children(node_id):
+                _update(child)
+
+        _update(start_node)
+
+    def _calc_sizes_thread(self, root_id: str) -> None:
+        """
+        Background worker for calculating folder sizes.
+
+        Currently a stub so that the thread exits cleanly without errors.
+        You can later extend this to walk the filesystem and push
+        size updates via self.gui_queue.
+        """
+        return
+
+    # ----------------------------------------------------------------- SERVICE API
+
+    @service_endpoint(
+        inputs={},
+        outputs={"selected_paths": "List[str]"},
+        description="Returns a list of currently checked folder paths.",
+        tags=["ui", "read"],
+        side_effects=["ui:read"],
+    )
+    def get_selected_paths(self) -> List[str]:
+        selected: List[str] = []
+        with self.state_lock:
+            for path, state in self.folder_item_states.items():
+                if state == "checked":
+                    selected.append(path)
+        return selected
+
+    # ------------------------------------------------------------------ GUI QUEUE
+
+    def process_gui_queue(self) -> None:
+        while not self.gui_queue.empty():
+            try:
+                callback = self.gui_queue.get_nowait()
+            except queue.Empty:
+                break
+            else:
+                try:
+                    callback()
+                except Exception:
+                    # In production you might want logging here.
+                    pass
+
+        # Schedule next pump
+        self.after(100, self.process_gui_queue)
+
+
+if __name__ == "__main__":
+    # Simple harness for manual testing.
+    root = tk.Tk()
+    root.title("ExplorerWidgetMS Test Harness")
+
+    widget = ExplorerWidgetMS({"parent": root, "root_path": os.getcwd()})
+    widget.pack(fill="both", expand=True)
+
+    root.mainloop()
+
+
+--------------------------------------------------------------------------------
+FILE: src\microservices\_FingerprintScannerMS.py
+--------------------------------------------------------------------------------
+"""
+SERVICE_NAME: _FingerprintScannerMS
+ENTRY_POINT: _FingerprintScannerMS.py
+DEPENDENCIES: None
+"""
+
+import hashlib
+import os
+import logging
+from pathlib import Path
+from typing import Any, Dict, List, Set, Optional, Tuple
+from microservice_std_lib import service_metadata, service_endpoint
+
+# ==============================================================================
+# CONFIGURATION
+# ==============================================================================
+DEFAULT_IGNORE_DIRS = {
+    "node_modules", ".git", "__pycache__", ".venv", "venv", "env",
+    ".mypy_cache", ".pytest_cache", ".idea", ".vscode", 
+    "dist", "build", "coverage", "target", "out", "bin", "obj",
+    "_project_library", "_sandbox", "_logs"
+}
+
+DEFAULT_IGNORE_FILES = {
+    ".DS_Store", "Thumbs.db", "*.log", "*.tmp", "*.lock"
+}
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(message)s')
+log = logging.getLogger("Fingerprint")
+# ==============================================================================
+
+@service_metadata(
+    name="FingerprintScannerMS",
+    version="1.0.0",
+    description="Scans a directory tree and generates a deterministic SHA-256 fingerprint.",
+    tags=["scanning", "integrity", "hashing"],
+    capabilities=["filesystem:read"],
+    dependencies=["hashlib", "os"],
+    side_effects=["filesystem:read"]
+)
+class FingerprintScannerMS:
+    """
+    The Detective: Scans a directory tree and generates a deterministic
+    'Fingerprint' (SHA-256 Merkle Root) representing its exact state.
+    """
+
+    def __init__(self, config: Optional[Dict[str, Any]] = None):
+        self.config = config or {}
+
+    @service_endpoint(
+        inputs={"root_path": "str"},
+        outputs={"state": "Dict[str, Any]"},
+        description="Scans the project and returns a comprehensive state object (hashes + Merkle root).",
+        tags=["scanning", "read"],
+        side_effects=["filesystem:read"]
+    )
+    def scan_project(self, root_path: str) -> Dict[str, Any]:
+        """
+        Scans the project and returns a comprehensive state object.
+        """
+        root = Path(root_path).resolve()
+        if not root.exists():
+            raise FileNotFoundError(f"Path not found: {root}")
+
+        file_map = {}
+        
+        # 1. Walk and Hash
+        for path in sorted(root.rglob("*")):
+            if path.is_file():
+                if self._should_ignore(path, root):
+                    continue
+                
+                rel_path = str(path.relative_to(root)).replace("\\", "/")
+                file_hash = self._hash_file(path)
+                
+                if file_hash:
+                    file_map[rel_path] = file_hash
+
+        # 2. Calculate Merkle Root
+        sorted_hashes = [file_map[p] for p in sorted(file_map.keys())]
+        combined_data = "".join(sorted_hashes).encode('utf-8')
+        project_fingerprint = hashlib.sha256(combined_data).hexdigest()
+
+        log.info(f"Scanned {len(file_map)} files. Fingerprint: {project_fingerprint[:8]}...")
+
+        return {
+            "root": str(root),
+            "project_fingerprint": project_fingerprint,
+            "file_hashes": file_map,
+            "file_count": len(file_map)
+        }
+
+    def _should_ignore(self, path: Path, root: Path) -> bool:
+        """Checks path against exclusion lists."""
+        try:
+            rel_parts = path.relative_to(root).parts
+            for part in rel_parts[:-1]: 
+                if part in DEFAULT_IGNORE_DIRS: return True
+            
+            import fnmatch
+            name = path.name
+            if name in DEFAULT_IGNORE_FILES: return True
+            if any(fnmatch.fnmatch(name, pat) for pat in DEFAULT_IGNORE_FILES): return True
+                
+            return False
+        except ValueError:
+            return True
+
+    def _hash_file(self, path: Path) -> Optional[str]:
+        try:
+            content = path.read_bytes()
+            return hashlib.sha256(content).hexdigest()
+        except (PermissionError, OSError):
+            log.warning(f"Could not read/hash: {path}")
+            return None
+
+# --- Independent Test Block ---
+if __name__ == "__main__":
+    import time
+    
+    test_dir = Path("test_fingerprint_proj")
+    if test_dir.exists():
+        import shutil
+        shutil.rmtree(test_dir)
+    test_dir.mkdir()
+    
+    (test_dir / "main.py").write_text("print('hello')")
+    
+    scanner = FingerprintScannerMS()
+    print("Service ready:", scanner)
+    
+    print("--- Scan 1 (Initial) ---")
+    state_1 = scanner.scan_project(str(test_dir))
+    print(f"Fingerprint 1: {state_1['project_fingerprint']}")
+    
+    if test_dir.exists():
+        import shutil
+        shutil.rmtree(test_dir)
+--------------------------------------------------------------------------------
+FILE: src\microservices\_HeuristicSumMS.py
+--------------------------------------------------------------------------------
+"""
+SERVICE_NAME: _HeuristicSumMS
+ENTRY_POINT: _HeuristicSumMS.py
+DEPENDENCIES: None
+"""
+
+import os
+import re
+from typing import Any, Dict, List, Optional
+
+from microservice_std_lib import service_metadata, service_endpoint, BaseService
+
+# ==============================================================================
+# CONFIGURATION: REGEX PATTERNS
+# ==============================================================================
+# Captures: def my_func, class MyClass, function myFunc, interface MyInterface
+SIG_RE = re.compile(r'^\s*(def|class|function|interface|struct|impl|func)\s+([A-Za-z_][A-Za-z0-9_]*)')
+
+# Captures: # Heading, ## Subheading
+MD_HDR_RE = re.compile(r'^\s{0,3}(#{1,3})\s+(.+)')
+
+# Captures: """ Docstring """ or ''' Docstring ''' (Start of block)
+DOC_RE = re.compile(r'^\s*("{3}|\'{3})(.*)', re.DOTALL)
+
+# ==============================================================================
+# SERVICE DEFINITION
+# ==============================================================================
+@service_metadata(
+    name="HeuristicSum",
+    version="1.0.0",
+    description="Generates quick summaries of code/text files using regex heuristics (No AI).",
+    tags=["parsing", "summary", "heuristics"],
+    capabilities=["compute"],
+    dependencies=["re"],
+    side_effects=[]
+)
+class HeuristicSumMS(BaseService):
+    """
+    The Skimmer: Generates quick summaries of code/text files without AI.
+    Scans for high-value lines (headers, signatures, docstrings) and concatenates them.
+    """
+
+    def __init__(self, config: Optional[Dict[str, Any]] = None):
+        super().__init__("HeuristicSum")
+        self.config = config or {}
+
+    @service_endpoint(
+        inputs={"text": "str", "filename": "str", "max_chars": "int"},
+        outputs={"summary": "str"},
+        description="Generates a summary string from the provided text.",
+        tags=["summary", "parsing"]
+    )
+    def summarize(self, text: str, filename: str = "", max_chars: int = 480) -> str:
+        """
+        Generates a summary string from the provided text.
+        """
+        lines = text.splitlines()
+        picks = []
+
+        # 1. Scan top 20 lines for Markdown Headers
+        for ln in lines[:20]:
+            m = MD_HDR_RE.match(ln)
+            if m:
+                picks.append(f"Heading: {m.group(2).strip()}")
+
+        # 2. Scan top 40 lines for Code Signatures (Functions/Classes)
+        for ln in lines[:40]:
+            m = SIG_RE.match(ln)
+            if m:
+                picks.append(f"{m.group(1)} {m.group(2)}")
+
+        # 3. Check for Docstrings / Preamble
+        if lines:
+            # Join first 80 lines to check for multi-line docstrings
+            joined = "\n".join(lines[:80])
+            m = DOC_RE.match(joined)
+            if m:
+                # Grab the first few lines of the docstring content
+                after = joined.splitlines()[1:3]
+                if after:
+                    clean_doc = " ".join(s.strip() for s in after).strip()
+                    picks.append(f"Doc: {clean_doc}")
+
+        # 4. Fallback: First non-empty line if nothing else found
+        if not picks:
+            head = " ".join(l.strip() for l in lines[:2] if l.strip())
+            if head:
+                picks.append(head)
+
+        # 5. Add Filename Context
+        if filename:
+            picks.append(f"[{os.path.basename(filename)}]")
+
+        # 6. Deduplicate and Format
+        seen = set()
+        uniq = []
+        for p in picks:
+            if p and p not in seen:
+                uniq.append(p)
+                seen.add(p)
+
+        summary = " | ".join(uniq)
+        
+        # 7. Truncate
+        if len(summary) > max_chars:
+            summary = summary[:max_chars-3] + "..."
+            
+        return summary.strip() if summary else "[No summary available]"
+
+# ==============================================================================
+# SELF-TEST / RUNNER
+# ==============================================================================
+if __name__ == "__main__":
+    skimmer = HeuristicSumMS()
+    print(f"Service ready: {skimmer}")
+    
+    # Test 1: Python Code
+    py_code = """
+    class DataProcessor:
+        '''
+        Handles the transformation of raw input data into structured formats.
+        '''
+        def process(self, data):
+            pass
+    """
+    print(f"Python Summary: {skimmer.summarize(py_code, 'processor.py')}")
+
+    # Test 2: Markdown
+    md_text = """
+    # Project Roadmap
+    ## Phase 1
+    We begin with ingestion.
+    """
+    print(f"Markdown Summary: {skimmer.summarize(md_text, 'README.md')}")
+--------------------------------------------------------------------------------
+FILE: src\microservices\_LogViewMS.py
+--------------------------------------------------------------------------------
+"""
+SERVICE_NAME: _LogViewMS
+ENTRY_POINT: _LogViewMS.py
+DEPENDENCIES: tkinter
+"""
+
+import tkinter as tk
+from tkinter import ttk, filedialog
+import queue
+import logging
+import datetime
+from typing import Any, Dict, Optional
+
+from microservice_std_lib import service_metadata, service_endpoint
+# [FIX] Added BaseService for consistency
+from base_service import BaseService
+
+# ==============================================================================
+# HELPER CLASS (Logging Handler)
+# ==============================================================================
+
+class QueueHandler(logging.Handler):
+    """
+    Sends log records to a thread-safe queue.
+    Used to bridge the gap between Python's logging system and the Tkinter UI.
+    """
+    def __init__(self, log_queue: queue.Queue):
+        super().__init__()
+        self.log_queue = log_queue
+
+    def emit(self, record):
+        self.log_queue.put(record)
+
+
+# ==============================================================================
+# MICROSERVICE CLASS (UI Widget)
+# ==============================================================================
+
+@service_metadata(
+    name="LogView",
+    version="1.1.0",
+    description="A thread-safe log viewer widget for Tkinter.",
+    tags=["ui", "logs", "widget"],
+    capabilities=["ui:gui", "filesystem:write"]
+)
+class LogViewMS(BaseService, tk.Frame):
+    """
+    The Console: A professional log viewer widget.
+    Features:
+    - Thread-safe (consumes from a Queue).
+    - Message Consolidation ("Error occurred (x5)").
+    - Level Filtering (Toggle INFO/DEBUG/ERROR).
+    - Dark Mode Compliant (uses ttk.Scrollbar).
+    """
+
+    def __init__(self, config: Optional[Dict[str, Any]] = None):
+        self.config = config or {}
+        parent = self.config.get("parent")
+        
+        # [FIX] Initialize BaseService AND tk.Frame
+        BaseService.__init__(self, "LogViewMS")
+        tk.Frame.__init__(self, parent)
+        
+        # Ensure we have a queue to pull from
+        self.log_queue: queue.Queue = self.config.get("log_queue")
+        if self.log_queue is None:
+            self.log_queue = queue.Queue()
+
+        # State for consolidation
+        self.last_msg = None
+        self.last_count = 0
+        self.last_line_index = None
+
+        self._build_ui()
+        self._poll_queue()
+
+    def _build_ui(self):
+        # Toolbar
+        toolbar = tk.Frame(self, bg="#2d2d2d", height=30)
+        toolbar.pack(fill="x", side="top")
+        
+        # Filters
+        self.filters = {
+            "INFO": tk.BooleanVar(value=True),
+            "DEBUG": tk.BooleanVar(value=True),
+            "WARNING": tk.BooleanVar(value=True),
+            "ERROR": tk.BooleanVar(value=True)
+        }
+        
+        for level, var in self.filters.items():
+            cb = tk.Checkbutton(
+                toolbar, text=level, variable=var, 
+                bg="#2d2d2d", fg="white", selectcolor="#444",
+                activebackground="#2d2d2d", activeforeground="white"
+            )
+            cb.pack(side="left", padx=5)
+
+        tk.Button(toolbar, text="Clear", command=self.clear, bg="#444", fg="white", relief="flat").pack(side="right", padx=5)
+        tk.Button(toolbar, text="Save", command=self.save, bg="#444", fg="white", relief="flat").pack(side="right")
+
+        # [FIX] Replaced ScrolledText with Text + ttk.Scrollbar 
+        # This allows the ThemeManager to style the scrollbar dark.
+        
+        # 1. The Scrollbar (Themed)
+        self.vsb = ttk.Scrollbar(self, orient="vertical")
+        self.vsb.pack(side="right", fill="y")
+        
+        # 2. The Text Area
+        self.text = tk.Text(
+            self, 
+            state="disabled", 
+            bg="#1e1e1e", 
+            fg="#d4d4d4", 
+            font=("Consolas", 10), 
+            insertbackground="white",
+            relief="flat",
+            yscrollcommand=self.vsb.set # Link to scrollbar
+        )
+        self.text.pack(side="left", fill="both", expand=True)
+        
+        # 3. Link Scrollbar to Text
+        self.vsb.config(command=self.text.yview)
+        
+        # Color Tags
+        self.text.tag_config("INFO", foreground="#d4d4d4")
+        self.text.tag_config("DEBUG", foreground="#569cd6")
+        self.text.tag_config("WARNING", foreground="#ce9178")
+        self.text.tag_config("ERROR", foreground="#f44747")
+        self.text.tag_config("timestamp", foreground="#608b4e")
+
+    def _poll_queue(self):
+        """Pulls logs from the queue and updates UI."""
+        try:
+            while True:
+                record = self.log_queue.get_nowait()
+                self._display(record)
+        except queue.Empty:
+            pass
+        finally:
+            # Schedule the next poll in 100ms
+            self.after(100, self._poll_queue)
+
+    def _display(self, record):
+        level = record.levelname
+        # Skip if filter for this level is off
+        if not self.filters.get(level, tk.BooleanVar(value=True)).get():
+            return
+
+        msg = record.getMessage()
+        ts = datetime.datetime.fromtimestamp(record.created).strftime("%H:%M:%S")
+        
+        self.text.config(state="normal")
+        
+        # Basic display logic (Consolidation placeholder)
+        if msg == self.last_msg:
+            self.last_count += 1
+            # In a full implementation, we would update the previous line here.
+            # For this microservice, we append normally to ensure stability.
+        else:
+            self.last_msg = msg
+            self.last_count = 1
+        
+        self.text.insert("end", f"[{ts}] ", "timestamp")
+        self.text.insert("end", f"{msg}\n", level)
+        self.text.see("end")
+        self.text.config(state="disabled")
+
+    @service_endpoint(
+        inputs={},
+        outputs={},
+        description="Clears the log console.",
+        tags=["ui", "logs"],
+        side_effects=["ui:update"]
+    )
+    def clear(self):
+        self.text.config(state="normal")
+        self.text.delete("1.0", "end")
+        self.text.config(state="disabled")
+
+    @service_endpoint(
+        inputs={},
+        outputs={},
+        description="Opens a dialog to save logs to a file.",
+        tags=["ui", "filesystem"],
+        side_effects=["filesystem:write", "ui:dialog"]
+    )
+    def save(self):
+        path = filedialog.asksaveasfilename(defaultextension=".log", filetypes=[("Log Files", "*.log")])
+        if path:
+            try:
+                with open(path, "w", encoding="utf-8") as f:
+                    f.write(self.text.get("1.0", "end"))
+            except Exception as e:
+                self.log_error(f"Save failed: {e}")
+
+
+# --- Independent Test Block ---
+if __name__ == "__main__":
+    root = tk.Tk()
+    root.title("Log View Test")
+    root.geometry("600x400")
+    
+    # 1. Setup Queue
+    q = queue.Queue()
+    
+    # 2. Setup Logger
+    logger = logging.getLogger("TestApp")
+    logger.setLevel(logging.DEBUG)
+    logger.addHandler(QueueHandler(q))
+    
+    # 3. Mount View
+    log_view = LogViewMS({"parent": root, "log_queue": q})
+    print("Service ready:", log_view._service_info)
+    log_view.pack(fill="both", expand=True)
+    
+    # 4. Generate Noise
+    def generate_noise():
+        logger.info("System initializing...")
+        logger.debug("Checking sensors...")
+        logger.warning("Sensor 4 response slow.")
+        logger.error("Connection failed!")
+        root.after(2000, generate_noise)
+        
+    generate_noise()
+    root.mainloop()
+--------------------------------------------------------------------------------
+FILE: src\microservices\_ScoutMS.py
+--------------------------------------------------------------------------------
+import os
+import time
+import requests
+from urllib.parse import urljoin, urlparse
+from typing import Dict, List, Any, Optional
+
+from microservice_std_lib import service_metadata, service_endpoint
+
+# Try imports for Web/PDF support
+try:
+    from bs4 import BeautifulSoup
+except ImportError:
+    BeautifulSoup = None
+
+@service_metadata(
+    name="Scout",
+    version="1.0.0",
+    description="The Scout: A depth-aware utility for recursively walking local file systems or crawling websites.",
+    tags=["utility", "scanner", "crawler"],
+    capabilities=["filesystem:read", "web:crawl"]
+)
+class ScoutMS:
+    """
+    The Scanner: Walks file systems OR crawls websites (Depth-Aware).
+    """
+    
+    def __init__(self):
+        self.IGNORE_DIRS = {
+            '.git', '__pycache__', 'node_modules', 'venv', '.env', 
+            '.idea', '.vscode', 'dist', 'build', 'coverage', 'site-packages'
+        }
+        self.BINARY_EXTENSIONS = {
+            '.pyc', '.pyd', '.exe', '.dll', '.so', '.dylib', '.class', 
+            '.jpg', '.jpeg', '.png', '.gif', '.ico', 
+            '.zip', '.tar', '.gz', '.docx', '.xlsx',
+            '.db', '.sqlite', '.sqlite3'
+        }
+        self.visited_urls = set()
+
+    def is_binary(self, file_path: str) -> bool:
+        _, ext = os.path.splitext(file_path)
+        if ext.lower() in self.BINARY_EXTENSIONS: return True
+        return False
+
+    @service_endpoint(
+        inputs={"root_path": "str", "web_depth": "int"},
+        outputs={"tree": "dict"},
+        description="Main entry point to perform a recursive scan of a directory or a web crawl.",
+        tags=["discovery", "recursive"],
+        side_effects=["filesystem:read", "network:read"]
+    )
+    def scan_directory(self, root_path: str, web_depth: int = 0) -> Optional[Dict[str, Any]]:
+        """
+        Main Entry Point.
+        :param root_path: File path or URL.
+        :param web_depth: How many links deep to crawl (0 = single page).
+        """
+        # 1. Web Crawl Mode
+        if root_path.startswith("http://") or root_path.startswith("https://"):
+            self.visited_urls.clear()
+            return self._crawl_web_recursive(root_path, depth=web_depth, origin_domain=urlparse(root_path).netloc)
+
+        # 2. Local File System Mode
+        target = os.path.abspath(root_path)
+        if not os.path.exists(target): return None
+        
+        if not os.path.isdir(target): 
+            return self._create_node(target, is_dir=False)
+            
+        return self._scan_fs_recursive(target)
+
+    # --- Web Logic ---
+    def _crawl_web_recursive(self, url: str, depth: int, origin_domain: str) -> Dict[str, Any]:
+        """
+        Recursively fetches links.
+        """
+        # Generate a nice VFS path: web/domain/path
+        parsed = urlparse(url)
+        clean_path = parsed.path.strip("/")
+        if not clean_path: clean_path = "index.html"
+        rel_path = f"web/{parsed.netloc}/{clean_path}"
+
+        node = {
+            'name': url,
+            'path': url,
+            'rel_path': rel_path,
+            'type': 'web',
+            'children': [],
+            'checked': True
+        }
+        
+        if depth < 0 or url in self.visited_urls: return node
+        self.visited_urls.add(url)
+
+        if depth > 0 and BeautifulSoup:
+            try:
+                # Polite Delay
+                time.sleep(0.1)
+                resp = requests.get(url, timeout=5)
+                if resp.status_code == 200:
+                    soup = BeautifulSoup(resp.content, 'html.parser')
+                    for link in soup.find_all('a', href=True):
+                        full_url = urljoin(url, link['href'])
+                        parsed = urlparse(full_url)
+                        
+                        # Filter: Only same domain, valid schemes
+                        if parsed.netloc == origin_domain and parsed.scheme in ['http', 'https']:
+                            if full_url not in self.visited_urls:
+                                child_node = self._crawl_web_recursive(full_url, depth - 1, origin_domain)
+                                node['children'].append(child_node)
+            except Exception as e:
+                node['error'] = str(e)
+                
+        return node
+
+    # --- File System Logic ---
+    def _scan_fs_recursive(self, current_path: str, root_path: str = None) -> Dict[str, Any]:
+        if root_path is None: root_path = current_path
+        
+        node = self._create_node(current_path, is_dir=True, root_path=root_path)
+        node['children'] = []
+        try:
+            with os.scandir(current_path) as it:
+                entries = sorted(it, key=lambda e: (not e.is_dir(), e.name.lower()))
+                for entry in entries:
+                    if entry.is_dir() and entry.name in self.IGNORE_DIRS: continue
+                    if entry.name.startswith('.'): continue
+
+                    if entry.is_dir():
+                        child = self._scan_fs_recursive(entry.path, root_path=root_path)
+                        if child: node['children'].append(child)
+                    else:
+                        node['children'].append(self._create_node(entry.path, is_dir=False, root_path=root_path))
+        except PermissionError:
+            node['error'] = "Access Denied"
+        return node
+
+    def _create_node(self, path: str, is_dir: bool, root_path: str = None) -> Dict[str, Any]:
+        name = os.path.basename(path)
+        # Calculate relative path for VFS
+        rel_path = name
+        if root_path:
+            try:
+                rel_path = os.path.relpath(path, root_path).replace("\\", "/")
+            except ValueError:
+                pass
+
+        node = {
+            'name': name, 
+            'path': path, 
+            'rel_path': rel_path,
+            'type': 'folder' if is_dir else 'file', 
+            'children': [],
+            'checked': False
+        }
+        return node
+
+    @service_endpoint(
+        inputs={"tree_node": "dict"},
+        outputs={"file_list": "list"},
+        description="Flattens a hierarchical tree node structure into a simple list of paths.",
+        tags=["utility", "processing"]
+    )
+    def flatten_tree(self, tree_node: Dict[str, Any]) -> List[str]:
+        files = []
+        if tree_node['type'] in ['file', 'web']:
+            files.append(tree_node['path'])
+        elif 'children' in tree_node:
+            for child in tree_node['children']:
+                files.extend(self.flatten_tree(child))
+        return files
+
+
+if __name__ == "__main__":
+    svc = ScoutMS()
+    print("Service ready:", svc)
+    
+    # Basic local test
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    tree = svc.scan_directory(current_dir)
+    if tree:
+        print(f"Scanned {len(svc.flatten_tree(tree))} files in current directory.")
+--------------------------------------------------------------------------------
+FILE: src\microservices\_SpinnerThingyMaBobberMS.py
+--------------------------------------------------------------------------------
+import tkinter as tk
+import math
+import colorsys
+import time
+from typing import Optional, Dict, Any
+
+from microservice_std_lib import service_metadata, service_endpoint
+
+# ==============================================================================
+# MICROSERVICE CLASS
+# ==============================================================================
+
+@service_metadata(
+    name="SpinnerTHINGYMABOBBER",
+    version="1.0.0",
+    description="Interactive visual spinner widget for OBS/UI overlays.",
+    tags=["ui", "widget", "visuals"],
+    capabilities=["ui:gui"]
+)
+class SpinnerThingyMaBobberMS:
+    """
+    The Visualizer: An interactive spinner widget.
+    Useful for "Processing..." screens or OBS overlays.
+    """
+    
+    def __init__(self, config: Optional[Dict[str, Any]] = None):
+        self.config = config or {}
+        self.root = tk.Tk()
+        self.root.title("OBS Interactive Spinner")
+        self.root.configure(bg="black")
+        
+        # Default size
+        self.root.geometry("600x600")
+        
+        # Canvas for drawing
+        self.canvas = tk.Canvas(
+            self.root, 
+            bg="black", 
+            highlightthickness=0
+        )
+        self.canvas.pack(fill="both", expand=True)
+
+        # --- STATE VARIABLES ---
+        self.angle_1 = 0
+        self.angle_2 = 0
+        self.angle_3 = 0
+        self.hue = 0
+        
+        # Text Input State
+        self.user_text = "PROCESSING"
+        self.cursor_visible = True
+        self.last_cursor_toggle = time.time()
+        
+        # Bind keyboard events to the window
+        self.root.bind("<Key>", self.handle_keypress)
+        
+        # Start animation immediately
+        self.animate()
+
+    @service_endpoint(
+        inputs={},
+        outputs={},
+        description="Launches the GUI main loop.",
+        tags=["ui", "execution"],
+        mode="sync",
+        side_effects=["ui:block"]
+    )
+    def launch(self):
+        """Starts the Tkinter main event loop."""
+        self.root.mainloop()
+
+    def handle_keypress(self, event):
+        # Handle Backspace
+        if event.keysym == "BackSpace":
+            self.user_text = self.user_text[:-1]
+        # Handle Escape (Reset to default)
+        elif event.keysym == "Escape":
+            self.user_text = "PROCESSING"
+        # Ignore special keys (Shift, Ctrl, Alt, F-keys, etc.)
+        elif len(event.char) == 1 and ord(event.char) >= 32:
+            # Limit length to prevent chaos (optional, but 20 is a safe max)
+            if len(self.user_text) < 25: 
+                self.user_text += event.char.upper()
+
+    def get_neon_color(self, offset=0):
+        h = (self.hue + offset) % 1.0
+        r, g, b = colorsys.hsv_to_rgb(h, 1.0, 1.0)
+        return f'#{int(r*255):02x}{int(g*255):02x}{int(b*255):02x}'
+
+    def draw_arc(self, cx, cy, radius, width, start, extent, color):
+        x0 = cx - radius
+        y0 = cy - radius
+        x1 = cx + radius
+        y1 = cy + radius
+        
+        self.canvas.create_arc(
+            x0, y0, x1, y1,
+            start=start, extent=extent,
+            outline=color, width=width, style="arc"
+        )
+
+    def animate(self):
+        self.canvas.delete("all")
+        
+        # Window Dimensions
+        w = self.canvas.winfo_width()
+        h = self.canvas.winfo_height()
+        
+        if w < 10 or h < 10:
+            self.root.after(50, self.animate)
+            return
+
+        cx, cy = w / 2, h / 2
+        base_size = min(w, h) / 2
+        
+        # Update Hue
+        self.hue += 0.005
+        if self.hue > 1: self.hue = 0
+        c1 = self.get_neon_color(0.0)
+        c2 = self.get_neon_color(0.3)
+        c3 = self.get_neon_color(0.6)
+
+        # --- RINGS ---
+            
+        # Ring 1
+        r1 = base_size * 0.85
+        self.angle_1 -= 3
+        for i in range(3):
+            self.draw_arc(cx, cy, r1, base_size*0.08, self.angle_1 + (i*120), 80, c1)
+
+        # Ring 2
+        r2 = base_size * 0.65
+        self.angle_2 += 5
+        self.draw_arc(cx, cy, r2, base_size*0.05, self.angle_2, 160, c2)
+        self.draw_arc(cx, cy, r2, base_size*0.05, self.angle_2 + 180, 160, c2)
+
+        # Ring 3
+        r3 = base_size * 0.45
+        self.angle_3 -= 8
+        self.draw_arc(cx, cy, r3, base_size*0.04, self.angle_3, 300, c3)
+        
+        # --- TEXT LOGIC ---
+        
+        # Toggle cursor every 0.5 seconds
+        if time.time() - self.last_cursor_toggle > 0.5:
+            self.cursor_visible = not self.cursor_visible
+            self.last_cursor_toggle = time.time()
+            
+        display_text = self.user_text + ("_" if self.cursor_visible else " ")
+
+        # Dynamic Font Scaling
+        # We start with a base size (0.15 of window).
+        # If text is long (> 8 chars), we shrink it proportionally so it fits.
+        text_len = max(len(self.user_text), 1)
+        scaling_factor = 1.0
+        if text_len > 8:
+            scaling_factor = 8 / text_len
+            
+        font_size = int(base_size * 0.15 * scaling_factor)
+        # Ensure font doesn't vanish
+        font_size = max(font_size, 10) 
+
+        self.canvas.create_text(
+            cx, cy, 
+            text=display_text, 
+            fill="white", 
+            font=("Courier", font_size, "bold")
+        )
+
+        self.root.after(30, self.animate)
+
+
+# --- Independent Test Block ---
+if __name__ == "__main__":
+    print("Launching Spinner ThingyMaBobber...")
+    svc = SpinnerThingyMaBobberMS()
+    svc.launch()
+--------------------------------------------------------------------------------
+FILE: src\microservices\_TextChunkerMS.py
+--------------------------------------------------------------------------------
+import logging
+from typing import Any, Dict, List, Optional, Tuple
+
+from microservice_std_lib import service_metadata, service_endpoint
+
+# ==============================================================================
+# CONFIGURATION
+# ==============================================================================
+logger = logging.getLogger("TextChunker")
+
+# ==============================================================================
+# MICROSERVICE CLASS
+# ==============================================================================
+
+@service_metadata(
+    name="TextChunker",
+    version="1.0.0",
+    description="Splits text into chunks using various strategies (chars, lines).",
+    tags=["chunking", "nlp", "rag"],
+    capabilities=["compute"]
+)
+class TextChunkerMS:
+    """
+    The Butcher: A unified service for splitting text into digestible chunks
+    for RAG (Retrieval Augmented Generation).
+    """
+
+    def __init__(self, config: Optional[Dict[str, Any]] = None):
+        self.config = config or {}
+
+    @service_endpoint(
+        inputs={"text": "str", "chunk_size": "int", "chunk_overlap": "int"},
+        outputs={"chunks": "List[str]"},
+        description="Standard sliding window split by character count.",
+        tags=["chunking", "chars"],
+        side_effects=[]
+    )
+    def chunk_by_chars(self, text: str, chunk_size: int = 500, chunk_overlap: int = 50) -> List[str]:
+        """
+        Standard Sliding Window. Best for prose/documentation.
+        Splits purely by character count.
+        """
+        if chunk_size <= 0: 
+            raise ValueError("chunk_size must be positive")
+        
+        chunks = []
+        start = 0
+        text_length = len(text)
+
+        while start < text_length:
+            end = start + chunk_size
+            chunk = text[start:end]
+            chunks.append(chunk)
+            
+            # Stop if we've reached the end
+            if end >= text_length:
+                break
+                
+            # Advance start, backing up by overlap
+            start += chunk_size - chunk_overlap
+            
+        return chunks
+
+    @service_endpoint(
+        inputs={"text": "str", "max_lines": "int", "max_chars": "int"},
+        outputs={"chunks": "List[Dict]"},
+        description="Line-preserving chunker, best for code.",
+        tags=["chunking", "lines", "code"],
+        side_effects=[]
+    )
+    def chunk_by_lines(self, text: str, max_lines: int = 200, max_chars: int = 4000) -> List[Dict[str, Any]]:
+        """
+        Line-Preserving Chunker. Best for Code.
+        Respects line boundaries and returns metadata about line numbers.
+        """
+        lines = text.splitlines()
+        chunks = []
+        start = 0
+        
+        while start < len(lines):
+            end = min(start + max_lines, len(lines))
+            chunk_str = "\n".join(lines[start:end])
+            
+            # If too big, shrink window (back off)
+            while len(chunk_str) > max_chars and end > start + 1:
+                end -= 1
+                chunk_str = "\n".join(lines[start:end])
+            
+            chunks.append({
+                "text": chunk_str,
+                "start_line": start + 1,
+                "end_line": end
+            })
+            start = end
+            
+        return chunks
+
+
+# --- Independent Test Block ---
+if __name__ == "__main__":
+    # Setup logging
+    logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(message)s')
+    
+    chunker = TextChunkerMS()
+    print("Service ready:", chunker)
+    
+    # 1. Prose Test
+    print("--- Prose Chunking ---")
+    lorem = "A" * 100 # 100 chars
+    result = chunker.chunk_by_chars(lorem, chunk_size=40, chunk_overlap=10)
+    for i, c in enumerate(result):
+        print(f"Chunk {i}: len={len(c)}")
+
+    # 2. Code Test
+    print("\n--- Code Chunking ---")
+    code = "\n".join([f"print('Line {i}')" for i in range(1, 10)])
+    # Force splits small for testing
+    result_code = chunker.chunk_by_lines(code, max_lines=3, max_chars=100)
+    for i, c in enumerate(result_code):
+        print(f"Chunk {i}: Lines {c['start_line']}-{c['end_line']}")
+--------------------------------------------------------------------------------
+FILE: src\microservices\_TkinterAppShellMS.py
+--------------------------------------------------------------------------------
+"""
+SERVICE_NAME: _TkinterAppShellMS
+ENTRY_POINT: _TkinterAppShellMS.py
+DEPENDENCIES: None
+"""
+import tkinter as tk
+from tkinter import ttk
+import logging
+from typing import Dict, Any, Optional
+
+from microservice_std_lib import service_metadata, service_endpoint
+
+# Updated Import: Single Underscore + 'Tkinter' prefix
+try:
+    from _TkinterThemeManagerMS import TkinterThemeManagerMS
+except ImportError:
+    TkinterThemeManagerMS = None
+
+logger = logging.getLogger("AppShell")
+
+@service_metadata(
+    name="TkinterAppShell",
+    version="2.0.0",
+    description="The Application Container. Manages the root window, main loop, and global layout.",
+    tags=["ui", "core", "lifecycle"],
+    capabilities=["ui:root", "ui:gui"]
+)
+class TkinterAppShellMS:
+    """
+    The Mother Ship.
+    Owns the Tkinter Root. All other UI microservices dock into this.
+    """
+    
+    def __init__(self, config: Optional[Dict[str, Any]] = None):
+        self.config = config or {}
+        self.root = tk.Tk()
+        self.root.withdraw() # Hide until launch
+        
+        # Load Theme (Inject dependency or create new)
+        self.theme_svc = self.config.get("theme_manager")
+        if not self.theme_svc and TkinterThemeManagerMS:
+            self.theme_svc = TkinterThemeManagerMS()
+            
+        self.colors = self.theme_svc.get_theme() if self.theme_svc else {}
+        self._configure_root()
+        
+    def _configure_root(self):
+        self.root.title(self.config.get("title", "Microservice OS"))
+        self.root.geometry(self.config.get("geometry", "1200x800"))
+        
+        # Apply Base Theme
+        bg = self.colors.get('background', '#1e1e1e')
+        self.root.configure(bg=bg)
+        
+        # Configure TTK Styles globally
+        style = ttk.Style()
+        style.theme_use('clam')
+        
+        # Standard Frames
+        style.configure('TFrame', background=bg)
+        style.configure('TLabel', background=bg, foreground=self.colors.get('foreground', '#ccc'))
+        style.configure('TButton', background=self.colors.get('panel_bg', '#333'), foreground='white')
+        
+        # Main Container (Grid or Pack)
+        self.main_container = tk.Frame(self.root, bg=bg)
+        self.main_container.pack(fill="both", expand=True, padx=5, pady=5)
+
+    @service_endpoint(
+        inputs={},
+        outputs={},
+        description="Starts the GUI Main Loop.",
+        tags=["lifecycle", "start"],
+        mode="sync",
+        side_effects=["ui:block"]
+    )
+    def launch(self):
+        """Ignition sequence start."""
+        self.root.deiconify()
+        logger.info("AppShell Launched.")
+        self.root.mainloop()
+
+    @service_endpoint(
+        inputs={},
+        outputs={"container": "tk.Frame"},
+        description="Returns the main content area for other services to dock into.",
+        tags=["ui", "layout"]
+    )
+    def get_main_container(self):
+        """Other services call this to know where to .pack() themselves."""
+        return self.main_container
+
+    @service_endpoint(
+        inputs={},
+        outputs={},
+        description="Gracefully shuts down the application.",
+        tags=["lifecycle", "stop"],
+        side_effects=["ui:close"]
+    )
+    def shutdown(self):
+        self.root.quit()
+
+if __name__ == "__main__":
+    shell = TkinterAppShellMS({"title": "Test Shell"})
+    shell.launch()
+--------------------------------------------------------------------------------
+FILE: src\microservices\_TkinterThemeManagerMS.py
+--------------------------------------------------------------------------------
+"""
+SERVICE_NAME: _TkinterThemeManagerMS
+ENTRY_POINT: _TkinterThemeManagerMS.py
+DEPENDENCIES: tkinter, ctypes
+"""
+
+import tkinter as tk
+from tkinter import ttk
+import ctypes
+import platform
+from microservice_std_lib import service_metadata, service_endpoint
+
+@service_metadata(
+    name="TkinterThemeManagerMS",
+    version="1.1.0",
+    description="Applies a forced Dark Theme to Tkinter widgets and the Windows Title Bar.",
+    tags=["ui", "theme", "style"],
+    capabilities=["theme:dark"],
+    side_effects=["ui:update"]
+)
+class TkinterThemeManagerMS:
+    def __init__(self):
+        # VS Code-like Palette
+        self.colors = {
+            "bg_dark": "#1e1e1e",      # Main Background
+            "bg_lighter": "#252526",   # Panels / Trees
+            "fg": "#cccccc",           # Text
+            "accent": "#007acc",       # Focus / Selection
+            "select_bg": "#094771",    # Selected Tree Item
+            "select_fg": "#ffffff",
+            "border": "#3e3e42",
+            
+            # [FIX] Added keys expected by AppShell
+            "panel_bg": "#252526",
+            "foreground": "#cccccc"
+        }
+
+    # [FIX] This is the missing method that caused the crash
+    @service_endpoint(
+        inputs={},
+        outputs={"theme": "Dict"},
+        description="Returns the current color palette.",
+        tags=["ui", "config"]
+    )
+    def get_theme(self):
+        return self.colors
+
+    @service_endpoint(
+        inputs={"root": "tk.Tk"},
+        outputs={},
+        description="Applies the dark theme styles to the provided root window.",
+        tags=["ui", "config"]
+    )
+    def apply_theme(self, root):
+        style = ttk.Style(root)
+        
+        # 1. Force Windows Title Bar to Dark Mode (The "Magic" Hack)
+        self._set_windows_titlebar_dark(root)
+
+        # 2. Configure Root Background
+        root.configure(bg=self.colors["bg_dark"])
+        
+        # 3. Switch to 'clam' engine (It listens to color configs better than 'vista')
+        try:
+            style.theme_use('clam')
+        except tk.TclError:
+            pass # Fallback if clam isn't available
+
+        # 4. Define Global Defaults
+        style.configure(".", 
+            background=self.colors["bg_dark"], 
+            foreground=self.colors["fg"],
+            fieldbackground=self.colors["bg_lighter"],
+            troughcolor=self.colors["bg_dark"],
+            borderwidth=0,
+            darkcolor=self.colors["bg_dark"], 
+            lightcolor=self.colors["bg_dark"]
+        )
+        
+        # 5. Widget Specifics
+        
+        # Frames & Labels
+        style.configure("TFrame", background=self.colors["bg_dark"])
+        style.configure("TLabel", background=self.colors["bg_dark"], foreground=self.colors["fg"])
+        style.configure("TLabelframe", background=self.colors["bg_dark"], bordercolor=self.colors["border"])
+        style.configure("TLabelframe.Label", background=self.colors["bg_dark"], foreground=self.colors["fg"])
+
+        # Buttons (Flat & Dark)
+        style.configure("TButton", 
+            background=self.colors["bg_lighter"], 
+            foreground=self.colors["fg"],
+            borderwidth=1,
+            bordercolor=self.colors["border"],
+            focusthickness=3,
+            focuscolor=self.colors["accent"]
+        )
+        style.map("TButton",
+            background=[("active", self.colors["accent"]), ("pressed", self.colors["select_bg"])],
+            foreground=[("active", "white")]
+        )
+
+        # Treeview (Explorer & Logs) - NO WHITE BACKGROUNDS
+        style.configure("Treeview", 
+            background=self.colors["bg_lighter"],
+            fieldbackground=self.colors["bg_lighter"],
+            foreground=self.colors["fg"],
+            borderwidth=0
+        )
+        style.map("Treeview", 
+            background=[("selected", self.colors["select_bg"])],
+            foreground=[("selected", self.colors["select_fg"])]
+        )
+        
+        # Tree Headers
+        style.configure("Treeview.Heading",
+            background=self.colors["bg_dark"],
+            foreground=self.colors["fg"],
+            relief="flat",
+            borderwidth=0
+        )
+        
+        # Scrollbars (The hardest part to darken)
+        style.configure("Vertical.TScrollbar",
+            gripcount=0,
+            background=self.colors["bg_lighter"],
+            darkcolor=self.colors["bg_dark"],
+            lightcolor=self.colors["bg_dark"],
+            troughcolor=self.colors["bg_dark"],
+            bordercolor=self.colors["bg_dark"],
+            arrowcolor=self.colors["fg"]
+        )
+        style.map("Vertical.TScrollbar",
+            background=[("active", self.colors["accent"])]
+        )
+
+    def _set_windows_titlebar_dark(self, root):
+        """
+        Uses ctypes to flip the undocumented Windows DWM flag for Dark Mode.
+        """
+        try:
+            if platform.system() == "Windows":
+                root.update() # Ensure handle exists
+                hwnd = ctypes.windll.user32.GetParent(root.winfo_id())
+                # DWMWA_USE_IMMERSIVE_DARK_MODE = 20
+                value = ctypes.c_int(2) 
+                ctypes.windll.dwmapi.DwmSetWindowAttribute(hwnd, 20, ctypes.byref(value), 4)
+        except Exception:
+            pass # Fail silently on Linux/Mac or older Windows
+--------------------------------------------------------------------------------
+FILE: src\microservices\_TreeMapperMS.py
+--------------------------------------------------------------------------------
+import os
+import datetime
+import logging
+from pathlib import Path
+from typing import Any, Dict, List, Set, Optional
+
+from microservice_std_lib import service_metadata, service_endpoint
+
+# ==============================================================================
+# CONFIGURATION
+# ==============================================================================
+DEFAULT_EXCLUDES = {
+    '.git', '__pycache__', '.idea', '.vscode', 'node_modules', 
+    '.venv', 'env', 'venv', 'dist', 'build', '.DS_Store'
+}
+logger = logging.getLogger("TreeMapper")
+
+# ==============================================================================
+# MICROSERVICE CLASS
+# ==============================================================================
+
+@service_metadata(
+    name="TreeMapper",
+    version="1.0.0",
+    description="Generates ASCII-art style directory maps of the file system.",
+    tags=["filesystem", "map", "visualization"],
+    capabilities=["filesystem:read"]
+)
+class TreeMapperMS:
+    """
+    The Cartographer: Generates ASCII-art style directory maps.
+    Useful for creating context snapshots for LLMs.
+    """
+    
+    def __init__(self, config: Optional[Dict[str, Any]] = None):
+        self.config = config or {}
+
+    @service_endpoint(
+        inputs={"root_path": "str", "additional_exclusions": "Set[str]", "use_default_exclusions": "bool"},
+        outputs={"tree_map": "str"},
+        description="Generates an ASCII tree map of the directory.",
+        tags=["filesystem", "visualization"],
+        side_effects=["filesystem:read"]
+    )
+    def generate_tree(self, 
+                      root_path: str, 
+                      additional_exclusions: Optional[Set[str]] = None,
+                      use_default_exclusions: bool = True) -> str:
+        
+        start_path = Path(root_path).resolve()
+        if not start_path.exists(): 
+            return f"Error: Path '{root_path}' does not exist."
+
+        exclusions = set()
+        if use_default_exclusions:
+            exclusions.update(DEFAULT_EXCLUDES)
+        if additional_exclusions:
+            exclusions.update(additional_exclusions)
+
+        timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        lines = [
+            f"Project Map: {start_path.name}",
+            f"Generated: {timestamp}",
+            "-" * 40,
+            f"📁 {start_path.name}/"
+        ]
+
+        logger.info(f"Mapping directory: {start_path}")
+        self._walk(start_path, "", lines, exclusions)
+        return "\n".join(lines)
+
+    def _walk(self, directory: Path, prefix: str, lines: List[str], exclusions: Set[str]):
+        try:
+            # Sort: Directories first, then files (alphabetical)
+            children = sorted(
+                [p for p in directory.iterdir() if p.name not in exclusions],
+                key=lambda x: (not x.is_dir(), x.name.lower())
+            )
+        except PermissionError:
+            lines.append(f"{prefix}└── 🚫 [Permission Denied]")
+            return
+
+        count = len(children)
+        for index, path in enumerate(children):
+            is_last = (index == count - 1)
+            connector = "└── " if is_last else "├── "
+            
+            if path.is_dir():
+                lines.append(f"{prefix}{connector}📁 {path.name}/")
+                extension = "    " if is_last else "│   "
+                self._walk(path, prefix + extension, lines, exclusions)
+            else:
+                lines.append(f"{prefix}{connector}📄 {path.name}")
+
+
+# --- Independent Test Block ---
+if __name__ == "__main__":
+    # Setup logging
+    logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(message)s')
+
+    svc = TreeMapperMS()
+    print("Service ready:", svc)
+    
+    # Map the current directory
+    print("\n--- Map of Current Dir ---")
+    tree = svc.generate_tree(".", additional_exclusions={"__pycache__"})
+    print(tree)

@@ -2,7 +2,14 @@
   "folder_states": {
     ".": "checked",
     "_logs": "unchecked",
-    "src": "checked"
+    "src": "checked",
+    "src\\__init__.py": "checked",
+    "src\\app.py": "checked",
+    ".ragforge.json": "checked",
+    "LICENSE.md": "checked",
+    "README.md": "checked",
+    "requirements.txt": "checked",
+    "setup_env.bat": "checked"
   },
   "dynamic_exclusions": []
 }

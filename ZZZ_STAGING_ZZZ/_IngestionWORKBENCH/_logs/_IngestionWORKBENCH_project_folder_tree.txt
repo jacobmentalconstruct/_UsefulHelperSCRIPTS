@@ -1,0 +1,26 @@
+Project Tree: C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_IngestionWORKBENCH
+Generated: 2025-12-27 06:30:45.405785
+
+├── 📁 src/
+│   ├── 📁 microservices/
+│   │   ├── 📄 _ContentExtractorMS.py
+│   │   ├── 📄 _ContextAggregatorMS.py
+│   │   ├── 📄 _ExplorerWidgetMS.py
+│   │   ├── 📄 _FingerprintScannerMS.py
+│   │   ├── 📄 _HeuristicSumMS.py
+│   │   ├── 📄 _LogViewMS.py
+│   │   ├── 📄 _ScoutMS.py
+│   │   ├── 📄 _SpinnerThingyMaBobberMS.py
+│   │   ├── 📄 _TextChunkerMS.py
+│   │   ├── 📄 _TkinterAppShellMS.py
+│   │   ├── 📄 _TkinterThemeManagerMS.py
+│   │   ├── 📄 _TreeMapperMS.py
+│   │   ├── 📄 base_service.py
+│   │   ├── 📄 document_utils.py
+│   │   └── 📄 microservice_std_lib.py
+│   ├── 📄 __init__.py
+│   └── 📄 app.py
+├── 📄 LICENSE.md
+├── 📄 README.md
+├── 📄 requirements.txt
+└── 📄 setup_env.bat

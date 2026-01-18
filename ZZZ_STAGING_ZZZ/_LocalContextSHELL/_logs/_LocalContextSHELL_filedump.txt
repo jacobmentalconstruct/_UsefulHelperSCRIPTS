@@ -1,0 +1,4265 @@
+Dump: C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_LocalContextSHELL
+
+
+--------------------------------------------------------------------------------
+FILE: LICENSE.md
+--------------------------------------------------------------------------------
+MIT License
+
+Copyright (c) 2025 Jacob Lambert
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+--------------------------------------------------------------------------------
+FILE: README.md
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+FILE: requirements.txt
+--------------------------------------------------------------------------------
+requests
+pydantic
+beautifulsoup4
+pypdf
+sqlite-vec
+--------------------------------------------------------------------------------
+FILE: setup_env.bat
+--------------------------------------------------------------------------------
+@echo off
+echo [SYSTEM] Initializing new project environment...
+
+:: 1. Create the venv if it doesn't exist
+if not exist .venv (
+    echo [SYSTEM] Creating .venv...
+    py -m venv .venv
+)
+
+:: 2. Upgrade pip and install requirements
+echo [SYSTEM] Installing dependencies...
+.venv\Scripts\python.exe -m pip install --upgrade pip
+if exist requirements.txt (
+    .venv\Scripts\pip install -r requirements.txt
+)
+
+echo.
+echo [SUCCESS] Environment ready!
+echo You can now open this folder in VS Code or launch via scripts_menu.py
+pause
+--------------------------------------------------------------------------------
+FILE: sessions\sessions_index.json
+--------------------------------------------------------------------------------
+{
+  "1d91b5a3-b96e-4111-b8dd-a700334e92a5": {
+    "id": "1d91b5a3-b96e-4111-b8dd-a700334e92a5",
+    "name": "New Session",
+    "created_at": "2026-01-17T11:25:04.183165",
+    "last_active_at": "2026-01-17T11:25:04.183165"
+  },
+  "21098622-da75-45b1-9ad1-a91f36631f7a": {
+    "id": "21098622-da75-45b1-9ad1-a91f36631f7a",
+    "name": "Session",
+    "created_at": "2026-01-17T11:25:04.432616",
+    "last_active_at": "2026-01-17T11:25:04.432616"
+  }
+}
+--------------------------------------------------------------------------------
+FILE: sessions\session_1d91b5a3-b96e-4111-b8dd-a700334e92a5.jsonl
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+FILE: sessions\session_21098622-da75-45b1-9ad1-a91f36631f7a.jsonl
+--------------------------------------------------------------------------------
+{"id":"8ea48069-14a2-4c90-8f45-42333c684251","timestamp":"2026-01-17T11:26:23.305318","role":"user","content":"Explain the purpose of the file 'app.py'.","metadata":{"session_id":"21098622-da75-45b1-9ad1-a91f36631f7a","session_name":"Session"}}
+{"id":"33c9ca2e-495d-4321-9c9b-2db99915e7de","timestamp":"2026-01-17T11:26:35.073438","role":"assistant","content":"The file 'app.py' typically serves as the main entry point for a Python web application. It contains the script that sets up and configures the environment, defines routes and controllers, and includes any necessary modules or libraries required by the application. The purpose of 'app.py' is to orchestrate the flow of requests to your web services and ensure they are processed correctly according to the defined API specifications.\n\nHere’s a basic structure of what 'app.py' might look like:\n\n```python\n# Import necessary modules\nfrom flask import Flask, request\n\napp = Flask(__name__)\n\n@app.route('/')\ndef hello_world():\n    return 'Hello, World!'\n\nif __name__ == '__main__':\n    app.run(debug=True)\n```\n\nIn this example:\n- `Flask` is imported to create the web application.\n- A route `/` is defined that responds with a simple \"Hello, World!\" message when accessed.\n- The `app.run(debug=True)` line starts the Flask development server, which allows for live reloading and debugging during development.\n\nThis structure helps in setting up a basic Flask application, making it ready to handle incoming HTTP requests and respond accordingly.","metadata":{"session_id":"21098622-da75-45b1-9ad1-a91f36631f7a","session_name":"Session"}}
+
+--------------------------------------------------------------------------------
+FILE: src\app.py
+--------------------------------------------------------------------------------
+import sys
+import os
+
+# --- 1. Path Setup ---
+# Get the absolute path to the 'src' folder
+src_path = os.path.dirname(os.path.abspath(__file__))
+
+# Add the project root to path (so we can find 'src')
+sys.path.append(os.path.dirname(src_path))
+
+# CRITICAL FIX: Add 'src/microservices' to path 
+# This allows files like _TkinterAppShellMS to find 'microservice_std_lib' directly
+sys.path.append(os.path.join(src_path, "microservices"))
+
+# --- 2. Microservice Imports ---
+# (Keep the rest of your imports the same, but now they will work safely)
+from src.microservices._TkinterAppShellMS import TkinterAppShellMS
+from src.microservices._TkinterThemeManagerMS import TkinterThemeManagerMS
+from src.microservices._TkinterUniButtonMS import TkinterUniButtonMS
+from src.microservices._ThoughtStreamMS import ThoughtStreamMS
+
+# Logic / Brain
+from src.microservices._NeuralServiceMS import NeuralServiceMS
+from src.microservices._CognitiveMemoryMS import CognitiveMemoryMS
+from src.microservices._RoleManagerMS import RoleManagerMS
+
+# RAG / Data
+from src.microservices._CartridgeServiceMS import CartridgeServiceMS
+from src.microservices._IngestEngineMS import IngestEngineMS
+from src.microservices._SearchEngineMS import SearchEngineMS
+from src.microservices._ContentExtractorMS import ContentExtractorMS
+
+# Orchestration
+from src.orchestrator import MainOrchestrator
+
+def main():
+    print('--- Booting Mindshard Scaffold ---')
+
+    # A. Initialize Core Services (The Toolbox)
+    # We store them in a dictionary to pass to the Orchestrator
+    services = {}
+
+    # 1. UI Foundation
+    services['theme'] = TkinterThemeManagerMS()
+    services['shell'] = TkinterAppShellMS({
+        "title": "Mindshard: Cognitive Scaffold", 
+        "geometry": "1400x900",
+        "theme_manager": services['theme']
+    })
+    
+    # 2. The Brain
+    services['neural'] = NeuralServiceMS()
+    
+    # 3. Memory Systems
+    # Short Term
+    services['memory'] = CognitiveMemoryMS({
+        "persistence_path": "active_chat_log.jsonl"
+    }) 
+    # Long Term (RAG)
+    services['cartridge'] = CartridgeServiceMS(db_path="knowledge_base.db")
+    
+    # 4. Utilities
+    services['extractor'] = ContentExtractorMS()
+    services['search'] = SearchEngineMS({"model_name": "phi3:mini-128k"}) # Or qwen
+    services['ingest'] = IngestEngineMS({"db_path": "knowledge_base.db"}) # Must match Cartridge DB
+    services['roles'] = RoleManagerMS()
+
+    # 5. UI Widgets (These need the Root, so we init them after shell)
+    # We pass the shell's main container as parent implicitly in orchestrator, 
+    # but ThoughtStream is a widget class we can instantiate early if we give it a parent later,
+    # or we just pass the Class. Here we instantiate it with the shell's container.
+    # actually, best to let Orchestrator pack it, but we can init it here:
+    services['thought_stream'] = ThoughtStreamMS({
+        "parent": services['shell'].get_main_container() 
+        # Note: In orchestrator we might repack this, or we let orchestrator init it.
+        # For this setup, we'll instantiate it here but not pack it yet.
+    })
+
+    # B. Launch Orchestrator (The Pilot)
+    print("--- Services Loaded. Handing control to Orchestrator ---")
+    app_logic = MainOrchestrator(services)
+
+    # C. Ignition
+    services['shell'].launch()
+
+if __name__ == '__main__':
+    main()
+--------------------------------------------------------------------------------
+FILE: src\orchestrator.py
+--------------------------------------------------------------------------------
+import tkinter as tk
+from tkinter import ttk, filedialog
+import threading
+import json
+
+class MainOrchestrator:
+    """
+    The Operator. 
+    Binds the UI (Shell) to the Brain (Neural) and Memory (Cartridge).
+    """
+    def __init__(self, services):
+        self.svc = services
+        self.root = self.svc['shell'].root
+        self.container = self.svc['shell'].get_main_container()
+        
+        # State
+        self.selected_model = tk.StringVar(value="qwen2.5:3b-cpu")
+        self.is_thinking = False
+
+        # Session State (Stage-1)
+        self.session_var = tk.StringVar(value="")
+        self.active_session_id = ""
+
+        # Active File State (for deictic queries like "this file")
+        self.active_file_paths = []
+        self.active_file_primary = ""
+
+        # Build UI
+        self._setup_layout()
+        self._refresh_models()
+
+        # --- Stage-1 Sessions ---
+        # Default to a new session on startup
+        try:
+            self.active_session_id = self.svc['memory'].new_session("Session")
+        except Exception:
+            self.active_session_id = ""
+
+        self._refresh_sessions()
+        self._log_system("System Ready. Waiting for input.")
+
+    def _setup_layout(self):
+        # --- Split View: Chat (Left) vs System/RAG (Right) ---
+        # We use standard tk.PanedWindow to allow easy background coloring
+        paned = tk.PanedWindow(self.container, orient=tk.HORIZONTAL, bg="#1e1e1e")
+        paned.pack(fill="both", expand=True)
+
+        # LEFT: Chat Interface
+        left_frame = ttk.Frame(paned)
+        # REMOVED: weight=3 (Not supported in tk.PanedWindow)
+        paned.add(left_frame)
+
+        # 1. Chat History
+        self.chat_display = tk.Text(left_frame, bg="#252526", fg="#cccccc", font=("Consolas", 10), state="disabled", wrap="word")
+        self.chat_display.pack(fill="both", expand=True, padx=5, pady=5)
+
+        # 2. Input Area
+        input_frame = ttk.Frame(left_frame)
+        input_frame.pack(fill="x", padx=5, pady=5)
+        
+        self.prompt_entry = tk.Text(input_frame, height=3, bg="#333333", fg="white", insertbackground="white")
+        self.prompt_entry.pack(side="left", fill="x", expand=True)
+        self.prompt_entry.bind("<Return>", self._handle_return_key)
+
+        # 3. Submit Button
+        btn_frame = ttk.Frame(input_frame)
+        btn_frame.pack(side="right", fill="y")
+        
+        send_btn = tk.Button(btn_frame, text="SEND", command=self.on_send, bg="#007acc", fg="white")
+        send_btn.pack(fill="both", expand=True, padx=2)
+
+        # RIGHT: System Control & RAG
+        right_frame = ttk.Frame(paned)
+        # REMOVED: weight=1 (Not supported in tk.PanedWindow)
+        paned.add(right_frame)
+
+        # 1. Model Picker
+        controls = ttk.LabelFrame(right_frame, text="Cortex Controls")
+        controls.pack(fill="x", padx=5, pady=5)
+
+        ttk.Label(controls, text="Active Model:").pack(anchor="w", padx=5)
+        self.model_menu = ttk.OptionMenu(controls, self.selected_model, "loading...", "loading...")
+        self.model_menu.pack(fill="x", padx=5, pady=5)
+
+        # 1b. Session Controls (Stage-1)
+        ttk.Label(controls, text="Active Session:").pack(anchor="w", padx=5)
+        self.session_menu = ttk.OptionMenu(controls, self.session_var, "(new session)", "(new session)")
+        self.session_menu.pack(fill="x", padx=5, pady=2)
+
+        sess_btn_row = ttk.Frame(controls)
+        sess_btn_row.pack(fill="x", padx=5, pady=2)
+        tk.Button(sess_btn_row, text="New Session", command=self.on_new_session, bg="#2d2d30", fg="#ccc").pack(side="left", fill="x", expand=True, padx=(0, 2))
+        tk.Button(sess_btn_row, text="Forget Last Turn", command=self.on_forget_last_turn, bg="#2d2d30", fg="#ccc").pack(side="left", fill="x", expand=True, padx=(2, 0))
+
+        # 2. RAG Controls
+        rag_frame = ttk.LabelFrame(right_frame, text="Memory Injection")
+        rag_frame.pack(fill="x", padx=5, pady=5)
+        
+        tk.Button(rag_frame, text="Ingest File(s)", command=self.on_ingest_click, bg="#2d2d30", fg="#ccc").pack(fill="x", padx=5, pady=2)
+        
+        # 3. ThoughtStream (The Neural Inspector)
+        self.thought_stream = self.svc['thought_stream']
+        self.thought_stream.pack(in_=right_frame, fill="both", expand=True, padx=5, pady=5)
+
+    def _refresh_models(self):
+        """Fetch models from Ollama in background"""
+        def _fetch():
+            models = self.svc['neural'].get_available_models()
+            if models:
+                menu = self.model_menu["menu"]
+                menu.delete(0, "end")
+                for m in models:
+                    menu.add_command(label=m, command=tk._setit(self.selected_model, m))
+                self.selected_model.set(models[0])
+        threading.Thread(target=_fetch, daemon=True).start()
+
+    def _handle_return_key(self, event):
+        if not event.state & 0x0001: # Shift not held
+            self.on_send()
+            return "break" # Prevent newline
+
+    # --- ACTIONS ---
+
+    def _refresh_sessions(self):
+        """Fetch known sessions and rebuild the session dropdown."""
+        try:
+            sessions = self.svc['memory'].list_sessions() or {}
+        except Exception:
+            sessions = {}
+
+        menu = self.session_menu["menu"]
+        menu.delete(0, "end")
+
+        # Sort by last_active_at if present
+        items = list(sessions.values())
+        items.sort(key=lambda x: x.get("last_active_at", ""), reverse=True)
+
+        # If no sessions exist, keep placeholder
+        if not items:
+            menu.add_command(label="(new session)", command=tk._setit(self.session_var, "(new session)"))
+            self.session_var.set("(new session)")
+            return
+
+        # Populate menu
+        label_for_active = None
+        for s in items:
+            sid = s.get("id", "")
+            name = s.get("name", "Session")
+            label = f"{name} | {sid[:8]}"
+            if sid and sid == self.active_session_id:
+                label_for_active = label
+            menu.add_command(label=label, command=lambda l=label, sid=sid: self.on_select_session(l, sid))
+
+        # Set visible label
+        if label_for_active:
+            self.session_var.set(label_for_active)
+        else:
+            # Default to the first item
+            first = items[0]
+            self.active_session_id = first.get("id", "")
+            self.session_var.set(f"{first.get('name','Session')} | {self.active_session_id[:8]}")
+            if self.active_session_id:
+                try:
+                    self.svc['memory'].set_active_session(self.active_session_id)
+                except Exception:
+                    pass
+
+    def on_select_session(self, label: str, session_id: str):
+        """Switch active session."""
+        self.session_var.set(label)
+        self.active_session_id = session_id
+        try:
+            self.svc['memory'].set_active_session(session_id)
+            self._log_system(f"Switched to session: {label}")
+        except Exception as e:
+            self._log_system(f"Session switch failed: {e}")
+
+    def on_new_session(self):
+        """Create and switch to a new session."""
+        try:
+            self.active_session_id = self.svc['memory'].new_session("Session")
+            self._refresh_sessions()
+            self._log_system("New session created.")
+        except Exception as e:
+            self._log_system(f"New session failed: {e}")
+
+    def on_forget_last_turn(self):
+        """Forget last turn (stage-1): remove last 2 entries from session log."""
+        try:
+            removed = self.svc['memory'].forget_last_entries(2)
+            self._log_system(f"Forgot last turn. Removed {removed} entries.")
+        except Exception as e:
+            self._log_system(f"Forget failed: {e}")
+
+    def _is_deictic_file_query(self, user_text: str) -> bool:
+        t = (user_text or "").strip().lower()
+        if not t:
+            return False
+        triggers = [
+            "this file",
+            "that file",
+            "the file i uploaded",
+            "the file i ingested",
+            "tell me about this file",
+            "what is this file"
+        ]
+        return any(x in t for x in triggers)
+
+    def on_send(self):
+        if self.is_thinking: return
+        text = self.prompt_entry.get("1.0", "end").strip()
+        if not text: return
+
+        self.prompt_entry.delete("1.0", "end")
+        self._append_chat("User", text)
+        
+        # 1. Add to Short Term Memory
+        self.svc['memory'].add_entry("user", text)
+
+        # 2. Check RAG (Hybrid Search)
+        # We spawn a thread to keep UI responsive
+        threading.Thread(target=self._run_inference_pipeline, args=(text,), daemon=True).start()
+
+    def _run_inference_pipeline(self, user_text):
+        self.is_thinking = True
+        
+        # Step 1: Search Cartridge (RAG)
+        self._log_system("Searching Long-Term Memory...")
+
+        # Deictic file binding: if the user says "this file", anchor to the last ingested file.
+        rag_query = user_text
+        active_file_header = ""
+        if self._is_deictic_file_query(user_text) and self.active_file_primary:
+            try:
+                import os
+                base = os.path.basename(self.active_file_primary)
+                rag_query = base
+                active_file_header = f"\nACTIVE FILE:\n- {self.active_file_primary}\n"
+            except Exception:
+                rag_query = user_text
+
+        rag_hits = self.svc['search'].search(
+            db_path=self.svc['cartridge'].db_path,
+            query=rag_query,
+            limit=5
+        )
+
+        context_str = ""
+        if rag_hits:
+            self._log_system(f"Found {len(rag_hits)} memory fragments.")
+            snippets = [f"- {h['snippet']} (Source: {h['path']})" for h in rag_hits]
+            context_str = "\nCONTEXT FROM MEMORY:\n" + "\n".join(snippets) + "\n"
+
+        # Step 2: Construct Prompt
+        # We get recent history from CognitiveMemoryMS (now session-scoped)
+        history = self.svc['memory'].get_context(limit=5)
+
+        session_info = ""
+        try:
+            s = self.svc['memory'].get_active_session()
+            if s.get("session_id"):
+                session_info = f"\nSESSION:\n- {s.get('session_name','Session')} | {s.get('session_id','')[:8]}\n"
+        except Exception:
+            pass
+
+        full_prompt = (
+            f"System: Use the context below if relevant.\n"
+            f"{session_info}"
+            f"{active_file_header}"
+            f"{context_str}\n\n"
+            f"History:\n{history}\n\n"
+            f"User: {user_text}\nAssistant:"
+        )
+        
+        # Step 3: Inference
+        self._log_system(f"Thinking ({self.selected_model.get()})...")
+        response = self.svc['neural'].request_inference(
+            prompt=full_prompt, 
+            tier=self.selected_model.get()
+        )
+
+        # Step 4: Display & Save
+        self.root.after(0, lambda: self._append_chat("Assistant", response))
+        self.svc['memory'].add_entry("assistant", response)
+        self.svc['memory'].commit_turn() # Flushes if full
+        self.is_thinking = False
+
+    def on_ingest_click(self):
+        files = filedialog.askopenfilenames(title="Select files to Ingest")
+        if not files: return
+
+        # Track active file(s) for deictic queries like "this file"
+        self.active_file_paths = list(files)
+        self.active_file_primary = files[-1] if files else ""
+        
+        def _ingest():
+            self._log_system(f"Ingesting {len(files)} files...")
+            engine = self.svc['ingest']
+            
+            # Use the generator pattern from your IngestEngineMS
+            for status in engine.process_files(list(files), model_name=self.selected_model.get()):
+                # Update ThoughtStream with the "Thought Frame" if available
+                if status.thought_frame:
+                     self.root.after(0, lambda s=status: self.svc['thought_stream'].add_thought_bubble(
+                         s.current_file, 
+                         s.thought_frame['chunk_index'],
+                         s.thought_frame['content'],
+                         s.thought_frame['vector_preview'],
+                         "#00FF00"
+                     ))
+                else:
+                    self._log_system(status.log_message)
+            
+            self._log_system("Ingestion Complete.")
+
+        threading.Thread(target=_ingest, daemon=True).start()
+
+    # --- HELPERS ---
+
+    def _append_chat(self, role, text):
+        self.chat_display.configure(state="normal")
+        tag = "user" if role == "User" else "ai"
+        self.chat_display.insert("end", f"\n{role}: ", tag)
+        self.chat_display.insert("end", f"{text}\n")
+        self.chat_display.see("end")
+        self.chat_display.configure(state="disabled")
+        
+        # Simple styling
+        self.chat_display.tag_config("user", foreground="#4ec9b0", font=("Consolas", 10, "bold"))
+        self.chat_display.tag_config("ai", foreground="#ce9178", font=("Consolas", 10, "bold"))
+
+    def _log_system(self, msg):
+        """Pipes simple text logs to the ThoughtStream as a fallback"""
+        # We construct a fake 'thought bubble' for system messages
+        if self.svc.get('thought_stream'):
+            self.root.after(0, lambda: self.svc['thought_stream'].add_thought_bubble(
+                "SYSTEM", 0, msg, [], "#888888"
+            ))
+
+--------------------------------------------------------------------------------
+FILE: src\__init__.py
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+FILE: src\microservices\base_service.py
+--------------------------------------------------------------------------------
+import logging
+from typing import Dict, Any
+
+class BaseService:
+    """
+    Standard parent class for all microservices. 
+    Provides consistent logging and identity management.
+    """
+    def __init__(self, name: str):
+        self._service_info = {
+            "name": name, 
+            "id": name.lower().replace(" ", "_")
+        }
+        
+        # Setup standard logging
+        logging.basicConfig(
+            level=logging.INFO, 
+            format='%(asctime)s [%(levelname)s] %(message)s',
+            datefmt='%H:%M:%S'
+        )
+        self.logger = logging.getLogger(name)
+
+    def log_info(self, message: str):
+        self.logger.info(message)
+
+    def log_error(self, message: str):
+        self.logger.error(message)
+
+    def log_warning(self, message: str):
+        self.logger.warning(message)
+
+--------------------------------------------------------------------------------
+FILE: src\microservices\document_utils.py
+--------------------------------------------------------------------------------
+from _ContentExtractorMS import ContentExtractorMS
+
+# Singleton instance to reuse the extractor logic
+_extractor = ContentExtractorMS()
+
+def extract_text_from_pdf(blob: bytes) -> str:
+    """Proxy to ContentExtractorMS PDF logic."""
+    return _extractor._extract_pdf(blob)
+
+def extract_text_from_html(html_text: str) -> str:
+    """Proxy to ContentExtractorMS HTML logic."""
+    return _extractor._extract_html(html_text)
+
+--------------------------------------------------------------------------------
+FILE: src\microservices\microservice_std_lib.py
+--------------------------------------------------------------------------------
+"""
+LIBRARY: Microservice Standard Lib
+VERSION: 2.0.0
+ROLE: Provides decorators for tagging Python classes as AI-discoverable services.
+"""
+
+import functools
+import inspect
+from typing import Dict, List, Any, Optional, Type
+
+# ==============================================================================
+# DECORATORS (The "Writer" Tools)
+# ==============================================================================
+
+def service_metadata(name: str, version: str, description: str, tags: List[str], capabilities: List[str] = None, dependencies: List[str] = None, side_effects: List[str] = None):
+    """
+    Class Decorator.
+    Labels a Microservice class with high-level metadata for the Catalog.
+    """
+    def decorator(cls):
+        cls._is_microservice = True
+        cls._service_info = {
+            "name": name,
+            "version": version,
+            "description": description,
+            "tags": tags,
+            "capabilities": capabilities or [],
+            "dependencies": dependencies or [],
+            "side_effects": side_effects or []
+        }
+        return cls
+    return decorator
+
+def service_endpoint(inputs: Dict[str, str], outputs: Dict[str, str], description: str, tags: List[str] = None, side_effects: List[str] = None, mode: str = "sync"):
+    """
+    Method Decorator.
+    Defines the 'Socket' that the AI Architect can plug into.
+    
+    :param inputs: Dict of {arg_name: type_string} (e.g. {"query": "str"})
+    :param outputs: Dict of {return_name: type_string} (e.g. {"results": "List[Dict]"})
+    :param description: What this specific function does.
+    :param tags: Keywords for searching (e.g. ["search", "read-only"])
+    :param side_effects: List of impact types (e.g. ["network:outbound", "disk:write"])
+    :param mode: 'sync', 'async', or 'ui_event'
+    """
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            return func(*args, **kwargs)
+        
+        # Attach metadata to the function object itself
+        wrapper._endpoint_info = {
+            "name": func.__name__,
+            "inputs": inputs,
+            "outputs": outputs,
+            "description": description,
+            "tags": tags or [],
+            "side_effects": side_effects or [],
+            "mode": mode
+        }
+        return wrapper
+    return decorator
+
+# ==============================================================================
+# INTROSPECTION (The "Reader" Tools)
+# ==============================================================================
+
+def extract_service_schema(service_cls: Type) -> Dict[str, Any]:
+    """
+    Scans a decorated Service Class and returns a JSON-serializable schema 
+    of its metadata and all its exposed endpoints.
+    
+    This is what the AI Agent uses to 'read' the manual.
+    """
+    if not getattr(service_cls, "_is_microservice", False):
+        raise ValueError(f"Class {service_cls.__name__} is not decorated with @service_metadata")
+
+    schema = {
+        "meta": getattr(service_cls, "_service_info", {}),
+        "endpoints": []
+    }
+
+    # Inspect all methods of the class
+    for name, method in inspect.getmembers(service_cls, predicate=inspect.isfunction):
+        # Unwrap decorators if necessary to find our tags
+        # (Though usually the wrapper has the tag attached)
+        endpoint_info = getattr(method, "_endpoint_info", None)
+        
+        if endpoint_info:
+            schema["endpoints"].append(endpoint_info)
+
+    return schema
+
+--------------------------------------------------------------------------------
+FILE: src\microservices\_CartridgeServiceMS.py
+--------------------------------------------------------------------------------
+"""
+SERVICE_NAME: _CartridgeServiceMS
+ENTRY_POINT: _CartridgeServiceMS.py
+DEPENDENCIES: None
+"""
+
+import datetime
+import json
+import os
+import sqlite3
+import struct
+import time
+import uuid
+from pathlib import Path
+from typing import Any, Dict, List, Optional
+
+# Try to import sqlite-vec (pip install sqlite-vec)
+try:
+    import sqlite_vec
+except ImportError:
+    sqlite_vec = None
+
+from microservice_std_lib import service_metadata, service_endpoint
+# [FIX] Import BaseService correctly
+from base_service import BaseService
+
+# ==============================================================================
+# SERVICE DEFINITION
+# ==============================================================================
+@service_metadata(
+    name="CartridgeServiceMS",
+    version="1.1.0",
+    description="The Source of Truth. Manages the Unified Neural Cartridge Format (UNCF v1.0).",
+    tags=["storage", "database", "RAG"],
+    capabilities=["sqlite", "vector-search", "graph-storage"],
+    dependencies=["sqlite3", "json", "uuid"],
+    side_effects=["filesystem:read", "filesystem:write"]
+)
+class CartridgeServiceMS(BaseService):
+    """
+    The Source of Truth.
+    Manages the Unified Neural Cartridge Format (UNCF v1.0).
+    """
+    
+    SCHEMA_VERSION = "uncf_v1.0"
+
+    def __init__(self, db_path: str):
+        super().__init__("CartridgeServiceMS")
+        self.db_path = Path(db_path)
+        self._init_db()
+
+    def _get_conn(self):
+        # Set generous timeout (60s) for multi-threaded Ingest/Refinery contention
+        conn = sqlite3.connect(self.db_path, timeout=60.0)
+        if sqlite_vec:
+            try:
+                conn.enable_load_extension(True)
+                sqlite_vec.load(conn)
+                conn.enable_load_extension(False)
+            except Exception as e:
+                self.log_error(f"Failed to load sqlite-vec: {e}")
+        return conn
+
+    def get_vector_dim(self) -> int:
+        """Retrieves the expected vector dimension from the manifest spec."""
+        spec = self.get_manifest("embedding_spec") or {}
+        if isinstance(spec, str):
+            try: spec = json.loads(spec)
+            except: spec = {}
+        return int(spec.get("dim", 0))
+
+    def _init_db(self):
+        """Initializes the standard Schema."""
+        self.db_path.parent.mkdir(parents=True, exist_ok=True)
+        
+        conn = self._get_conn()
+        cursor = conn.cursor()
+        
+        # Enable WAL Mode: Allows concurrent Readers (Refinery) & Writers (Ingest)
+        cursor.execute("PRAGMA journal_mode=WAL")
+        cursor.execute("PRAGMA synchronous=NORMAL")
+        
+        # 1. Manifest (The Boot Sector)
+        cursor.execute("CREATE TABLE IF NOT EXISTS manifest (key TEXT PRIMARY KEY, value TEXT)")
+        
+        # 1.5 Directories (The VFS Index)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS directories (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                vfs_path TEXT UNIQUE NOT NULL,
+                parent_path TEXT,
+                metadata TEXT DEFAULT '{}'
+            )
+        """)
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_dir_parent ON directories(parent_path)")
+
+        # 2. Files (The Content Store)
+        # Supports Text AND Binary (blob_data)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS files (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                vfs_path TEXT NOT NULL,       -- Portable path (e.g. "src/main.py")
+                origin_path TEXT,             -- Provenance (e.g. "C:/Users/...")
+                origin_type TEXT,             -- 'filesystem', 'web', 'github'
+                content TEXT,                 -- Text content (UTF-8)
+                blob_data BLOB,               -- Binary content (Images, PDFs)
+                mime_type TEXT,
+                status TEXT DEFAULT 'RAW',    -- RAW, REFINED, ERROR, SKIPPED
+                metadata TEXT DEFAULT '{}',   -- JSON tags, summaries
+                last_updated TIMESTAMP
+            )
+        """)
+        # Index for fast lookups by VFS path
+        cursor.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_vfs ON files(vfs_path)")
+
+        # 3. Chunks (The Vector Store)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS chunks (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                file_id INTEGER,
+                chunk_index INTEGER,
+                content TEXT,
+                embedding BLOB,
+                name TEXT,
+                type TEXT,
+                start_line INTEGER,
+                end_line INTEGER,
+                FOREIGN KEY(file_id) REFERENCES files(id)
+            )
+        """)
+
+        # 3.5 Vector Index (sqlite-vec)
+        if sqlite_vec:
+            dim = self.get_vector_dim()
+            if dim > 0:
+                try:
+                    cursor.execute(f"CREATE VIRTUAL TABLE IF NOT EXISTS vec_items USING vec0(embedding float[{dim}])")
+                except Exception as e:
+                    self.log_error(f"Vector Table Init Error: {e}")
+            else:
+                self.log_info("Vector table creation deferred: No dimensions found in manifest yet.")
+
+        # 4. Graph Topology (The Neural Wiring)
+        cursor.execute("CREATE TABLE IF NOT EXISTS graph_nodes (id TEXT PRIMARY KEY, type TEXT, label TEXT, data_json TEXT)")
+        cursor.execute("CREATE TABLE IF NOT EXISTS graph_edges (source TEXT, target TEXT, relation TEXT, weight REAL)")
+
+        # 5. Validation Logs
+        cursor.execute("CREATE TABLE IF NOT EXISTS logs (timestamp REAL, level TEXT, message TEXT, context TEXT)")
+        
+        conn.commit()
+        conn.close()
+        
+        # Initialize standard keys if new
+        self.initialize_manifest()
+
+    def initialize_manifest(self):
+        """Populates the boot sector with strict RagFORGE Cartridge Schema (UNCF) v1.1."""
+        if not self.get_manifest("cartridge_id"):
+            now = datetime.datetime.utcnow().isoformat()
+
+            # 1. Identity & Versioning
+            self.set_manifest("schema_name", "ragforge_cartridge")
+            self.set_manifest("schema_version", "1.1.0")
+            self.set_manifest("cartridge_id", str(uuid.uuid4()))
+            self.set_manifest("created_at_utc", now)
+            self.set_manifest("created_by_app", "RagFORGE")
+
+            # 2. Provenance / Sources
+            self.set_manifest("sources", [])
+            self.set_manifest("source_policies", {
+                "binary_policy": "Extract Text",
+                "web_depth": 0
+            })
+
+            # 3. Specs (Defaults - updated by RefineryService._stamp_specs)
+            self.set_manifest("embedding_spec", {
+                "provider": "unknown",
+                "model": "pending_init",
+                "dim": 0,
+                "dtype": "unknown",
+                "distance": "unknown"
+            })
+            self.set_manifest("chunking_spec", {
+                "strategy": "semantic_hybrid",
+                "python_ast": True,
+                "generic_window": 1500
+            })
+
+            # 4. VFS + Content Stats (populated/updated over time)
+            self.set_manifest("vfs", {
+                "root_label": "",
+                "directories": {"count": 0},
+                "files": {
+                    "count": 0,
+                    "by_origin_type": {},
+                    "by_mime": {}
+                },
+                "index_built": False
+            })
+            self.set_manifest("content_stats", {
+                "chunks": {"count": 0},
+                "vector_index": {
+                    "enabled": False,
+                    "table": "vec_items",
+                    "backend": "sqlite-vec",
+                    "dims": 0,
+                    "status": "unknown"
+                },
+                "graph": {
+                    "nodes": 0,
+                    "edges": 0
+                }
+            })
+
+            # 5. Capabilities Contract (what an agent can assume exists / how to navigate)
+            self.set_manifest("capabilities", {
+                "tables": {
+                    "manifest": True,
+                    "directories": True,
+                    "files": True,
+                    "chunks": True,
+                    "vec_items": True,
+                    "graph_nodes": True,
+                    "graph_edges": True,
+                    "logs": True
+                },
+                "navigation": {
+                    "vfs_path": "files.vfs_path",
+                    "directory_index": "directories.vfs_path",
+                    "list_files_query": "SELECT vfs_path, mime_type, origin_type, status FROM files ORDER BY vfs_path",
+                    "list_directories_query": "SELECT vfs_path, parent_path FROM directories ORDER BY vfs_path"
+                },
+                "retrieval": {
+                    "raw_file_content_query": "SELECT content, blob_data, mime_type FROM files WHERE vfs_path=?",
+                    "chunks_by_file_query": "SELECT chunk_index, name, type, start_line, end_line, content FROM chunks WHERE file_id=? ORDER BY chunk_index",
+                    "vector_search": "sqlite-vec on vec_items if available"
+                },
+                "python_helper_api": {
+                    "note": "Optional convenience layer for agents running inside Python. For non-Python consumers, use the SQL queries above.",
+                    "methods": [
+                        "CartridgeServiceMS.get_status_flags",
+                        "CartridgeServiceMS.list_files",
+                        "CartridgeServiceMS.list_directories",
+                        "CartridgeServiceMS.get_file_record",
+                        "CartridgeServiceMS.get_directory_tree",
+                        "CartridgeServiceMS.get_status_summary",
+                        "CartridgeServiceMS.add_node",
+                        "CartridgeServiceMS.add_edge",
+                        "CartridgeServiceMS.search_embeddings"
+                    ]
+                }
+            })
+
+            # 6. Status & Health
+            self.set_manifest("cartridge_health", "FRESH")
+            self.set_manifest("ingest_complete", False)
+            self.set_manifest("refine_complete", False)
+            self.set_manifest("last_ingest_at_utc", "")
+            self.set_manifest("last_refine_at_utc", "")
+            self.set_manifest("last_error", "")
+            self.set_manifest("locks", {
+                "write_lock_expected": False,
+                "notes": "If DB locks occur, consider batching writes and shorter-lived connections."
+            })
+
+    def set_manifest(self, key: str, value: Any):
+        """Upsert metadata key."""
+        conn = self._get_conn()
+        val_str = json.dumps(value) if isinstance(value, (dict, list)) else str(value)
+        conn.execute("INSERT OR REPLACE INTO manifest (key, value) VALUES (?, ?)", (key, val_str))
+        conn.commit()
+        conn.close()
+
+    def get_manifest(self, key: str) -> Optional[str]:
+        """Retrieve metadata key."""
+        conn = self._get_conn()
+        row = conn.execute("SELECT value FROM manifest WHERE key=?", (key,)).fetchone()
+        conn.close()
+        return row[0] if row else None
+
+    def validate_cartridge(self) -> Dict[str, Any]:
+        """Quality Control: Checks if the cartridge is Agent-Safe."""
+        report = {"valid": True, "health": "OK", "errors": []}
+        
+        # 1. Check Required Keys
+        required = [
+            "schema_name", "schema_version", "cartridge_id",
+            "created_at_utc", "created_by_app", "embedding_spec",
+            "chunking_spec", "capabilities"
+        ]
+        for key in required:
+            if not self.get_manifest(key):
+                report["valid"] = False
+                report["errors"].append(f"Missing Manifest Key: {key}")
+        
+        # 2. Check Vector Index Presence
+        conn = self._get_conn()
+        vec_enabled = False
+        vec_status = "unknown"
+        try:
+            conn.execute("SELECT count(*) FROM vec_items").fetchone()
+            vec_enabled = True
+            vec_status = "available"
+        except Exception:
+            vec_enabled = False
+            vec_status = "unavailable"
+            report["errors"].append("Vector Index (vec_items) missing or not loaded.")
+            report["health"] = "WARN_NO_VECTORS"
+        finally:
+            conn.close()
+
+        # Update manifest content_stats.vector_index to reflect truth
+        try:
+            content_stats = self.get_manifest("content_stats") or {}
+            if isinstance(content_stats, str):
+                 try: content_stats = json.loads(content_stats)
+                 except: content_stats = {}
+            
+            vec = content_stats.get("vector_index", {}) if isinstance(content_stats, dict) else {}
+
+            embed_spec = self.get_manifest("embedding_spec") or {}
+            if isinstance(embed_spec, str):
+                try: embed_spec = json.loads(embed_spec)
+                except: embed_spec = {}
+            
+            spec_dim = 0
+            if isinstance(embed_spec, dict):
+                spec_dim = int(embed_spec.get("dim", 0) or 0)
+
+            vec["enabled"] = bool(vec_enabled)
+            vec["status"] = vec_status
+            if spec_dim > 0:
+                vec["dims"] = spec_dim
+
+            if "table" not in vec:
+                vec["table"] = "vec_items"
+            if "backend" not in vec:
+                vec["backend"] = "sqlite-vec"
+
+            content_stats["vector_index"] = vec
+            self.set_manifest("content_stats", content_stats)
+        except Exception as e:
+            report["errors"].append(f"Failed to stamp vector_index status into manifest: {e}")
+            report["health"] = "WARN_MANIFEST_STAMP_FAIL"
+            
+        return report
+
+    def store_file(self, vfs_path: str, origin_path: str, content: str = None, blob: bytes = None, mime_type: str = "text/plain", origin_type: str = "filesystem"):
+        """
+        The Universal Input Method.
+        Stores raw data. If file exists, updates it and resets status to 'RAW' for re-refining.
+        """
+        conn = self._get_conn()
+        try:
+            conn.execute("""
+                INSERT OR REPLACE INTO files 
+                (vfs_path, origin_path, origin_type, content, blob_data, mime_type, status, last_updated)
+                VALUES (?, ?, ?, ?, ?, ?, 'RAW', ?)
+            """, (vfs_path, origin_path, origin_type, content, blob, mime_type, time.time()))
+            conn.commit()
+            return True
+        except Exception as e:
+            self.log_error(f"DB Store Error ({vfs_path}): {e}")
+            return False
+        finally:
+            conn.close()
+
+    def get_pending_files(self, limit: int = 10) -> List[Dict]:
+        """Fetches files waiting for the Refinery."""
+        conn = self._get_conn()
+        conn.row_factory = sqlite3.Row
+        rows = conn.execute("SELECT * FROM files WHERE status = 'RAW' LIMIT ?", (limit,)).fetchall()
+        conn.close()
+        return [dict(row) for row in rows]
+
+    def update_status(self, file_id: int, status: str, metadata: dict = None):
+        conn = self._get_conn()
+        if metadata:
+            conn.execute("UPDATE files SET status = ?, metadata = ? WHERE id = ?", 
+                         (status, json.dumps(metadata), file_id))
+        else:
+            conn.execute("UPDATE files SET status = ? WHERE id = ?", (status, file_id))
+        conn.commit()
+        conn.close()
+
+    def ensure_directory(self, vfs_path: str):
+        """Idempotent insert for VFS directories."""
+        if not vfs_path: return
+        parent = os.path.dirname(vfs_path).replace("\\", "/")
+        if parent == vfs_path: parent = "" # Root case
+        
+        conn = self._get_conn()
+        try:
+            conn.execute("INSERT OR IGNORE INTO directories (vfs_path, parent_path) VALUES (?, ?)", (vfs_path, parent))
+            conn.commit()
+        except: pass
+        finally:
+            conn.close()
+
+    # --- Agent-Friendly Helpers (No raw SQL required) ---
+    def _coerce_bool(self, v: Any) -> bool:
+        """Best-effort conversion for manifest values stored as strings."""
+        if v is None:
+            return False
+        if isinstance(v, bool):
+            return v
+        s = str(v).strip().lower()
+        return s in ("1", "true", "yes", "y", "on")
+
+    @service_endpoint(
+        inputs={},
+        outputs={"ingest_complete": "bool", "refine_complete": "bool", "cartridge_health": "str"},
+        description="Returns key manifest status flags (ingest/refine status and health) in a single call.",
+        tags=["status", "health"]
+    )
+    def get_status_flags(self) -> Dict[str, Any]:
+        """Returns key manifest status flags in a single call."""
+        ingest_complete = self._coerce_bool(self.get_manifest("ingest_complete"))
+        refine_complete = self._coerce_bool(self.get_manifest("refine_complete"))
+        health = self.get_manifest("cartridge_health") or "UNKNOWN"
+        return {
+            "ingest_complete": ingest_complete,
+            "refine_complete": refine_complete,
+            "cartridge_health": health,
+            "schema_name": self.get_manifest("schema_name") or "",
+            "schema_version": self.get_manifest("schema_version") or "",
+            "cartridge_id": self.get_manifest("cartridge_id") or ""
+        }
+
+    def list_files(self, prefix: str = "", status: Optional[str] = None, limit: Optional[int] = None) -> List[Dict[str, Any]]:
+        """Enumerate files in the cartridge (optionally filtered by VFS prefix and/or status)."""
+        conn = self._get_conn()
+        conn.row_factory = sqlite3.Row
+        try:
+            sql = "SELECT id, vfs_path, origin_path, origin_type, mime_type, status, last_updated, metadata FROM files"
+            clauses = []
+            params = []
+
+            if prefix:
+                clauses.append("vfs_path LIKE ?")
+                params.append(prefix.rstrip("/") + "/%")
+
+            if status:
+                clauses.append("status = ?")
+                params.append(status)
+
+            if clauses:
+                sql += " WHERE " + " AND ".join(clauses)
+
+            sql += " ORDER BY vfs_path"
+
+            if limit is not None:
+                sql += " LIMIT ?"
+                params.append(int(limit))
+
+            rows = conn.execute(sql, tuple(params)).fetchall()
+            out = []
+            for r in rows:
+                d = dict(r)
+                try:
+                    d["metadata"] = json.loads(d.get("metadata") or "{}")
+                except Exception:
+                    d["metadata"] = {}
+                out.append(d)
+            return out
+        finally:
+            conn.close()
+
+    def get_file_record(self, vfs_path: str) -> Optional[Dict[str, Any]]:
+        """Fetch a single file record by VFS path."""
+        if not vfs_path:
+            return None
+        conn = self._get_conn()
+        conn.row_factory = sqlite3.Row
+        try:
+            row = conn.execute(
+                "SELECT id, vfs_path, origin_path, origin_type, content, blob_data, mime_type, status, metadata, last_updated FROM files WHERE vfs_path = ?",
+                (vfs_path,)
+            ).fetchone()
+            if not row:
+                return None
+            d = dict(row)
+            try:
+                d["metadata"] = json.loads(d.get("metadata") or "{}")
+            except Exception:
+                d["metadata"] = {}
+            return d
+        finally:
+            conn.close()
+
+    def list_directories(self, prefix: str = "") -> List[Dict[str, Any]]:
+        """Enumerate directories in the cartridge VFS."""
+        conn = self._get_conn()
+        conn.row_factory = sqlite3.Row
+        try:
+            if prefix:
+                rows = conn.execute(
+                    "SELECT id, vfs_path, parent_path, metadata FROM directories WHERE vfs_path LIKE ? ORDER BY vfs_path",
+                    (prefix.rstrip("/") + "/%",)
+                ).fetchall()
+            else:
+                rows = conn.execute(
+                    "SELECT id, vfs_path, parent_path, metadata FROM directories ORDER BY vfs_path"
+                ).fetchall()
+
+            out = []
+            for r in rows:
+                d = dict(r)
+                try:
+                    d["metadata"] = json.loads(d.get("metadata") or "{}")
+                except Exception:
+                    d["metadata"] = {}
+                out.append(d)
+            return out
+        finally:
+            conn.close()
+
+    @service_endpoint(
+        inputs={"root": "str"},
+        outputs={"tree": "dict"},
+        description="Builds a nested directory tree structure for UI navigation or context mapping.",
+        tags=["vfs", "navigation"]
+    )
+    def get_directory_tree(self, root: str = "") -> Dict[str, Any]:
+        """Builds a nested directory tree starting at `root` ("" for full tree)."""
+        dirs = self.list_directories(prefix=root) if root else self.list_directories()
+        files = self.list_files(prefix=root) if root else self.list_files()
+
+        # Tree nodes are dicts: {"_dirs": {name: node}, "_files": [file_records...]}
+        def new_node():
+            return {"_dirs": {}, "_files": []}
+
+        tree = new_node()
+
+        # Insert directories
+        for d in dirs:
+            path = (d.get("vfs_path") or "").strip("/")
+            if not path:
+                continue
+            parts = path.split("/")
+            cur = tree
+            for p in parts:
+                cur = cur["_dirs"].setdefault(p, new_node())
+
+        # Insert files
+        for f in files:
+            path = (f.get("vfs_path") or "").strip("/")
+            if not path:
+                continue
+            parts = path.split("/")
+            fname = parts[-1]
+            
+            cur = tree
+            for p in parts[:-1]:
+                cur = cur["_dirs"].setdefault(p, new_node())
+            # Store a light file record for tree browsing
+            cur["_files"].append({
+                "name": fname,
+                "vfs_path": f.get("vfs_path"),
+                "mime_type": f.get("mime_type"),
+                "origin_type": f.get("origin_type"),
+                "status": f.get("status")
+            })
+
+        return tree
+
+    def get_status_summary(self) -> Dict[str, Any]:
+        """Counts files by status and provides a quick cartridge overview."""
+        conn = self._get_conn()
+        conn.row_factory = sqlite3.Row
+        try:
+            rows = conn.execute("SELECT status, COUNT(*) as n FROM files GROUP BY status").fetchall()
+            by_status = {r["status"]: r["n"] for r in rows}
+
+            dcnt = conn.execute("SELECT COUNT(*) FROM directories").fetchone()[0]
+            fcnt = conn.execute("SELECT COUNT(*) FROM files").fetchone()[0]
+            ccnt = conn.execute("SELECT COUNT(*) FROM chunks").fetchone()[0]
+            ncnt = conn.execute("SELECT COUNT(*) FROM graph_nodes").fetchone()[0]
+            ecnt = conn.execute("SELECT COUNT(*) FROM graph_edges").fetchone()[0]
+
+            return {
+                "directories": int(dcnt),
+                "files": int(fcnt),
+                "chunks": int(ccnt),
+                "graph_nodes": int(ncnt),
+                "graph_edges": int(ecnt),
+                "files_by_status": by_status,
+                "flags": self.get_status_flags()
+            }
+        finally:
+            conn.close()
+
+    # --- Graph Helpers ---
+    def add_node(self, node_id: str, node_type: str, label: str, data: dict = None):
+        conn = self._get_conn()
+        conn.execute("INSERT OR REPLACE INTO graph_nodes (id, type, label, data_json) VALUES (?, ?, ?, ?)",
+                     (node_id, node_type, label, json.dumps(data or {})))
+        conn.commit()
+        conn.close()
+
+    def add_edge(self, source: str, target: str, relation: str = "related", weight: float = 1.0):
+        conn = self._get_conn()
+        conn.execute("INSERT OR IGNORE INTO graph_edges (source, target, relation, weight) VALUES (?, ?, ?, ?)",
+                     (source, target, relation, weight))
+        conn.commit()
+        conn.close()
+
+    # --- Vector Search ---
+    @service_endpoint(
+        inputs={"query_vector": "list", "limit": "int"},
+        outputs={"results": "list"},
+        description="Performs semantic vector search using sqlite-vec against the cartridge chunks.",
+        tags=["search", "vector"]
+    )
+    def search_embeddings(self, query_vector: List[float], limit: int = 5) -> List[Dict]:
+        """Performs semantic search using sqlite-vec."""
+        if not sqlite_vec or not query_vector:
+            return []
+
+        conn = self._get_conn()
+        conn.row_factory = sqlite3.Row
+        results = []
+        
+        try:
+            # Pack vector to binary if needed, but sqlite-vec usually handles raw lists in parameterized queries
+            # dependent on the binding. We'll pass binary for safety if using standard bindings,
+            # but typically raw list works with the extension's adapters.
+            # For now, we assume the extension handles the list->vector conversion.
+            rows = conn.execute("""
+                SELECT
+                    rowid,
+                    distance
+                FROM vec_items
+                WHERE embedding MATCH ?
+                ORDER BY distance
+                LIMIT ?
+            """, (json.dumps(query_vector), limit)).fetchall()
+            
+            # Resolve back to chunks with VFS context
+            for r in rows:
+                chunk_id = r['rowid']
+                # Join with files to get vfs_path
+                query = """
+                    SELECT c.*, f.vfs_path 
+                    FROM chunks c 
+                    JOIN files f ON c.file_id = f.id 
+                    WHERE c.id=?
+                """
+                chunk = conn.execute(query, (chunk_id,)).fetchone()
+                
+                if chunk:
+                    res = dict(chunk)
+                    res['score'] = r['distance']
+                    results.append(res)
+                    
+        except Exception as e:
+            self.log_error(f"Vector Search Error: {e}")
+        finally:
+            conn.close()
+            
+        return results
+
+# ==============================================================================
+# SELF-TEST / RUNNER
+# ==============================================================================
+if __name__ == "__main__":
+    import tempfile
+    
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        db_file = os.path.join(tmp_dir, "test_cartridge.db")
+        print(f"Initializing service at: {db_file}")
+        
+        svc = CartridgeServiceMS(db_file)
+        print(f"Service Ready: {svc}")
+        
+        # Simple test: check manifest
+        status = svc.get_status_flags()
+        print(f"Initial Status: {status}")
+--------------------------------------------------------------------------------
+FILE: src\microservices\_CognitiveMemoryMS.py
+--------------------------------------------------------------------------------
+"""
+SERVICE_NAME: _CognitiveMemoryMS
+ENTRY_POINT: _CognitiveMemoryMS.py
+DEPENDENCIES: pip install pydantic
+"""
+
+# --- RUNTIME DEPENDENCY CHECK ---
+import importlib.util
+import sys
+
+REQUIRED = ["pydantic"]
+MISSING = []
+for lib in REQUIRED:
+    if importlib.util.find_spec(lib) is None:
+        MISSING.append(lib)
+
+if MISSING:
+    print(f"MISSING DEPENDENCIES: {' '.join(MISSING)}")
+    print("Please run: pip install pydantic")
+
+import datetime
+import json
+import logging
+import uuid
+import os
+from pathlib import Path
+from typing import Any, Callable, Dict, List, Optional
+
+from pydantic import BaseModel, Field
+from microservice_std_lib import service_metadata, service_endpoint
+from base_service import BaseService
+
+# ==============================================================================
+# CONFIGURATION
+# ==============================================================================
+# Stage-1 Sessions (lightweight, filesystem-backed):
+# - Each session writes to its own JSONL log under ./sessions/
+# - A simple sessions index file tracks available sessions
+SESSIONS_DIR = Path("sessions")
+SESSIONS_INDEX_FILE = SESSIONS_DIR / "sessions_index.json"
+DEFAULT_SESSION_NAME = "New Session"
+
+# Backward-compat: if a legacy path is provided, we still support it,
+# but by default we write to session logs.
+DEFAULT_MEMORY_FILE = Path("working_memory.jsonl")
+
+FLUSH_THRESHOLD = 5  # Number of turns before summarizing to Long Term Memory
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(message)s')
+log = logging.getLogger("CognitiveMem")
+
+# ==============================================================================
+# DATA MODELS
+# ==============================================================================
+class MemoryEntry(BaseModel):
+    """Atomic unit of memory."""
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    timestamp: datetime.datetime = Field(default_factory=datetime.datetime.utcnow)
+    role: str  # 'user', 'assistant', 'system', 'tool'
+    content: str
+    metadata: Dict[str, Any] = Field(default_factory=dict)
+
+# ==============================================================================
+# SERVICE DEFINITION
+# ==============================================================================
+@service_metadata(
+    name="CognitiveMemory",
+    version="1.0.0",
+    description="Manages Short-Term (Working) Memory and orchestrates flushing to Long-Term Memory.",
+    tags=["memory", "history", "context"],
+    capabilities=["filesystem:read", "filesystem:write"],
+    dependencies=["pydantic"],
+    side_effects=["filesystem:write"]
+)
+class CognitiveMemoryMS(BaseService):
+    """
+    The Hippocampus: Manages Short-Term (Working) Memory and orchestrates 
+    flushing to Long-Term Memory (Vector Store).
+    """
+
+    def __init__(self, config: Optional[Dict[str, Any]] = None):
+        super().__init__("CognitiveMemory")
+        self.config = config or {}
+
+        # Long-term flush hooks (optional)
+        self.summarizer = self.config.get("summarizer_func")
+        self.ingestor = self.config.get("long_term_ingest_func")
+
+        # --- Session State ---
+        self.sessions_dir = Path(self.config.get("sessions_dir", SESSIONS_DIR))
+        self.sessions_index_file = Path(self.config.get("sessions_index_file", SESSIONS_INDEX_FILE))
+        self.active_session_id: Optional[str] = None
+        self.active_session_name: str = DEFAULT_SESSION_NAME
+
+        # Legacy support: allow overriding persistence_path, but default is session-backed.
+        self.file_path = Path(self.config.get("persistence_path", DEFAULT_MEMORY_FILE))
+
+        # Ensure storage exists
+        self._ensure_sessions_storage()
+
+        # Working memory must exist BEFORE any session operations (new_session/set_active_session)
+        # because those methods clear/reload it.
+        self.working_memory: List[MemoryEntry] = []
+
+        # Load session index and start a new session unless a session_id was provided.
+        requested_session_id = self.config.get("active_session_id")
+        if requested_session_id:
+            self.set_active_session(str(requested_session_id))
+        else:
+            self.new_session(DEFAULT_SESSION_NAME)
+
+        # Load whatever is currently active (new session will usually be empty)
+        self._load_working_memory()
+
+    # ==========================================================================
+    # WORKING MEMORY OPERATIONS
+    # ==========================================================================
+
+    @service_endpoint(
+        inputs={"role": "str", "content": "str", "metadata": "Dict"},
+        outputs={"entry": "MemoryEntry"},
+        description="Adds an item to working memory and persists it.",
+        tags=["memory", "write"],
+        side_effects=["filesystem:write"]
+    )
+    def add_entry(self, role: str, content: str, metadata: Dict = None) -> MemoryEntry:
+        """Adds an item to working memory and persists it."""
+        meta = metadata or {}
+        # Hard-scope every entry to the active session
+        if self.active_session_id:
+            meta.setdefault("session_id", self.active_session_id)
+            meta.setdefault("session_name", self.active_session_name)
+
+        entry = MemoryEntry(role=role, content=content, metadata=meta)
+        self.working_memory.append(entry)
+        self._append_to_file(entry)
+        log.info(f"Added memory: [{role}] {content[:30]}...")
+        return entry
+
+    # ======================================================================
+    # SESSION OPERATIONS (Stage-1, filesystem-backed)
+    # ======================================================================
+
+    @service_endpoint(
+        inputs={"name": "str"},
+        outputs={"session_id": "str"},
+        description="Creates a new session and sets it active.",
+        tags=["memory", "session", "write"],
+        side_effects=["filesystem:write"]
+    )
+    def new_session(self, name: str = DEFAULT_SESSION_NAME) -> str:
+        session_id = str(uuid.uuid4())
+        self.active_session_id = session_id
+        self.active_session_name = name or DEFAULT_SESSION_NAME
+
+        # Point persistence to this session file
+        self.file_path = self._session_file_path(session_id)
+
+        # Update index
+        index = self._load_sessions_index()
+        now = datetime.datetime.utcnow().isoformat()
+        index[session_id] = {
+            "id": session_id,
+            "name": self.active_session_name,
+            "created_at": now,
+            "last_active_at": now
+        }
+        self._save_sessions_index(index)
+
+        # Clear in-RAM working memory and create file if needed
+        self.working_memory.clear()
+        self.file_path.parent.mkdir(parents=True, exist_ok=True)
+        if not self.file_path.exists():
+            self.file_path.write_text("", encoding="utf-8")
+
+        return session_id
+
+    @service_endpoint(
+        inputs={},
+        outputs={"sessions": "Dict"},
+        description="Lists known sessions from the sessions index.",
+        tags=["memory", "session", "read"],
+        side_effects=["filesystem:read"]
+    )
+    def list_sessions(self) -> Dict[str, Any]:
+        return self._load_sessions_index()
+
+    @service_endpoint(
+        inputs={"session_id": "str"},
+        outputs={"active_session_id": "str"},
+        description="Sets the active session and reloads working memory from that session log.",
+        tags=["memory", "session", "write"],
+        side_effects=["filesystem:read", "filesystem:write"]
+    )
+    def set_active_session(self, session_id: str) -> str:
+        session_id = str(session_id)
+        index = self._load_sessions_index()
+        if session_id not in index:
+            # If unknown, create a minimal record and empty log.
+            now = datetime.datetime.utcnow().isoformat()
+            index[session_id] = {
+                "id": session_id,
+                "name": DEFAULT_SESSION_NAME,
+                "created_at": now,
+                "last_active_at": now
+            }
+            self._save_sessions_index(index)
+
+        self.active_session_id = session_id
+        self.active_session_name = index[session_id].get("name", DEFAULT_SESSION_NAME)
+        self.file_path = self._session_file_path(session_id)
+
+        # Touch and reload
+        self.file_path.parent.mkdir(parents=True, exist_ok=True)
+        if not self.file_path.exists():
+            self.file_path.write_text("", encoding="utf-8")
+
+        index[session_id]["last_active_at"] = datetime.datetime.utcnow().isoformat()
+        self._save_sessions_index(index)
+
+        self.working_memory.clear()
+        self._load_working_memory()
+        return session_id
+
+    @service_endpoint(
+        inputs={},
+        outputs={"session_id": "str", "session_name": "str"},
+        description="Returns the currently active session.",
+        tags=["memory", "session", "read"],
+        side_effects=[]
+    )
+    def get_active_session(self) -> Dict[str, str]:
+        return {
+            "session_id": self.active_session_id or "",
+            "session_name": self.active_session_name or ""
+        }
+
+    @service_endpoint(
+        inputs={"count": "int"},
+        outputs={"removed": "int"},
+        description="Removes the last N entries from the active session (stage-1 forget).",
+        tags=["memory", "session", "forget"],
+        side_effects=["filesystem:write"]
+    )
+    def forget_last_entries(self, count: int = 2) -> int:
+        if count <= 0:
+            return 0
+        if not self.working_memory:
+            return 0
+
+        removed = min(count, len(self.working_memory))
+        # Trim in-RAM
+        self.working_memory = self.working_memory[:-removed]
+        # Rewrite session file
+        self._rewrite_session_file()
+        return removed
+
+    @service_endpoint(
+        inputs={"limit": "int"},
+        outputs={"context": "str"},
+        description="Returns the most recent conversation history formatted for an LLM.",
+        tags=["memory", "read", "llm"],
+        side_effects=["filesystem:read"]
+    )
+    def get_context(self, limit: int = 10) -> str:
+        """
+        Returns the most recent conversation history formatted for an LLM.
+        """
+        recent = self.working_memory[-limit:]
+        return "\n".join([f"{e.role.upper()}: {e.content}" for e in recent])
+
+    def get_full_history(self) -> List[Dict]:
+        """Returns the raw list of memory objects."""
+        return [e.dict() for e in self.working_memory]
+
+    # ==========================================================================
+    # CONSOLIDATION (The "Sleep" Cycle)
+    # ==========================================================================
+
+    @service_endpoint(
+        inputs={},
+        outputs={},
+        description="Signals that a turn is complete; checks if memory flush is needed.",
+        tags=["memory", "maintenance"],
+        side_effects=["filesystem:write"]
+    )
+    def commit_turn(self):
+        """
+        Signal that a "Turn" (User + AI response) is complete.
+        Checks if memory is full and triggers a flush if needed.
+        """
+        if len(self.working_memory) >= FLUSH_THRESHOLD:
+            self._flush_to_long_term()
+
+    def _flush_to_long_term(self):
+        """
+        Compresses working memory into a summary and moves it to Long-Term storage.
+        """
+        if not self.summarizer or not self.ingestor:
+            log.warning("Flush triggered but Summarizer/Ingestor not configured. Skipping.")
+            return
+
+        log.info("🌀 Flushing Working Memory to Long-Term Storage...")
+        
+        # 1. Combine Text
+        full_text = "\n".join([f"{e.role}: {e.content}" for e in self.working_memory])
+        
+        # 2. Summarize
+        try:
+            summary = self.summarizer(full_text)
+            log.info(f"Summary generated: {summary[:50]}...")
+        except Exception as e:
+            log.error(f"Summarization failed: {e}")
+            return
+
+        # 3. Ingest into Vector DB
+        try:
+            meta = {
+                "source": "cognitive_memory_flush", 
+                "date": datetime.datetime.utcnow().isoformat(),
+                "original_entry_count": len(self.working_memory)
+            }
+            self.ingestor(summary, meta)
+            log.info("✅ Saved to Long-Term Memory.")
+        except Exception as e:
+            log.error(f"Ingestion failed: {e}")
+            return
+
+        # 4. Clear Working Memory
+        # For this pattern, we clear the 'Active' RAM, and rotate the log file.
+        self.working_memory.clear()
+        self._rotate_log_file()
+
+    # ==========================================================================
+    # PERSISTENCE HELPERS
+    # ==========================================================================
+
+    def _ensure_sessions_storage(self):
+        """Ensures the sessions directory and sessions index exist."""
+        self.sessions_dir.mkdir(parents=True, exist_ok=True)
+        if not self.sessions_index_file.exists():
+            self.sessions_index_file.write_text("{}", encoding="utf-8")
+
+    def _load_sessions_index(self) -> Dict[str, Any]:
+        try:
+            raw = self.sessions_index_file.read_text(encoding="utf-8").strip() or "{}"
+            data = json.loads(raw)
+            if isinstance(data, dict):
+                return data
+            return {}
+        except Exception:
+            return {}
+
+    def _save_sessions_index(self, index: Dict[str, Any]):
+        try:
+            self.sessions_index_file.write_text(json.dumps(index, indent=2), encoding="utf-8")
+        except Exception as e:
+            log.error(f"Failed to save sessions index: {e}")
+
+    def _session_file_path(self, session_id: str) -> Path:
+        return self.sessions_dir / f"session_{session_id}.jsonl"
+
+    def _rewrite_session_file(self):
+        """Rewrites the active session JSONL file from in-RAM working memory."""
+        try:
+            self.file_path.parent.mkdir(parents=True, exist_ok=True)
+            with open(self.file_path, "w", encoding="utf-8") as f:
+                for e in self.working_memory:
+                    f.write(e.json() + "\n")
+        except Exception as e:
+            log.error(f"Failed to rewrite session file: {e}")
+
+    def _load_working_memory(self):
+        """Rehydrates memory from the JSONL file."""
+        if not self.file_path.exists():
+            return
+
+        try:
+            with open(self.file_path, 'r', encoding='utf-8') as f:
+                for line in f:
+                    if line.strip():
+                        self.working_memory.append(MemoryEntry.parse_raw(line))
+            log.info(f"Loaded {len(self.working_memory)} items from {self.file_path}")
+        except Exception as e:
+            log.error(f"Corrupt memory file: {e}")
+
+    def _append_to_file(self, entry: MemoryEntry):
+        """Appends a single entry to the JSONL log."""
+        with open(self.file_path, 'a', encoding='utf-8') as f:
+            f.write(entry.json() + "\n")
+
+    def _rotate_log_file(self):
+        """Renames the current log to an archive timestamp."""
+        if self.file_path.exists():
+            timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+            archive_name = self.file_path.with_name(f"memory_archive_{timestamp}.jsonl")
+            self.file_path.rename(archive_name)
+            log.info(f"Rotated memory log to {archive_name}")
+
+
+# ==============================================================================
+# SELF-TEST / RUNNER
+# ==============================================================================
+if __name__ == "__main__":
+    # 1. Setup Mock Dependencies
+    def mock_summarizer(text):
+        return f"SUMMARY OF {len(text)} CHARS: The user and AI discussed AI architecture."
+
+    def mock_ingest(text, metadata):
+        print(f"\n[VectorDB] Indexing: '{text}'\n[VectorDB] Meta: {metadata}")
+
+    # 2. Initialize
+    print("--- Initializing Cognitive Memory ---")
+    mem = CognitiveMemoryMS({
+        "summarizer_func": mock_summarizer,
+        "long_term_ingest_func": mock_ingest
+    })
+    print(f"Service ready: {mem}")
+
+    # 3. Simulate Conversation
+    print("\n--- Simulating Conversation ---")
+    mem.add_entry("user", "Hello, who are you?")
+    mem.add_entry("assistant", "I am a Cognitive Agent.")
+    mem.add_entry("user", "What is your memory capacity?")
+    mem.add_entry("assistant", "I have a tiered memory system.")
+    mem.add_entry("user", "That sounds complex.")
+
+    print(f"\nCurrent Context:\n{mem.get_context()}")
+
+    # 4. Trigger Flush (Threshold is 5)
+    print("\n--- Triggering Memory Flush ---")
+    mem.commit_turn() # Should trigger flush because count is 5
+
+    print(f"\nWorking Memory after flush: {len(mem.working_memory)} items")
+
+    # Cleanup
+    if Path("working_memory.jsonl").exists():
+        os.remove("working_memory.jsonl")
+    # Clean up archives if any were made
+    for p in Path(".").glob("memory_archive_*.jsonl"):
+        os.remove(p)
+
+
+--------------------------------------------------------------------------------
+FILE: src\microservices\_ContentExtractorMS.py
+--------------------------------------------------------------------------------
+"""
+SERVICE_NAME: _ContentExtractorMS
+ENTRY_POINT: _ContentExtractorMS.py
+DEPENDENCIES: None
+"""
+
+import io
+import re
+import time
+from typing import Dict, Any, Optional
+from microservice_std_lib import service_metadata, service_endpoint
+
+# Configuration for the Graph Mapper
+@service_metadata(
+    name="ContentExtractorMS",
+    version="1.0.0",
+    description="The Decoder: A specialist service for extracting clean text from complex formats like PDF and HTML.",
+    tags=["utility", "extraction", "nlp"],
+    capabilities=["pdf-to-text", "html-cleaning"],
+    dependencies=["pypdf", "beautifulsoup4"],
+    side_effects=["filesystem:read"]
+)
+class ContentExtractorMS:
+    """
+    The Decoder.
+    A standalone utility microservice that separates the concern of 
+    document parsing from ingestion logic.
+    """
+    
+    def __init__(self):
+        self.start_time = time.time()
+        
+        # Lazy load imports to prevent service crash if dependencies are missing
+        self._pdf_ready = False
+        try:
+            from pypdf import PdfReader
+            self._pdf_ready = True
+        except ImportError:
+            pass
+            
+        self._html_ready = False
+        try:
+            from bs4 import BeautifulSoup
+            self._html_ready = True
+        except ImportError:
+            pass
+
+    @service_endpoint(
+        inputs={},
+        outputs={"status": "str", "pdf_support": "bool", "html_support": "bool"},
+        description="Health check to verify which extraction backends are installed.",
+        tags=["diagnostic", "health"]
+    )
+    def get_health(self) -> Dict[str, Any]:
+        """Returns the operational status and library availability."""
+        return {
+            "status": "online",
+            "uptime": time.time() - self.start_time,
+            "pdf_support": self._pdf_ready,
+            "html_support": self._html_ready
+        }
+
+    @service_endpoint(
+        inputs={"blob": "bytes", "mime_type": "str"},
+        outputs={"text": "str"},
+        description="Unified entry point for text extraction. Routes to the correct parser based on mime_type.",
+        tags=["processing", "extraction"]
+    )
+    def extract_text(self, blob: bytes, mime_type: str) -> str:
+        """
+        Main routing logic for extraction. 
+         logic is internalized here.
+        """
+        if "pdf" in mime_type.lower():
+            return self._extract_pdf(blob)
+        elif "html" in mime_type.lower():
+            # Decode bytes to string for HTML parser
+            try:
+                html_content = blob.decode('utf-8', errors='ignore')
+                return self._extract_html(html_content)
+            except:
+                return ""
+        return ""
+
+    def _extract_pdf(self, file_bytes: bytes) -> str:
+        """Extracts text from a PDF blob using pypdf. [cite: 96-97]"""
+        if not self._pdf_ready:
+            return ""
+        
+        from pypdf import PdfReader
+        text_content = []
+        try:
+            stream = io.BytesIO(file_bytes)
+            reader = PdfReader(stream)
+            for page in reader.pages:
+                extracted = page.extract_text()
+                if extracted:
+                    text_content.append(extracted)
+            return "\n".join(text_content)
+        except Exception as e:
+            return f"PDF Extraction Error: {e}"
+
+    def _extract_html(self, html_content: str) -> str:
+        """Cleans HTML to raw text using BeautifulSoup. [cite: 98-99]"""
+        if not self._html_ready:
+            return self._strip_tags_regex(html_content)
+        
+        from bs4 import BeautifulSoup
+        try:
+            soup = BeautifulSoup(html_content, 'html.parser')
+            for script in soup(["script", "style", "meta", "noscript"]):
+                script.decompose()
+                
+            text = soup.get_text()
+            lines = (line.strip() for line in text.splitlines())
+            chunks = (phrase.strip() for line in lines for phrase in line.split("  "))
+            return '\n'.join(chunk for chunk in chunks if chunk)
+        except Exception:
+            return self._strip_tags_regex(html_content)
+
+    def _strip_tags_regex(self, html: str) -> str:
+        """Fallback if BS4 is missing. [cite: 100]"""
+        clean = re.compile('<.*?>')
+        return re.sub(clean, '', html)
+
+if __name__ == "__main__":
+    svc = ContentExtractorMS()
+    print("Service ready:", svc._service_info["name"])
+    print("Health:", svc.get_health())
+
+--------------------------------------------------------------------------------
+FILE: src\microservices\_ContextAggregatorMS.py
+--------------------------------------------------------------------------------
+"""
+SERVICE_NAME: _ContextAggregatorMS
+ENTRY_POINT: _ContextAggregatorMS.py
+DEPENDENCIES: None
+"""
+
+import os
+import fnmatch
+import datetime
+import logging
+from pathlib import Path
+from typing import Set, Optional, Dict, Any
+from microservice_std_lib import service_metadata, service_endpoint
+
+# ==============================================================================
+# USER CONFIGURATION: DEFAULTS
+# ==============================================================================
+# Extensions known to be binary/non-text (Images, Archives, Executables)
+DEFAULT_BINARY_EXTENSIONS = {
+    ".tar.gz", ".gz", ".zip", ".rar", ".7z", ".bz2", ".xz", ".tgz",
+    ".png", ".jpg", ".jpeg", ".gif", ".bmp", ".ico", ".webp", ".tif", ".tiff",
+    ".mp3", ".wav", ".ogg", ".flac", ".mp4", ".mkv", ".avi", ".mov", ".webm",
+    ".pdf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx", ".exe", ".dll", ".so",
+    ".db", ".sqlite", ".mdb", ".pyc", ".pyo", ".class", ".jar", ".wasm"
+}
+
+# Folders to ignore by default
+DEFAULT_IGNORE_DIRS = {
+    "node_modules", ".git", "__pycache__", ".venv", ".env", 
+    "dist", "build", "coverage", ".idea", ".vscode"
+}
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(message)s')
+log = logging.getLogger("ContextAggregator")
+# ==============================================================================
+
+@service_metadata(
+    name="ContextAggregator",
+    version="1.0.0",
+    description="Flattens a project folder into a single readable text file.",
+    tags=["filesystem", "context", "compilation"],
+    capabilities=["filesystem:read", "filesystem:write"],
+    dependencies=["os", "fnmatch", "datetime"],
+    side_effects=["filesystem:read", "filesystem:write"]
+)
+class ContextAggregatorMS:
+    """
+    The Context Builder: Flattens a project folder into a single readable text file.
+    """
+
+    def __init__(self, config: Optional[Dict[str, Any]] = None):
+        self.config = config or {}
+        max_file_size_mb = self.config.get("max_file_size_mb", 1)
+        self.max_file_size_bytes = max_file_size_mb * 1024 * 1024
+
+    @service_endpoint(
+        inputs={"root_path": "str", "output_file": "str", "extra_exclusions": "Set[str]", "use_default_exclusions": "bool"},
+        outputs={"file_count": "int"},
+        description="Aggregates project files into a single text dump.",
+        tags=["filesystem", "dump"],
+        side_effects=["filesystem:read", "filesystem:write"]
+    )
+    def aggregate(self, 
+                  root_path: str, 
+                  output_file: str, 
+                  extra_exclusions: Optional[Set[str]] = None,
+                  use_default_exclusions: bool = True) -> int:
+        
+        project_root = Path(root_path).resolve()
+        out_path = Path(output_file).resolve()
+        
+        # Build Exclusions
+        exclusions = set()
+        if use_default_exclusions:
+            exclusions.update(DEFAULT_IGNORE_DIRS)
+        if extra_exclusions:
+            exclusions.update(extra_exclusions)
+
+        # Build Binary List
+        binary_exts = DEFAULT_BINARY_EXTENSIONS.copy()
+        
+        file_count = 0
+        timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+        try:
+            with open(out_path, "w", encoding="utf-8") as out_f:
+                out_f.write(f"File Dump from Project: {project_root.name}\nGenerated: {timestamp}\n{'='*60}\n\n")
+
+                for root, dirs, files in os.walk(project_root):
+                    # In-place filtering of directories
+                    dirs[:] = [d for d in dirs if d not in exclusions]
+                    
+                    for filename in files:
+                        if self._should_exclude(filename, exclusions): continue
+
+                        file_path = Path(root) / filename
+                        if file_path.resolve() == out_path: continue
+
+                        if self._is_safe_to_dump(file_path, binary_exts):
+                            self._write_file_content(out_f, file_path, project_root)
+                            file_count += 1                            
+        except IOError as e:
+            log.error(f"Error writing dump: {e}")
+            
+        return file_count
+
+    def _should_exclude(self, filename: str, exclusions: Set[str]) -> bool:
+        return any(fnmatch.fnmatch(filename, pattern) for pattern in exclusions)
+
+    def _is_safe_to_dump(self, file_path: Path, binary_exts: Set[str]) -> bool:
+        if "".join(file_path.suffixes).lower() in binary_exts: return False
+        try:
+            if file_path.stat().st_size > self.max_file_size_bytes: return False
+            with open(file_path, 'rb') as f:
+                if b'\0' in f.read(1024): return False
+        except (IOError, OSError): return False
+        return True
+
+    def _write_file_content(self, out_f, file_path: Path, project_root: Path):
+        relative_path = file_path.relative_to(project_root)
+        header = f"\n{'-'*20} FILE: {relative_path} {'-'*20}\n"
+        try:
+            with open(file_path, "r", encoding="utf-8", errors="ignore") as in_f:
+                out_f.write(header + in_f.read() + f"\n{'-'*60}\n")
+        except Exception as e:
+            out_f.write(f"\n[Error reading file: {e}]\n")
+
+if __name__ == "__main__":
+    svc = ContextAggregatorMS()
+    print("Service ready:", svc)
+--------------------------------------------------------------------------------
+FILE: src\microservices\_IngestEngineMS.py
+--------------------------------------------------------------------------------
+"""
+SERVICE_NAME: _IngestEngineMS
+ENTRY_POINT: _IngestEngineMS.py
+DEPENDENCIES: requests
+"""
+
+# --- RUNTIME DEPENDENCY CHECK ---
+import importlib.util
+import sys
+
+REQUIRED = ["requests"]
+MISSING = []
+for lib in REQUIRED:
+    if importlib.util.find_spec(lib) is None:
+        MISSING.append(lib)
+
+if MISSING:
+    print(f"MISSING DEPENDENCIES: {' '.join(MISSING)}")
+    print("Please run: pip install requests")
+
+import json
+import os
+import re
+import sqlite3
+import time
+from dataclasses import dataclass
+from typing import Any, Dict, Generator, List, Optional
+
+import requests
+from microservice_std_lib import service_metadata, service_endpoint
+from base_service import BaseService
+
+# ==============================================================================
+# CONFIGURATION
+# ==============================================================================
+OLLAMA_API_URL = "http://localhost:11434/api"
+
+@dataclass
+class IngestStatus:
+    current_file: str
+    progress_percent: float
+    processed_files: int
+    total_files: int
+    log_message: str
+    thought_frame: Optional[Dict] = None
+
+# ==============================================================================
+# HELPER: SYNAPSE WEAVER
+# ==============================================================================
+class SynapseWeaver:
+    """
+    Parses source code to extract import dependencies.
+    Used to generate the 'DEPENDS_ON' edges in the Knowledge Graph.
+    """
+    def __init__(self):
+        # Python: "from x import y", "import x"
+        self.py_pattern = re.compile(r'^\s*(?:from|import)\s+([\w\.]+)')
+        # JS/TS: "import ... from 'x'", "require('x')"
+        self.js_pattern = re.compile(r'(?:import\s+.*?from\s+[\'"]|require\([\'"])([\.\/\w\-_]+)[\'"]')
+
+    def extract_dependencies(self, content: str, file_path: str) -> List[str]:
+        dependencies = []
+        ext = os.path.splitext(file_path)[1].lower()
+        
+        lines = content.split('\n')
+        for line in lines:
+            match = None
+            if ext == '.py':
+                match = self.py_pattern.match(line)
+            elif ext in ['.js', '.ts', '.tsx', '.jsx']:
+                match = self.js_pattern.search(line)
+            
+            if match:
+                # Clean up the module name (e.g., "backend.database" -> "database")
+                raw_dep = match.group(1)
+                clean_dep = raw_dep.split('.')[-1].split('/')[-1]
+                if clean_dep not in dependencies:
+                    dependencies.append(clean_dep)
+        
+        return dependencies
+
+# ==============================================================================
+# SERVICE DEFINITION
+# ==============================================================================
+@service_metadata(
+    name="IngestEngine",
+    version="1.0.0",
+    description="Reads files, chunks text, fetches embeddings, and weaves graph edges.",
+    tags=["ingest", "rag", "parsing", "embedding"],
+    capabilities=["filesystem:read", "network:outbound", "db:sqlite"],
+    dependencies=["requests", "sqlite3"],
+    side_effects=["db:write", "network:outbound"]
+)
+class IngestEngineMS(BaseService):
+    """
+    The Heavy Lifter: Reads files, chunks text, fetches embeddings,
+    populates the Graph Nodes, and weaves Graph Edges.
+    """
+    
+    def __init__(self, config: Optional[Dict[str, Any]] = None):
+        super().__init__("IngestEngine")
+        self.config = config or {}
+        self.db_path = self.config.get("db_path", "knowledge.db")
+        self.stop_signal = False
+        self.weaver = SynapseWeaver()
+        self._init_db()
+
+    def _init_db(self):
+        """Ensures the target database has the required schema."""
+        conn = sqlite3.connect(self.db_path)
+        conn.execute("CREATE TABLE IF NOT EXISTS files (id INTEGER PRIMARY KEY, path TEXT, last_updated REAL)")
+        conn.execute("CREATE TABLE IF NOT EXISTS chunks (id INTEGER PRIMARY KEY, file_id INT, chunk_index INT, content TEXT, embedding BLOB)")
+        conn.execute("CREATE TABLE IF NOT EXISTS graph_nodes (id TEXT PRIMARY KEY, type TEXT, label TEXT, data_json TEXT)")
+        conn.execute("CREATE TABLE IF NOT EXISTS graph_edges (source TEXT, target TEXT, weight REAL)")
+        conn.close()
+
+    def abort(self):
+        self.stop_signal = True
+
+    def check_ollama_connection(self) -> bool:
+        try:
+            requests.get(f"{OLLAMA_API_URL}/tags", timeout=2)
+            return True
+        except:
+            return False
+
+    def get_available_models(self) -> List[str]:
+        try:
+            res = requests.get(f"{OLLAMA_API_URL}/tags")
+            if res.status_code == 200:
+                data = res.json()
+                return [m['name'] for m in data.get('models', [])]
+        except:
+            pass
+        return []
+
+    @service_endpoint(
+        inputs={"file_paths": "List[str]", "model_name": "str"},
+        outputs={"status": "IngestStatus"},
+        description="Processes a list of files, ingesting them into the knowledge graph.",
+        tags=["ingest", "processing"],
+        mode="generator",
+        side_effects=["db:write", "network:outbound"]
+    )
+    def process_files(self, file_paths: List[str], model_name: str = "none") -> Generator[IngestStatus, None, None]:
+        total = len(file_paths)
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        
+        # Optimization settings
+        cursor.execute("PRAGMA synchronous = OFF")
+        cursor.execute("PRAGMA journal_mode = MEMORY")
+
+        # Memory for graph weaving (Node Name -> Node ID)
+        node_registry = {}
+        file_contents = {} # Cache content for the weaving pass
+
+        # --- PHASE 1: INGESTION (Files, Chunks, Nodes) ---
+        for idx, file_path in enumerate(file_paths):
+            if self.stop_signal:
+                yield IngestStatus(file_path, 0, idx, total, "Ingestion Aborted.")
+                break
+
+            filename = os.path.basename(file_path)
+
+            # 1. Read
+            try:
+                with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+                    content = f.read()
+                file_contents[filename] = content # Cache for Phase 2
+            except Exception as e:
+                yield IngestStatus(file_path, (idx/total)*100, idx, total, f"Error: {e}")
+                continue
+
+            # 2. Track File
+            try:
+                cursor.execute("INSERT OR REPLACE INTO files (path, last_updated) VALUES (?, ?)", 
+                              (file_path, time.time()))
+                file_id = cursor.lastrowid
+            except sqlite3.Error:
+                continue
+
+            # 3. Create Graph Node (for Visualization)
+            # We use the filename as the unique ID for the graph to make linking easier
+            cursor.execute("""
+                INSERT OR REPLACE INTO graph_nodes (id, type, label, data_json)
+                VALUES (?, ?, ?, ?)
+            """, (filename, 'file', filename, json.dumps({"path": file_path})))
+            
+            node_registry[filename] = filename
+
+            # 4. Chunking & Embedding
+            chunks = self._chunk_text(content)
+            
+            for i, chunk_text in enumerate(chunks):
+                if self.stop_signal: break
+                
+                embedding = None
+                if model_name != "none":
+                    embedding = self._get_embedding(model_name, chunk_text)
+                
+                emb_blob = json.dumps(embedding).encode('utf-8') if embedding else None
+                
+                cursor.execute("""
+                    INSERT INTO chunks (file_id, chunk_index, content, embedding)
+                    VALUES (?, ?, ?, ?)
+                """, (file_id, i, chunk_text, emb_blob))
+
+                # Visual Feedback
+                thought_frame = {
+                    "id": f"{file_id}_{i}",
+                    "file": filename,
+                    "chunk_index": i,
+                    "content": chunk_text,
+                    "vector_preview": embedding[:20] if embedding else [],
+                    "concept_color": "#007ACC"
+                }
+                
+                yield IngestStatus(
+                    current_file=filename,
+                    progress_percent=((idx + (i/len(chunks))) / total) * 100,
+                    processed_files=idx,
+                    total_files=total,
+                    log_message=f"Processing {filename}...",
+                    thought_frame=thought_frame
+                )
+
+            # Checkpoint per file
+            conn.commit()
+
+        # --- PHASE 2: WEAVING (Edges) ---
+        yield IngestStatus("Graph", 100, total, total, "Weaving Knowledge Graph...")
+        
+        edge_count = 0
+        for filename, content in file_contents.items():
+            if self.stop_signal: break
+            
+            # Find imports
+            deps = self.weaver.extract_dependencies(content, filename)
+            
+            for dep in deps:
+                # Naive matching: if 'database' is imported, look for 'database.py' or 'database.ts'
+                # in our registry.
+                target_id = None
+                for potential_match in node_registry.keys():
+                    if potential_match.startswith(dep + '.') or potential_match == dep:
+                        target_id = potential_match
+                        break
+                
+                if target_id and target_id != filename:
+                    try:
+                        cursor.execute("""
+                            INSERT OR IGNORE INTO graph_edges (source, target, weight)
+                            VALUES (?, ?, 1.0)
+                        """, (filename, target_id))
+                        edge_count += 1
+                    except:
+                        pass
+
+        conn.commit()
+        conn.close()
+
+        yield IngestStatus(
+            current_file="Complete",
+            progress_percent=100,
+            processed_files=total,
+            total_files=total,
+            log_message=f"Ingestion Complete. Created {edge_count} dependency edges."
+        )
+
+    # --- Internal Helpers ---
+
+    def _chunk_text(self, text: str, chunk_size: int = 1000, overlap: int = 100) -> List[str]:
+        if len(text) < chunk_size: return [text]
+        chunks = []
+        start = 0
+        while start < len(text):
+            end = start + chunk_size
+            chunks.append(text[start:end])
+            start += (chunk_size - overlap)
+        return chunks
+
+    def _get_embedding(self, model: str, text: str) -> Optional[List[float]]:
+        try:
+            res = requests.post(
+                f"{OLLAMA_API_URL}/embeddings",
+                json={"model": model, "prompt": text},
+                timeout=30
+            )
+            if res.status_code == 200:
+                return res.json().get("embedding")
+        except:
+            return None
+
+# ==============================================================================
+# SELF-TEST / RUNNER
+# ==============================================================================
+if __name__ == "__main__":
+    TEST_DB = "test_ingest_v2.db"
+    
+    # Init Engine (Schema created automatically in __init__)
+    engine = IngestEngineMS({"db_path": TEST_DB})
+    print(f"Service Ready: {engine}")
+
+    # Self-ingest to test dependency parsing
+    # Note: Ensure this file actually exists in the run directory or change filename
+    target_file = "__IngestEngineMS.py"
+    if not os.path.exists(target_file):
+        # Create a dummy file if running in a temp environment without self
+        with open(target_file, "w") as f:
+            f.write("import os\nimport json\nprint('Hello World')")
+
+    print(f"Running Ingest on {target_file}...")
+    
+    files = [target_file] 
+    for status in engine.process_files(files, "none"):
+        print(f"[{status.progress_percent:.0f}%] {status.log_message}")
+    
+    # Verify Edges
+    conn = sqlite3.connect(TEST_DB)
+    edges = conn.execute("SELECT * FROM graph_edges").fetchall()
+    nodes = conn.execute("SELECT * FROM graph_nodes").fetchall()
+    print(f"\nResult: {len(nodes)} Nodes, {len(edges)} Edges.")
+    conn.close()
+    
+    if os.path.exists(TEST_DB):
+        os.remove(TEST_DB)
+    if os.path.exists(target_file) and "Hello World" in open(target_file).read():
+        os.remove(target_file)
+--------------------------------------------------------------------------------
+FILE: src\microservices\_NeuralServiceMS.py
+--------------------------------------------------------------------------------
+import requests
+import json
+import concurrent.futures
+import logging
+from typing import Optional, Dict, Any, List
+
+from microservice_std_lib import service_metadata, service_endpoint
+
+# ==============================================================================
+# CONFIGURATION
+# ==============================================================================
+
+OLLAMA_API_URL = "http://localhost:11434/api"
+logger = logging.getLogger("NeuralService")
+
+# ==============================================================================
+# MICROSERVICE CLASS
+# ==============================================================================
+
+@service_metadata(
+    name="NeuralService",
+    version="1.0.0",
+    description="The Brain Interface: Orchestrates local AI operations via Ollama.",
+    tags=["ai", "neural", "inference", "ollama"],
+    capabilities=["text-generation", "embeddings", "parallel-processing"]
+)
+class NeuralServiceMS:
+    """
+    The Brain Interface: Orchestrates local AI operations via Ollama for inference and embeddings.
+    """
+    
+    def __init__(self, config: Optional[Dict[str, Any]] = None):
+        self.config = config or {}
+        self.max_workers = self.config.get("max_workers", 4)
+        
+        # Default internal model config
+        self.models = {
+            "fast": "qwen2.5-coder:1.5b-cpu",
+            "smart": "qwen2.5:3b-cpu",
+            "embed": "mxbai-embed-large:latest-cpu"
+        }
+        # Override defaults if provided in initial config
+        if "models" in self.config:
+            self.models.update(self.config["models"])
+
+    @service_endpoint(
+        inputs={"fast_model": "str", "smart_model": "str", "embed_model": "str"},
+        outputs={"status": "str"},
+        description="Updates the active model configurations on the fly.",
+        tags=["config", "write"],
+        side_effects=["config:update"]
+    )
+    def update_models(self, fast_model: str, smart_model: str, embed_model: str) -> Dict[str, str]:
+        """Called by the UI Settings Modal to change models on the fly."""
+        self.models["fast"] = fast_model
+        self.models["smart"] = smart_model
+        self.models["embed"] = embed_model
+        logger.info(f"Models Updated: Fast={fast_model}, Smart={smart_model}")
+        return {"status": "success", "config": str(self.models)}
+
+    @service_endpoint(
+        inputs={},
+        outputs={"models": "List[str]"},
+        description="Fetches a list of available models from the local Ollama instance.",
+        tags=["ai", "read"],
+        side_effects=["network:read"]
+    )
+    def get_available_models(self) -> List[str]:
+        """Fetches list from Ollama for the UI dropdown."""
+        try:
+            res = requests.get(f"{OLLAMA_API_URL}/tags", timeout=2)
+            if res.status_code == 200:
+                return [m['name'] for m in res.json().get('models', [])]
+        except Exception as e:
+            logger.error(f"Failed to fetch models: {e}")
+            return []
+        return []
+
+    @service_endpoint(
+        inputs={},
+        outputs={"is_alive": "bool"},
+        description="Pings Ollama to verify connectivity.",
+        tags=["health", "read"],
+        side_effects=["network:read"]
+    )
+    def check_connection(self) -> bool:
+        """Pings Ollama to see if it's alive."""
+        try:
+            requests.get(f"{OLLAMA_API_URL}/tags", timeout=2)
+            return True
+        except requests.RequestException:
+            logger.error("Ollama connection failed. Is 'ollama serve' running?")
+            return False
+
+    @service_endpoint(
+        inputs={"text": "str"},
+        outputs={"embedding": "list"},
+        description="Generates a vector embedding for the provided text.",
+        tags=["nlp", "vector", "ai"],
+        side_effects=["network:read"]
+    )
+    def get_embedding(self, text: str) -> Optional[List[float]]:
+        """Generates a vector using the configured embedding model."""
+        try:
+            res = requests.post(
+                f"{OLLAMA_API_URL}/embeddings",
+                json={"model": self.models["embed"], "prompt": text},
+                timeout=30
+            )
+            if res.status_code == 200:
+                return res.json().get("embedding")
+        except Exception as e:
+            logger.error(f"Embedding failed: {e}")
+        return None
+
+    @service_endpoint(
+        inputs={"prompt": "str", "tier": "str", "format_json": "bool"},
+        outputs={"response": "str"},
+        description="Requests synchronous text generation from a local LLM.",
+        tags=["llm", "inference"],
+        side_effects=["network:read"]
+    )
+    def request_inference(self, prompt: str, tier: str = "fast", format_json: bool = False) -> str:
+        """
+        Synchronous inference request.
+        tier: 'fast', 'smart', or other keys in self.models
+        """
+        model = self.models.get(tier, self.models["fast"])
+        payload = {
+            "model": model,
+            "prompt": prompt,
+            "stream": False
+        }
+        if format_json:
+            payload["format"] = "json"
+
+        try:
+            res = requests.post(f"{OLLAMA_API_URL}/generate", json=payload, timeout=60)
+            if res.status_code == 200:
+                return res.json().get("response", "").strip()
+        except Exception as e:
+            logger.error(f"Inference ({tier}) failed: {e}")
+        return ""
+
+    def process_parallel(self, items: List[Any], worker_func) -> List[Any]:
+        """
+        Helper to run a function across many items using a ThreadPool.
+        Useful for batch ingestion.
+        Note: Not exposed as an endpoint as it takes a function as an argument.
+        """
+        results = []
+        with concurrent.futures.ThreadPoolExecutor(max_workers=self.max_workers) as executor:
+            # worker_func should take a single item and return a result
+            futures = {executor.submit(worker_func, item): item for item in items}
+            for future in concurrent.futures.as_completed(futures):
+                try:
+                    results.append(future.result())
+                except Exception as e:
+                    logger.error(f"Worker task failed: {e}")
+        
+        return results
+
+
+# --- Independent Test Block ---
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
+    svc = NeuralServiceMS()
+    print("Service ready:", svc)
+    
+    if svc.check_connection():
+        print("Ollama Connection: OK")
+        print(f"Models available: {svc.get_available_models()}")
+        
+        # Simple Inference Test
+        print("Testing Inference (Fast Tier)...")
+        response = svc.request_inference("Why is the sky blue? Answer in 1 sentence.")
+        print(f"Response: {response}")
+    else:
+        print("Ollama Connection: FAILED (Is Ollama running?)")
+--------------------------------------------------------------------------------
+FILE: src\microservices\_RoleManagerMS.py
+--------------------------------------------------------------------------------
+import importlib.util
+import sys
+import sqlite3
+import json
+import uuid
+import logging
+import datetime
+from pathlib import Path
+from typing import List, Optional, Dict, Any
+
+# --- RUNTIME DEPENDENCY CHECK ---
+REQUIRED = ["pydantic"]
+MISSING = []
+
+for lib in REQUIRED:
+    if importlib.util.find_spec(lib) is None:
+        MISSING.append(lib)
+
+if MISSING:
+    print('\n' + '!'*60)
+    print(f'MISSING DEPENDENCIES for _RoleManagerMS:')
+    print(f'Run:  pip install {" ".join(MISSING)}')
+    print('!'*60 + '\n')
+    # Proceeding so the class definition loads, but functionality will break.
+
+from pydantic import BaseModel
+from microservice_std_lib import service_metadata, service_endpoint
+
+# ==============================================================================
+# CONFIGURATION & MODELS
+# ==============================================================================
+
+DB_PATH = Path("roles.db")
+logger = logging.getLogger("RoleManager")
+
+class RoleModel(BaseModel):
+    """Data model representing an Agent Persona."""
+    id: str
+    name: str
+    description: Optional[str] = ""
+    system_prompt: str
+    knowledge_bases: List[str] = []
+    memory_policy: str = "scratchpad" # or 'auto_commit'
+    created_at: datetime.datetime
+
+
+# ==============================================================================
+# MICROSERVICE CLASS
+# ==============================================================================
+
+@service_metadata(
+    name="RoleManager",
+    version="1.0.0",
+    description="Manages Agent Personas (Roles), including System Prompts and Memory Settings.",
+    tags=["roles", "personas", "db"],
+    capabilities=["db:sqlite"]
+)
+class RoleManagerMS:
+    """
+    The Casting Director: Manages Agent Personas (Roles).
+    Persists configuration for System Prompts, Attached KBs, and Memory Settings.
+    """
+
+    def __init__(self, config: Optional[Dict[str, Any]] = None):
+        self.config = config or {}
+        # Allow config to override DB path
+        self.db_path = Path(self.config.get("db_path", DB_PATH))
+        self._init_db()
+
+    def _get_conn(self):
+        conn = sqlite3.connect(self.db_path)
+        conn.row_factory = sqlite3.Row
+        return conn
+
+    def _init_db(self):
+        with self._get_conn() as conn:
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS roles (
+                    id TEXT PRIMARY KEY,
+                    name TEXT UNIQUE NOT NULL,
+                    description TEXT,
+                    system_prompt TEXT NOT NULL,
+                    knowledge_bases_json TEXT,
+                    memory_policy TEXT,
+                    created_at TIMESTAMP
+                )
+            """)
+
+    @service_endpoint(
+        inputs={"name": "str", "system_prompt": "str", "description": "str", "kbs": "List[str]"},
+        outputs={"role": "Dict"},
+        description="Creates a new Agent Persona.",
+        tags=["roles", "create"],
+        side_effects=["db:write"]
+    )
+    def create_role(self, name: str, system_prompt: str, description: str = "", kbs: List[str] = None) -> Dict[str, Any]:
+        """Creates a new Agent Persona."""
+        role_id = str(uuid.uuid4())
+        now = datetime.datetime.utcnow()
+        kbs_json = json.dumps(kbs or [])
+        
+        try:
+            with self._get_conn() as conn:
+                conn.execute(
+                    "INSERT INTO roles (id, name, description, system_prompt, knowledge_bases_json, memory_policy, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                    (role_id, name, description, system_prompt, kbs_json, "scratchpad", now)
+                )
+            logger.info(f"Created Role: {name}")
+            
+            # Return the created object as a dict
+            role = self.get_role(name)
+            return role.dict() if role else {}
+            
+        except sqlite3.IntegrityError:
+            raise ValueError(f"Role '{name}' already exists.")
+
+    @service_endpoint(
+        inputs={"name_or_id": "str"},
+        outputs={"role": "Optional[RoleModel]"},
+        description="Retrieves a role by Name or ID.",
+        tags=["roles", "read"],
+        side_effects=["db:read"]
+    )
+    def get_role(self, name_or_id: str) -> Optional[RoleModel]:
+        """Retrieves a role by Name or ID."""
+        with self._get_conn() as conn:
+            # Try ID first
+            row = conn.execute("SELECT * FROM roles WHERE id = ?", (name_or_id,)).fetchone()
+            if not row:
+                # Try Name
+                row = conn.execute("SELECT * FROM roles WHERE name = ?", (name_or_id,)).fetchone()
+            
+            if not row: return None
+
+            return RoleModel(
+                id=row['id'],
+                name=row['name'],
+                description=row['description'],
+                system_prompt=row['system_prompt'],
+                knowledge_bases=json.loads(row['knowledge_bases_json']),
+                memory_policy=row['memory_policy'],
+                # SQLite usually returns ISO string or similar for timestamps
+                created_at=row['created_at'] 
+            )
+
+    @service_endpoint(
+        inputs={},
+        outputs={"roles": "List[Dict]"},
+        description="Lists all available roles.",
+        tags=["roles", "read"],
+        side_effects=["db:read"]
+    )
+    def list_roles(self) -> List[Dict[str, Any]]:
+        with self._get_conn() as conn:
+            rows = conn.execute("SELECT id, name, description FROM roles").fetchall()
+            return [dict(r) for r in rows]
+
+    @service_endpoint(
+        inputs={"name": "str"},
+        outputs={},
+        description="Deletes a role by name.",
+        tags=["roles", "delete"],
+        side_effects=["db:write"]
+    )
+    def delete_role(self, name: str):
+        with self._get_conn() as conn:
+            conn.execute("DELETE FROM roles WHERE name = ?", (name,))
+        logger.info(f"Deleted Role: {name}")
+
+
+# --- Independent Test Block ---
+if __name__ == "__main__":
+    import os
+    
+    # Use a test DB file
+    test_db = Path("test_roles.db")
+    if test_db.exists(): 
+        os.remove(test_db)
+        
+    logging.basicConfig(level=logging.INFO)
+    
+    mgr = RoleManagerMS({"db_path": test_db})
+    print("Service ready:", mgr)
+    
+    # 1. Create
+    mgr.create_role(
+        name="SeniorDev", 
+        system_prompt="You are a senior Python developer. Prefer Clean Code principles.",
+        description="Expert coding assistant",
+        kbs=["python_docs", "project_repo"]
+    )
+    
+    # 2. Retrieve
+    role = mgr.get_role("SeniorDev")
+    if role:
+        print(f"Role: {role.name}")
+        print(f"Prompt: {role.system_prompt}")
+        print(f"KBs: {role.knowledge_bases}")
+    
+    # Cleanup
+    if test_db.exists(): 
+        os.remove(test_db)
+--------------------------------------------------------------------------------
+FILE: src\microservices\_SearchEngineMS.py
+--------------------------------------------------------------------------------
+import importlib.util
+import sys
+import sqlite3
+import json
+import struct
+import requests
+import os
+import logging
+from typing import List, Dict, Any, Optional
+
+# --- RUNTIME DEPENDENCY CHECK ---
+REQUIRED = ["requests", "sqlite_vec"] # 'sqlite-vec' package name is often 'sqlite_vec' in pip/import
+MISSING = []
+
+for lib in REQUIRED:
+    # Handle hyphenated package names for import check vs pip name
+    import_name = lib.replace("-", "_")
+    if importlib.util.find_spec(import_name) is None:
+        MISSING.append(lib)
+
+if MISSING:
+    print('\n' + '!'*60)
+    print(f'MISSING DEPENDENCIES for _SearchEngineMS:')
+    print(f'Run:  pip install {" ".join(MISSING)}')
+    print('!'*60 + '\n')
+    # We proceed so the class loads, but methods will likely fail.
+
+from microservice_std_lib import service_metadata, service_endpoint
+
+# ==============================================================================
+# CONFIGURATION
+# ==============================================================================
+
+DEFAULT_OLLAMA_URL = "http://localhost:11434/api"
+logger = logging.getLogger("SearchEngine")
+
+# ==============================================================================
+# MICROSERVICE CLASS
+# ==============================================================================
+
+@service_metadata(
+    name="SearchEngine",
+    version="1.0.0",
+    description="The Oracle: Performs Hybrid Search (Vector Similarity + Keyword Matching) on SQLite databases.",
+    tags=["search", "vector", "hybrid", "rag"],
+    capabilities=["db:sqlite", "network:outbound", "compute"]
+)
+class SearchEngineMS:
+    """
+    The Oracle: Performs Hybrid Search (Vector Similarity + Keyword Matching).
+    
+    Architecture:
+    1. Vector Search: Uses sqlite-vec (vec0) for fast nearest neighbor search.
+    2. Keyword Search: Uses SQLite FTS5 for BM25-style text matching.
+    3. Reranking: Combines scores using Reciprocal Rank Fusion (RRF).
+    """
+
+    def __init__(self, config: Optional[Dict[str, Any]] = None):
+        self.config = config or {}
+        self.model_name = self.config.get("model_name", "phi3:mini-128k")
+        self.ollama_url = self.config.get("ollama_url", DEFAULT_OLLAMA_URL)
+
+    @service_endpoint(
+        inputs={"db_path": "str", "query": "str", "limit": "int"},
+        outputs={"results": "List[Dict]"},
+        description="Main entry point. Returns a list of results.",
+        tags=["search", "query"],
+        side_effects=["db:read", "network:outbound"]
+    )
+    def search(self, db_path: str, query: str, limit: int = 10) -> List[Dict[str, Any]]:
+        """
+        Smart Keyword Search (Patch).
+        Splits query into keywords and searches both Content and Filenames.
+        """
+        if not os.path.exists(db_path):
+            logger.warning(f"Database not found at: {db_path}")
+            return []
+
+        conn = sqlite3.connect(db_path)
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+
+        # 1. Break query into keywords (e.g., "What is app.py" -> ["app.py"])
+        # We ignore short words to reduce noise
+        words = query.split()
+        keywords = [w for w in words if len(w) > 2]
+        
+        # Fallback: if all words are short, use the whole query
+        if not keywords:
+            keywords = [query]
+
+        # 2. Build Dynamic SQL (Search Content OR Filename)
+        conditions = []
+        params = []
+        
+        for w in keywords:
+            # Check if the word is in the file content
+            conditions.append("c.content LIKE ?")
+            params.append(f"%{w}%")
+            # Check if the word is in the filename (e.g. searching for "app")
+            conditions.append("f.path LIKE ?")
+            params.append(f"%{w}%")
+            
+        where_clause = " OR ".join(conditions)
+        
+        # We join 'chunks' with 'files' to get the path
+        sql = f"""
+        SELECT DISTINCT
+            f.path as file_path,
+            c.content,
+            1.0 as score
+        FROM chunks c
+        JOIN files f ON c.file_id = f.id
+        WHERE {where_clause}
+        LIMIT ?
+        """
+        
+        # Add limit to params
+        params.append(limit)
+
+        try:
+            rows = cursor.execute(sql, params).fetchall()
+        except sqlite3.OperationalError as e:
+            logger.error(f"Search Error: {e}")
+            return []
+        finally:
+            conn.close()
+
+        results = []
+        for r in rows:
+            path = r["file_path"]
+            content = r["content"]
+            score = r["score"]
+            
+            snippet = self._extract_snippet(content, query)
+            results.append({
+                "path": path,
+                "score": round(score, 4),
+                "snippet": snippet
+            })
+
+        return results
+    def search(self, db_path: str, query: str, limit: int = 10) -> List[Dict[str, Any]]:
+        """
+        Smart Keyword Search (Patch).
+        Splits query into keywords and searches both Content and Filenames.
+        """
+        if not os.path.exists(db_path):
+            logger.warning(f"Database not found at: {db_path}")
+            return []
+
+        conn = sqlite3.connect(db_path)
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+
+        # 1. Break query into keywords (e.g., "What is app.py" -> ["app.py"])
+        # We ignore short words to reduce noise
+        words = query.split()
+        keywords = [w for w in words if len(w) > 2]
+        
+        # Fallback: if all words are short, use the whole query
+        if not keywords:
+            keywords = [query]
+
+        # 2. Build Dynamic SQL (Search Content OR Filename)
+        conditions = []
+        params = []
+        
+        for w in keywords:
+            # Check if the word is in the file content
+            conditions.append("c.content LIKE ?")
+            params.append(f"%{w}%")
+            # Check if the word is in the filename (vfs_path is the portable path column)
+            conditions.append("f.vfs_path LIKE ?")
+            params.append(f"%{w}%")
+            
+        where_clause = " OR ".join(conditions)
+        
+        # We join 'chunks' with 'files' to get the vfs_path
+        sql = f"""
+        SELECT DISTINCT
+            f.vfs_path as file_path,
+            c.content,
+            1.0 as score
+        FROM chunks c
+        JOIN files f ON c.file_id = f.id
+        WHERE {where_clause}
+        LIMIT ?
+        """
+        
+        # Add limit to params
+        params.append(limit)
+
+        try:
+            rows = cursor.execute(sql, params).fetchall()
+        except sqlite3.OperationalError as e:
+            logger.error(f"Search Error: {e}")
+            return []
+        finally:
+            conn.close()
+
+        results = []
+        for r in rows:
+            path = r["file_path"]
+            content = r["content"]
+            score = r["score"]
+            
+            snippet = self._extract_snippet(content, query)
+            results.append({
+                "path": path,
+                "score": round(score, 4),
+                "snippet": snippet
+            })
+
+        return results
+
+        """
+        Patched entry point. 
+        Targets the actual 'chunks' and 'files' tables created by IngestEngine.
+        """
+        if not os.path.exists(db_path):
+            logger.warning(f"Database not found at: {db_path}")
+            return []
+
+        conn = sqlite3.connect(db_path)
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+
+        # We will perform a basic similarity search using LIKE since FTS/Vector tables
+        # aren't populated by the current IngestEngine.
+        # Ideally, we would rely on vector search, but let's get data flowing first.
+        
+        sql = """
+        SELECT 
+            f.path as file_path,
+            c.content,
+            0.9 as score -- Dummy score since we aren't using RRF yet
+        FROM chunks c
+        JOIN files f ON c.file_id = f.id
+        WHERE c.content LIKE ?
+        LIMIT ?
+        """
+
+        try:
+            # Simple keyword match
+            search_term = f"%{query}%"
+            rows = cursor.execute(sql, (search_term, limit)).fetchall()
+        except sqlite3.OperationalError as e:
+            logger.error(f"Search Error: {e}")
+            return []
+        finally:
+            conn.close()
+
+        results = []
+        for r in rows:
+            path = r["file_path"]
+            content = r["content"]
+            score = r["score"]
+            
+            snippet = self._extract_snippet(content, query)
+            results.append({
+                "path": path,
+                "score": round(score, 4),
+                "snippet": snippet
+            })
+
+        return results
+
+        conn = sqlite3.connect(db_path)
+        # Enable sqlite-vec extension
+        try:
+            conn.enable_load_extension(True)
+            import sqlite_vec
+            sqlite_vec.load(conn)
+        except Exception as e:
+            logger.warning(f"Warning: sqlite_vec not loaded. Vector search may fail. Error: {e}")
+
+        cursor = conn.cursor()
+
+        # 1. Vectorize the User Query
+        query_vec = self._get_query_embedding(query)
+        if not query_vec:
+            # Fallback to keyword only if embedding fails
+            logger.info("Vectorization failed. Falling back to keyword-only search.")
+            conn.close()
+            # Re-open connection is not strictly necessary for fallback logic, 
+            # but we return early. Note: _keyword_search_only expects a cursor.
+            # We reopen/reuse properly:
+            return self._keyword_search_only(db_path, query, limit)
+
+        # Pack vector for sqlite-vec (Float32 Little Endian)
+        vec_bytes = struct.pack(f'{len(query_vec)}f', *query_vec)
+
+        # 2. HYBRID QUERY (The "Magic" SQL)
+        # Note: This SQL assumes a specific schema ('knowledge_vectors', 'documents_fts', 'knowledge_chunks').
+        # Ensure your database setup (e.g. Refinery/Librarian) matches these table names.
+        sql = """
+        WITH 
+        vec_matches AS (
+            SELECT rowid, distance,
+            row_number() OVER (ORDER BY distance) as rank
+            FROM knowledge_vectors
+            WHERE embedding MATCH ? 
+            AND k = 50
+        ),
+        fts_matches AS (
+            SELECT rowid, rank as fts_score,
+            row_number() OVER (ORDER BY rank) as rank
+            FROM documents_fts
+            WHERE documents_fts MATCH ?
+            ORDER BY rank
+            LIMIT 50
+        )
+        SELECT 
+            kc.file_path,
+            kc.content,
+            (
+                -- RRF Formula: 1 / (k + rank)
+                COALESCE(1.0 / (60 + v.rank), 0.0) +
+                COALESCE(1.0 / (60 + f.rank), 0.0)
+            ) as rrf_score
+        FROM knowledge_chunks kc
+        LEFT JOIN vec_matches v ON kc.id = v.rowid
+        LEFT JOIN fts_matches f ON kc.id = f.rowid
+        WHERE v.rowid IS NOT NULL OR f.rowid IS NOT NULL
+        ORDER BY rrf_score DESC
+        LIMIT ?;
+        """
+
+        try:
+            # Escape quotes for FTS
+            fts_query = f'"{query}"' 
+            rows = cursor.execute(sql, (vec_bytes, fts_query, limit)).fetchall()
+        except sqlite3.OperationalError as e:
+            logger.error(f"Search Error (likely missing schema or sqlite-vec): {e}")
+            return []
+        finally:
+            conn.close()
+
+        results = []
+        for r in rows:
+            path, content, score = r
+            snippet = self._extract_snippet(content, query)
+            results.append({
+                "path": path,
+                "score": round(score, 4),
+                "snippet": snippet,
+                # "full_content": content # Optional: Uncomment if full content is needed
+            })
+
+        return results
+
+    def _keyword_search_only(self, db_path: str, query: str, limit: int) -> List[Dict[str, Any]]:
+        """Fallback if embeddings are offline."""
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+        
+        sql = """
+            SELECT file_path, content
+            FROM documents_fts
+            WHERE documents_fts MATCH ?
+            ORDER BY rank
+            LIMIT ?
+        """
+        try:
+            rows = cursor.execute(sql, (f'"{query}"', limit)).fetchall()
+            return [{
+                "path": r[0], 
+                "score": 0.0, 
+                "snippet": self._extract_snippet(r[1], query)
+            } for r in rows]
+        except sqlite3.OperationalError as e:
+            logger.error(f"Keyword Search Error: {e}")
+            return []
+        finally:
+            conn.close()
+
+    def _get_query_embedding(self, text: str) -> Optional[List[float]]:
+        """Call Ollama to get the vector for the search query."""
+        try:
+            res = requests.post(
+                f"{self.ollama_url}/embeddings",
+                json={"model": self.model_name, "prompt": text},
+                timeout=5
+            )
+            if res.status_code == 200:
+                return res.json().get("embedding")
+        except Exception as e:
+            logger.error(f"Embedding request failed: {e}")
+            return None
+        return None
+
+    def _extract_snippet(self, content: str, query: str) -> str:
+        """Finds the best window of text around the keyword."""
+        if not content:
+            return ""
+            
+        lower_content = content.lower()
+        parts = query.lower().split()
+        lower_query = parts[0] if parts else "" 
+        
+        idx = lower_content.find(lower_query)
+        if idx == -1:
+            return content[:200].replace('\n', ' ') + "..."
+            
+        start = max(0, idx - 60)
+        end = min(len(content), idx + 140)
+        snippet = content[start:end].replace('\n', ' ')
+        return f"...{snippet}..."
+
+
+# --- Independent Test Block ---
+if __name__ == "__main__":
+    # Note: Requires a real DB path to work effectively
+    print("Initializing Search Engine...")
+    engine = SearchEngineMS({"model_name": "phi3:mini-128k"})
+    print("Service ready:", engine)
+    
+    # Example usage:
+    # results = engine.search("my_knowledge.db", "python error handling")
+    # print(results)
+
+--------------------------------------------------------------------------------
+FILE: src\microservices\_TasklistVaultMS.py
+--------------------------------------------------------------------------------
+import sqlite3
+import uuid
+import logging
+import datetime
+import json
+from pathlib import Path
+from typing import List, Optional, Dict, Any, Literal
+
+from microservice_std_lib import service_metadata, service_endpoint
+
+# ==============================================================================
+# CONFIGURATION
+# ==============================================================================
+DB_PATH = Path(__file__).parent / "task_vault.db"
+logger = logging.getLogger("TaskVault")
+
+TaskStatus = Literal["Pending", "Running", "Complete", "Error", "Awaiting-Approval"]
+
+# ==============================================================================
+# MICROSERVICE CLASS
+# ==============================================================================
+
+@service_metadata(
+    name="TaskVault",
+    version="1.0.0",
+    description="Persistent SQLite engine for hierarchical task management.",
+    tags=["tasks", "db", "project-management"],
+    capabilities=["db:sqlite", "filesystem:read", "filesystem:write"]
+)
+class TasklistVaultMS:
+    """
+    The Taskmaster: A persistent SQLite engine for hierarchical task management.
+    Supports infinite nesting of sub-tasks and status tracking.
+    """
+    
+    def __init__(self, config: Optional[Dict[str, Any]] = None):
+        self.config = config or {}
+        self.db_path = self.config.get("db_path", DB_PATH)
+        self._init_db()
+
+    def _get_conn(self):
+        conn = sqlite3.connect(self.db_path)
+        conn.row_factory = sqlite3.Row
+        return conn
+
+    def _init_db(self):
+        with self._get_conn() as conn:
+            # 1. Task Lists (The containers)
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS task_lists (
+                    id TEXT PRIMARY KEY,
+                    name TEXT NOT NULL,
+                    created_at TIMESTAMP
+                )
+            """)
+            # 2. Tasks (The items, supporting hierarchy via parent_id)
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS tasks (
+                    id TEXT PRIMARY KEY,
+                    list_id TEXT NOT NULL,
+                    parent_id TEXT,
+                    content TEXT NOT NULL,
+                    status TEXT DEFAULT 'Pending',
+                    result TEXT,
+                    created_at TIMESTAMP,
+                    updated_at TIMESTAMP,
+                    FOREIGN KEY(list_id) REFERENCES task_lists(id) ON DELETE CASCADE,
+                    FOREIGN KEY(parent_id) REFERENCES tasks(id) ON DELETE CASCADE
+                )
+            """)
+
+    # --- List Management ---
+
+    @service_endpoint(
+        inputs={"name": "str"},
+        outputs={"list_id": "str"},
+        description="Creates a new task list and returns its ID.",
+        tags=["tasks", "create"],
+        side_effects=["db:write"]
+    )
+    def create_list(self, name: str) -> str:
+        """Creates a new task list and returns its ID."""
+        list_id = str(uuid.uuid4())
+        now = datetime.datetime.utcnow()
+        with self._get_conn() as conn:
+            conn.execute(
+                "INSERT INTO task_lists (id, name, created_at) VALUES (?, ?, ?)",
+                (list_id, name, now)
+            )
+        logger.info(f"Created Task List: '{name}' ({list_id})")
+        return list_id
+
+    @service_endpoint(
+        inputs={},
+        outputs={"lists": "List[Dict]"},
+        description="Returns metadata for all task lists.",
+        tags=["tasks", "read"],
+        side_effects=["db:read"]
+    )
+    def get_lists(self) -> List[Dict[str, Any]]:
+        """Returns metadata for all task lists."""
+        with self._get_conn() as conn:
+            rows = conn.execute("SELECT * FROM task_lists ORDER BY created_at DESC").fetchall()
+            return [dict(r) for r in rows]
+
+    # --- Task Management ---
+
+    @service_endpoint(
+        inputs={"list_id": "str", "content": "str", "parent_id": "Optional[str]"},
+        outputs={"task_id": "str"},
+        description="Adds a task (or sub-task) to a list.",
+        tags=["tasks", "write"],
+        side_effects=["db:write"]
+    )
+    def add_task(self, list_id: str, content: str, parent_id: Optional[str] = None) -> str:
+        """Adds a task (or sub-task) to a list."""
+        task_id = str(uuid.uuid4())
+        now = datetime.datetime.utcnow()
+        with self._get_conn() as conn:
+            conn.execute(
+                """INSERT INTO tasks (id, list_id, parent_id, content, status, created_at, updated_at) 
+                   VALUES (?, ?, ?, ?, ?, ?, ?)""",
+                (task_id, list_id, parent_id, content, "Pending", now, now)
+            )
+        return task_id
+
+    @service_endpoint(
+        inputs={"task_id": "str", "content": "str", "status": "str", "result": "str"},
+        outputs={},
+        description="Updates a task's details.",
+        tags=["tasks", "update"],
+        side_effects=["db:write"]
+    )
+    def update_task(self, task_id: str, content: str = None, status: TaskStatus = None, result: str = None):
+        """Updates a task's details."""
+        updates = []
+        params = []
+        
+        if content:
+            updates.append("content = ?")
+            params.append(content)
+        if status:
+            updates.append("status = ?")
+            params.append(status)
+        if result:
+            updates.append("result = ?")
+            params.append(result)
+            
+        if not updates: return
+
+        updates.append("updated_at = ?")
+        params.append(datetime.datetime.utcnow())
+        params.append(task_id)
+
+        sql = f"UPDATE tasks SET {', '.join(updates)} WHERE id = ?"
+        
+        with self._get_conn() as conn:
+            conn.execute(sql, params)
+        logger.info(f"Updated task {task_id}")
+
+    # --- Tree Reconstruction ---
+
+    @service_endpoint(
+        inputs={"list_id": "str"},
+        outputs={"tree": "Dict[str, Any]"},
+        description="Fetches a list and reconstructs the full hierarchy of tasks.",
+        tags=["tasks", "read"],
+        side_effects=["db:read"]
+    )
+    def get_full_tree(self, list_id: str) -> Dict[str, Any]:
+        """
+        Fetches a list and reconstructs the full hierarchy of tasks.
+        """
+        with self._get_conn() as conn:
+            # 1. Get List Info
+            list_row = conn.execute("SELECT * FROM task_lists WHERE id = ?", (list_id,)).fetchone()
+            if not list_row: return {}
+            
+            # 2. Get All Tasks
+            task_rows = conn.execute("SELECT * FROM tasks WHERE list_id = ?", (list_id,)).fetchall()
+            
+        # 3. Build Adjacency Map
+        tasks_by_id = {}
+        for r in task_rows:
+            t = dict(r)
+            t['sub_tasks'] = [] # Prepare children container
+            tasks_by_id[t['id']] = t
+
+        # 4. Link Parents and Children
+        root_tasks = []
+        for t_id, task in tasks_by_id.items():
+            parent_id = task['parent_id']
+            if parent_id and parent_id in tasks_by_id:
+                tasks_by_id[parent_id]['sub_tasks'].append(task)
+            else:
+                root_tasks.append(task)
+
+        return {
+            "id": list_row['id'],
+            "name": list_row['name'],
+            "tasks": root_tasks
+        }
+
+    @service_endpoint(
+        inputs={"list_id": "str"},
+        outputs={},
+        description="Deletes a task list and all its tasks.",
+        tags=["tasks", "delete"],
+        side_effects=["db:write"]
+    )
+    def delete_list(self, list_id: str):
+        with self._get_conn() as conn:
+            conn.execute("DELETE FROM task_lists WHERE id = ?", (list_id,))
+        logger.info(f"Deleted list {list_id}")
+
+
+# --- Independent Test Block ---
+if __name__ == "__main__":
+    import os
+    
+    # Use a test DB
+    test_db = Path("test_task_vault.db")
+    if test_db.exists(): 
+        os.remove(test_db)
+    
+    # Setup logging
+    logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(message)s')
+
+    vault = TasklistVaultMS({"db_path": test_db})
+    print("Service ready:", vault)
+    
+    # 1. Create a Plan
+    plan_id = vault.create_list("System Upgrade Plan")
+    
+    # 2. Add Root Tasks
+    t1 = vault.add_task(plan_id, "Backup Database")
+    t2 = vault.add_task(plan_id, "Update Server")
+    
+    # 3. Add Sub-Tasks
+    t2_1 = vault.add_task(plan_id, "Stop Services", parent_id=t2)
+    t2_2 = vault.add_task(plan_id, "Run Installer", parent_id=t2)
+    
+    # 4. Update Status
+    vault.update_task(t1, status="Complete", result="Backup saved to /tmp/bk.tar")
+    vault.update_task(t2_1, status="Running")
+    
+    # 5. Render Tree
+    tree = vault.get_full_tree(plan_id)
+    print(f"\n--- {tree.get('name')} ---")
+    
+    def print_node(node, indent=0):
+        status_icon = "✓" if node['status'] == 'Complete' else "○"
+        print(f"{'  '*indent}{status_icon} {node['content']} [{node['status']}]")
+        for child in node['sub_tasks']:
+            print_node(child, indent + 1)
+
+    if 'tasks' in tree:
+        for task in tree['tasks']:
+            print_node(task)
+        
+    # Cleanup
+    if test_db.exists(): 
+        os.remove(test_db)
+--------------------------------------------------------------------------------
+FILE: src\microservices\_TextChunkerMS.py
+--------------------------------------------------------------------------------
+import logging
+from typing import Any, Dict, List, Optional, Tuple
+
+from microservice_std_lib import service_metadata, service_endpoint
+
+# ==============================================================================
+# CONFIGURATION
+# ==============================================================================
+logger = logging.getLogger("TextChunker")
+
+# ==============================================================================
+# MICROSERVICE CLASS
+# ==============================================================================
+
+@service_metadata(
+    name="TextChunker",
+    version="1.0.0",
+    description="Splits text into chunks using various strategies (chars, lines).",
+    tags=["chunking", "nlp", "rag"],
+    capabilities=["compute"]
+)
+class TextChunkerMS:
+    """
+    The Butcher: A unified service for splitting text into digestible chunks
+    for RAG (Retrieval Augmented Generation).
+    """
+
+    def __init__(self, config: Optional[Dict[str, Any]] = None):
+        self.config = config or {}
+
+    @service_endpoint(
+        inputs={"text": "str", "chunk_size": "int", "chunk_overlap": "int"},
+        outputs={"chunks": "List[str]"},
+        description="Standard sliding window split by character count.",
+        tags=["chunking", "chars"],
+        side_effects=[]
+    )
+    def chunk_by_chars(self, text: str, chunk_size: int = 500, chunk_overlap: int = 50) -> List[str]:
+        """
+        Standard Sliding Window. Best for prose/documentation.
+        Splits purely by character count.
+        """
+        if chunk_size <= 0: 
+            raise ValueError("chunk_size must be positive")
+        
+        chunks = []
+        start = 0
+        text_length = len(text)
+
+        while start < text_length:
+            end = start + chunk_size
+            chunk = text[start:end]
+            chunks.append(chunk)
+            
+            # Stop if we've reached the end
+            if end >= text_length:
+                break
+                
+            # Advance start, backing up by overlap
+            start += chunk_size - chunk_overlap
+            
+        return chunks
+
+    @service_endpoint(
+        inputs={"text": "str", "max_lines": "int", "max_chars": "int"},
+        outputs={"chunks": "List[Dict]"},
+        description="Line-preserving chunker, best for code.",
+        tags=["chunking", "lines", "code"],
+        side_effects=[]
+    )
+    def chunk_by_lines(self, text: str, max_lines: int = 200, max_chars: int = 4000) -> List[Dict[str, Any]]:
+        """
+        Line-Preserving Chunker. Best for Code.
+        Respects line boundaries and returns metadata about line numbers.
+        """
+        lines = text.splitlines()
+        chunks = []
+        start = 0
+        
+        while start < len(lines):
+            end = min(start + max_lines, len(lines))
+            chunk_str = "\n".join(lines[start:end])
+            
+            # If too big, shrink window (back off)
+            while len(chunk_str) > max_chars and end > start + 1:
+                end -= 1
+                chunk_str = "\n".join(lines[start:end])
+            
+            chunks.append({
+                "text": chunk_str,
+                "start_line": start + 1,
+                "end_line": end
+            })
+            start = end
+            
+        return chunks
+
+
+# --- Independent Test Block ---
+if __name__ == "__main__":
+    # Setup logging
+    logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(message)s')
+    
+    chunker = TextChunkerMS()
+    print("Service ready:", chunker)
+    
+    # 1. Prose Test
+    print("--- Prose Chunking ---")
+    lorem = "A" * 100 # 100 chars
+    result = chunker.chunk_by_chars(lorem, chunk_size=40, chunk_overlap=10)
+    for i, c in enumerate(result):
+        print(f"Chunk {i}: len={len(c)}")
+
+    # 2. Code Test
+    print("\n--- Code Chunking ---")
+    code = "\n".join([f"print('Line {i}')" for i in range(1, 10)])
+    # Force splits small for testing
+    result_code = chunker.chunk_by_lines(code, max_lines=3, max_chars=100)
+    for i, c in enumerate(result_code):
+        print(f"Chunk {i}: Lines {c['start_line']}-{c['end_line']}")
+--------------------------------------------------------------------------------
+FILE: src\microservices\_ThoughtStreamMS.py
+--------------------------------------------------------------------------------
+import tkinter as tk
+from tkinter import ttk
+import datetime
+from typing import Any, Dict, Optional, List
+
+from microservice_std_lib import service_metadata, service_endpoint
+
+# ==============================================================================
+# MICROSERVICE CLASS
+# ==============================================================================
+
+@service_metadata(
+    name="ThoughtStream",
+    version="1.0.0",
+    description="A UI widget for displaying a stream of AI thoughts/logs.",
+    tags=["ui", "stream", "logs", "widget"],
+    capabilities=["ui:gui"]
+)
+class ThoughtStreamMS(ttk.Frame):
+    """
+    The Neural Inspector: A UI widget for displaying a stream of AI thoughts/logs
+    visualized as 'bubbles' with sparklines.
+    """
+    
+    def __init__(self, config: Optional[Dict[str, Any]] = None):
+        self.config = config or {}
+        parent = self.config.get("parent")
+        # Initialize ttk.Frame
+        super().__init__(parent)
+        
+        # Header
+        self.header = ttk.Label(self, text="NEURAL INSPECTOR", font=("Consolas", 10, "bold"))
+        self.header.pack(fill="x", padx=5, pady=5)
+        
+        # The Stream Area (Canvas allows for custom drawing like sparklines)
+        self.canvas = tk.Canvas(self, bg="#13131f", highlightthickness=0)
+        self.scrollbar = ttk.Scrollbar(self, orient="vertical", command=self.canvas.yview)
+        self.scrollable_frame = tk.Frame(self.canvas, bg="#13131f")
+        
+        self.scrollable_frame.bind(
+            "<Configure>",
+            lambda e: self.canvas.configure(scrollregion=self.canvas.bbox("all"))
+        )
+        
+        self.canvas.create_window((0, 0), window=self.scrollable_frame, anchor="nw", width=340) # Fixed width like React
+        self.canvas.configure(yscrollcommand=self.scrollbar.set)
+        
+        self.canvas.pack(side="left", fill="both", expand=True)
+        self.scrollbar.pack(side="right", fill="y")
+
+    @service_endpoint(
+        inputs={"filename": "str", "chunk_id": "int", "content": "str", "vector_preview": "List[float]", "color": "str"},
+        outputs={},
+        description="Adds a new thought bubble to the visual stream.",
+        tags=["ui", "update"],
+        side_effects=["ui:update"]
+    )
+    def add_thought_bubble(self, filename: str, chunk_id: int, content: str, vector_preview: List[float], color: str):
+        """
+        Mimics the 'InspectorFrame' from your React code.
+        """
+        # Bubble Container
+        bubble = tk.Frame(self.scrollable_frame, bg="#1a1a25", highlightbackground="#444", highlightthickness=1)
+        bubble.pack(fill="x", padx=5, pady=5)
+        
+        # Header: File + Timestamp
+        ts = datetime.datetime.now().strftime("%H:%M:%S")
+        header_lbl = tk.Label(bubble, text=f"{filename} #{chunk_id} [{ts}]", 
+                              fg="#007ACC", bg="#1a1a25", font=("Consolas", 8))
+        header_lbl.pack(anchor="w", padx=5, pady=2)
+        
+        # Content Snippet
+        snippet = content[:400] + "..." if len(content) > 400 else content
+        content_lbl = tk.Label(bubble, text=snippet, fg="#ccc", bg="#10101a", 
+                               font=("Consolas", 8), justify="left", wraplength=300)
+        content_lbl.pack(fill="x", padx=5, pady=2)
+        
+        # Vector Sparkline (The Custom Draw)
+        self._draw_sparkline(bubble, vector_preview, color)
+
+    def _draw_sparkline(self, parent, vector: List[float], color: str):
+        """
+        Recreates the 'vector_preview' visual from React using a micro-canvas.
+        """
+        h = 30
+        w = 300
+        cv = tk.Canvas(parent, height=h, width=w, bg="#1a1a25", highlightthickness=0)
+        cv.pack(padx=5, pady=2)
+        
+        if not vector:
+            return
+
+        bar_w = w / len(vector) if len(vector) > 0 else 0
+        
+        for i, val in enumerate(vector):
+            # Normalize -1..1 to 0..1 for height
+            mag = abs(val) 
+            bar_h = mag * h
+            x0 = i * bar_w
+            y0 = h - bar_h
+            x1 = x0 + bar_w
+            y1 = h
+            
+            # Draw bar
+            cv.create_rectangle(x0, y0, x1, y1, fill=color, outline="")
+
+
+# --- Independent Test Block ---
+if __name__ == "__main__":
+    import random
+    
+    root = tk.Tk()
+    root.title("Thought Stream Test")
+    root.geometry("400x600")
+    
+    stream = ThoughtStreamMS({"parent": root})
+    print("Service ready:", stream)
+    stream.pack(fill="both", expand=True)
+    
+    # Simulate an incoming "Microservice" event
+    fake_vector = [random.uniform(-1, 1) for _ in range(20)]
+    stream.add_thought_bubble("ExplorerView.tsx", 1, "import React from 'react'...", fake_vector, "#FF00FF")
+    
+    # Add another one for effect
+    fake_vector_2 = [random.uniform(-1, 1) for _ in range(20)]
+    stream.add_thought_bubble("Backend.py", 42, "def process_data(self): pass", fake_vector_2, "#00FF00")
+
+    root.mainloop()
+--------------------------------------------------------------------------------
+FILE: src\microservices\_TkinterAppShellMS.py
+--------------------------------------------------------------------------------
+"""
+SERVICE_NAME: _TkinterAppShellMS
+ENTRY_POINT: _TkinterAppShellMS.py
+DEPENDENCIES: None
+"""
+import tkinter as tk
+from tkinter import ttk
+import logging
+from typing import Dict, Any, Optional
+
+from microservice_std_lib import service_metadata, service_endpoint
+
+# Updated Import: Single Underscore + 'Tkinter' prefix
+try:
+    from _TkinterThemeManagerMS import TkinterThemeManagerMS
+except ImportError:
+    TkinterThemeManagerMS = None
+
+logger = logging.getLogger("AppShell")
+
+@service_metadata(
+    name="TkinterAppShell",
+    version="2.0.0",
+    description="The Application Container. Manages the root window, main loop, and global layout.",
+    tags=["ui", "core", "lifecycle"],
+    capabilities=["ui:root", "ui:gui"]
+)
+class TkinterAppShellMS:
+    """
+    The Mother Ship.
+    Owns the Tkinter Root. All other UI microservices dock into this.
+    """
+    
+    def __init__(self, config: Optional[Dict[str, Any]] = None):
+        self.config = config or {}
+        self.root = tk.Tk()
+        self.root.withdraw() # Hide until launch
+        
+        # Load Theme (Inject dependency or create new)
+        self.theme_svc = self.config.get("theme_manager")
+        if not self.theme_svc and TkinterThemeManagerMS:
+            self.theme_svc = TkinterThemeManagerMS()
+            
+        self.colors = self.theme_svc.get_theme() if self.theme_svc else {}
+        self._configure_root()
+        
+    def _configure_root(self):
+        self.root.title(self.config.get("title", "Microservice OS"))
+        self.root.geometry(self.config.get("geometry", "1200x800"))
+        
+        # Apply Base Theme
+        bg = self.colors.get('background', '#1e1e1e')
+        self.root.configure(bg=bg)
+        
+        # Configure TTK Styles globally
+        style = ttk.Style()
+        style.theme_use('clam')
+        
+        # Standard Frames
+        style.configure('TFrame', background=bg)
+        style.configure('TLabel', background=bg, foreground=self.colors.get('foreground', '#ccc'))
+        style.configure('TButton', background=self.colors.get('panel_bg', '#333'), foreground='white')
+        
+        # Main Container (Grid or Pack)
+        self.main_container = tk.Frame(self.root, bg=bg)
+        self.main_container.pack(fill="both", expand=True, padx=5, pady=5)
+
+    @service_endpoint(
+        inputs={},
+        outputs={},
+        description="Starts the GUI Main Loop.",
+        tags=["lifecycle", "start"],
+        mode="sync",
+        side_effects=["ui:block"]
+    )
+    def launch(self):
+        """Ignition sequence start."""
+        self.root.deiconify()
+        logger.info("AppShell Launched.")
+        self.root.mainloop()
+
+    @service_endpoint(
+        inputs={},
+        outputs={"container": "tk.Frame"},
+        description="Returns the main content area for other services to dock into.",
+        tags=["ui", "layout"]
+    )
+    def get_main_container(self):
+        """Other services call this to know where to .pack() themselves."""
+        return self.main_container
+
+    @service_endpoint(
+        inputs={},
+        outputs={},
+        description="Gracefully shuts down the application.",
+        tags=["lifecycle", "stop"],
+        side_effects=["ui:close"]
+    )
+    def shutdown(self):
+        self.root.quit()
+
+if __name__ == "__main__":
+    shell = TkinterAppShellMS({"title": "Test Shell"})
+    shell.launch()
+--------------------------------------------------------------------------------
+FILE: src\microservices\_TkinterThemeManagerMS.py
+--------------------------------------------------------------------------------
+"""
+SERVICE_NAME: _TkinterThemeManagerMS
+ENTRY_POINT: _TkinterThemeManagerMS.py
+DEPENDENCIES: tkinter, ctypes
+"""
+
+import tkinter as tk
+from tkinter import ttk
+import ctypes
+import platform
+from microservice_std_lib import service_metadata, service_endpoint
+
+@service_metadata(
+    name="TkinterThemeManagerMS",
+    version="1.1.0",
+    description="Applies a forced Dark Theme to Tkinter widgets and the Windows Title Bar.",
+    tags=["ui", "theme", "style"],
+    capabilities=["theme:dark"],
+    side_effects=["ui:update"]
+)
+class TkinterThemeManagerMS:
+    def __init__(self):
+        # VS Code-like Palette
+        self.colors = {
+            "bg_dark": "#1e1e1e",      # Main Background
+            "bg_lighter": "#252526",   # Panels / Trees
+            "fg": "#cccccc",           # Text
+            "accent": "#007acc",       # Focus / Selection
+            "select_bg": "#094771",    # Selected Tree Item
+            "select_fg": "#ffffff",
+            "border": "#3e3e42",
+            
+            # [FIX] Added keys expected by AppShell
+            "panel_bg": "#252526",
+            "foreground": "#cccccc"
+        }
+
+    # [FIX] This is the missing method that caused the crash
+    @service_endpoint(
+        inputs={},
+        outputs={"theme": "Dict"},
+        description="Returns the current color palette.",
+        tags=["ui", "config"]
+    )
+    def get_theme(self):
+        return self.colors
+
+    @service_endpoint(
+        inputs={"root": "tk.Tk"},
+        outputs={},
+        description="Applies the dark theme styles to the provided root window.",
+        tags=["ui", "config"]
+    )
+    def apply_theme(self, root):
+        style = ttk.Style(root)
+        
+        # 1. Force Windows Title Bar to Dark Mode (The "Magic" Hack)
+        self._set_windows_titlebar_dark(root)
+
+        # 2. Configure Root Background
+        root.configure(bg=self.colors["bg_dark"])
+        
+        # 3. Switch to 'clam' engine (It listens to color configs better than 'vista')
+        try:
+            style.theme_use('clam')
+        except tk.TclError:
+            pass # Fallback if clam isn't available
+
+        # 4. Define Global Defaults
+        style.configure(".", 
+            background=self.colors["bg_dark"], 
+            foreground=self.colors["fg"],
+            fieldbackground=self.colors["bg_lighter"],
+            troughcolor=self.colors["bg_dark"],
+            borderwidth=0,
+            darkcolor=self.colors["bg_dark"], 
+            lightcolor=self.colors["bg_dark"]
+        )
+        
+        # 5. Widget Specifics
+        
+        # Frames & Labels
+        style.configure("TFrame", background=self.colors["bg_dark"])
+        style.configure("TLabel", background=self.colors["bg_dark"], foreground=self.colors["fg"])
+        style.configure("TLabelframe", background=self.colors["bg_dark"], bordercolor=self.colors["border"])
+        style.configure("TLabelframe.Label", background=self.colors["bg_dark"], foreground=self.colors["fg"])
+
+        # Buttons (Flat & Dark)
+        style.configure("TButton", 
+            background=self.colors["bg_lighter"], 
+            foreground=self.colors["fg"],
+            borderwidth=1,
+            bordercolor=self.colors["border"],
+            focusthickness=3,
+            focuscolor=self.colors["accent"]
+        )
+        style.map("TButton",
+            background=[("active", self.colors["accent"]), ("pressed", self.colors["select_bg"])],
+            foreground=[("active", "white")]
+        )
+
+        # Treeview (Explorer & Logs) - NO WHITE BACKGROUNDS
+        style.configure("Treeview", 
+            background=self.colors["bg_lighter"],
+            fieldbackground=self.colors["bg_lighter"],
+            foreground=self.colors["fg"],
+            borderwidth=0
+        )
+        style.map("Treeview", 
+            background=[("selected", self.colors["select_bg"])],
+            foreground=[("selected", self.colors["select_fg"])]
+        )
+        
+        # Tree Headers
+        style.configure("Treeview.Heading",
+            background=self.colors["bg_dark"],
+            foreground=self.colors["fg"],
+            relief="flat",
+            borderwidth=0
+        )
+        
+        # Scrollbars (The hardest part to darken)
+        style.configure("Vertical.TScrollbar",
+            gripcount=0,
+            background=self.colors["bg_lighter"],
+            darkcolor=self.colors["bg_dark"],
+            lightcolor=self.colors["bg_dark"],
+            troughcolor=self.colors["bg_dark"],
+            bordercolor=self.colors["bg_dark"],
+            arrowcolor=self.colors["fg"]
+        )
+        style.map("Vertical.TScrollbar",
+            background=[("active", self.colors["accent"])]
+        )
+
+    def _set_windows_titlebar_dark(self, root):
+        """
+        Uses ctypes to flip the undocumented Windows DWM flag for Dark Mode.
+        """
+        try:
+            if platform.system() == "Windows":
+                root.update() # Ensure handle exists
+                hwnd = ctypes.windll.user32.GetParent(root.winfo_id())
+                # DWMWA_USE_IMMERSIVE_DARK_MODE = 20
+                value = ctypes.c_int(2) 
+                ctypes.windll.dwmapi.DwmSetWindowAttribute(hwnd, 20, ctypes.byref(value), 4)
+        except Exception:
+            pass # Fail silently on Linux/Mac or older Windows
+--------------------------------------------------------------------------------
+FILE: src\microservices\_TkinterUniButtonMS.py
+--------------------------------------------------------------------------------
+import tkinter as tk
+from dataclasses import dataclass
+from typing import Any, Dict, Optional, Callable
+
+from microservice_std_lib import service_metadata, service_endpoint
+
+# ==============================================================================
+# CONFIGURATION MODELS
+# ==============================================================================
+
+@dataclass
+class ButtonConfig:
+    text: str
+    command: Callable[[], None]
+    bg_color: str
+    active_bg_color: str
+    fg_color: str = "#FFFFFF"
+
+@dataclass
+class LinkConfig:
+    """Configuration for the 'Linked' state (The Trap)"""
+    trap_bg: str = "#7C3AED"    # Deep Purple
+    btn_bg: str = "#8B5CF6"     # Lighter Purple
+    text_color: str = "#FFFFFF"
+
+# ==============================================================================
+# MICROSERVICE CLASS
+# ==============================================================================
+
+@service_metadata(
+    name="LockingDualBtn",
+    version="1.0.0",
+    description="A unified button group (Left/Right/Link) where linking merges the actions.",
+    tags=["ui", "widget", "button"],
+    capabilities=["ui:gui"]
+)
+class TkinterUniButtonMS(tk.Frame):
+    """
+    A generic button group that can merge ANY two actions.
+    Pass the visual/functional definitions in via the config objects.
+    """
+    
+    def __init__(self, config: Optional[Dict[str, Any]] = None):
+        self.config = config or {}
+        parent = self.config.get("parent")
+        # Initialize tk.Frame
+        super().__init__(parent)
+        
+        # Extract Button Configurations
+        self.left_cfg: Optional[ButtonConfig] = self.config.get("left_btn")
+        self.right_cfg: Optional[ButtonConfig] = self.config.get("right_btn")
+        self.link_cfg: LinkConfig = self.config.get("link_config") or LinkConfig()
+        
+        self.is_linked = False
+        
+        # Attempt to get parent background for seamless look
+        try:
+            self.default_bg = parent.cget("bg")
+        except AttributeError:
+            self.default_bg = "#f0f0f0"
+
+        if not self.left_cfg or not self.right_cfg:
+            # Fallback for safe init if configs are missing
+            print("Warning: TkinterUniButtonMS initialized without button configs.")
+            return
+
+        self._setup_ui()
+        self._update_state()
+
+    def _setup_ui(self):
+        self.configure(padx=4, pady=4)
+        
+        common_style = {"relief": "flat", "font": ("Segoe UI", 10, "bold"), "bd": 0, "cursor": "hand2"}
+
+        # 1. Left Button (Generic)
+        self.btn_left = tk.Button(self, command=lambda: self._execute("left"), **common_style)
+        self.btn_left.pack(side="left", fill="y", padx=(0, 2))
+
+        # 2. Link Toggle (The Chain)
+        self.btn_link = tk.Button(self, text="&", width=3, command=self._toggle_link, **common_style)
+        self.btn_link.pack(side="left", fill="y", padx=(0, 2))
+
+        # 3. Right Button (Generic)
+        self.btn_right = tk.Button(self, command=lambda: self._execute("right"), **common_style)
+        self.btn_right.pack(side="left", fill="y")
+
+    def _toggle_link(self):
+        self.is_linked = not self.is_linked
+        self._update_state()
+
+    def _update_state(self):
+        if self.is_linked:
+            # --- LINKED STATE (The Trap) ---
+            self.configure(bg=self.link_cfg.trap_bg)
+            
+            # Both buttons look identical in the "Trap"
+            for btn in (self.btn_left, self.btn_right, self.btn_link):
+                btn.configure(bg=self.link_cfg.btn_bg, fg=self.link_cfg.text_color, activebackground=self.link_cfg.trap_bg)
+            
+            # Keep original text
+            self.btn_left.configure(text=self.left_cfg.text)
+            self.btn_right.configure(text=self.right_cfg.text)
+
+        else:
+            # --- INDEPENDENT STATE ---
+            try: 
+                self.configure(bg=self.default_bg)
+            except: 
+                self.configure(bg="#f0f0f0") 
+
+            # Restore Left Button
+            self.btn_left.configure(
+                text=self.left_cfg.text, 
+                bg=self.left_cfg.bg_color, 
+                fg=self.left_cfg.fg_color,
+                activebackground=self.left_cfg.active_bg_color
+            )
+
+            # Restore Right Button
+            self.btn_right.configure(
+                text=self.right_cfg.text, 
+                bg=self.right_cfg.bg_color, 
+                fg=self.right_cfg.fg_color,
+                activebackground=self.right_cfg.active_bg_color
+            )
+
+            # Restore Link Button (Neutral Gray)
+            self.btn_link.configure(bg="#E5E7EB", fg="#374151", activebackground="#D1D5DB")
+
+    def _execute(self, source):
+        if self.is_linked:
+            # Chain them: Left then Right
+            self.left_cfg.command()
+            self.right_cfg.command()
+        else:
+            if source == "left": 
+                self.left_cfg.command()
+            elif source == "right": 
+                self.right_cfg.command()
+
+
+# --- Independent Test Block ---
+if __name__ == "__main__":
+    root = tk.Tk()
+    root.title("UniButton Test")
+    root.geometry("300x100")
+    
+    # Define actions
+    def on_validate(): print("Validating Data...")
+    def on_apply(): print("Applying Changes...")
+    
+    # Create Configs
+    btn1 = ButtonConfig("Validate", on_validate, "#3b82f6", "#2563eb") # Blue
+    btn2 = ButtonConfig("Apply", on_apply, "#10b981", "#059669")       # Green
+    
+    # Init Service
+    svc = TkinterUniButtonMS({
+        "parent": root, 
+        "left_btn": btn1, 
+        "right_btn": btn2
+    })
+    print("Service ready:", svc)
+    svc.pack(pady=20)
+    
+    root.mainloop()
+--------------------------------------------------------------------------------
+FILE: src\microservices\_TreeMapperMS.py
+--------------------------------------------------------------------------------
+import os
+import datetime
+import logging
+from pathlib import Path
+from typing import Any, Dict, List, Set, Optional
+
+from microservice_std_lib import service_metadata, service_endpoint
+
+# ==============================================================================
+# CONFIGURATION
+# ==============================================================================
+DEFAULT_EXCLUDES = {
+    '.git', '__pycache__', '.idea', '.vscode', 'node_modules', 
+    '.venv', 'env', 'venv', 'dist', 'build', '.DS_Store'
+}
+logger = logging.getLogger("TreeMapper")
+
+# ==============================================================================
+# MICROSERVICE CLASS
+# ==============================================================================
+
+@service_metadata(
+    name="TreeMapper",
+    version="1.0.0",
+    description="Generates ASCII-art style directory maps of the file system.",
+    tags=["filesystem", "map", "visualization"],
+    capabilities=["filesystem:read"]
+)
+class TreeMapperMS:
+    """
+    The Cartographer: Generates ASCII-art style directory maps.
+    Useful for creating context snapshots for LLMs.
+    """
+    
+    def __init__(self, config: Optional[Dict[str, Any]] = None):
+        self.config = config or {}
+
+    @service_endpoint(
+        inputs={"root_path": "str", "additional_exclusions": "Set[str]", "use_default_exclusions": "bool"},
+        outputs={"tree_map": "str"},
+        description="Generates an ASCII tree map of the directory.",
+        tags=["filesystem", "visualization"],
+        side_effects=["filesystem:read"]
+    )
+    def generate_tree(self, 
+                      root_path: str, 
+                      additional_exclusions: Optional[Set[str]] = None,
+                      use_default_exclusions: bool = True) -> str:
+        
+        start_path = Path(root_path).resolve()
+        if not start_path.exists(): 
+            return f"Error: Path '{root_path}' does not exist."
+
+        exclusions = set()
+        if use_default_exclusions:
+            exclusions.update(DEFAULT_EXCLUDES)
+        if additional_exclusions:
+            exclusions.update(additional_exclusions)
+
+        timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        lines = [
+            f"Project Map: {start_path.name}",
+            f"Generated: {timestamp}",
+            "-" * 40,
+            f"📁 {start_path.name}/"
+        ]
+
+        logger.info(f"Mapping directory: {start_path}")
+        self._walk(start_path, "", lines, exclusions)
+        return "\n".join(lines)
+
+    def _walk(self, directory: Path, prefix: str, lines: List[str], exclusions: Set[str]):
+        try:
+            # Sort: Directories first, then files (alphabetical)
+            children = sorted(
+                [p for p in directory.iterdir() if p.name not in exclusions],
+                key=lambda x: (not x.is_dir(), x.name.lower())
+            )
+        except PermissionError:
+            lines.append(f"{prefix}└── 🚫 [Permission Denied]")
+            return
+
+        count = len(children)
+        for index, path in enumerate(children):
+            is_last = (index == count - 1)
+            connector = "└── " if is_last else "├── "
+            
+            if path.is_dir():
+                lines.append(f"{prefix}{connector}📁 {path.name}/")
+                extension = "    " if is_last else "│   "
+                self._walk(path, prefix + extension, lines, exclusions)
+            else:
+                lines.append(f"{prefix}{connector}📄 {path.name}")
+
+
+# --- Independent Test Block ---
+if __name__ == "__main__":
+    # Setup logging
+    logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(message)s')
+
+    svc = TreeMapperMS()
+    print("Service ready:", svc)
+    
+    # Map the current directory
+    print("\n--- Map of Current Dir ---")
+    tree = svc.generate_tree(".", additional_exclusions={"__pycache__"})
+    print(tree)

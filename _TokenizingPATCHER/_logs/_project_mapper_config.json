@@ -145,7 +145,16 @@
     "assets": "checked",
     "assets\\icons": "checked",
     "src": "checked",
-    "src\\__pycache__": "unchecked"
+    "src\\__pycache__": "unchecked",
+    "assets\\icons\\tokenizing-patcher.png": "checked",
+    "src\\microservices": "checked",
+    "src\\__init__.py": "checked",
+    "src\\app.py": "checked",
+    "src\\Patcher-app-python-code-insde.txt": "checked",
+    "LICENSE.md": "checked",
+    "README.md": "checked",
+    "requirements.txt": "checked",
+    "setup_env.bat": "checked"
   },
   "dynamic_exclusions": []
 }
