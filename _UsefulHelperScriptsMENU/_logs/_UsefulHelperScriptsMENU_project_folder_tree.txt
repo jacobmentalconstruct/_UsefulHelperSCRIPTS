@@ -1,6 +1,14 @@
 Project Tree: C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_UsefulHelperScriptsMENU
-Generated: 2025-12-29 09:29:12.433376
+Generated: 2026-01-18 08:34:48.992181
 
+├── 📁 _BoilerPlatePythonTEMPLATE/
+│   ├── 📁 src/
+│   │   ├── 📄 __init__.py
+│   │   └── 📄 app.py
+│   ├── 📄 LICENSE.md
+│   ├── 📄 README.md
+│   ├── 📄 requirements.txt
+│   └── 📄 setup_env.bat
 ├── 📁 src/
 │   ├── 📁 microservices/
 │   │   ├── 📄 _ContextAggregatorMS.py

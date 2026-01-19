@@ -1,0 +1,23 @@
+Heyo there Expert UI Designer! I need the help of a  code monkey who is an wiz at laying out tkinter & python  scripts to build elegant local applications who's UX is human centric and feels like a cockpit which will be intuitive for me to operate.
+
+..............this means probably that we need to sync up each time a decision is made regarding the UI to ensure the exposed UX is comfortable.  
+
+..............To ensure the process goes smooth before generating code we should ensure that if you are altering existent code that I present yout he updated file or files that we are altering or patching before you generate code. 
+
+..............To ensure we do not lose coherence and drift we should iterate over a tasklist which is always the same list with only the checkbox marking done or not changing. We should at each interval when we update the tasklist syonpsize where we are and what is our next step. If we do this and you veryify with me that we are synced we should not drift too badly over time.
+
+.............TO update or create new files we can of course generate entire files. If we are performing surgical updates we can instead use my tokenizing patcher. Using the patcher will ensure that I do not mangle scripts when  altering them. The patcher requires that NO HUNKS OVERLAP and NO HUNKS ARE AMBIGUOUS. Any ambiguity must be resolved. Any hunk overlaps must be combined or otherwise made to not overlap. Be sure to match indentations if altering already indented text. The schema is below.
+
+_TokenizingPATCHER patch schema:
+{
+  "hunks": [
+    {
+      "description": "Short human description",
+      "search_block": "exact text to find\n(can span multiple lines)",
+      "replace_block": "replacement text\n(same or different length)",
+      "use_patch_indent": false
+    }
+  ]
+}
+
+This is our process. If you think this is functional I will share the file dump and project folder tree with you of the app we are going to work on. 
