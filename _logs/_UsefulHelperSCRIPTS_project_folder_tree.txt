@@ -1,0 +1,387 @@
+Project Tree: C:\Users\petya\Documents\Jacob's BIN\_UsefulHelperSCRIPTS
+Generated: 2026-01-25 17:36:23.053260
+
+├── 📁 __ARCHIVES__/
+│   ├── 📁 _AppWinSTALLER/
+│   │   └── 📁 src/
+│   │       └── 📁 microservices/
+│   │           ├── 📄 _ChalkBoardMS.py
+│   │           ├── 📄 _EnvironmentManagerMS.py
+│   │           ├── 📄 _FingerprintScannerMS.py
+│   │           ├── 📄 _LogViewMS.py
+│   │           ├── 📄 _NetworkLayoutMS.py
+│   │           ├── 📄 _ProjectForgeMS.py
+│   │           ├── 📄 _ScannerMS.py
+│   │           ├── 📄 _ScoutMS.py
+│   │           ├── 📄 _SpinnerThingyMaBobberMS.py
+│   │           ├── 📄 _SysInspectorMS.py
+│   │           ├── 📄 _TelemetryServiceMS.py
+│   │           ├── 📄 _TkinterAppShellMS.py
+│   │           ├── 📄 _TkinterSmartExplorerMS.py
+│   │           ├── 📄 _TkinterThemeManagerMS.py
+│   │           ├── 📄 base_service.py
+│   │           ├── 📄 document_utils.py
+│   │           └── 📄 microservice_std_lib.py
+│   ├── 📁 _GraphFORGE/
+│   │   ├── 📁 src/
+│   │   │   ├── 📄 __init__.py
+│   │   │   └── 📄 app.py
+│   │   ├── 📄 LICENSE.md
+│   │   ├── 📄 README.md
+│   │   ├── 📄 requirements.txt
+│   │   └── 📄 setup_env.bat
+│   ├── 📁 _RAGcartridgeFACTORY/
+│   │   ├── 📁 src/
+│   │   │   ├── 📁 microservices/
+│   │   │   │   ├── 📄 _CartridgeServiceMS.py
+│   │   │   │   ├── 📄 _ChunkingRouterMS.py
+│   │   │   │   ├── 📄 _ContentExtractorMS.py
+│   │   │   │   ├── 📄 _ContextAggregatorMS.py
+│   │   │   │   ├── 📄 _IntakeServiceMS.py
+│   │   │   │   ├── 📄 _LexicalSearchMS.py
+│   │   │   │   ├── 📄 _LogViewMS.py
+│   │   │   │   ├── 📄 _NeuralGraphEngineMS.py
+│   │   │   │   ├── 📄 _NeuralGraphViewerMS.py
+│   │   │   │   ├── 📄 _NeuralServiceMS.py
+│   │   │   │   ├── 📄 _PythonChunkerMS.py
+│   │   │   │   ├── 📄 _RefineryServiceMS.py
+│   │   │   │   ├── 📄 _RegexWeaverMS.py
+│   │   │   │   ├── 📄 _ScannerMS.py
+│   │   │   │   ├── 📄 _ScoutMS.py
+│   │   │   │   ├── 📄 _SearchEngineMS.py
+│   │   │   │   ├── 📄 _ServiceRegistryMS.py
+│   │   │   │   ├── 📄 _TasklistVaultMS.py
+│   │   │   │   ├── 📄 _TelemetryServiceMS.py
+│   │   │   │   ├── 📄 _ThoughtStreamMS.py
+│   │   │   │   ├── 📄 _TkinterAppShellMS.py
+│   │   │   │   ├── 📄 _TkinterSmartExplorerMS.py
+│   │   │   │   ├── 📄 _TkinterThemeManagerMS.py
+│   │   │   │   ├── 📄 _TreeMapperMS.py
+│   │   │   │   ├── 📄 _WorkbenchLayoutMS.py
+│   │   │   │   ├── 📄 base_service.py
+│   │   │   │   ├── 📄 document_utils.py
+│   │   │   │   └── 📄 microservice_std_lib.py
+│   │   │   ├── 📄 __init__.py
+│   │   │   ├── 📄 app.py
+│   │   │   └── 📄 orchestrator.py
+│   │   ├── 📄 LICENSE.md
+│   │   ├── 📄 README.md
+│   │   ├── 📄 requirements.txt
+│   │   └── 📄 setup_env.bat
+│   ├── 📁 _RagFORGE/
+│   │   ├── 📁 src/
+│   │   │   ├── 📁 microservices/
+│   │   │   │   ├── 📄 .ragforge.json
+│   │   │   │   ├── 📄 __init__.py
+│   │   │   │   ├── 📄 base_service.py
+│   │   │   │   ├── 📄 cartridge_service.py
+│   │   │   │   ├── 📄 document_utils.py
+│   │   │   │   ├── 📄 graph_engine.py
+│   │   │   │   ├── 📄 graph_view.py
+│   │   │   │   ├── 📄 intake_service.py
+│   │   │   │   ├── 📄 neural_service.py
+│   │   │   │   ├── 📄 panels.py
+│   │   │   │   ├── 📄 refinery_service.py
+│   │   │   │   ├── 📄 scanner.py
+│   │   │   │   ├── 📄 semantic_chunker.py
+│   │   │   │   ├── 📄 telemetry_service.py
+│   │   │   │   └── 📄 thought_stream.py
+│   │   │   ├── 📄 .ragforge.json
+│   │   │   ├── 📄 __init__.py
+│   │   │   └── 📄 app.py
+│   │   ├── 📁 tests/
+│   │   │   ├── 📁 dummy_source/
+│   │   │   │   └── 📄 concept.txt
+│   │   │   └── 📄 verify_forge.py
+│   │   ├── 📄 .ragforge.json
+│   │   ├── 📄 LICENSE.md
+│   │   ├── 📄 README.md
+│   │   ├── 📄 requirements.txt
+│   │   └── 📄 setup_env.bat
+│   ├── 📁 _TasklistWORKER/
+│   │   ├── 📁 src/
+│   │   │   ├── 📁 _microservices/
+│   │   │   │   ├── 📄 ollama_client.py
+│   │   │   │   ├── 📄 runner.py
+│   │   │   │   ├── 📄 state.py
+│   │   │   │   ├── 📄 tasklists.py
+│   │   │   │   └── 📄 template_engine.py
+│   │   │   ├── 📄 __init__.py
+│   │   │   ├── 📄 app - Copy.py
+│   │   │   ├── 📄 app.py
+│   │   │   └── 📄 gui_layout.py
+│   │   ├── 📄 LICENSE.md
+│   │   ├── 📄 README.md
+│   │   ├── 📄 requirements.txt
+│   │   └── 📄 setup_env.bat
+│   └── 📁 _TaskORCHESTRATOR/
+│       ├── 📁 _sandbox_test_directory/
+│       │   ├── 📁 microservices_test_sample/
+│       │   │   ├── 📄 __ArchiveBotMS.py
+│       │   │   ├── 📄 __AuthMS.py.txt
+│       │   │   ├── 📄 __CartridgeServiceMS.py.txt
+│       │   │   ├── 📄 __ChalkBoardMS.py.txt
+│       │   │   ├── 📄 __ChunkingRouterMS.py.txt
+│       │   │   ├── 📄 __CodeChunkerMS.py.txt
+│       │   │   ├── 📄 __CodeGrapherMS.py.txt
+│       │   │   ├── 📄 __CognitiveMemoryMS.py.txt
+│       │   │   ├── 📄 __HeuristicSumMS.py.txt
+│       │   │   ├── 📄 __IngestEngineMS.py.txt
+│       │   │   ├── 📄 __IsoProcessMS.py.txt
+│       │   │   ├── 📄 __LexicalSearchMS.py.txt
+│       │   │   ├── 📄 __LibrarianServiceMS.py.txt
+│       │   │   ├── 📄 __LogViewMS.py.txt
+│       │   │   ├── 📄 __MonacoHostMS.py.txt
+│       │   │   ├── 📄 __NetworkLayoutMS.py.txt
+│       │   │   ├── 📄 __NeuralServiceMS.py.txt
+│       │   │   ├── 📄 __PromptOptimizerMS.py.txt
+│       │   │   ├── 📄 __PromptVaultMS.py.txt
+│       │   │   ├── 📄 __PythonChunkerMS.py.txt
+│       │   │   ├── 📄 __RefineryServiceMS.py.txt
+│       │   │   ├── 📄 __RegexWeaverMS.py.txt
+│       │   │   ├── 📄 __RoleManagerMS.py.txt
+│       │   │   ├── 📄 __SandboxManagerMS.py.txt
+│       │   │   ├── 📄 __ScoutMS.py.txt
+│       │   │   ├── 📄 __SearchEngineMS.py.txt
+│       │   │   ├── 📄 __SemanticChunkerMS.py.txt
+│       │   │   ├── 📄 __ServiceRegistryMS.py.txt
+│       │   │   ├── 📄 __SpinnerThingyMaBobberMS.py.txt
+│       │   │   ├── 📄 __SysInspectorMS.py.txt
+│       │   │   ├── 📄 __TasklistVaultMS.py.txt
+│       │   │   ├── 📄 __TelemetryServiceMS.py.txt
+│       │   │   ├── 📄 __TextChunkerMS.py.txt
+│       │   │   ├── 📄 __ThoughtStreamMS.py.txt
+│       │   │   ├── 📄 __TkinterUniButtonMS.py.txt
+│       │   │   ├── 📄 __TreeMapperMS.py.txt
+│       │   │   ├── 📄 __VectorFactoryMS.py.txt
+│       │   │   ├── 📄 __WebScraperMS.py.txt
+│       │   │   ├── 📄 base_service.py.txt
+│       │   │   ├── 📄 boiler_plate.py
+│       │   │   └── 📄 Microservice Patching Onboarding Document.pdf
+│       │   ├── 📄 dirty_service.py
+│       │   ├── 📄 TEST_dirty_service.py
+│       │   └── 📄 TEST_TEST_dirty_service.py
+│       ├── 📁 src/
+│       │   ├── 📁 _microservices/
+│       │   │   ├── 📄 __AuthMS.py
+│       │   │   ├── 📄 _FileSaverMS.py
+│       │   │   ├── 📄 _TokenizingPatcherMS.py
+│       │   │   ├── 📄 _TokenizingPatcherMS_README.md
+│       │   │   ├── 📄 _ToolsMS.py
+│       │   │   ├── 📄 _ZipCompressMS.py
+│       │   │   ├── 📄 base_service.py
+│       │   │   ├── 📄 document_utils.py
+│       │   │   ├── 📄 microservice_std_lib.py
+│       │   │   ├── 📄 microservice_template.py
+│       │   │   └── 📄 py_template.py
+│       │   ├── 📁 _roles/
+│       │   │   └── 📄 default_roles.json
+│       │   ├── 📁 _system_prompts/
+│       │   │   └── 📄 default_system_prompts.json
+│       │   ├── 📁 _tasklists/
+│       │   │   ├── 📄 __init__.py
+│       │   │   ├── 📄 ast_patch_generator.json
+│       │   │   ├── 📄 basic_file_tranformation_tasklist.json
+│       │   │   ├── 📄 default_tasklist.json
+│       │   │   └── 📄 tasklist_microservices_generator.json
+│       │   ├── 📁 _workflows/
+│       │   │   ├── 📄 default_workflow.json
+│       │   │   └── 📄 microservice_processing_workflow.json
+│       │   ├── 📄 __init__.py
+│       │   └── 📄 app.py
+│       ├── 📄 LICENSE.md
+│       ├── 📄 README.md
+│       ├── 📄 requirements.txt
+│       └── 📄 setup_env.bat
+├── 📁 _GitPUSHER/
+│   ├── 📁 src/
+│   │   ├── 📄 __init__.py
+│   │   └── 📄 app.py
+│   ├── 📄 .gitignore
+│   ├── 📄 LICENSE.md
+│   ├── 📄 README.md
+│   ├── 📄 requirements.txt
+│   └── 📄 setup_env.bat
+├── 📁 _LineNUMBERIZER/
+│   ├── 📁 src/
+│   │   ├── 📄 __init__.py
+│   │   ├── 📄 app.py
+│   │   └── 📄 linenumberizer.py
+│   ├── 📄 LICENSE.md
+│   ├── 📄 README.md
+│   ├── 📄 requirements.txt
+│   └── 📄 setup_env.bat
+├── 📁 _MicroserviceBROWSER/
+│   ├── 📁 src/
+│   │   ├── 📁 microservices/
+│   │   │   ├── 📄 _ContextPackerMS.py
+│   │   │   ├── 📄 _ServiceRegistryMS.py
+│   │   │   ├── 📄 _TkinterAppShellMS.py
+│   │   │   ├── 📄 _TkinterThemeManagerMS.py
+│   │   │   └── 📄 microservice_std_lib.py
+│   │   ├── 📄 __init__.py
+│   │   ├── 📄 app.py
+│   │   └── 📄 manifest-summary.txt
+│   ├── 📄 .txt
+│   ├── 📄 AgentSpec_list-of-tools.txt
+│   ├── 📄 README.md
+│   ├── 📄 requirements.txt
+│   └── 📄 setup_env.bat
+├── 📁 _MicroserviceLIBRARY/
+│   ├── 📄 _ArchiveBotMS.py
+│   ├── 📄 _AuthMS.py
+│   ├── 📄 _CartridgeServiceMS.py
+│   ├── 📄 _ChalkBoardMS.py
+│   ├── 📄 _ChunkingRouterMS.py
+│   ├── 📄 _CodeChunkerMS.py
+│   ├── 📄 _CodeFormatterMS.py
+│   ├── 📄 _CodeGrapherMS.py
+│   ├── 📄 _CodeJanitorMS.py
+│   ├── 📄 _CodeJanitorMS_OG.py
+│   ├── 📄 _CognitiveMemoryMS.py
+│   ├── 📄 _ContentExtractorMS.py
+│   ├── 📄 _ContextAggregatorMS.py
+│   ├── 📄 _ContextPackerMS.py
+│   ├── 📄 _DiffEngineMS.py
+│   ├── 📄 _EnvironmentManagerMS.py
+│   ├── 📄 _ExplorerWidgetMS.py
+│   ├── 📄 _FingerprintScannerMS.py
+│   ├── 📄 _GitPilotMS.py
+│   ├── 📄 _HeuristicSumMS.py
+│   ├── 📄 _IngestEngineMS.py
+│   ├── 📄 _IntakeServiceMS.py
+│   ├── 📄 _IsoProcessMS.py
+│   ├── 📄 _LexicalSearchMS.py
+│   ├── 📄 _LibrarianMS.py
+│   ├── 📄 _LibrarianServiceMS.py
+│   ├── 📄 _LogViewMS.py
+│   ├── 📄 _MonacoHostMS.py
+│   ├── 📄 _NetworkLayoutMS.py
+│   ├── 📄 _NeuralGraphEngineMS.py
+│   ├── 📄 _NeuralGraphViewerMS.py
+│   ├── 📄 _NeuralServiceMS.py
+│   ├── 📄 _ProjectForgeMS.py
+│   ├── 📄 _PromptOptimizerMS.py
+│   ├── 📄 _PromptVaultMS.py
+│   ├── 📄 _PythonChunkerMS.py
+│   ├── 📄 _RefineryServiceMS.py
+│   ├── 📄 _RegexWeaverMS.py
+│   ├── 📄 _RoleManagerMS.py
+│   ├── 📄 _SandboxManagerMS.py
+│   ├── 📄 _ScannerMS.py
+│   ├── 📄 _ScoutMS.py
+│   ├── 📄 _SearchEngineMS.py
+│   ├── 📄 _SemanticChunkerMS.py
+│   ├── 📄 _ServiceRegistryMS.py
+│   ├── 📄 _SpinnerThingyMaBobberMS.py
+│   ├── 📄 _SysInspectorMS.py
+│   ├── 📄 _TasklistVaultMS.py
+│   ├── 📄 _TelemetryServiceMS.py
+│   ├── 📄 _TextChunkerMS.py
+│   ├── 📄 _ThoughtStreamMS.py
+│   ├── 📄 _TkinterAppShellMS.py
+│   ├── 📄 _TkinterBootstrap.py
+│   ├── 📄 _TkinterSmartExplorerMS.py
+│   ├── 📄 _TkinterThemeManagerMS.py
+│   ├── 📄 _TkinterUniButtonMS.py
+│   ├── 📄 _TreeMapperMS.py
+│   ├── 📄 _VectorFactoryMS.py
+│   ├── 📄 _WebScraperMS.py
+│   ├── 📄 _WorkbenchLayoutMS.py
+│   ├── 📄 base_service.py
+│   ├── 📄 boiler_plate.py
+│   ├── 📄 DEP_REPORT.json
+│   ├── 📄 DEP_REPORT.md
+│   ├── 📄 document_utils.py
+│   ├── 📄 LIBRARY_CATALOGUE.md
+│   ├── 📄 microservice_std_lib.py
+│   ├── 📄 ms_deps_report.md
+│   ├── 📄 registry.json
+│   ├── 📄 requirements.txt
+│   └── 📄 sync-ms-deps.py
+├── 📁 _MonacoVIEWER/
+│   ├── 📁 assets/
+│   │   ├── 📄 index.html
+│   │   ├── 📄 index.js
+│   │   ├── 📄 monaco-viewer-icon.png
+│   │   └── 📄 style.css
+│   ├── 📁 src/
+│   │   ├── 📄 __init__.py
+│   │   └── 📄 app.py
+│   ├── 📄 LICENSE.md
+│   ├── 📄 README.md
+│   ├── 📄 requirements.txt
+│   └── 📄 setup_env.bat
+├── 📁 _ProjectMAPPER/
+│   ├── 📁 src/
+│   │   ├── 📄 __init__.py
+│   │   └── 📄 app.py
+│   ├── 📄 gitignore
+│   ├── 📄 LICENSE.md
+│   ├── 📄 README.md
+│   ├── 📄 requirements.txt
+│   ├── 📄 setup_env.bat
+│   └── 📄 start.bat
+├── 📁 _TempServerMAKER/
+│   ├── 📁 src/
+│   │   ├── 📁 assets/
+│   │   │   ├── 📄 index.html
+│   │   │   ├── 📄 index.js
+│   │   │   └── 📄 style.css
+│   │   ├── 📄 __init__.py
+│   │   ├── 📄 app.py
+│   │   └── 📄 app_OG.py
+│   ├── 📄 .gitignore
+│   ├── 📄 LICENSE.md
+│   ├── 📄 README.md
+│   ├── 📄 requirements.txt
+│   └── 📄 setup_env.bat
+├── 📁 _TextTOUCHER/
+│   ├── 📁 src/
+│   │   ├── 📄 __init__.py
+│   │   └── 📄 app.py
+│   ├── 📄 .ragforge.json
+│   ├── 📄 LICENSE.md
+│   ├── 📄 README.md
+│   ├── 📄 requirements.txt
+│   └── 📄 setup_env.bat
+├── 📁 _TokenizingPATCHER/
+│   ├── 📁 assets/
+│   │   └── 📁 icons/
+│   │       └── 📄 tokenizing-patcher.png
+│   ├── 📁 src/
+│   │   ├── 📄 __init__.py
+│   │   └── 📄 app.py
+│   ├── 📄 LICENSE.md
+│   ├── 📄 README.md
+│   ├── 📄 requirements.txt
+│   └── 📄 setup_env.bat
+├── 📁 _UsefulHelperScriptsMENU/
+│   ├── 📁 _BoilerPlatePythonTEMPLATE/
+│   │   ├── 📁 src/
+│   │   │   ├── 📄 __init__.py
+│   │   │   └── 📄 app.py
+│   │   ├── 📄 LICENSE.md
+│   │   ├── 📄 README.md
+│   │   ├── 📄 requirements.txt
+│   │   └── 📄 setup_env.bat
+│   ├── 📁 src/
+│   │   ├── 📁 microservices/
+│   │   │   ├── 📄 _ContextAggregatorMS.py
+│   │   │   └── 📄 _TreeMapperMS.py
+│   │   ├── 📄 __init__.py
+│   │   ├── 📄 app.pyw
+│   │   ├── 📄 app_workingBACKUP_v1.pyw
+│   │   ├── 📄 app_workingBACKUP_v2.pyw
+│   │   ├── 📄 app_workingBackup_v3.pyw
+│   │   ├── 📄 app_workingBACKUP_v4.pyw
+│   │   └── 📄 app_workingBACKUP_v5.pyw
+│   ├── 📄 Iterative App Refactor Tasklist.md
+│   ├── 📄 requirements.txt
+│   └── 📄 setup_env.bat
+├── 📄 .gitignore
+├── 📄 _MicroserviceLIBRARY.zip
+├── 📄 _VectorFactoryMS.7z
+├── 📄 LICENSE.md
+├── 📄 MENU.bat
+└── 📄 THEME_SPEC.md

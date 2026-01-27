@@ -1,0 +1,947 @@
+{
+  "folder": "C:\\Users\\petya\\Documents\\Jacob's BIN\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY",
+  "microservices": 58,
+  "union_external": [
+    "PIL",
+    "bs4",
+    "chromadb",
+    "faiss",
+    "httpx",
+    "jinja2",
+    "networkx",
+    "numpy",
+    "pydantic",
+    "pygame",
+    "pypdf",
+    "readability",
+    "requests",
+    "sqlite_vec",
+    "webview"
+  ],
+  "files": [
+    {
+      "file": "_ArchiveBotMS.py",
+      "internal": [
+        "base_service",
+        "microservice_std_lib"
+      ],
+      "external": [],
+      "declared_internal": [],
+      "inferred_internal": [
+        "base_service",
+        "microservice_std_lib"
+      ],
+      "notes": [
+        "No external deps inferred."
+      ],
+      "errors": []
+    },
+    {
+      "file": "_AuthMS.py",
+      "internal": [
+        "microservice_std_lib"
+      ],
+      "external": [],
+      "declared_internal": [],
+      "inferred_internal": [
+        "microservice_std_lib"
+      ],
+      "notes": [
+        "No external deps inferred."
+      ],
+      "errors": []
+    },
+    {
+      "file": "_CartridgeServiceMS.py",
+      "internal": [
+        "base_service",
+        "microservice_std_lib"
+      ],
+      "external": [
+        "sqlite_vec"
+      ],
+      "declared_internal": [],
+      "inferred_internal": [
+        "base_service",
+        "microservice_std_lib"
+      ],
+      "notes": [],
+      "errors": []
+    },
+    {
+      "file": "_ChalkBoardMS.py",
+      "internal": [
+        "base_service",
+        "microservice_std_lib"
+      ],
+      "external": [
+        "webview"
+      ],
+      "declared_internal": [],
+      "inferred_internal": [
+        "base_service",
+        "microservice_std_lib"
+      ],
+      "notes": [],
+      "errors": []
+    },
+    {
+      "file": "_ChunkingRouterMS.py",
+      "internal": [
+        "_PythonChunkerMS",
+        "base_service",
+        "microservice_std_lib"
+      ],
+      "external": [],
+      "declared_internal": [],
+      "inferred_internal": [
+        "_PythonChunkerMS",
+        "base_service",
+        "microservice_std_lib"
+      ],
+      "notes": [
+        "No external deps inferred."
+      ],
+      "errors": []
+    },
+    {
+      "file": "_CodeChunkerMS.py",
+      "internal": [
+        "base_service",
+        "microservice_std_lib"
+      ],
+      "external": [],
+      "declared_internal": [],
+      "inferred_internal": [
+        "base_service",
+        "microservice_std_lib"
+      ],
+      "notes": [
+        "No external deps inferred."
+      ],
+      "errors": []
+    },
+    {
+      "file": "_CodeFormatterMS.py",
+      "internal": [
+        "microservice_std_lib"
+      ],
+      "external": [],
+      "declared_internal": [],
+      "inferred_internal": [
+        "microservice_std_lib"
+      ],
+      "notes": [
+        "No external deps inferred."
+      ],
+      "errors": []
+    },
+    {
+      "file": "_CodeGrapherMS.py",
+      "internal": [
+        "base_service",
+        "microservice_std_lib"
+      ],
+      "external": [],
+      "declared_internal": [],
+      "inferred_internal": [
+        "base_service",
+        "microservice_std_lib"
+      ],
+      "notes": [
+        "No external deps inferred."
+      ],
+      "errors": []
+    },
+    {
+      "file": "_CodeJanitorMS.py",
+      "internal": [
+        "microservice_std_lib"
+      ],
+      "external": [],
+      "declared_internal": [],
+      "inferred_internal": [
+        "microservice_std_lib"
+      ],
+      "notes": [
+        "No external deps inferred."
+      ],
+      "errors": []
+    },
+    {
+      "file": "_CognitiveMemoryMS.py",
+      "internal": [
+        "base_service",
+        "microservice_std_lib"
+      ],
+      "external": [
+        "pydantic"
+      ],
+      "declared_internal": [],
+      "inferred_internal": [
+        "base_service",
+        "microservice_std_lib"
+      ],
+      "notes": [],
+      "errors": []
+    },
+    {
+      "file": "_ContentExtractorMS.py",
+      "internal": [
+        "microservice_std_lib"
+      ],
+      "external": [
+        "bs4",
+        "pypdf"
+      ],
+      "declared_internal": [],
+      "inferred_internal": [
+        "microservice_std_lib"
+      ],
+      "notes": [],
+      "errors": []
+    },
+    {
+      "file": "_ContextAggregatorMS.py",
+      "internal": [
+        "microservice_std_lib"
+      ],
+      "external": [],
+      "declared_internal": [],
+      "inferred_internal": [
+        "microservice_std_lib"
+      ],
+      "notes": [
+        "No external deps inferred."
+      ],
+      "errors": []
+    },
+    {
+      "file": "_ContextPackerMS.py",
+      "internal": [
+        "microservice_std_lib"
+      ],
+      "external": [],
+      "declared_internal": [],
+      "inferred_internal": [
+        "microservice_std_lib"
+      ],
+      "notes": [
+        "No external deps inferred."
+      ],
+      "errors": []
+    },
+    {
+      "file": "_DiffEngineMS.py",
+      "internal": [
+        "microservice_std_lib"
+      ],
+      "external": [],
+      "declared_internal": [],
+      "inferred_internal": [
+        "microservice_std_lib"
+      ],
+      "notes": [
+        "No external deps inferred."
+      ],
+      "errors": []
+    },
+    {
+      "file": "_EnvironmentManagerMS.py",
+      "internal": [
+        "microservice_std_lib"
+      ],
+      "external": [],
+      "declared_internal": [],
+      "inferred_internal": [
+        "microservice_std_lib"
+      ],
+      "notes": [
+        "No external deps inferred."
+      ],
+      "errors": []
+    },
+    {
+      "file": "_ExplorerWidgetMS.py",
+      "internal": [
+        "base_service",
+        "microservice_std_lib"
+      ],
+      "external": [],
+      "declared_internal": [],
+      "inferred_internal": [
+        "base_service",
+        "microservice_std_lib"
+      ],
+      "notes": [
+        "No external deps inferred."
+      ],
+      "errors": []
+    },
+    {
+      "file": "_FingerprintScannerMS.py",
+      "internal": [
+        "microservice_std_lib"
+      ],
+      "external": [],
+      "declared_internal": [],
+      "inferred_internal": [
+        "microservice_std_lib"
+      ],
+      "notes": [
+        "No external deps inferred."
+      ],
+      "errors": []
+    },
+    {
+      "file": "_GitPilotMS.py",
+      "internal": [
+        "microservice_std_lib"
+      ],
+      "external": [],
+      "declared_internal": [],
+      "inferred_internal": [
+        "microservice_std_lib"
+      ],
+      "notes": [
+        "No external deps inferred."
+      ],
+      "errors": []
+    },
+    {
+      "file": "_HeuristicSumMS.py",
+      "internal": [
+        "base_service",
+        "microservice_std_lib"
+      ],
+      "external": [],
+      "declared_internal": [],
+      "inferred_internal": [
+        "base_service",
+        "microservice_std_lib"
+      ],
+      "notes": [
+        "No external deps inferred."
+      ],
+      "errors": []
+    },
+    {
+      "file": "_IngestEngineMS.py",
+      "internal": [
+        "base_service",
+        "microservice_std_lib"
+      ],
+      "external": [
+        "requests"
+      ],
+      "declared_internal": [],
+      "inferred_internal": [
+        "base_service",
+        "microservice_std_lib"
+      ],
+      "notes": [],
+      "errors": []
+    },
+    {
+      "file": "_IntakeServiceMS.py",
+      "internal": [
+        "_CartridgeServiceMS",
+        "_ScannerMS",
+        "base_service",
+        "document_utils",
+        "microservice_std_lib"
+      ],
+      "external": [
+        "bs4",
+        "requests"
+      ],
+      "declared_internal": [],
+      "inferred_internal": [
+        "_CartridgeServiceMS",
+        "_ScannerMS",
+        "base_service",
+        "document_utils",
+        "microservice_std_lib"
+      ],
+      "notes": [],
+      "errors": []
+    },
+    {
+      "file": "_IsoProcessMS.py",
+      "internal": [
+        "microservice_std_lib"
+      ],
+      "external": [],
+      "declared_internal": [],
+      "inferred_internal": [
+        "microservice_std_lib"
+      ],
+      "notes": [
+        "No external deps inferred."
+      ],
+      "errors": []
+    },
+    {
+      "file": "_LexicalSearchMS.py",
+      "internal": [
+        "microservice_std_lib"
+      ],
+      "external": [],
+      "declared_internal": [],
+      "inferred_internal": [
+        "microservice_std_lib"
+      ],
+      "notes": [
+        "No external deps inferred."
+      ],
+      "errors": []
+    },
+    {
+      "file": "_LibrarianMS.py",
+      "internal": [
+        "microservice_std_lib"
+      ],
+      "external": [
+        "requests"
+      ],
+      "declared_internal": [],
+      "inferred_internal": [
+        "microservice_std_lib"
+      ],
+      "notes": [],
+      "errors": []
+    },
+    {
+      "file": "_LibrarianServiceMS.py",
+      "internal": [
+        "microservice_std_lib"
+      ],
+      "external": [
+        "requests"
+      ],
+      "declared_internal": [],
+      "inferred_internal": [
+        "microservice_std_lib"
+      ],
+      "notes": [],
+      "errors": []
+    },
+    {
+      "file": "_LogViewMS.py",
+      "internal": [
+        "microservice_std_lib"
+      ],
+      "external": [],
+      "declared_internal": [],
+      "inferred_internal": [
+        "microservice_std_lib"
+      ],
+      "notes": [
+        "No external deps inferred."
+      ],
+      "errors": []
+    },
+    {
+      "file": "_MonacoHostMS.py",
+      "internal": [
+        "microservice_std_lib"
+      ],
+      "external": [
+        "webview"
+      ],
+      "declared_internal": [],
+      "inferred_internal": [
+        "microservice_std_lib"
+      ],
+      "notes": [],
+      "errors": []
+    },
+    {
+      "file": "_NetworkLayoutMS.py",
+      "internal": [
+        "microservice_std_lib"
+      ],
+      "external": [
+        "networkx"
+      ],
+      "declared_internal": [],
+      "inferred_internal": [
+        "microservice_std_lib"
+      ],
+      "notes": [],
+      "errors": []
+    },
+    {
+      "file": "_NeuralGraphEngineMS.py",
+      "internal": [
+        "base_service",
+        "microservice_std_lib"
+      ],
+      "external": [
+        "pygame"
+      ],
+      "declared_internal": [],
+      "inferred_internal": [
+        "base_service",
+        "microservice_std_lib"
+      ],
+      "notes": [],
+      "errors": []
+    },
+    {
+      "file": "_NeuralGraphViewerMS.py",
+      "internal": [
+        "_NeuralGraphEngineMS",
+        "base_service",
+        "microservice_std_lib"
+      ],
+      "external": [
+        "PIL"
+      ],
+      "declared_internal": [],
+      "inferred_internal": [
+        "_NeuralGraphEngineMS",
+        "base_service",
+        "microservice_std_lib"
+      ],
+      "notes": [],
+      "errors": []
+    },
+    {
+      "file": "_NeuralServiceMS.py",
+      "internal": [
+        "microservice_std_lib"
+      ],
+      "external": [
+        "requests"
+      ],
+      "declared_internal": [],
+      "inferred_internal": [
+        "microservice_std_lib"
+      ],
+      "notes": [],
+      "errors": []
+    },
+    {
+      "file": "_ProjectForgeMS.py",
+      "internal": [
+        "microservice_std_lib"
+      ],
+      "external": [],
+      "declared_internal": [],
+      "inferred_internal": [
+        "microservice_std_lib"
+      ],
+      "notes": [
+        "No external deps inferred."
+      ],
+      "errors": []
+    },
+    {
+      "file": "_PromptOptimizerMS.py",
+      "internal": [
+        "microservice_std_lib"
+      ],
+      "external": [],
+      "declared_internal": [],
+      "inferred_internal": [
+        "microservice_std_lib"
+      ],
+      "notes": [
+        "No external deps inferred."
+      ],
+      "errors": []
+    },
+    {
+      "file": "_PromptVaultMS.py",
+      "internal": [
+        "microservice_std_lib"
+      ],
+      "external": [
+        "jinja2",
+        "pydantic"
+      ],
+      "declared_internal": [],
+      "inferred_internal": [
+        "microservice_std_lib"
+      ],
+      "notes": [],
+      "errors": []
+    },
+    {
+      "file": "_PythonChunkerMS.py",
+      "internal": [
+        "microservice_std_lib"
+      ],
+      "external": [],
+      "declared_internal": [],
+      "inferred_internal": [
+        "microservice_std_lib"
+      ],
+      "notes": [
+        "No external deps inferred."
+      ],
+      "errors": []
+    },
+    {
+      "file": "_RefineryServiceMS.py",
+      "internal": [
+        "_CartridgeServiceMS",
+        "_ChunkingRouterMS",
+        "_NeuralServiceMS",
+        "microservice_std_lib"
+      ],
+      "external": [],
+      "declared_internal": [],
+      "inferred_internal": [
+        "_CartridgeServiceMS",
+        "_ChunkingRouterMS",
+        "_NeuralServiceMS",
+        "microservice_std_lib"
+      ],
+      "notes": [
+        "No external deps inferred."
+      ],
+      "errors": []
+    },
+    {
+      "file": "_RegexWeaverMS.py",
+      "internal": [
+        "microservice_std_lib"
+      ],
+      "external": [],
+      "declared_internal": [],
+      "inferred_internal": [
+        "microservice_std_lib"
+      ],
+      "notes": [
+        "No external deps inferred."
+      ],
+      "errors": []
+    },
+    {
+      "file": "_RoleManagerMS.py",
+      "internal": [
+        "microservice_std_lib"
+      ],
+      "external": [
+        "pydantic"
+      ],
+      "declared_internal": [],
+      "inferred_internal": [
+        "microservice_std_lib"
+      ],
+      "notes": [],
+      "errors": []
+    },
+    {
+      "file": "_SandboxManagerMS.py",
+      "internal": [
+        "microservice_std_lib"
+      ],
+      "external": [],
+      "declared_internal": [],
+      "inferred_internal": [
+        "microservice_std_lib"
+      ],
+      "notes": [
+        "No external deps inferred."
+      ],
+      "errors": []
+    },
+    {
+      "file": "_ScannerMS.py",
+      "internal": [
+        "base_service",
+        "microservice_std_lib"
+      ],
+      "external": [],
+      "declared_internal": [],
+      "inferred_internal": [
+        "base_service",
+        "microservice_std_lib"
+      ],
+      "notes": [
+        "No external deps inferred."
+      ],
+      "errors": []
+    },
+    {
+      "file": "_ScoutMS.py",
+      "internal": [
+        "microservice_std_lib"
+      ],
+      "external": [
+        "bs4",
+        "requests"
+      ],
+      "declared_internal": [],
+      "inferred_internal": [
+        "microservice_std_lib"
+      ],
+      "notes": [],
+      "errors": []
+    },
+    {
+      "file": "_SearchEngineMS.py",
+      "internal": [
+        "microservice_std_lib"
+      ],
+      "external": [
+        "requests",
+        "sqlite_vec"
+      ],
+      "declared_internal": [],
+      "inferred_internal": [
+        "microservice_std_lib"
+      ],
+      "notes": [],
+      "errors": []
+    },
+    {
+      "file": "_SemanticChunkerMS.py",
+      "internal": [
+        "microservice_std_lib"
+      ],
+      "external": [],
+      "declared_internal": [],
+      "inferred_internal": [
+        "microservice_std_lib"
+      ],
+      "notes": [
+        "No external deps inferred."
+      ],
+      "errors": []
+    },
+    {
+      "file": "_ServiceRegistryMS.py",
+      "internal": [
+        "microservice_std_lib"
+      ],
+      "external": [],
+      "declared_internal": [],
+      "inferred_internal": [
+        "microservice_std_lib"
+      ],
+      "notes": [
+        "No external deps inferred."
+      ],
+      "errors": []
+    },
+    {
+      "file": "_SpinnerThingyMaBobberMS.py",
+      "internal": [
+        "microservice_std_lib"
+      ],
+      "external": [],
+      "declared_internal": [],
+      "inferred_internal": [
+        "microservice_std_lib"
+      ],
+      "notes": [
+        "No external deps inferred."
+      ],
+      "errors": []
+    },
+    {
+      "file": "_SysInspectorMS.py",
+      "internal": [
+        "microservice_std_lib"
+      ],
+      "external": [],
+      "declared_internal": [],
+      "inferred_internal": [
+        "microservice_std_lib"
+      ],
+      "notes": [
+        "No external deps inferred."
+      ],
+      "errors": []
+    },
+    {
+      "file": "_TasklistVaultMS.py",
+      "internal": [
+        "microservice_std_lib"
+      ],
+      "external": [],
+      "declared_internal": [],
+      "inferred_internal": [
+        "microservice_std_lib"
+      ],
+      "notes": [
+        "No external deps inferred."
+      ],
+      "errors": []
+    },
+    {
+      "file": "_TelemetryServiceMS.py",
+      "internal": [
+        "microservice_std_lib"
+      ],
+      "external": [],
+      "declared_internal": [],
+      "inferred_internal": [
+        "microservice_std_lib"
+      ],
+      "notes": [
+        "No external deps inferred."
+      ],
+      "errors": []
+    },
+    {
+      "file": "_TextChunkerMS.py",
+      "internal": [
+        "microservice_std_lib"
+      ],
+      "external": [],
+      "declared_internal": [],
+      "inferred_internal": [
+        "microservice_std_lib"
+      ],
+      "notes": [
+        "No external deps inferred."
+      ],
+      "errors": []
+    },
+    {
+      "file": "_ThoughtStreamMS.py",
+      "internal": [
+        "microservice_std_lib"
+      ],
+      "external": [],
+      "declared_internal": [],
+      "inferred_internal": [
+        "microservice_std_lib"
+      ],
+      "notes": [
+        "No external deps inferred."
+      ],
+      "errors": []
+    },
+    {
+      "file": "_TkinterAppShellMS.py",
+      "internal": [
+        "_TkinterThemeManagerMS",
+        "microservice_std_lib"
+      ],
+      "external": [],
+      "declared_internal": [],
+      "inferred_internal": [
+        "_TkinterThemeManagerMS",
+        "microservice_std_lib"
+      ],
+      "notes": [
+        "No external deps inferred."
+      ],
+      "errors": []
+    },
+    {
+      "file": "_TkinterSmartExplorerMS.py",
+      "internal": [
+        "microservice_std_lib"
+      ],
+      "external": [],
+      "declared_internal": [],
+      "inferred_internal": [
+        "microservice_std_lib"
+      ],
+      "notes": [
+        "No external deps inferred."
+      ],
+      "errors": []
+    },
+    {
+      "file": "_TkinterThemeManagerMS.py",
+      "internal": [
+        "microservice_std_lib"
+      ],
+      "external": [],
+      "declared_internal": [],
+      "inferred_internal": [
+        "microservice_std_lib"
+      ],
+      "notes": [
+        "No external deps inferred."
+      ],
+      "errors": []
+    },
+    {
+      "file": "_TkinterUniButtonMS.py",
+      "internal": [
+        "microservice_std_lib"
+      ],
+      "external": [],
+      "declared_internal": [],
+      "inferred_internal": [
+        "microservice_std_lib"
+      ],
+      "notes": [
+        "No external deps inferred."
+      ],
+      "errors": []
+    },
+    {
+      "file": "_TreeMapperMS.py",
+      "internal": [
+        "microservice_std_lib"
+      ],
+      "external": [],
+      "declared_internal": [],
+      "inferred_internal": [
+        "microservice_std_lib"
+      ],
+      "notes": [
+        "No external deps inferred."
+      ],
+      "errors": []
+    },
+    {
+      "file": "_VectorFactoryMS.py",
+      "internal": [
+        "microservice_std_lib"
+      ],
+      "external": [
+        "chromadb",
+        "faiss",
+        "numpy"
+      ],
+      "declared_internal": [],
+      "inferred_internal": [
+        "microservice_std_lib"
+      ],
+      "notes": [],
+      "errors": []
+    },
+    {
+      "file": "_WebScraperMS.py",
+      "internal": [
+        "microservice_std_lib"
+      ],
+      "external": [
+        "httpx",
+        "readability"
+      ],
+      "declared_internal": [],
+      "inferred_internal": [
+        "microservice_std_lib"
+      ],
+      "notes": [],
+      "errors": []
+    },
+    {
+      "file": "_WorkbenchLayoutMS.py",
+      "internal": [
+        "microservice_std_lib"
+      ],
+      "external": [],
+      "declared_internal": [],
+      "inferred_internal": [
+        "microservice_std_lib"
+      ],
+      "notes": [
+        "No external deps inferred."
+      ],
+      "errors": []
+    }
+  ]
+}

@@ -2,21 +2,7 @@
   "folder_states": {
     ".": "checked",
     "_logs": "unchecked",
-    "src": "checked",
-    "src\\microservices": "checked",
-    "src\\microservices\\_ContextPackerMS.py": "checked",
-    "src\\microservices\\_ServiceRegistryMS.py": "checked",
-    "src\\microservices\\_TkinterAppShellMS.py": "checked",
-    "src\\microservices\\_TkinterThemeManagerMS.py": "checked",
-    "src\\microservices\\microservice_std_lib.py": "checked",
-    "src\\__init__.py": "checked",
-    "src\\app.py": "checked",
-    "src\\manifest-summary.txt": "checked",
-    ".txt": "checked",
-    "AgentSpec_list-of-tools.txt": "checked",
-    "README.md": "checked",
-    "requirements.txt": "checked",
-    "setup_env.bat": "checked"
+    "src": "checked"
   },
   "dynamic_exclusions": []
 }

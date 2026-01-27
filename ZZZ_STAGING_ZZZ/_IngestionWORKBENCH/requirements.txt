@@ -1,9 +1,0 @@
-# CORE DEPENDENCIES
-requests>=2.31.0  # Required for Ollama AI Chat Client
-
-# STANDARD LIBRARY (Built-in to Python)
-# - tkinter (GUI)
-# - json (Data Parsing)
-# - threading (Async UI updates)
-# - pathlib (File System)
-# - shutil (File Operations)

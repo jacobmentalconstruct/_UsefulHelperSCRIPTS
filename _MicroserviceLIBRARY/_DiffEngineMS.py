@@ -1,9 +1,9 @@
 """
 SERVICE_NAME: _DiffEngineMS
 ENTRY_POINT: _DiffEngineMS.py
-DEPENDENCIES: None
+INTERNAL_DEPENDENCIES: microservice_std_lib
+EXTERNAL_DEPENDENCIES: None
 """
-
 import sqlite3
 import difflib
 import datetime
@@ -12,24 +12,11 @@ import logging
 from pathlib import Path
 from typing import Optional, Dict, List, Tuple, Any
 from microservice_std_lib import service_metadata, service_endpoint
-
-# ==============================================================================
-# CONFIGURATION
-# ==============================================================================
-DB_PATH = Path(__file__).parent / "diff_engine.db"
+DB_PATH = Path(__file__).parent / 'diff_engine.db'
 logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(message)s')
-log = logging.getLogger("DiffEngine")
-# ==============================================================================
+log = logging.getLogger('DiffEngine')
 
-@service_metadata(
-    name="DiffEngineMS",
-    version="1.0.0",
-    description="Implements hybrid versioning (Head + Diff History) for file content.",
-    tags=["version-control", "diff", "db"],
-    capabilities=["db:sqlite", "filesystem:write"],
-    dependencies=["sqlite3", "difflib", "uuid", "datetime"],
-    side_effects=["db:read", "db:write"]
-)
+@service_metadata(name='DiffEngineMS', version='1.0.0', description='Implements hybrid versioning (Head + Diff History) for file content.', tags=['version-control', 'diff', 'db'], capabilities=['db:sqlite', 'filesystem:write'], side_effects=['db:read', 'db:write'], internal_dependencies=['microservice_std_lib'], external_dependencies=[])
 class DiffEngineMS:
     """
     The Timekeeper: Implements a 'Hybrid' versioning architecture.
@@ -37,9 +24,9 @@ class DiffEngineMS:
     2. HISTORY: Stores diff deltas using difflib for audit trails.
     """
 
-    def __init__(self, config: Optional[Dict[str, Any]] = None):
+    def __init__(self, config: Optional[Dict[str, Any]]=None):
         self.config = config or {}
-        self.db_path = Path(self.config.get("db_path", DB_PATH))
+        self.db_path = Path(self.config.get('db_path', DB_PATH))
         self._init_db()
 
     def _get_conn(self):
@@ -49,39 +36,11 @@ class DiffEngineMS:
 
     def _init_db(self):
         with self._get_conn() as conn:
-            # 1. The Head (Fast Access Cache)
-            conn.execute("""
-                CREATE TABLE IF NOT EXISTS files (
-                    id TEXT PRIMARY KEY,
-                    path TEXT UNIQUE NOT NULL,
-                    content TEXT,
-                    last_updated TIMESTAMP
-                )
-            """)
-            
-            # 2. The Rising Edge (Diff History)
-            conn.execute("""
-                CREATE TABLE IF NOT EXISTS diff_log (
-                    id TEXT PRIMARY KEY,
-                    file_id TEXT NOT NULL,
-                    timestamp TIMESTAMP,
-                    change_type TEXT,  -- 'CREATE', 'EDIT', 'DELETE'
-                    diff_blob TEXT,    -- The text output of difflib
-                    author TEXT,
-                    FOREIGN KEY(file_id) REFERENCES files(id)
-                )
-            """)
+            conn.execute('\n                CREATE TABLE IF NOT EXISTS files (\n                    id TEXT PRIMARY KEY,\n                    path TEXT UNIQUE NOT NULL,\n                    content TEXT,\n                    last_updated TIMESTAMP\n                )\n            ')
+            conn.execute("\n                CREATE TABLE IF NOT EXISTS diff_log (\n                    id TEXT PRIMARY KEY,\n                    file_id TEXT NOT NULL,\n                    timestamp TIMESTAMP,\n                    change_type TEXT,  -- 'CREATE', 'EDIT', 'DELETE'\n                    diff_blob TEXT,    -- The text output of difflib\n                    author TEXT,\n                    FOREIGN KEY(file_id) REFERENCES files(id)\n                )\n            ")
 
-    # --- Core Workflow ---
-
-    @service_endpoint(
-        inputs={"path": "str", "new_content": "str", "author": "str"},
-        outputs={"status": "str", "file_id": "str"},
-        description="Updates a file, creating a diff history entry and updating the head state.",
-        tags=["version-control", "write"],
-        side_effects=["db:write"]
-    )
-    def update_file(self, path: str, new_content: str, author: str = "agent") -> Dict[str, Any]:
+    @service_endpoint(inputs={'path': 'str', 'new_content': 'str', 'author': 'str'}, outputs={'status': 'str', 'file_id': 'str'}, description='Updates a file, creating a diff history entry and updating the head state.', tags=['version-control', 'write'], side_effects=['db:write'])
+    def update_file(self, path: str, new_content: str, author: str='agent') -> Dict[str, Any]:
         """
         The Atomic Update Operation:
         1. Checks current state.
@@ -89,119 +48,67 @@ class DiffEngineMS:
         3. Writes Diff to History.
         4. Updates Head to New Content.
         """
-        path = str(Path(path).as_posix()) # Normalize path
+        path = str(Path(path).as_posix())
         now = datetime.datetime.utcnow()
-        
         with self._get_conn() as conn:
-            # 1. Fetch Head
-            row = conn.execute("SELECT id, content FROM files WHERE path = ?", (path,)).fetchone()
-            
+            row = conn.execute('SELECT id, content FROM files WHERE path = ?', (path,)).fetchone()
             if not row:
-                # --- CASE: NEW FILE ---
                 file_id = str(uuid.uuid4())
-                conn.execute(
-                    "INSERT INTO files (id, path, content, last_updated) VALUES (?, ?, ?, ?)",
-                    (file_id, path, new_content, now)
-                )
-                self._log_diff(conn, file_id, "CREATE", "[New File Created]", author, now)
-                log.info(f"Created new file: {path}")
-                return {"status": "created", "file_id": file_id}
-
-            # --- CASE: EXISTING FILE ---
+                conn.execute('INSERT INTO files (id, path, content, last_updated) VALUES (?, ?, ?, ?)', (file_id, path, new_content, now))
+                self._log_diff(conn, file_id, 'CREATE', '[New File Created]', author, now)
+                log.info(f'Created new file: {path}')
+                return {'status': 'created', 'file_id': file_id}
             file_id = row['id']
-            old_content = row['content'] or ""
-
-            # 2. Calculate Diff
+            old_content = row['content'] or ''
             old_lines = old_content.splitlines(keepends=True)
             new_lines = new_content.splitlines(keepends=True)
-
-            diff_gen = difflib.unified_diff(
-                old_lines, new_lines, 
-                fromfile=f"a/{path}", tofile=f"b/{path}",
-                lineterm=''
-            )
-            diff_text = "".join(diff_gen)
-
+            diff_gen = difflib.unified_diff(old_lines, new_lines, fromfile=f'a/{path}', tofile=f'b/{path}', lineterm='')
+            diff_text = ''.join(diff_gen)
             if not diff_text:
-                return {"status": "unchanged", "file_id": file_id}
-
-            # 3. Write History
-            self._log_diff(conn, file_id, "EDIT", diff_text, author, now)
-
-            # 4. Update Head
-            conn.execute(
-                "UPDATE files SET content = ?, last_updated = ? WHERE id = ?",
-                (new_content, now, file_id)
-            )
-            log.info(f"Updated file: {path}")
-            return {"status": "updated", "file_id": file_id, "diff_size": len(diff_text)}
+                return {'status': 'unchanged', 'file_id': file_id}
+            self._log_diff(conn, file_id, 'EDIT', diff_text, author, now)
+            conn.execute('UPDATE files SET content = ?, last_updated = ? WHERE id = ?', (new_content, now, file_id))
+            log.info(f'Updated file: {path}')
+            return {'status': 'updated', 'file_id': file_id, 'diff_size': len(diff_text)}
 
     def _log_diff(self, conn, file_id, change_type, diff_text, author, timestamp):
         diff_id = str(uuid.uuid4())
-        conn.execute(
-            "INSERT INTO diff_log (id, file_id, timestamp, change_type, diff_blob, author) VALUES (?, ?, ?, ?, ?, ?)",
-            (diff_id, file_id, timestamp, change_type, diff_text, author)
-        )
+        conn.execute('INSERT INTO diff_log (id, file_id, timestamp, change_type, diff_blob, author) VALUES (?, ?, ?, ?, ?, ?)', (diff_id, file_id, timestamp, change_type, diff_text, author))
 
-    # --- Retrieval ---
-
-    @service_endpoint(
-        inputs={"path": "str"},
-        outputs={"content": "Optional[str]"},
-        description="Fast retrieval of current content.",
-        tags=["version-control", "read"],
-        side_effects=["db:read"]
-    )
+    @service_endpoint(inputs={'path': 'str'}, outputs={'content': 'Optional[str]'}, description='Fast retrieval of current content.', tags=['version-control', 'read'], side_effects=['db:read'])
     def get_head(self, path: str) -> Optional[str]:
         """Fast retrieval of current content."""
         with self._get_conn() as conn:
-            row = conn.execute("SELECT content FROM files WHERE path = ?", (path,)).fetchone()
+            row = conn.execute('SELECT content FROM files WHERE path = ?', (path,)).fetchone()
             return row['content'] if row else None
 
-    @service_endpoint(
-        inputs={"path": "str"},
-        outputs={"history": "List[Dict]"},
-        description="Retrieves the full evolution history of a file.",
-        tags=["version-control", "read"],
-        side_effects=["db:read"]
-    )
+    @service_endpoint(inputs={'path': 'str'}, outputs={'history': 'List[Dict]'}, description='Retrieves the full evolution history of a file.', tags=['version-control', 'read'], side_effects=['db:read'])
     def get_history(self, path: str) -> List[Dict]:
         """Retrieves the full evolution history of a file."""
         with self._get_conn() as conn:
-            row = conn.execute("SELECT id FROM files WHERE path = ?", (path,)).fetchone()
-            if not row: return []
-            
-            rows = conn.execute(
-                "SELECT timestamp, change_type, diff_blob, author FROM diff_log WHERE file_id = ? ORDER BY timestamp DESC",
-                (row['id'],)
-            ).fetchall()
-            
+            row = conn.execute('SELECT id FROM files WHERE path = ?', (path,)).fetchone()
+            if not row:
+                return []
+            rows = conn.execute('SELECT timestamp, change_type, diff_blob, author FROM diff_log WHERE file_id = ? ORDER BY timestamp DESC', (row['id'],)).fetchall()
             return [dict(r) for r in rows]
-
-# --- Independent Test Block ---
-if __name__ == "__main__":
+if __name__ == '__main__':
     import os
-    if DB_PATH.exists(): os.remove(DB_PATH)
-    
+    if DB_PATH.exists():
+        os.remove(DB_PATH)
     engine = DiffEngineMS()
-    print("Service ready:", engine)
-    
-    print("--- 1. Creating File ---")
-    engine.update_file("notes.txt", "Todo List:\n1. Buy Milk\n")
-    
-    print("\n--- 2. Updating File (The Rising Edge) ---")
-    new_text = "Todo List:\n1. Buy Eggs\n2. Code Python\n"
-    res = engine.update_file("notes.txt", new_text, author="Jacob")
-    
+    print('Service ready:', engine)
+    print('--- 1. Creating File ---')
+    engine.update_file('notes.txt', 'Todo List:\n1. Buy Milk\n')
+    print('\n--- 2. Updating File (The Rising Edge) ---')
+    new_text = 'Todo List:\n1. Buy Eggs\n2. Code Python\n'
+    res = engine.update_file('notes.txt', new_text, author='Jacob')
     print(f"Update Result: {res['status']}")
-    
-    print("\n--- 3. Inspecting History ---")
-    history = engine.get_history("notes.txt")
+    print('\n--- 3. Inspecting History ---')
+    history = engine.get_history('notes.txt')
     for event in history:
         print(f"\n[{event['timestamp']}] {event['change_type']} by {event['author']}")
         print(f"Diff Preview:\n{event['diff_blob'].strip()}")
-
-    print("\n--- 4. Inspecting Head (Cache) ---")
-    print(engine.get_head("notes.txt"))
-    
-    if DB_PATH.exists(): os.remove(DB_PATH)
+    print('\n--- 4. Inspecting Head (Cache) ---')
+    print(engine.get_head('notes.txt'))
+    if DB_PATH.exists():
+        os.remove(DB_PATH)

@@ -1,0 +1,21 @@
+Project Tree: C:\Users\petya\Documents\Jacob's BIN\_UsefulHelperSCRIPTS\_HelperScriptExeMAKER
+Generated: 2026-01-25 18:49:30.708177
+
+├── 📁 src/
+│   ├── 📁 microservices/
+│   │   ├── 📄 __init__.py
+│   │   ├── 📄 _ScannerMS.py
+│   │   ├── 📄 _TelemetryServiceMS.py
+│   │   ├── 📄 _TkinterAppShellMS.py
+│   │   ├── 📄 _TkinterThemeManagerMS.py
+│   │   ├── 📄 base_service.py
+│   │   └── 📄 microservice_std_lib.py
+│   ├── 📄 __init__.py
+│   ├── 📄 app.py
+│   ├── 📄 engine.py
+│   └── 📄 ui.py
+├── 📄 LICENSE.md
+├── 📄 README.md
+├── 📄 requirements.txt
+├── 📄 setup_env.bat
+└── 📄 Tasklist_ _HelperScriptExeMAKER Buildable App (Engine + UI + Microservices).md

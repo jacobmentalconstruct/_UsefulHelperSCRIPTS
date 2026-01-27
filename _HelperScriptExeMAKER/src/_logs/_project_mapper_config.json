@@ -1,0 +1,18 @@
+{
+  "folder_states": {
+    ".": "checked",
+    "microservices": "checked",
+    "microservices\\__init__.py": "checked",
+    "microservices\\_ScannerMS.py": "checked",
+    "microservices\\_TelemetryServiceMS.py": "checked",
+    "microservices\\_TkinterAppShellMS.py": "checked",
+    "microservices\\_TkinterThemeManagerMS.py": "checked",
+    "microservices\\base_service.py": "checked",
+    "microservices\\microservice_std_lib.py": "checked",
+    "__init__.py": "checked",
+    "app.py": "checked",
+    "engine.py": "checked",
+    "ui.py": "checked"
+  },
+  "dynamic_exclusions": []
+}

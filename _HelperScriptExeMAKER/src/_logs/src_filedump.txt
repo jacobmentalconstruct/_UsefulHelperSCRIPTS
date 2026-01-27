@@ -1,0 +1,1406 @@
+Dump: C:\Users\petya\Documents\Jacob's BIN\_UsefulHelperSCRIPTS\_HelperScriptExeMAKER\src
+
+
+--------------------------------------------------------------------------------
+FILE: app.py
+--------------------------------------------------------------------------------
+#!/usr/bin/env python3
+"""
+app.py
+
+Dumb interconnection layer between:
+- engine.py (build pipeline orchestrator / CLI-capable)
+- ui.py     (Tkinter wrapper around the engine)
+
+Rules:
+- Logging is configured ONCE here.
+- engine remains usable as a CLI without UI.
+- UI remains a thin wrapper that calls engine.build_exe(...).
+"""
+
+from __future__ import annotations
+
+import argparse
+import logging
+import sys
+from typing import Optional
+
+
+def configure_logging(verbose: bool = False) -> None:
+    """Configure logging once for the entire application."""
+    level = logging.DEBUG if verbose else logging.INFO
+    logging.basicConfig(
+        level=level,
+        format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+        datefmt="%H:%M:%S",
+    )
+
+
+def parse_app_args(argv: Optional[list[str]] = None) -> argparse.Namespace:
+    """
+    Parse only the 'mode' args for the app.
+    All build args are handled by engine.py when running in --cli mode.
+    """
+    p = argparse.ArgumentParser(
+        prog="HelperScriptExeMAKER",
+        add_help=True,
+        description="HelperScriptExeMAKER - GUI wrapper + CLI entrypoint",
+    )
+    p.add_argument(
+        "--cli",
+        action="store_true",
+        help="Run in CLI mode (delegates to engine.py argument parsing and execution).",
+    )
+    p.add_argument(
+        "--verbose",
+        action="store_true",
+        help="Enable verbose logging (DEBUG).",
+    )
+    return p.parse_args(argv)
+
+
+def run_cli_passthrough() -> int:
+    """
+    Run engine's CLI as-is. We do not re-parse build args here.
+    This keeps engine.py as the authoritative CLI interface.
+    """
+    import engine  # local import so GUI mode doesn't load build deps unnecessarily
+
+    # engine.main() uses engine.parse_args() internally.
+    return int(engine.main())
+
+
+def run_gui() -> int:
+    """
+    Run Tkinter UI wrapper. UI should call engine.build_exe(...) under the hood.
+    """
+    try:
+        import ui
+    except Exception as e:
+        logging.getLogger("app").error(
+            "UI module failed to import. If ui.py is not implemented yet, use --cli. Error: %s",
+            e,
+        )
+        return 2
+
+    # Support either ui.run() or ui.main() as entrypoint
+    if hasattr(ui, "run"):
+        ui.run()
+        return 0
+    if hasattr(ui, "main"):
+        return int(ui.main())
+
+    logging.getLogger("app").error("ui.py has no run() or main() entrypoint.")
+    return 2
+
+
+def main(argv: Optional[list[str]] = None) -> int:
+    args = parse_app_args(argv)
+
+    configure_logging(verbose=args.verbose)
+
+    if args.cli:
+        return run_cli_passthrough()
+
+    return run_gui()
+
+
+if __name__ == "__main__":
+    raise SystemExit(main(sys.argv[1:]))
+
+--------------------------------------------------------------------------------
+FILE: engine.py
+--------------------------------------------------------------------------------
+#!/usr/bin/env python3
+"""
+_HelperScriptExeMAKER.py
+
+Monolithic CLI tool to build a Windows .exe for one of your UsefulHelper projects.
+
+Design goals:
+- Point at a project root folder (contains src/app.py or src/app.pyw).
+- Produce a shareable executable bundle into a destination folder.
+- Be deterministic: emits a build report and logs.
+
+Default behavior:
+- Build mode: onedir (more reliable with assets/data).
+- Uses per-project build venv: <project_root>/.build_venv
+- Installs dependencies from requirements.txt if present.
+- Includes assets/ folder if present via --add-data.
+
+Later evolution:
+- Wrap this into your microservice pattern.
+- Add a Tkinter UI that shells out to this CLI (thin wrapper).
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import shutil
+import subprocess
+import sys
+import time
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Optional, List, Tuple
+
+
+# ----------------------------
+# Utilities
+# ----------------------------
+
+def now_iso() -> str:
+    return time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime())
+
+def eprint(*args):
+    print(*args, file=sys.stderr)
+
+def run(cmd: List[str], cwd: Optional[Path] = None, env: Optional[dict] = None) -> None:
+    """Run a command and raise with good context on failure."""
+    print(f"\n[RUN] {' '.join(cmd)}")
+    subprocess.run(cmd, cwd=str(cwd) if cwd else None, env=env, check=True)
+
+def safe_mkdir(p: Path) -> None:
+    p.mkdir(parents=True, exist_ok=True)
+
+def is_windows() -> bool:
+    return os.name == "nt"
+
+
+# ----------------------------
+# Configuration / Detection
+# ----------------------------
+
+@dataclass
+class ProjectInfo:
+    project_root: Path
+    name: str
+    entrypoint: Path
+    gui: bool
+    requirements: Optional[Path]
+    assets_dir: Optional[Path]
+
+
+def detect_project(project_root: Path) -> ProjectInfo:
+    if not project_root.exists() or not project_root.is_dir():
+        raise FileNotFoundError(f"Project root not found or not a directory: {project_root}")
+
+    src_dir = project_root / "src"
+    if not src_dir.exists():
+        raise FileNotFoundError(f"Expected 'src' folder not found in: {project_root}")
+
+    entry_pyW = src_dir / "app.pyw"
+    entry_py  = src_dir / "app.py"
+
+    if entry_pyW.exists():
+        entrypoint = entry_pyW
+        gui = True
+    elif entry_py.exists():
+        entrypoint = entry_py
+        # Many of your tools are GUI even if app.py not app.pyw;
+        # we default to GUI packaging unless user forces console.
+        gui = True
+    else:
+        raise FileNotFoundError(f"No entrypoint found. Expected src/app.pyw or src/app.py in: {project_root}")
+
+    requirements = (project_root / "requirements.txt") if (project_root / "requirements.txt").exists() else None
+    assets_dir = (project_root / "assets") if (project_root / "assets").exists() else None
+
+    # Name: use folder name by default
+    name = project_root.name.strip()
+
+    return ProjectInfo(
+        project_root=project_root,
+        name=name,
+        entrypoint=entrypoint,
+        gui=gui,
+        requirements=requirements,
+        assets_dir=assets_dir
+    )
+
+
+def venv_paths(venv_dir: Path) -> Tuple[Path, Path]:
+    """
+    Return (python_exe, pip_exe) for the venv.
+    Windows: Scripts/python.exe, Scripts/pip.exe
+    """
+    if is_windows():
+        py = venv_dir / "Scripts" / "python.exe"
+        pip = venv_dir / "Scripts" / "pip.exe"
+    else:
+        py = venv_dir / "bin" / "python"
+        pip = venv_dir / "bin" / "pip"
+    return py, pip
+
+
+def ensure_venv(venv_dir: Path) -> Tuple[Path, Path]:
+    safe_mkdir(venv_dir.parent)
+    py, pip = venv_paths(venv_dir)
+    if py.exists() and pip.exists():
+        return py, pip
+
+    print(f"[INFO] Creating venv: {venv_dir}")
+    run([sys.executable, "-m", "venv", str(venv_dir)])
+    py, pip = venv_paths(venv_dir)
+
+    # Upgrade pip tooling
+    run([str(py), "-m", "pip", "install", "--upgrade", "pip", "setuptools", "wheel"])
+    return py, pip
+
+
+def ensure_pyinstaller(python_exe: Path) -> None:
+    """
+    Ensure PyInstaller is installed in the build venv.
+    """
+    # Install or upgrade PyInstaller in the venv
+    run([str(python_exe), "-m", "pip", "install", "--upgrade", "pyinstaller"])
+
+
+def install_requirements(python_exe: Path, requirements: Optional[Path]) -> None:
+    if requirements is None:
+        print("[INFO] No requirements.txt found; skipping dependency install.")
+        return
+    print(f"[INFO] Installing requirements from: {requirements}")
+    run([str(python_exe), "-m", "pip", "install", "-r", str(requirements)])
+
+
+def build_pyinstaller_cmd(
+    python_exe: Path,
+    proj: ProjectInfo,
+    build_mode: str,
+    clean: bool,
+    console: bool,
+    icon_path: Optional[Path],
+    extra_data_dirs: List[Path],
+) -> List[str]:
+    """
+    Build a PyInstaller command suitable for running inside the project root.
+    """
+    cmd = [str(python_exe), "-m", "PyInstaller"]
+
+    # Clean build artifacts (PyInstaller build cache)
+    if clean:
+        cmd.append("--clean")
+
+    # Name of the output exe/bundle
+    cmd += ["--name", proj.name]
+
+    # Mode
+    if build_mode == "onefile":
+        cmd.append("--onefile")
+    else:
+        cmd.append("--onedir")
+
+    # Console behavior
+    if not console:
+        cmd.append("--noconsole")
+
+    # Icon
+    if icon_path and icon_path.exists():
+        cmd += ["--icon", str(icon_path)]
+
+    # Data directories (assets, configs, etc.)
+    # On Windows, --add-data uses "SRC;DEST" separator.
+    # DEST is relative inside the bundle.
+    sep = ";" if is_windows() else ":"
+    for data_dir in extra_data_dirs:
+        # Put in same folder name inside bundle
+        dest_name = data_dir.name
+        cmd += ["--add-data", f"{str(data_dir)}{sep}{dest_name}"]
+
+    # Entrypoint script
+    cmd.append(str(proj.entrypoint))
+
+    return cmd
+
+
+def clean_project_build_artifacts(project_root: Path) -> None:
+    """
+    Remove build/ dist/ *.spec to avoid mixing outputs between builds.
+    """
+    for folder in ["build", "dist"]:
+        p = project_root / folder
+        if p.exists() and p.is_dir():
+            shutil.rmtree(p, ignore_errors=True)
+
+    # Spec file typically lands in project root: <name>.spec
+    # We'll remove any spec files created by this build later as well.
+    for spec in project_root.glob("*.spec"):
+        try:
+            spec.unlink()
+        except Exception:
+            pass
+
+
+def copy_dist_to_destination(project_root: Path, proj_name: str, dest_dir: Path, build_mode: str) -> Path:
+    """
+    Copy the PyInstaller output into destination folder.
+    Returns the output path created in destination.
+    """
+    dist_root = project_root / "dist"
+    if not dist_root.exists():
+        raise FileNotFoundError("PyInstaller dist folder not found. Build likely failed.")
+
+    safe_mkdir(dest_dir)
+
+    if build_mode == "onefile":
+        exe_path = dist_root / f"{proj_name}.exe"
+        if not exe_path.exists():
+            # Sometimes exe is nested; attempt fallback
+            candidates = list(dist_root.glob("*.exe"))
+            if not candidates:
+                raise FileNotFoundError(f"Expected exe not found in dist: {dist_root}")
+            exe_path = candidates[0]
+
+        out_path = dest_dir / exe_path.name
+        shutil.copy2(exe_path, out_path)
+        return out_path
+
+    # onedir: dist/<name>/...
+    bundle_dir = dist_root / proj_name
+    if not bundle_dir.exists():
+        # fallback: pick first dir in dist
+        dirs = [p for p in dist_root.iterdir() if p.is_dir()]
+        if not dirs:
+            raise FileNotFoundError(f"Expected bundle folder not found in dist: {dist_root}")
+        bundle_dir = dirs[0]
+
+    out_bundle = dest_dir / bundle_dir.name
+    if out_bundle.exists():
+        shutil.rmtree(out_bundle, ignore_errors=True)
+
+    shutil.copytree(bundle_dir, out_bundle)
+    return out_bundle
+
+
+def write_build_report(dest_dir: Path, proj: ProjectInfo, output_path: Path, args: argparse.Namespace) -> Path:
+    report = {
+        "timestamp": now_iso(),
+        "project_root": str(proj.project_root),
+        "project_name": proj.name,
+        "entrypoint": str(proj.entrypoint),
+        "gui": proj.gui,
+        "requirements": str(proj.requirements) if proj.requirements else None,
+        "assets_dir": str(proj.assets_dir) if proj.assets_dir else None,
+        "build_mode": args.mode,
+        "console": args.console,
+        "clean": args.clean,
+        "icon": str(args.icon) if args.icon else None,
+        "extra_data": [str(p) for p in args.include_data] if args.include_data else [],
+        "output_path": str(output_path),
+        "python": sys.version,
+        "platform": sys.platform,
+    }
+    report_path = dest_dir / f"{proj.name}_build_report.json"
+    report_path.write_text(json.dumps(report, indent=2), encoding="utf-8")
+    return report_path
+
+
+# ----------------------------
+# Main
+# ----------------------------
+
+def parse_args() -> argparse.Namespace:
+    p = argparse.ArgumentParser(
+        description="Build a shareable .exe bundle for a UsefulHelper project (PyInstaller)."
+    )
+    p.add_argument("--project", required=True, help="Path to the target project root folder.")
+    p.add_argument("--dest", required=True, help="Destination folder to place built output.")
+    p.add_argument("--mode", choices=["onedir", "onefile"], default="onedir", help="PyInstaller build mode (default: onedir).")
+    p.add_argument("--clean", action="store_true", help="Clean prior build artifacts before building.")
+    p.add_argument("--console", action="store_true", help="Force console window (default: no console).")
+    p.add_argument("--icon", default=None, help="Optional .ico path.")
+    p.add_argument(
+        "--include-data",
+        nargs="*",
+        default=[],
+        help="Extra data directories to include (paths). Example: --include-data assets _roles"
+    )
+    p.add_argument(
+        "--venv",
+        default=None,
+        help="Optional venv path. Default is <project_root>/.build_venv"
+    )
+    return p.parse_args()
+
+
+def build_exe(
+    project: Path | str,
+    dest: Path | str,
+    mode: str = "onedir",
+    clean: bool = False,
+    console: bool = False,
+    icon: Optional[Path | str] = None,
+    include_data: Optional[List[str]] = None,
+    venv: Optional[Path | str] = None,
+) -> Tuple[Path, Path]:
+    """Build a shareable .exe bundle for a target project and stage it into dest.
+
+    This is the stable façade API that both CLI and Tkinter UI will call.
+
+    Returns:
+        (output_path, report_path)
+    """
+    project_root = Path(project).resolve()
+    dest_dir = Path(dest).resolve()
+
+    proj = detect_project(project_root)
+
+    # Compute venv location
+    venv_dir = Path(venv).resolve() if venv else (proj.project_root / ".build_venv")
+
+    # Extra data dirs: include assets automatically if present, plus user-specified
+    extra_data_dirs: List[Path] = []
+    if proj.assets_dir:
+        extra_data_dirs.append(proj.assets_dir)
+
+    for p in (include_data or []):
+        candidate = (proj.project_root / p).resolve() if not Path(p).is_absolute() else Path(p).resolve()
+        if candidate.exists() and candidate.is_dir():
+            extra_data_dirs.append(candidate)
+        else:
+            eprint(f"[WARN] include-data path not found or not a directory, skipping: {candidate}")
+
+    icon_path = Path(icon).resolve() if icon else None
+
+    print(f"[INFO] Project: {proj.name}")
+    print(f"[INFO] Root:    {proj.project_root}")
+    print(f"[INFO] Entry:   {proj.entrypoint}")
+    print(f"[INFO] Dest:    {dest_dir}")
+    print(f"[INFO] Mode:    {mode}")
+
+    if clean:
+        print("[INFO] Cleaning prior build artifacts...")
+        clean_project_build_artifacts(proj.project_root)
+
+    # Build environment
+    py, _pip = ensure_venv(venv_dir)
+    ensure_pyinstaller(py)
+    install_requirements(py, proj.requirements)
+
+    # Build
+    cmd = build_pyinstaller_cmd(
+        python_exe=py,
+        proj=proj,
+        build_mode=mode,
+        clean=clean,
+        console=console,
+        icon_path=icon_path,
+        extra_data_dirs=extra_data_dirs,
+    )
+
+    # Run PyInstaller in the project root
+    run(cmd, cwd=proj.project_root)
+
+    # Copy to destination
+    output_path = copy_dist_to_destination(proj.project_root, proj.name, dest_dir, mode)
+
+    # Build a lightweight args-like object for the existing report function
+    report_args = argparse.Namespace(
+        mode=mode,
+        console=console,
+        clean=clean,
+        icon=str(icon_path) if icon_path else None,
+        include_data=include_data or [],
+    )
+    report_path = write_build_report(dest_dir, proj, output_path, report_args)
+
+    print(f"\n[SUCCESS] Output: {output_path}")
+    print(f"[SUCCESS] Report: {report_path}")
+    return output_path, report_path
+
+
+def main() -> int:
+    args = parse_args()
+
+    build_exe(
+        project=args.project,
+        dest=args.dest,
+        mode=args.mode,
+        clean=args.clean,
+        console=args.console,
+        icon=args.icon,
+        include_data=args.include_data,
+        venv=args.venv,
+    )
+    return 0
+
+
+if __name__ == "__main__":
+    try:
+        raise SystemExit(main())
+    except subprocess.CalledProcessError as e:
+        eprint("\n[ERROR] Build command failed.")
+        eprint(f"Command: {e.cmd}")
+        eprint(f"Exit code: {e.returncode}")
+        raise
+    except Exception as e:
+        eprint("\n[ERROR] Unexpected failure:", str(e))
+        raise
+
+
+--------------------------------------------------------------------------------
+FILE: ui.py
+--------------------------------------------------------------------------------
+#!/usr/bin/env python3
+"""
+ui.py
+
+Tkinter UI wrapper for _HelperScriptExeMAKER.
+
+Design:
+- Thin wrapper that gathers user inputs and calls engine.build_exe(...)
+- Runs build in a background thread so UI stays responsive
+- Streams logs into UI via a logging.Handler
+
+Expected engine API:
+    build_exe(
+        project, dest, mode="onedir", clean=False, console=False,
+        icon=None, include_data=None, venv=None
+    ) -> (output_path, report_path)
+"""
+
+from __future__ import annotations
+
+import logging
+import queue
+import threading
+import tkinter as tk
+from dataclasses import dataclass
+from pathlib import Path
+from tkinter import filedialog, messagebox, ttk
+from typing import Optional, List, Tuple
+
+
+# -----------------------------
+# Logging -> Tkinter bridge
+# -----------------------------
+
+class TkQueueHandler(logging.Handler):
+    """Logging handler that writes formatted log records to a queue."""
+    def __init__(self, q: "queue.Queue[str]"):
+        super().__init__()
+        self.q = q
+
+    def emit(self, record: logging.LogRecord) -> None:
+        try:
+            msg = self.format(record)
+            self.q.put(msg)
+        except Exception:
+            # Never crash UI due to logging
+            pass
+
+
+# -----------------------------
+# UI State
+# -----------------------------
+
+@dataclass
+class BuildFormState:
+    project_root: str = ""
+    dest_dir: str = ""
+    mode: str = "onedir"      # onedir | onefile
+    clean: bool = False
+    console: bool = False
+    icon_path: str = ""
+    include_data_text: str = ""  # multiline: relative folder names or absolute paths
+
+
+# -----------------------------
+# Main App
+# -----------------------------
+
+class ExeMakerUI:
+    def __init__(self, root: tk.Tk):
+        self.root = root
+        self.root.title("HelperScriptExeMAKER")
+        self.root.geometry("980x700")
+
+        self.log_queue: "queue.Queue[str]" = queue.Queue()
+        self._build_thread: Optional[threading.Thread] = None
+        self._build_in_progress = False
+
+        self.state = BuildFormState()
+
+        self._setup_logging_bridge()
+        self._build_layout()
+        self._schedule_log_drain()
+
+    # ---------- Logging ----------
+    def _setup_logging_bridge(self) -> None:
+        """
+        Attach a queue handler to root logger so engine logs appear in UI.
+        app.py already calls logging.basicConfig(); we just add another handler.
+        """
+        handler = TkQueueHandler(self.log_queue)
+        handler.setLevel(logging.DEBUG)
+        handler.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(name)s: %(message)s", "%H:%M:%S"))
+
+        root_logger = logging.getLogger()
+        root_logger.addHandler(handler)
+        # Keep logger level as-is (app.py controls it). Do not force root level here.
+
+    # ---------- Layout ----------
+    def _build_layout(self) -> None:
+        # Top frame: form controls
+        top = ttk.Frame(self.root, padding=10)
+        top.pack(side=tk.TOP, fill=tk.X)
+
+        # Middle: include-data + options
+        mid = ttk.Frame(self.root, padding=10)
+        mid.pack(side=tk.TOP, fill=tk.BOTH, expand=False)
+
+        # Bottom: logs
+        bottom = ttk.Frame(self.root, padding=10)
+        bottom.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+
+        # --- Row 0: Project Root
+        ttk.Label(top, text="Target Project Root:").grid(row=0, column=0, sticky="w")
+        self.project_var = tk.StringVar(value=self.state.project_root)
+        project_entry = ttk.Entry(top, textvariable=self.project_var, width=80)
+        project_entry.grid(row=0, column=1, sticky="we", padx=(8, 8))
+        ttk.Button(top, text="Browse…", command=self._browse_project).grid(row=0, column=2, sticky="e")
+
+        # --- Row 1: Destination Dir
+        ttk.Label(top, text="Destination Folder:").grid(row=1, column=0, sticky="w", pady=(8, 0))
+        self.dest_var = tk.StringVar(value=self.state.dest_dir)
+        dest_entry = ttk.Entry(top, textvariable=self.dest_var, width=80)
+        dest_entry.grid(row=1, column=1, sticky="we", padx=(8, 8), pady=(8, 0))
+        ttk.Button(top, text="Browse…", command=self._browse_dest).grid(row=1, column=2, sticky="e", pady=(8, 0))
+
+        # Make column 1 stretch
+        top.grid_columnconfigure(1, weight=1)
+
+        # --- Options row
+        opts = ttk.Frame(mid)
+        opts.pack(side=tk.TOP, fill=tk.X)
+
+        ttk.Label(opts, text="Mode:").grid(row=0, column=0, sticky="w")
+        self.mode_var = tk.StringVar(value=self.state.mode)
+        mode_combo = ttk.Combobox(opts, textvariable=self.mode_var, values=["onedir", "onefile"], width=10, state="readonly")
+        mode_combo.grid(row=0, column=1, sticky="w", padx=(6, 16))
+
+        self.clean_var = tk.BooleanVar(value=self.state.clean)
+        ttk.Checkbutton(opts, text="Clean build artifacts", variable=self.clean_var).grid(row=0, column=2, sticky="w", padx=(0, 16))
+
+        self.console_var = tk.BooleanVar(value=self.state.console)
+        ttk.Checkbutton(opts, text="Console window", variable=self.console_var).grid(row=0, column=3, sticky="w")
+
+        # --- Icon picker row
+        ttk.Label(opts, text="Icon (.ico):").grid(row=1, column=0, sticky="w", pady=(8, 0))
+        self.icon_var = tk.StringVar(value=self.state.icon_path)
+        icon_entry = ttk.Entry(opts, textvariable=self.icon_var, width=60)
+        icon_entry.grid(row=1, column=1, columnspan=2, sticky="we", padx=(6, 8), pady=(8, 0))
+        ttk.Button(opts, text="Browse…", command=self._browse_icon).grid(row=1, column=3, sticky="e", pady=(8, 0))
+
+        opts.grid_columnconfigure(2, weight=1)
+
+        # --- Include-data box
+        inc = ttk.LabelFrame(mid, text="Include Data Directories (one per line; relative to project root or absolute paths)")
+        inc.pack(side=tk.TOP, fill=tk.BOTH, expand=False, pady=(10, 0))
+
+        self.include_text = tk.Text(inc, height=6, wrap="none")
+        self.include_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+        scroll_y = ttk.Scrollbar(inc, orient="vertical", command=self.include_text.yview)
+        scroll_y.pack(side=tk.RIGHT, fill=tk.Y)
+        self.include_text.configure(yscrollcommand=scroll_y.set)
+
+        # --- Action buttons
+        actions = ttk.Frame(self.root, padding=(10, 0, 10, 10))
+        actions.pack(side=tk.TOP, fill=tk.X)
+
+        self.build_btn = ttk.Button(actions, text="Build EXE", command=self._on_build)
+        self.build_btn.pack(side=tk.LEFT)
+
+        self.status_var = tk.StringVar(value="Ready.")
+        ttk.Label(actions, textvariable=self.status_var).pack(side=tk.LEFT, padx=(12, 0))
+
+        # --- Logs
+        log_frame = ttk.LabelFrame(bottom, text="Build Log")
+        log_frame.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+
+        self.log_text = tk.Text(log_frame, wrap="word")
+        self.log_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+        log_scroll = ttk.Scrollbar(log_frame, orient="vertical", command=self.log_text.yview)
+        log_scroll.pack(side=tk.RIGHT, fill=tk.Y)
+        self.log_text.configure(yscrollcommand=log_scroll.set)
+
+        # Initial guidance
+        self._append_log("UI ready. Choose a project root and destination, then click Build EXE.\n")
+
+    # ---------- Browse handlers ----------
+    def _browse_project(self) -> None:
+        path = filedialog.askdirectory(title="Select Target Project Root")
+        if path:
+            self.project_var.set(path)
+
+    def _browse_dest(self) -> None:
+        path = filedialog.askdirectory(title="Select Destination Folder")
+        if path:
+            self.dest_var.set(path)
+
+    def _browse_icon(self) -> None:
+        path = filedialog.askopenfilename(
+            title="Select .ico file",
+            filetypes=[("Icon files", "*.ico"), ("All files", "*.*")]
+        )
+        if path:
+            self.icon_var.set(path)
+
+    # ---------- Build workflow ----------
+    def _on_build(self) -> None:
+        if self._build_in_progress:
+            messagebox.showinfo("Build in progress", "A build is already running.")
+            return
+
+        project = self.project_var.get().strip()
+        dest = self.dest_var.get().strip()
+        if not project or not Path(project).exists():
+            messagebox.showerror("Invalid Project Root", "Please choose a valid Target Project Root folder.")
+            return
+        if not dest or not Path(dest).exists():
+            messagebox.showerror("Invalid Destination", "Please choose a valid Destination folder.")
+            return
+
+        mode = self.mode_var.get().strip() or "onedir"
+        clean = bool(self.clean_var.get())
+        console = bool(self.console_var.get())
+        icon = self.icon_var.get().strip() or None
+
+        include_data = self._parse_include_data(project)
+
+        self._build_in_progress = True
+        self.build_btn.configure(state="disabled")
+        self.status_var.set("Building…")
+
+        self._append_log("\n--- BUILD START ---\n")
+        self._append_log(f"Project: {project}\nDest:    {dest}\nMode:    {mode}\nClean:   {clean}\nConsole: {console}\n")
+        if icon:
+            self._append_log(f"Icon:    {icon}\n")
+        if include_data:
+            self._append_log(f"Include: {include_data}\n")
+
+        self._build_thread = threading.Thread(
+            target=self._build_worker,
+            args=(project, dest, mode, clean, console, icon, include_data),
+            daemon=True
+        )
+        self._build_thread.start()
+
+    def _parse_include_data(self, project_root: str) -> List[str]:
+        """
+        Read include-data lines. Each line can be:
+        - relative folder name (relative to project root)
+        - absolute path
+        """
+        raw = self.include_text.get("1.0", "end").strip()
+        if not raw:
+            return []
+        lines = []
+        for line in raw.splitlines():
+            s = line.strip()
+            if not s or s.startswith("#"):
+                continue
+            lines.append(s)
+        return lines
+
+    def _build_worker(
+        self,
+        project: str,
+        dest: str,
+        mode: str,
+        clean: bool,
+        console: bool,
+        icon: Optional[str],
+        include_data: List[str],
+    ) -> None:
+        """
+        Background thread: call engine.build_exe and report results.
+        """
+        try:
+            import engine  # local import in worker thread
+
+            output_path, report_path = engine.build_exe(
+                project=project,
+                dest=dest,
+                mode=mode,
+                clean=clean,
+                console=console,
+                icon=icon,
+                include_data=include_data,
+                venv=None,
+            )
+            self.log_queue.put(f"[UI] Build complete.\n[UI] Output: {output_path}\n[UI] Report: {report_path}\n")
+            self._finish_build(success=True)
+
+        except Exception as e:
+            self.log_queue.put(f"[UI] ERROR: {e}\n")
+            self._finish_build(success=False)
+
+    def _finish_build(self, success: bool) -> None:
+        """
+        Marshal UI updates back to the Tk thread.
+        """
+        def _done():
+            self._build_in_progress = False
+            self.build_btn.configure(state="normal")
+            self.status_var.set("Build complete." if success else "Build failed.")
+            self._append_log("--- BUILD END ---\n")
+            if success:
+                messagebox.showinfo("Build complete", "Build completed successfully.")
+            else:
+                messagebox.showerror("Build failed", "Build failed. See log output for details.")
+
+        self.root.after(0, _done)
+
+    # ---------- Log display ----------
+    def _schedule_log_drain(self) -> None:
+        self._drain_logs()
+        self.root.after(100, self._schedule_log_drain)
+
+    def _drain_logs(self) -> None:
+        try:
+            while True:
+                msg = self.log_queue.get_nowait()
+                self._append_log(msg + "\n" if not msg.endswith("\n") else msg)
+        except queue.Empty:
+            return
+
+    def _append_log(self, text: str) -> None:
+        self.log_text.insert("end", text)
+        self.log_text.see("end")
+
+
+def run() -> None:
+    root = tk.Tk()
+    # ttk default theme is fine for now; later you can integrate your ThemeManagerMS
+    app = ExeMakerUI(root)
+    root.mainloop()
+
+
+def main() -> int:
+    run()
+    return 0
+
+
+if __name__ == "__main__":
+    run()
+
+--------------------------------------------------------------------------------
+FILE: __init__.py
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+FILE: microservices\base_service.py
+--------------------------------------------------------------------------------
+import logging
+from typing import Dict, Any
+
+class BaseService:
+    """
+    Standard parent class for all microservices. 
+    Provides consistent logging and identity management.
+    """
+    def __init__(self, name: str):
+        self._service_info = {
+            "name": name, 
+            "id": name.lower().replace(" ", "_")
+        }
+        
+        # NOTE: Do not call logging.basicConfig() per service instance.
+        # Configure logging once at the application entrypoint (app.py / UI shell),
+        # then services simply acquire named loggers.
+        self.logger = logging.getLogger(name)
+
+    def log_info(self, message: str):
+        self.logger.info(message)
+
+    def log_error(self, message: str):
+        self.logger.error(message)
+
+    def log_warning(self, message: str):
+        self.logger.warning(message)
+
+
+--------------------------------------------------------------------------------
+FILE: microservices\microservice_std_lib.py
+--------------------------------------------------------------------------------
+"""
+LIBRARY: Microservice Standard Lib
+VERSION: 2.1.0
+ROLE: Provides decorators for tagging Python classes as AI-discoverable services.
+
+Change (2.1.0):
+- Split dependencies into:
+    internal_dependencies: local modules / microservices to vendor with the app
+    external_dependencies: pip-installable packages (requirements.txt)
+- Keep legacy "dependencies" as an alias for external_dependencies for backward compatibility.
+- Accept unknown keyword args in @service_metadata(...) to prevent older/newer services from crashing
+  (e.g. when a runner passes additional fields).
+"""
+
+import functools
+import inspect
+from typing import Dict, List, Any, Optional, Type
+
+# ==============================================================================
+# DECORATORS (The "Writer" Tools)
+# ==============================================================================
+
+def service_metadata(
+    name: str,
+    version: str,
+    description: str,
+    tags: List[str],
+    capabilities: Optional[List[str]] = None,
+
+    # Legacy field (kept for backward compatibility):
+    # Historically this mixed stdlib + pip deps. Going forward, treat this as *external* deps.
+    dependencies: Optional[List[str]] = None,
+
+    # New fields (preferred):
+    internal_dependencies: Optional[List[str]] = None,
+    external_dependencies: Optional[List[str]] = None,
+
+    # Side effects / operational hints
+    side_effects: Optional[List[str]] = None,
+
+    # Forward-compat: ignore unknown keyword args instead of crashing older/newer services
+    **_ignored_kwargs: Any,
+):
+    """
+    Class Decorator.
+    Labels a Microservice class with high-level metadata for the Catalog.
+
+    Dependency semantics:
+      - internal_dependencies: local modules and/or other microservice modules that must be shipped with an app
+      - external_dependencies: third-party pip packages (requirements.txt)
+      - dependencies (legacy): treated as external_dependencies when external_dependencies is not provided
+    """
+    # Prefer explicit new key, otherwise fall back to legacy dependencies
+    ext = external_dependencies if external_dependencies is not None else (dependencies or [])
+    intl = internal_dependencies or []
+
+    def decorator(cls):
+        cls._is_microservice = True
+        cls._service_info = {
+            "name": name,
+            "version": version,
+            "description": description,
+            "tags": tags,
+            "capabilities": capabilities or [],
+
+            # New keys
+            "internal_dependencies": intl,
+            "external_dependencies": ext,
+
+            # Legacy alias (keep existing tooling working)
+            "dependencies": ext,
+
+            "side_effects": side_effects or []
+        }
+        return cls
+    return decorator
+
+
+def service_endpoint(
+    inputs: Dict[str, str],
+    outputs: Dict[str, str],
+    description: str,
+    tags: Optional[List[str]] = None,
+    side_effects: Optional[List[str]] = None,
+    mode: str = "sync",
+    # Forward-compat: ignore unknown keyword args instead of crashing older/newer services
+    **_ignored_kwargs: Any,
+):
+    """
+    Method Decorator.
+    Defines the 'Socket' that the AI Architect can plug into.
+
+    :param inputs: Dict of {arg_name: type_string} (e.g. {"query": "str"})
+    :param outputs: Dict of {return_name: type_string}
+    :param description: What the endpoint does
+    :param tags: List of categories (e.g. ["read", "write"])
+    :param side_effects: List of side effects (e.g. ["filesystem:write", "db:write"])
+    :param mode: "sync" or "async" (informational unless your runtime uses it)
+    """
+
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            return func(*args, **kwargs)
+
+        # Attach metadata to the function object itself
+        wrapper._is_endpoint = True
+        wrapper._endpoint_info = {
+            "name": func.__name__,
+            "inputs": inputs,
+            "outputs": outputs,
+            "description": description,
+            "tags": tags or [],
+            "side_effects": side_effects or [],
+            "mode": mode
+        }
+        return wrapper
+    return decorator
+
+
+# ==============================================================================
+# INTROSPECTION (The "Reader" Tools)
+# ==============================================================================
+
+def extract_service_schema(service_cls: Type) -> Dict[str, Any]:
+    """
+    Scans a decorated Service Class and returns a JSON-serializable schema
+    of its metadata and all its exposed endpoints.
+
+    This is what the AI Agent uses to 'read' the manual.
+    """
+    if not getattr(service_cls, "_is_microservice", False):
+        raise ValueError(f"Class {service_cls.__name__} is not decorated with @service_metadata")
+
+    schema = {
+        "meta": getattr(service_cls, "_service_info", {}),
+        "endpoints": []
+    }
+
+    # Inspect all methods of the class
+    for _, method in inspect.getmembers(service_cls, predicate=inspect.isfunction):
+        endpoint_info = getattr(method, "_endpoint_info", None)
+        if endpoint_info:
+            schema["endpoints"].append(endpoint_info)
+
+    return schema
+
+
+--------------------------------------------------------------------------------
+FILE: microservices\_ScannerMS.py
+--------------------------------------------------------------------------------
+"""
+SERVICE_NAME: _ScannerMS
+ENTRY_POINT: _ScannerMS.py
+INTERNAL_DEPENDENCIES: base_service, microservice_std_lib
+EXTERNAL_DEPENDENCIES: None
+"""
+import os
+import time
+from typing import Dict, List, Any, Optional
+
+# Package-safe imports (works when imported as microservices._ScannerMS) with fallback for direct execution
+try:
+    from .microservice_std_lib import service_metadata, service_endpoint
+    from .base_service import BaseService
+except ImportError:
+    from microservice_std_lib import service_metadata, service_endpoint
+    from base_service import BaseService
+
+@service_metadata(name='ScannerMS', version='1.0.0', description='Recursively scans directories, filters junk, and detects binaries.', tags=['filesystem', 'scanner', 'tree'], capabilities=['filesystem:read'], side_effects=['filesystem:read'], internal_dependencies=['base_service', 'microservice_std_lib'], external_dependencies=[])
+class ScannerMS(BaseService):
+    """
+    The Scanner: Walks the file system, filters junk, and detects binary files.
+    Generates the tree structure used by the UI.
+    """
+
+    def __init__(self, config: Optional[Dict[str, Any]]=None):
+        super().__init__('ScannerMS')
+        self.config = config or {}
+        self.IGNORE_DIRS = {'.git', '__pycache__', 'node_modules', 'venv', '.env', '.idea', '.vscode', 'dist', 'build', 'coverage'}
+        self.BINARY_EXTENSIONS = {'.pyc', '.pyd', '.exe', '.dll', '.so', '.dylib', '.class', '.jpg', '.png', '.gif', '.ico', '.zip', '.tar', '.gz'}
+
+    @service_endpoint(inputs={'path': 'str', 'depth': 'int'}, outputs={'tree': 'Dict'}, description='Scans the target directory and returns a nested dictionary tree of valid files.', tags=['filesystem', 'scan'], side_effects=['filesystem:read'])
+    def scan_directory(self, path: str, depth: int=0) -> Dict[str, Any]:
+        """
+        Recursively scans a directory, building a tree.
+        Excludes ignored directories and binary files.
+        """
+        if not os.path.exists(path):
+            self.log_error(f'Path not found: {path}')
+            return {}
+        root_name = os.path.basename(path) or path
+        tree = {'name': root_name, 'path': path, 'type': 'folder', 'children': []}
+        try:
+            with os.scandir(path) as it:
+                entries = sorted(it, key=lambda e: (not e.is_dir(), e.name.lower()))
+                for entry in entries:
+                    if entry.name in self.IGNORE_DIRS:
+                        continue
+                    if entry.is_dir():
+                        child_tree = self.scan_directory(entry.path, depth + 1)
+                        if child_tree:
+                            tree['children'].append(child_tree)
+                    elif entry.is_file():
+                        _, ext = os.path.splitext(entry.name)
+                        if ext.lower() in self.BINARY_EXTENSIONS:
+                            continue
+                        tree['children'].append({'name': entry.name, 'path': entry.path, 'type': 'file', 'size': entry.stat().st_size})
+        except PermissionError:
+            self.log_warning(f'Permission denied: {path}')
+        return tree
+
+    @service_endpoint(inputs={'tree_node': 'Dict'}, outputs={'files': 'List[str]'}, description='Flattens a tree node into a list of file paths.', tags=['filesystem', 'utility'], side_effects=[])
+    def flatten_tree(self, tree_node: Dict[str, Any]) -> List[str]:
+        """
+        Helper to extract all valid file paths from a tree node 
+        (e.g., when the user clicks 'Start Ingest').
+        """
+        files = []
+        if not tree_node:
+            return []
+        if tree_node.get('type') == 'file':
+            files.append(tree_node['path'])
+        elif tree_node.get('type') == 'folder' and 'children' in tree_node:
+            for child in tree_node['children']:
+                files.extend(self.flatten_tree(child))
+        return files
+if __name__ == '__main__':
+    scanner = ScannerMS()
+    print('Service ready:', scanner._service_info)
+    cwd = os.getcwd()
+    print(f'Scanning: {cwd} ...')
+    start_time = time.time()
+    tree = scanner.scan_directory(cwd)
+    duration = time.time() - start_time
+    if tree:
+        file_count = len(scanner.flatten_tree(tree))
+        print(f'Scan complete in {duration:.4f}s')
+        print(f'Found {file_count} files.')
+
+
+--------------------------------------------------------------------------------
+FILE: microservices\_TelemetryServiceMS.py
+--------------------------------------------------------------------------------
+import logging
+import queue
+import time
+from typing import Dict, Any, Optional
+
+# Package-safe imports (works when imported as microservices._TelemetryServiceMS) with fallback for direct execution
+try:
+    from .microservice_std_lib import service_metadata, service_endpoint
+except ImportError:
+    from microservice_std_lib import service_metadata, service_endpoint
+
+logger = logging.getLogger('TelemetryService')
+
+class QueueHandler(logging.Handler):
+    """
+    Custom logging handler that pushes log records into a thread-safe queue.
+    """
+
+    def __init__(self, log_queue: queue.Queue):
+        super().__init__()
+        self.log_queue = log_queue
+
+    def emit(self, record):
+        self.format(record)
+        self.log_queue.put(record)
+
+@service_metadata(name='TelemetryService', version='1.0.0', description='The Nervous System: Watches the thread-safe LogQueue and updates GUI components with real-time status.', tags=['utility', 'logging', 'telemetry'], capabilities=['log-redirection', 'real-time-updates'], internal_dependencies=['microservice_std_lib'], external_dependencies=[])
+class TelemetryServiceMS:
+    """
+    The Nervous System.
+    Watches the thread-safe LogQueue and updates the GUI Panels.
+    """
+
+    def __init__(self, config: Optional[Dict[str, Any]]=None):
+        self.config = config or {}
+        self.root = self.config.get('root')
+        self.panels = self.config.get('panels')
+        self.log_queue = queue.Queue()
+        self.start_time = time.time()
+        self._heartbeat_count = 0
+        self._setup_logging_hook()
+
+    @service_endpoint(inputs={}, outputs={'status': 'str', 'uptime': 'float', 'queue_depth': 'int'}, description='Standardized health check to verify the operational state of the telemetry pipeline.', tags=['diagnostic', 'health'], side_effects=[])
+    def get_health(self) -> Dict[str, Any]:
+        """Returns the operational status of the TelemetryServiceMS."""
+        return {'status': 'online', 'uptime': time.time() - self.start_time, 'queue_depth': self.log_queue.qsize()}
+
+    def _setup_logging_hook(self):
+        """Redirects Python's standard logging to our Queue."""
+        root_logger = logging.getLogger()
+        root_logger.setLevel(logging.INFO)
+        q_handler = QueueHandler(self.log_queue)
+        formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s', datefmt='%H:%M:%S')
+        q_handler.setFormatter(formatter)
+        root_logger.addHandler(q_handler)
+
+    @service_endpoint(inputs={}, outputs={}, description='Initiates the telemetry service and begins the asynchronous GUI log-polling loop.', tags=['lifecycle', 'event-loop'], mode='async', side_effects=['ui:update'])
+    def start(self):
+        """Begins the GUI update loop."""
+        logger.info('Telemetry Service starting...')
+        self._poll_queue()
+
+    @service_endpoint(inputs={}, outputs={'alive': 'bool', 'heartbeat': 'int'}, description='Verifies that the GUI polling loop is actively processing the log queue.', tags=['diagnostic', 'heartbeat'], side_effects=[])
+    def ping(self) -> Dict[str, Any]:
+        """Allows an agent to verify the pulse of the UI loop."""
+        return {'alive': True, 'heartbeat': self._heartbeat_count}
+
+    def _poll_queue(self):
+        """The heartbeat that drains the queue into the GUI."""
+        if not self.root or not self.panels:
+            return
+        self._heartbeat_count += 1
+        try:
+            while True:
+                record = self.log_queue.get_nowait()
+                msg = f'[{record.levelname}] {record.message}'
+                if hasattr(self.panels, 'log'):
+                    self.panels.log(msg)
+        except queue.Empty:
+            pass
+        finally:
+            if hasattr(self.root, 'after'):
+                self.root.after(100, self._poll_queue)
+if __name__ == '__main__':
+
+    class MockRoot:
+
+        def after(self, ms, func):
+            pass
+
+    class MockPanels:
+
+        def log(self, msg):
+            print(f'[UI LOG]: {msg}')
+    svc = TelemetryServiceMS({'root': MockRoot(), 'panels': MockPanels()})
+    print('Service ready:', svc)
+    logger.info('Internal test message')
+    svc._poll_queue()
+
+
+--------------------------------------------------------------------------------
+FILE: microservices\_TkinterAppShellMS.py
+--------------------------------------------------------------------------------
+"""
+SERVICE_NAME: _TkinterAppShellMS
+ENTRY_POINT: _TkinterAppShellMS.py
+INTERNAL_DEPENDENCIES: _TkinterThemeManagerMS, microservice_std_lib
+EXTERNAL_DEPENDENCIES: None
+"""
+import tkinter as tk
+from tkinter import ttk
+import logging
+from typing import Dict, Any, Optional
+
+# Package-safe imports (works when imported as microservices._TkinterAppShellMS) with fallback for direct execution
+try:
+    from .microservice_std_lib import service_metadata, service_endpoint
+    from ._TkinterThemeManagerMS import TkinterThemeManagerMS
+except ImportError:
+    from microservice_std_lib import service_metadata, service_endpoint
+    try:
+        from _TkinterThemeManagerMS import TkinterThemeManagerMS
+    except ImportError:
+        TkinterThemeManagerMS = None
+logger = logging.getLogger('AppShell')
+
+@service_metadata(name='TkinterAppShell', version='2.0.0', description='The Application Container. Manages the root window, main loop, and global layout.', tags=['ui', 'core', 'lifecycle'], capabilities=['ui:root', 'ui:gui'], internal_dependencies=['_TkinterThemeManagerMS', 'microservice_std_lib'], external_dependencies=[])
+class TkinterAppShellMS:
+    """
+    The Mother Ship.
+    Owns the Tkinter Root. All other UI microservices dock into this.
+    """
+
+    def __init__(self, config: Optional[Dict[str, Any]]=None):
+        self.config = config or {}
+        self.root = tk.Tk()
+        self.root.withdraw()
+        self.theme_svc = self.config.get('theme_manager')
+        if not self.theme_svc and TkinterThemeManagerMS:
+            self.theme_svc = TkinterThemeManagerMS()
+        self.colors = self.theme_svc.get_theme() if self.theme_svc else {}
+        self._configure_root()
+
+    def _configure_root(self):
+        self.root.title(self.config.get('title', 'Microservice OS'))
+        self.root.geometry(self.config.get('geometry', '1200x800'))
+        bg = self.colors.get('background', '#1e1e1e')
+        self.root.configure(bg=bg)
+        style = ttk.Style()
+        style.theme_use('clam')
+        style.configure('TFrame', background=bg)
+        style.configure('TLabel', background=bg, foreground=self.colors.get('foreground', '#ccc'))
+        style.configure('TButton', background=self.colors.get('panel_bg', '#333'), foreground='white')
+        self.main_container = tk.Frame(self.root, bg=bg)
+        self.main_container.pack(fill='both', expand=True, padx=5, pady=5)
+
+    @service_endpoint(inputs={}, outputs={}, description='Starts the GUI Main Loop.', tags=['lifecycle', 'start'], mode='sync', side_effects=['ui:block'])
+    def launch(self):
+        """Ignition sequence start."""
+        self.root.deiconify()
+        logger.info('AppShell Launched.')
+        self.root.mainloop()
+
+    @service_endpoint(inputs={}, outputs={'container': 'tk.Frame'}, description='Returns the main content area for other services to dock into.', tags=['ui', 'layout'])
+    def get_main_container(self):
+        """Other services call this to know where to .pack() themselves."""
+        return self.main_container
+
+    @service_endpoint(inputs={}, outputs={}, description='Gracefully shuts down the application.', tags=['lifecycle', 'stop'], side_effects=['ui:close'])
+    def shutdown(self):
+        self.root.quit()
+if __name__ == '__main__':
+    shell = TkinterAppShellMS({'title': 'Test Shell'})
+    shell.launch()
+
+
+--------------------------------------------------------------------------------
+FILE: microservices\_TkinterThemeManagerMS.py
+--------------------------------------------------------------------------------
+"""
+SERVICE_NAME: _TkinterThemeManagerMS
+ENTRY_POINT: _TkinterThemeManagerMS.py
+INTERNAL_DEPENDENCIES: microservice_std_lib
+EXTERNAL_DEPENDENCIES: None
+"""
+from typing import Dict, Any, Optional
+
+# Package-safe imports (works when imported as microservices._TkinterThemeManagerMS) with fallback for direct execution
+try:
+    from .microservice_std_lib import service_metadata, service_endpoint
+except ImportError:
+    from microservice_std_lib import service_metadata, service_endpoint
+
+DEFAULT_THEME = {'background': '#1e1e1e', 'foreground': '#d4d4d4', 'panel_bg': '#252526', 'border': '#3c3c3c', 'accent': '#007acc', 'error': '#f48771', 'success': '#89d185', 'font_main': ('Segoe UI', 10), 'font_mono': ('Consolas', 10)}
+
+@service_metadata(name='TkinterThemeManager', version='1.0.0', description='Centralized configuration for UI colors and fonts.', tags=['ui', 'config', 'theme'], capabilities=['ui:style'], internal_dependencies=['microservice_std_lib'], external_dependencies=[])
+class TkinterThemeManagerMS:
+    """
+    The Stylist: Holds the color palette and font settings.
+    All UI components query this service to decide how to draw themselves.
+    """
+
+    def __init__(self, config: Optional[Dict[str, Any]]=None):
+        self.config = config or {}
+        self.theme = DEFAULT_THEME.copy()
+        if 'overrides' in self.config:
+            self.theme.update(self.config['overrides'])
+
+    @service_endpoint(inputs={}, outputs={'theme': 'Dict'}, description='Returns the current active theme dictionary.', tags=['ui', 'read'])
+    def get_theme(self) -> Dict[str, Any]:
+        return self.theme
+
+    @service_endpoint(inputs={'key': 'str', 'value': 'Any'}, outputs={}, description='Updates a specific theme attribute (e.g., changing accent color).', tags=['ui', 'write'], side_effects=['ui:refresh'])
+    def update_key(self, key: str, value: Any):
+        self.theme[key] = value
+if __name__ == '__main__':
+    svc = TkinterThemeManagerMS()
+    print('Theme Ready:', svc.get_theme()['accent'])
+
+
+--------------------------------------------------------------------------------
+FILE: microservices\__init__.py
+--------------------------------------------------------------------------------
+# src/microservices/__init__.py
+"""
+Microservice package for _HelperScriptExeMAKER.
+
+This file exists so PyInstaller + Python treat /microservices as a real package,
+enabling safe relative imports (e.g. from .microservice_std_lib import ...).
+"""
+
