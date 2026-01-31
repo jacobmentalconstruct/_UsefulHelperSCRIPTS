@@ -1,0 +1,28 @@
+# LangBOT - pinned to a Pydantic v2-compatible stack
+# NOTE: This set is intended for Python 3.11–3.12. If you're on Python 3.14 preview,
+# binary wheels (faiss/numpy/chroma deps) may be missing or flaky.
+
+# Core orchestration
+langchain>=0.2.0,<0.3.0
+langgraph>=0.2.0,<0.3.0
+
+# HTTP + scraping
+requests>=2.31.0,<3.0.0
+httpx>=0.26.0,<1.0.0
+readability-lxml>=0.8.1,<1.0.0
+
+# Vector stores + math
+# Numpy pinned <2 because faiss/chroma stacks have historically lagged on numpy major bumps.
+numpy>=1.26.0,<2.0.0
+faiss-cpu>=1.7.4,<2.0.0
+
+# Chroma + config stack (fixes the BaseSettings move)
+chromadb>=0.5.0,<0.6.0
+pydantic>=2.6.0,<3.0.0
+pydantic-settings>=2.1.0,<3.0.0
+
+# Chroma telemetry dependency alignment (PostHog SDK v6 changed capture() signature)
+posthog>=5,<6
+
+# (Optional but often needed transitively; harmless if already pulled)
+typing-extensions>=4.9.0

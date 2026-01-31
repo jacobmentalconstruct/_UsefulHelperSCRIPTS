@@ -154,7 +154,17 @@
     "src\\app - Copy.pyw": "checked",
     "src\\app.pyw": "checked",
     "requirements.txt": "checked",
-    "setup_env.bat": "checked"
+    "setup_env.bat": "checked",
+    "assets": "checked",
+    "assets\\icons": "checked",
+    "assets\\icons\\_UsefulHelperSCRIPTS.ico": "checked",
+    "src\\app_workingBACKUP_v1.pyw": "checked",
+    "src\\app_workingBACKUP_v2.pyw": "checked",
+    "src\\app_workingBackup_v3.pyw": "checked",
+    "src\\app_workingBACKUP_v4.pyw": "checked",
+    "src\\app_workingBACKUP_v5.pyw": "checked",
+    "_UsefulHelperScriptsMENU.spec": "checked",
+    "Iterative App Refactor Tasklist.md": "checked"
   },
   "dynamic_exclusions": []
 }

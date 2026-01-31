@@ -1,5 +1,5 @@
-Project Tree: C:\Users\petya\Documents\Jacob's BIN\_UsefulHelperSCRIPTS\_UsefulHelperScriptsMENU
-Generated: 2026-01-25 10:59:07.567391
+Project Tree: C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_UsefulHelperScriptsMENU
+Generated: 2026-01-28 10:05:53.534414
 
 ├── 📁 _BoilerPlatePythonTEMPLATE/
 │   ├── 📁 src/
@@ -9,12 +9,21 @@ Generated: 2026-01-25 10:59:07.567391
 │   ├── 📄 README.md
 │   ├── 📄 requirements.txt
 │   └── 📄 setup_env.bat
+├── 📁 assets/
+│   └── 📁 icons/
+│       └── 📄 _UsefulHelperSCRIPTS.ico
 ├── 📁 src/
 │   ├── 📁 microservices/
 │   │   ├── 📄 _ContextAggregatorMS.py
 │   │   └── 📄 _TreeMapperMS.py
 │   ├── 📄 __init__.py
-│   ├── 📄 app - Copy.pyw
-│   └── 📄 app.pyw
+│   ├── 📄 app.pyw
+│   ├── 📄 app_workingBACKUP_v1.pyw
+│   ├── 📄 app_workingBACKUP_v2.pyw
+│   ├── 📄 app_workingBackup_v3.pyw
+│   ├── 📄 app_workingBACKUP_v4.pyw
+│   └── 📄 app_workingBACKUP_v5.pyw
+├── 📄 _UsefulHelperScriptsMENU.spec
+├── 📄 Iterative App Refactor Tasklist.md
 ├── 📄 requirements.txt
 └── 📄 setup_env.bat

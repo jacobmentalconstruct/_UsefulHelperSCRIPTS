@@ -1,4 +1,234 @@
-Dump: C:\Users\petya\Documents\Jacob's BIN\_UsefulHelperSCRIPTS\_UsefulHelperScriptsMENU
+Dump: C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_UsefulHelperScriptsMENU
+
+
+--------------------------------------------------------------------------------
+FILE: Iterative App Refactor Tasklist.md
+--------------------------------------------------------------------------------
+This mechanical task list breaks the upgrade down into iterative steps. We will move through the files by establishing the structural fixes first, then the interaction logic, and finally the advanced UX features.
+
+### **Phase 1: Structural Integrity & Standard Fixes**
+
+**Goal:** Prevent UI collapse, fix the layout of the right-hand buttons, and enable the double-click launch.
+
+* **Step 1.1: src/app.pyw**  
+  * **Action:** Add self.root.minsize(900, 600\) to \_\_init\_\_.
+
+  * **Action:** Refactor btn\_row (in \_build\_widgets) to use pack(side=tk.RIGHT) with specific padding or a nested frame to prevent truncation.
+
+* **Step 1.2: src/app.pyw**  
+  * **Action:** Bind \<Double-1\> on self.app\_listbox and self.archive\_listbox to self.\_on\_launch\_clicked.
+
+* **Step 1.3: src/app.pyw**  
+  * **Action:** Implement the \_on\_mousewheel helper method and bind it to all scrollable widgets.
+
+* **THE PATCH FOR PHASE 1** *
+{
+  "hunks": [
+    {
+      "description": "Add window constraints and double-click bindings in __init__",
+      "search_block": "        self.root.title(\"Useful Helper Apps Launcher\")\n        self.root.geometry(\"900x600\")\n        self._setup_styles()\n        self._build_widgets()\n        self._refresh_all()",
+      "replace_block": "        self.root.title(\"Useful Helper Apps Launcher\")\n        self.root.geometry(\"900x600\")\n        self.root.minsize(900, 600)\n        self._setup_styles()\n        self._build_widgets()\n        self._refresh_all()\n\n        # Double-click launch bindings\n        self.app_listbox.bind(\"<Double-1>\", self._on_double_click)\n        self.archive_listbox.bind(\"<Double-1>\", self._on_double_click)",
+      "use_patch_indent": false
+    },
+    {
+      "description": "Refactor btn_row to prevent button truncation and add right-alignment",
+      "search_block": "        btn_row = ttk.Frame(right_frame)\n        btn_row.pack(fill=tk.X, pady=(15, 0))\n        \n        ttk.Button(btn_row, text=\"Launch\", command=self._on_launch_clicked).pack(side=tk.LEFT)\n        ttk.Button(btn_row, text=\"Create New...\", command=self._on_create_clicked).pack(side=tk.LEFT, padx=5)\n        ttk.Button(btn_row, text=\"Refresh\", command=self._refresh_all).pack(side=tk.LEFT)\n\n        ttk.Button(btn_row, text=\"VENV\", width=5, command=self._on_open_venv).pack(side=tk.RIGHT, padx=2)\n        ttk.Button(btn_row, text=\"PS\", width=3, command=self._on_open_ps).pack(side=tk.RIGHT, padx=2)\n        ttk.Button(btn_row, text=\"CMD\", width=4, command=self._on_open_cmd).pack(side=tk.RIGHT, padx=2)\n        ttk.Button(btn_row, text=\"Folder\", command=self._on_open_folder).pack(side=tk.RIGHT)",
+      "replace_block": "        btn_row = ttk.Frame(right_frame)\n        btn_row.pack(fill=tk.X, pady=(15, 0))\n\n        # Action Group (Left)\n        left_btn_grp = ttk.Frame(btn_row)\n        left_btn_grp.pack(side=tk.LEFT)\n        \n        ttk.Button(left_btn_grp, text=\"Launch\", command=self._on_launch_clicked).pack(side=tk.LEFT)\n        ttk.Button(left_btn_grp, text=\"Create New...\", command=self._on_create_clicked).pack(side=tk.LEFT, padx=5)\n        ttk.Button(left_btn_grp, text=\"Refresh\", command=self._refresh_all).pack(side=tk.LEFT)\n\n        # Utility Group (Right)\n        right_btn_grp = ttk.Frame(btn_row)\n        right_btn_grp.pack(side=tk.RIGHT)\n\n        ttk.Button(right_btn_grp, text=\"VENV\", width=6, command=self._on_open_venv).pack(side=tk.RIGHT, padx=2)\n        ttk.Button(right_btn_grp, text=\"PS\", width=4, command=self._on_open_ps).pack(side=tk.RIGHT, padx=2)\n        ttk.Button(right_btn_grp, text=\"CMD\", width=5, command=self._on_open_cmd).pack(side=tk.RIGHT, padx=2)\n        ttk.Button(right_btn_grp, text=\"Folder\", command=self._on_open_folder).pack(side=tk.RIGHT)",
+      "use_patch_indent": false
+    },
+    {
+      "description": "Add Mousewheel helper and double-click handler",
+      "search_block": "    def _on_launch_clicked(self):\n        if hasattr(self, 'selected_app'): launch_app(self.selected_app)",
+      "replace_block": "    def _on_mousewheel(self, event):\n        \"\"\"Universal scroll handler for listboxes and text widgets.\"\"\"\n        direction = -1 if event.delta > 0 else 1\n        event.widget.yview_scroll(direction * 3, \"units\")\n\n    def _on_double_click(self, event=None):\n        self._on_launch_clicked()\n\n    def _on_launch_clicked(self):\n        if hasattr(self, 'selected_app'): launch_app(self.selected_app)",
+      "use_patch_indent": false
+    }
+  ]
+}
+
+### ---
+
+**Phase 2: Navigation & Contextual Control**
+
+**Goal:** Add real-time searching and the ability to control apps via right-click.
+
+* **Step 2.1: src/app.pyw**  
+  * **Action:** Insert a ttk.Entry (Search Bar) above the "Available Apps" label.
+
+  * **Action:** Create a self.search\_var with a .trace\_add("write", ...) callback to filter self.active\_apps.
+
+* **Step 2.2: src/app.pyw**  
+  * **Action:** Define a \_show\_context\_menu method.  
+  * **Action:** Bind \<Button-3\> (Right Click) on the listboxes to trigger a tk.Menu containing Launch, Folder, CMD, PS, and VENV actions.
+
+* **THE PATCH FOR PHASE 2** *
+{
+  "hunks": [
+    {
+      "description": "Initialize search variable and context menu in __init__",
+      "search_block": "        self._setup_styles()\n        self._build_widgets()\n        self._refresh_all()",
+      "replace_block": "        self._setup_styles()\n        self.search_var = tk.StringVar()\n        self.search_var.trace_add(\"write\", lambda *args: self._refresh_listbox_only())\n        self._build_widgets()\n        self._refresh_all()\n        self._build_context_menu()",
+      "use_patch_indent": false
+    },
+    {
+      "description": "Insert Search Bar and bind Right-Click to listboxes",
+      "search_block": "        # 1. Available Apps (The \"Expander\")\n        ttk.Label(left_frame, text=\"Available Apps\", font=(\"Segoe UI\", 9, \"bold\")).pack(anchor=\"w\")\n        self.app_listbox = tk.Listbox(left_frame, bg=self.widget_colors[\"bg\"], ",
+      "replace_block": "        # 1. Search and Available Apps\n        ttk.Label(left_frame, text=\"Search Apps\", font=(\"Segoe UI\", 8)).pack(anchor=\"w\")\n        search_entry = ttk.Entry(left_frame, textvariable=self.search_var)\n        search_entry.pack(fill=tk.X, pady=(0, 10))\n\n        ttk.Label(left_frame, text=\"Available Apps\", font=(\"Segoe UI\", 9, \"bold\")).pack(anchor=\"w\")\n        self.app_listbox = tk.Listbox(left_frame, bg=self.widget_colors[\"bg\"], ",
+      "use_patch_indent": false
+    },
+    {
+      "description": "Bind Button-3 for Context Menu on both listboxes",
+      "search_block": "        self.app_listbox.pack(fill=tk.BOTH, expand=True, pady=(0, 5))\n        self.app_listbox.bind(\"<<ListboxSelect>>\", lambda e: self._on_select(self.app_listbox))",
+      "replace_block": "        self.app_listbox.pack(fill=tk.BOTH, expand=True, pady=(0, 5))\n        self.app_listbox.bind(\"<<ListboxSelect>>\", lambda e: self._on_select(self.app_listbox))\n        self.app_listbox.bind(\"<Button-3>\", self._show_context_menu)",
+      "use_patch_indent": false
+    },
+    {
+      "description": "Bind Button-3 for Archive listbox",
+      "search_block": "        self.archive_listbox.pack(fill=tk.X, expand=False) # Only fills width, height is fixed\n        self.archive_listbox.bind(\"<<ListboxSelect>>\", lambda e: self._on_select(self.archive_listbox))",
+      "replace_block": "        self.archive_listbox.pack(fill=tk.X, expand=False) # Only fills width, height is fixed\n        self.archive_listbox.bind(\"<<ListboxSelect>>\", lambda e: self._on_select(self.archive_listbox))\n        self.archive_listbox.bind(\"<Button-3>\", self._show_context_menu)",
+      "use_patch_indent": false
+    },
+    {
+      "description": "Implement filtering logic and context menu methods",
+      "search_block": "    def _refresh_all(self):\n        self.active_apps = discover_apps(ROOT_DIR)\n        self.archived_apps = discover_apps(ROOT_DIR / \"__ARCHIVES__\")\n        \n        self.app_listbox.delete(0, tk.END)\n        for a in self.active_apps: self.app_listbox.insert(tk.END, a.name)\n        \n        self.archive_listbox.delete(0, tk.END)\n        for a in self.archived_apps: self.archive_listbox.insert(tk.END, a.name)",
+      "replace_block": "    def _refresh_all(self):\n        self.active_apps = discover_apps(ROOT_DIR)\n        self.archived_apps = discover_apps(ROOT_DIR / \"__ARCHIVES__\")\n        self._refresh_listbox_only()\n\n    def _refresh_listbox_only(self):\n        search_query = self.search_var.get().lower()\n        \n        self.app_listbox.delete(0, tk.END)\n        for a in self.active_apps:\n            if search_query in a.name.lower():\n                self.app_listbox.insert(tk.END, a.name)\n        \n        self.archive_listbox.delete(0, tk.END)\n        for a in self.archived_apps:\n            if search_query in a.name.lower():\n                self.archive_listbox.insert(tk.END, a.name)\n\n    def _build_context_menu(self):\n        self.context_menu = tk.Menu(self.root, tearoff=0, bg=self.widget_colors[\"bg\"], fg=\"white\")\n        self.context_menu.add_command(label=\"🚀 Launch\", command=self._on_launch_clicked)\n        self.context_menu.add_separator()\n        self.context_menu.add_command(label=\"📂 Open Folder\", command=self._on_open_folder)\n        self.context_menu.add_command(label=\"💻 CMD Terminal\", command=self._on_open_cmd)\n        self.context_menu.add_command(label=\"🐚 PowerShell\", command=self._on_open_ps)\n        self.context_menu.add_command(label=\"🐍 VENV Terminal\", command=self._on_open_venv)\n\n    def _show_context_menu(self, event):\n        # Select the item under the mouse first\n        widget = event.widget\n        index = widget.nearest(event.y)\n        widget.selection_clear(0, tk.END)\n        widget.selection_set(index)\n        widget.activate(index)\n        self._on_select(widget)\n        \n        self.context_menu.post(event.x_root, event.y_root)",
+      "use_patch_indent": false
+    }
+  ]
+}
+
+### ---
+
+**Phase 3: Feedback & Visual Polish**
+
+**Goal:** Improve communication with the user and add visual distinction to the app list.
+
+* **Step 3.1: src/app.pyw**  
+  * **Action:** Add a ttk.Label (Status Bar) at the very bottom of the root window.
+
+  * **Action:** Create a \_set\_status(text) method to update this label and replace generic print statements or non-critical messagebox alerts.
+
+* **Step 3.2: src/app.pyw**  
+  * **Action:** Modify \_refresh\_all to prepend symbols (e.g., 🐍  for Python apps) to the names inserted into the listboxes.
+
+* **Step 3.3: src/app.pyw**  
+  * **Action:** Wrap the left and right columns in a ttk.PanedWindow to allow user-adjustable sidebar width.
+
+* **THE PATCH FOR PHASE 3** *
+{
+  "hunks": [
+    {
+      "description": "Initialize Status Bar and PanedWindow in _build_widgets",
+      "search_block": "    def _build_widgets(self):\n        main_frame = ttk.Frame(self.root, padding=10)\n        main_frame.pack(fill=tk.BOTH, expand=True)\n\n        # --- LEFT COLUMN ---",
+      "replace_block": "    def _build_widgets(self):\n        # Status Bar at the bottom\n        self.status_bar = ttk.Label(self.root, text=\" Ready\", relief=tk.SUNKEN, anchor=tk.W)\n        self.status_bar.pack(side=tk.BOTTOM, fill=tk.X)\n\n        # PanedWindow to allow resizing columns\n        self.paned = ttk.PanedWindow(self.root, orient=tk.HORIZONTAL)\n        self.paned.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)\n\n        # --- LEFT COLUMN ---",
+      "use_patch_indent": false
+    },
+    {
+      "description": "Add left and right frames to PanedWindow instead of packing directly",
+      "search_block": "        # --- LEFT COLUMN ---\n        left_frame = ttk.Frame(main_frame)\n        left_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)",
+      "replace_block": "        # --- LEFT COLUMN ---\n        left_frame = ttk.Frame(self.paned)\n        self.paned.add(left_frame, weight=1)",
+      "use_patch_indent": false
+    },
+    {
+      "description": "Add right frame to PanedWindow",
+      "search_block": "        # RIGHT DETAILS\n        right_frame = ttk.Frame(main_frame, padding=(15, 0))\n        right_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)",
+      "replace_block": "        # RIGHT DETAILS\n        right_frame = ttk.Frame(self.paned, padding=(15, 0))\n        self.paned.add(right_frame, weight=2)",
+      "use_patch_indent": false
+    },
+    {
+      "description": "Implement _set_status and update listbox icons",
+      "search_block": "    def _refresh_listbox_only(self):\n        search_query = self.search_var.get().lower()\n        \n        self.app_listbox.delete(0, tk.END)\n        for a in self.active_apps:\n            if search_query in a.name.lower():\n                self.app_listbox.insert(tk.END, a.name)\n        \n        self.archive_listbox.delete(0, tk.END)\n        for a in self.archived_apps:\n            if search_query in a.name.lower():\n                self.archive_listbox.insert(tk.END, a.name)",
+      "replace_block": "    def _set_status(self, text):\n        \"\"\"Updates the status bar with a timestamped message.\"\"\"\n        import datetime\n        ts = datetime.datetime.now().strftime(\"%H:%M:%S\")\n        self.status_bar.config(text=f\" [{ts}] {text}\")\n\n    def _refresh_listbox_only(self):\n        search_query = self.search_var.get().lower()\n        \n        self.app_listbox.delete(0, tk.END)\n        for a in self.active_apps:\n            if search_query in a.name.lower():\n                icon = \"🐍 \" if a.has_src_app else \"⭕ \"\n                self.app_listbox.insert(tk.END, f\"{icon}{a.name}\")\n        \n        self.archive_listbox.delete(0, tk.END)\n        for a in self.archived_apps:\n            if search_query in a.name.lower():\n                self.archive_listbox.insert(tk.END, f\"📦 {a.name}\")\n        \n        self._set_status(f\"Refreshed list ({len(self.active_apps)} active, {len(self.archived_apps)} archived)\")",
+      "use_patch_indent": false
+    },
+    {
+      "description": "Update launch and folder actions to use status bar",
+      "search_block": "    def _on_launch_clicked(self):\n        if hasattr(self, 'selected_app'): launch_app(self.selected_app)\n\n    def _on_open_venv(self):\n        if hasattr(self, 'selected_app'):\n            act = self.selected_app.folder / \".venv\" / \"Scripts\" / \"activate.bat\"\n            if act.exists(): subprocess.Popen([\"cmd.exe\", \"/k\", str(act)], cwd=str(self.selected_app.folder))\n            else: self._on_open_cmd()",
+      "replace_block": "    def _on_launch_clicked(self):\n        if hasattr(self, 'selected_app'): \n            self._set_status(f\"Launching {self.selected_app.name}...\")\n            launch_app(self.selected_app)\n\n    def _on_open_venv(self):\n        if hasattr(self, 'selected_app'):\n            self._set_status(f\"Opening VENV for {self.selected_app.name}\")\n            act = self.selected_app.folder / \".venv\" / \"Scripts\" / \"activate.bat\"\n            if act.exists(): subprocess.Popen([\"cmd.exe\", \"/k\", str(act)], cwd=str(self.selected_app.folder))\n            else: self._on_open_cmd()",
+      "use_patch_indent": false
+    }
+  ]
+}
+
+### ---
+
+**Phase 4: Scaffolding Enhancements**
+
+**Goal:** Ensure the Microservice Selector is as robust as the main menu.
+
+* **Step 4.1: src/app.pyw (Inside MicroserviceSelector Class)**  
+  * **Action:** Add mousewheel support to the scrollable\_frame.
+
+  * **Action:** Add a "Project Name" Entry directly into this modal so all creation data is in one window.
+
+* **Step 4.2: src/app.pyw**  
+  * **Action:** Update \_on\_create\_clicked to validate that the project name is safe and the target path is writable before proceeding.
+
+* **THE PATCH FOR PHASE 4** *
+{
+  "hunks": [
+    {
+      "description": "Add Project Name entry and mousewheel binding to MicroserviceSelector",
+      "search_block": "    def _build_ui(self):\n        # Folder Picker Row\n        frame_folder = ttk.LabelFrame(self, text=\"Step 1: Target Location\", padding=10)\n        frame_folder.pack(fill=\"x\", padx=10, pady=10)\n        self.lbl_path = ttk.Label(frame_folder, text=\"No folder selected...\", foreground=\"#ff6666\", wraplength=450)\n        self.lbl_path.pack(side=\"left\", padx=5)\n        ttk.Button(frame_folder, text=\"Browse...\", command=self._on_browse).pack(side=\"right\")\n\n        # Microservice Selection",
+      "replace_block": "    def _build_ui(self):\n        # Step 1: Project Name\n        frame_name = ttk.LabelFrame(self, text=\"Step 1: Project Name\", padding=10)\n        frame_name.pack(fill=\"x\", padx=10, pady=5)\n        self.ent_name = ttk.Entry(frame_name)\n        self.ent_name.pack(fill=\"x\")\n\n        # Step 2: Folder Picker Row\n        frame_folder = ttk.LabelFrame(self, text=\"Step 2: Target Location\", padding=10)\n        frame_folder.pack(fill=\"x\", padx=10, pady=5)\n        self.lbl_path = ttk.Label(frame_folder, text=\"No folder selected...\", foreground=\"#ff6666\", wraplength=450)\n        self.lbl_path.pack(side=\"left\", padx=5)\n        ttk.Button(frame_folder, text=\"Browse...\", command=self._on_browse).pack(side=\"right\")\n\n        # Step 3: Microservice Selection",
+      "use_patch_indent": false
+    },
+    {
+      "description": "Bind Mousewheel to the canvas in MicroserviceSelector",
+      "search_block": "        canvas.pack(side=\"left\", fill=\"both\", expand=True)\n        scrollbar.pack(side=\"right\", fill=\"y\")",
+      "replace_block": "        canvas.pack(side=\"left\", fill=\"both\", expand=True)\n        scrollbar.pack(side=\"right\", fill=\"y\")\n\n        # Mousewheel support\n        canvas.bind_all(\"<MouseWheel>\", lambda e: canvas.yview_scroll(int(-1*(e.delta/120)), \"units\"))",
+      "use_patch_indent": false
+    },
+    {
+      "description": "Add name validation and cleanup mousewheel binding on confirm",
+      "search_block": "    def _on_confirm(self):\n        self.selected_files = [f for f, var in self.check_vars.items() if var.get()]\n        self.confirmed = True\n        self.destroy()",
+      "replace_block": "    def _on_confirm(self):\n        name = self.ent_name.get().strip()\n        if not name:\n            messagebox.showerror(\"Error\", \"Project name is required.\")\n            return\n        \n        self.safe_name = \"\".join(c for c in name if c.isalnum() or c in ('_', '-')).strip()\n        if not self.target_path:\n            messagebox.showerror(\"Error\", \"Target location is required.\")\n            return\n\n        self.selected_files = [f for f, var in self.check_vars.items() if var.get()]\n        self.confirmed = True\n        self.unbind_all(\"<MouseWheel>\")\n        self.destroy()",
+      "use_patch_indent": false
+    },
+    {
+      "description": "Update _on_create_clicked to use unified selector data and validate path",
+      "search_block": "    def _on_create_clicked(self):\n        name = simpledialog.askstring(\"New App\", \"Enter project name:\")\n        if not name: return\n        safe_name = \"\".join(c for c in name if c.isalnum() or c in ('_', '-')).strip()\n        \n        selector = MicroserviceSelector(self.root)\n        self.root.wait_window(selector)\n        if not selector.confirmed or not selector.target_path: return\n\n        target_dir = selector.target_path / safe_name\n        self._write_boilerplate(target_dir, selector.selected_files)\n        self._refresh_all()\n        messagebox.showinfo(\"Success\", f\"App {safe_name} created.\")",
+      "replace_block": "    def _on_create_clicked(self):\n        selector = MicroserviceSelector(self.root)\n        self.root.wait_window(selector)\n        \n        if not selector.confirmed: \n            return\n\n        target_dir = selector.target_path / selector.safe_name\n        \n        # Path Validation\n        if target_dir.exists():\n            messagebox.showerror(\"Error\", f\"Directory already exists:\\n{target_dir}\")\n            return\n        \n        try:\n            # Test writability\n            target_dir.mkdir(parents=True, exist_ok=True)\n            self._write_boilerplate(target_dir, selector.selected_files)\n            self._refresh_all()\n            self._set_status(f\"Created app: {selector.safe_name}\")\n            messagebox.showinfo(\"Success\", f\"App {selector.safe_name} created.\")\n        except Exception as e:\n            messagebox.showerror(\"Creation Failed\", f\"Could not create project:\\n{e}\")",
+      "use_patch_indent": false
+    }
+  ]
+}
+
+### ---
+
+**Phase 5: Boilerplate & Template Sync**
+
+**Goal:** Align the "stamped out" apps with the new microservice standards.
+
+* **Step 5.1: \_BoilerPlatePythonTEMPLATE/src/app.py**  
+  * **Action:** Update the boilerplate imports and main() structure to match the microservice injection logic.
+
+* **Step 5.2: src/microservices/\_ContextAggregatorMS.py**  
+  * **Action:** Update the default ignore list to include the newly created \_logs and \_\_ARCHIVES\_\_ directories.
+
+* **THE PATCH FOR PHASE 5** *
+{
+  "hunks": [
+    {
+      "description": "Update boilerplate to match microservice injection logic",
+      "search_block": "import sys\nimport os\nimport argparse  # For parsing command-line arguments\n\n# Third-party imports (if any)\n# e.g., import requests\n\n# Local/application imports (if any)\n# e.g., from . import my_other_module",
+      "replace_block": "import sys\nimport os\n\n# Note: This file is designed to be overwritten by the Launcher's injection logic.\n# It provides the entry point for loaded microservices.",
+      "use_patch_indent": false
+    },
+    {
+      "description": "Align boilerplate main() with microservice boot sequence",
+      "search_block": "def main():\n    \"\"\"\n    Main function to run the script from the command line.\n    It parses arguments, calls core functions, and handles CLI-specific\n    input/output and error handling.\n    \"\"\"\n    \n    # --- Argument Parsing ---\n    # Set up the argument parser\n    # TODO: Update the description to match your tool.\n    parser = argparse.ArgumentParser(\n        description=\"A generic CLI tool. TODO: Describe your tool here.\",\n        epilog=\"Example: python generic_module.py my_input.txt -o my_output.txt -v\"\n    )",
+      "replace_block": "def main():\n    \"\"\"\n    Main entry point for the microservice-enabled application.\n    \"\"\"\n    print('--- Booting Microservice App ---')\n    # Injection point for service instances\n    print('--- System Ready ---')",
+      "use_patch_indent": false
+    },
+    {
+      "description": "Update ContextAggregator ignore list to include logs and archives",
+      "search_block": "DEFAULT_IGNORE_DIRS = {\n    \"node_modules\", \".git\", \"__pycache__\", \".venv\", \".env\", \n    \"dist\", \"build\", \"coverage\", \".idea\", \".vscode\"\n}",
+      "replace_block": "DEFAULT_IGNORE_DIRS = {\n    \"node_modules\", \".git\", \"__pycache__\", \".venv\", \".env\", \n    \"dist\", \"build\", \"coverage\", \".idea\", \".vscode\",\n    \"_logs\", \"__ARCHIVES__\"\n}",
+      "use_patch_indent": false
+    }
+  ]
+}
+
 
 
 --------------------------------------------------------------------------------
@@ -29,13 +259,64 @@ echo [SUCCESS] Environment ready!
 echo You can now open this folder in VS Code or launch via scripts_menu.py
 pause
 --------------------------------------------------------------------------------
-FILE: src\app - Copy.pyw
+FILE: _UsefulHelperScriptsMENU.spec
+--------------------------------------------------------------------------------
+# -*- mode: python ; coding: utf-8 -*-
+
+
+a = Analysis(
+    ['C:\\Users\\petya\\Documents\\_JacobBIN\\_UsefulHelperSCRIPTS\\_UsefulHelperScriptsMENU\\src\\app.pyw'],
+    pathex=['C:\\Users\\petya\\Documents\\_JacobBIN\\_UsefulHelperSCRIPTS\\_UsefulHelperScriptsMENU'],
+    binaries=[],
+    datas=[('C:\\Users\\petya\\Documents\\_JacobBIN\\_UsefulHelperSCRIPTS\\_UsefulHelperScriptsMENU\\assets', 'assets'), ('C:\\Users\\petya\\Documents\\_JacobBIN\\_UsefulHelperSCRIPTS\\_UsefulHelperScriptsMENU\\assets', 'assets')],
+    hiddenimports=[],
+    hookspath=[],
+    hooksconfig={},
+    runtime_hooks=[],
+    excludes=[],
+    noarchive=False,
+    optimize=0,
+)
+pyz = PYZ(a.pure)
+
+exe = EXE(
+    pyz,
+    a.scripts,
+    [],
+    exclude_binaries=True,
+    name='_UsefulHelperScriptsMENU',
+    debug=False,
+    bootloader_ignore_signals=False,
+    strip=False,
+    upx=True,
+    console=False,
+    disable_windowed_traceback=False,
+    argv_emulation=False,
+    target_arch=None,
+    codesign_identity=None,
+    entitlements_file=None,
+    icon=['C:\\Users\\petya\\Documents\\_JacobBIN\\_UsefulHelperSCRIPTS\\_UsefulHelperScriptsMENU\\assets\\icons\\_UsefulHelperSCRIPTS.ico'],
+)
+coll = COLLECT(
+    exe,
+    a.binaries,
+    a.datas,
+    strip=False,
+    upx=True,
+    upx_exclude=[],
+    name='_UsefulHelperScriptsMENU',
+)
+
+--------------------------------------------------------------------------------
+FILE: src\app.pyw
 --------------------------------------------------------------------------------
 import json
 import os
 import shutil
 import subprocess
 import sys
+import datetime
+import ast
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, List, Optional
@@ -46,19 +327,8 @@ from tkinter import ttk, messagebox, simpledialog
 # ==============================================================================
 # CONFIGURATION
 # ==============================================================================
-# Resolve Root Directory (Go up 3 levels: src -> _UsefulHelperScriptsMENU -> _UsefulHelperSCRIPTS)
 ROOT_DIR = Path(__file__).resolve().parent.parent.parent
 MICROSERVICE_LIB_PATH = ROOT_DIR / "_MicroserviceLIBRARY"
-CONFIG_FILE = ROOT_DIR / "helper_apps.json"
-
-GLOBAL_IGNORE_PATTERNS = [
-    ".git", ".gitignore", ".gitattributes", ".vscode", ".idea",
-    "__pycache__", "*.pyc", "*.pyo", ".DS_Store", "Thumbs.db",
-    ".venv", "venv", "env", "node_modules",
-    "_logs", "*.log", "*.tmp", "dist", "build",
-    "*.exe", "*.dll", "*.so", "*.bin", "*.iso", "*.zip", "*.tar", "*.gz",
-    "package-lock.json", "yarn.lock" 
-]
 
 @dataclass
 class AppConfig:
@@ -86,29 +356,13 @@ class AppConfig:
         
         return ["pyw"] if os.name == "nt" else [sys.executable]
 
-# ---------- Discovery & Launch Logic ----------
-
-def discover_apps() -> List[AppConfig]:
-    apps: Dict[str, AppConfig] = {}
-    if CONFIG_FILE.is_file():
-        try:
-            raw = json.load(CONFIG_FILE.open("r", encoding="utf-8"))
-            for entry in raw:
-                folder = ROOT_DIR / entry["folder"]
-                apps[str(folder.resolve())] = AppConfig(
-                    name=entry.get("name", folder.name),
-                    folder=folder,
-                    python_cmd=entry.get("python"),
-                    env=entry.get("env", {})
-                )
-        except Exception as e: print(f"Config Load Error: {e}")
-
-    for child in ROOT_DIR.iterdir():
-        if child.is_dir() and (child / "src" / "app.py").is_file():
-            key = str(child.resolve())
-            if key not in apps:
-                apps[key] = AppConfig(name=child.name, folder=child)
-    return list(apps.values())
+def discover_apps(base_dir: Path) -> List[AppConfig]:
+    apps = []
+    if base_dir.is_dir():
+        for child in base_dir.iterdir():
+            if child.is_dir() and (child / "src" / "app.py").is_file():
+                apps.append(AppConfig(name=child.name, folder=child))
+    return sorted(apps, key=lambda a: a.name.lower())
 
 def launch_app(app_cfg: AppConfig):
     if not app_cfg.has_src_app:
@@ -123,342 +377,593 @@ def launch_app(app_cfg: AppConfig):
         messagebox.showerror("Launch failed", f"Failed to launch {app_cfg.name}:\n{e}")
 
 # ==============================================================================
-# UI COMPONENTS (DARK THEME)
+# UI COMPONENTS
 # ==============================================================================
 
 class MicroserviceSelector(tk.Toplevel):
     def __init__(self, parent):
         super().__init__(parent)
-        self.title("Select Microservices to Inject")
-        self.geometry("600x750")
+        self.title("Scaffolding Details")
+        self.geometry("600x800")
         self.configure(bg="#1e1e2f")
-        self.colors = getattr(parent, 'widget_colors', {"bg": "#151521", "fg": "white", "selectbg": "#007ACC"})
         
         self.confirmed = False
         self.selected_files = []
+        self.target_path = None
+        self.safe_name = ""
         self.available_files = {}
 
         if MICROSERVICE_LIB_PATH.exists():
             for f in MICROSERVICE_LIB_PATH.glob("*MS.py"):
-                key = f.stem.lstrip("_")
-                self.available_files[key] = f
                 self.available_files[f.name] = f
+                self.available_files[f.stem.lstrip("_")] = f
 
         self._build_ui()
         self.transient(parent)
         self.grab_set()
 
     def _build_ui(self):
-        # 1. Header
-        lbl = ttk.Label(self, text="Select capabilities to add:", font=("Segoe UI", 10, "bold"))
-        lbl.pack(pady=(10, 5))
+        # --- ttk dark styling for this dialog (prevents OS theme grey/white bleed) ---
+        BG = "#1e1e2f"
+        PANEL = "#151521"
+        FG = "#d1d1e0"
+        BORDER = "#33334d"
 
-        # --- Quick Paste Area ---
-        frame_batch = ttk.LabelFrame(self, text="Quick Paste (Comma Separated)", padding=10)
-        frame_batch.pack(fill="x", padx=10, pady=5)
+        style = ttk.Style(self)
+        # On Windows, default themes often ignore background colors; clam is predictable.
+        try:
+            style.theme_use("clam")
+        except tk.TclError:
+            pass
 
-        self.txt_batch = tk.Text(
-            frame_batch, height=3, font=("Consolas", 9),
-            bg=self.colors["bg"], fg=self.colors["fg"],
-            insertbackground="white", borderwidth=0
-        )
-        self.txt_batch.pack(fill="x", pady=5)
+        style.configure("Dark.TFrame", background=BG)
+        style.configure("Dark.TLabelframe", background=BG, bordercolor=BORDER)
+        style.configure("Dark.TLabelframe.Label", background=BG, foreground=FG)
+        style.configure("Dark.TLabel", background=BG, foreground=FG)
+        style.configure("Dark.TEntry", fieldbackground=PANEL, foreground=FG)
 
-        # 2. Scrollable Checkbox List (Cleaned of gray backgrounds)
-        frame_list = ttk.Frame(self)
-        frame_list.pack(fill="both", expand=True, padx=10, pady=5)
+        # --- Project Name ---
+        frame_name = ttk.LabelFrame(self, text="Project Name", padding=10, style="Dark.TLabelframe")
+        frame_name.pack(fill="x", padx=10, pady=5)
+        self.ent_name = ttk.Entry(frame_name, style="Dark.TEntry")
+        self.ent_name.pack(fill="x")
 
-        # Set Canvas background to match the main window blue (#1e1e2f)
-        canvas = tk.Canvas(frame_list, bg="#1e1e2f", highlightthickness=0)
-        scrollbar = ttk.Scrollbar(frame_list, orient="vertical", command=canvas.yview)
-        
-        # Ensure the interior frame also matches the main background
-        scrollable_frame = tk.Frame(canvas, bg="#1e1e2f")
+        # --- Project Location ---
+        frame_folder = ttk.LabelFrame(self, text="Project Location", padding=10, style="Dark.TLabelframe")
+        frame_folder.pack(fill="x", padx=10, pady=5)
+        self.lbl_path = ttk.Label(frame_folder, text="No folder selected...", style="Dark.TLabel", wraplength=450)
+        self.lbl_path.pack(side="left", padx=5)
+        ttk.Button(frame_folder, text="Browse...", command=self._on_browse).pack(side="right")
 
-        scrollable_frame.bind(
-            "<Configure>",
-            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
-        )
-        canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
-        canvas.configure(yscrollcommand=scrollbar.set)
+        # --- Microservices ---
+        frame_ms = ttk.LabelFrame(self, text="Microservices to Include", padding=10, style="Dark.TLabelframe")
+        frame_ms.pack(fill="both", expand=True, padx=10, pady=5)
 
-        canvas.pack(side="left", fill="both", expand=True)
+        # Core libs are always vendored (not MS files)
+        self.core_libs = ["microservice_std_lib.py", "base_service.py", "document_utils.py"]
+        core_txt = "Core libs (always included): " + ", ".join(self.core_libs)
+        ttk.Label(frame_ms, text=core_txt, style="Dark.TLabel", wraplength=560).pack(anchor="w", pady=(0, 8))
+
+        # Horizontal split: list (left) + info panel (right)
+        split = tk.PanedWindow(frame_ms, orient=tk.HORIZONTAL, bg=BG, sashwidth=4, borderwidth=0)
+        split.pack(fill="both", expand=True)
+
+        # Left: scrollable MS list
+        frame_list = tk.Frame(split, bg=BG, highlightthickness=0)
+        split.add(frame_list, width=330)
+
+        self.canvas = tk.Canvas(frame_list, bg=BG, highlightthickness=0)
+        scrollbar = ttk.Scrollbar(frame_list, orient="vertical", command=self.canvas.yview)
+        self.scrollable_frame = tk.Frame(self.canvas, bg=BG)
+        self.scrollable_frame.bind("<Configure>", lambda e: self.canvas.configure(scrollregion=self.canvas.bbox("all")))
+        self.canvas.create_window((0, 0), window=self.scrollable_frame, anchor="nw")
+        self.canvas.configure(yscrollcommand=scrollbar.set)
+
+        self.canvas.pack(side="left", fill="both", expand=True)
         scrollbar.pack(side="right", fill="y")
 
-        # 3. Themed Checkboxes
+        self.canvas.bind_all("<MouseWheel>", self._on_canvas_scroll)
+
+        # Right: info panel (always shows last selected)
+        frame_info = tk.Frame(split, bg=BG, highlightthickness=0)
+        split.add(frame_info)
+
+        ttk.Label(frame_info, text="Microservice Info", style="Dark.TLabel", font=("Segoe UI", 10, "bold")).pack(anchor="w")
+        self.info_text = tk.Text(
+            frame_info,
+            wrap="word",
+            height=20,
+            state="disabled",
+            bg=PANEL,
+            fg=FG,
+            borderwidth=0,
+            padx=10,
+            pady=10,
+            highlightthickness=1,
+            highlightbackground=BORDER,
+        )
+        self.info_text.pack(fill="both", expand=True, pady=(6, 0))
+
+        # Build MS rows
         self.check_vars = {}
+        self.check_btns = {}
+        self.required_paths = set()
+        self.ms_meta_cache = {}
+        self.last_selected_ms = None
+
         unique_paths = sorted(list(set(self.available_files.values())), key=lambda p: p.name)
-
-        # Create a style for the checkboxes to ensure they inherit the dark blue bg
-        style = ttk.Style()
-        style.configure("TCheckbutton", background="#1e1e2f", foreground="white")
-
         for f in unique_paths:
-            var = tk.BooleanVar()
-            # Use the style and explicit bg to prevent gray flicker
+            var = tk.BooleanVar(value=False)
+            row = tk.Frame(self.scrollable_frame, bg=BG)
+            row.pack(fill="x", padx=5, pady=2)
+
             cb = ttk.Checkbutton(
-                scrollable_frame, 
-                text=f.name, 
+                row,
+                text="",
                 variable=var,
-                style="TCheckbutton"
+                style="TCheckbutton",
+                command=lambda p=f: self._on_check_changed(p),
             )
-            cb.pack(anchor="w", padx=5, pady=2)
+            cb.pack(side="left")
+
+            lbl = tk.Label(
+                row,
+                text=f.name,
+                bg=BG,
+                fg=FG,
+                anchor="w",
+                cursor="hand2",
+            )
+            lbl.pack(side="left", fill="x", expand=True, padx=(6, 0))
+
+            # Single click: show info (do NOT toggle)
+            lbl.bind("<Button-1>", lambda e, p=f: self._on_ms_select(p))
+            # Double click: toggle checkbox
+            lbl.bind("<Double-1>", lambda e, p=f: self._toggle_ms(p))
+
             self.check_vars[f] = var
+            self.check_btns[f] = cb
 
-        # 4. Action Buttons
-        btn_frame = ttk.Frame(self)
+        # Seed info panel with instructions
+        self._set_info_text("Single-click a microservice name to view details.\nDouble-click to toggle include.")
+
+        btn_frame = ttk.Frame(self, style="Dark.TFrame")
         btn_frame.pack(fill="x", pady=10, padx=10)
-
-        tk.Button(
-            btn_frame, text="CREATE APP", 
-            bg="#007ACC", fg="white", 
-            font=("Segoe UI", 9, "bold"),
-            command=self._on_confirm, 
-            padx=15, borderwidth=0
-        ).pack(side="right", padx=5)
-
+        self.btn_create = tk.Button(
+            btn_frame,
+            text="CREATE APP",
+            bg="#444444",
+            fg="gray",
+            state="disabled",
+            command=self._on_confirm,
+            borderwidth=0,
+            padx=15,
+        )
+        self.btn_create.pack(side="right", padx=5)
         ttk.Button(btn_frame, text="Cancel", command=self.destroy).pack(side="right")
-        
+
+    def _set_info_text(self, text: str) -> None:
+        self.info_text.config(state="normal")
+        self.info_text.delete("1.0", tk.END)
+        self.info_text.insert("1.0", text)
+        self.info_text.config(state="disabled")
+
+    def _extract_meta_from_ast(self, path: Path) -> Dict[str, object]:
+        """Extracts a light metadata object from @service_metadata(...) on the first class found."""
+        src = path.read_text(encoding="utf-8", errors="replace")
+        try:
+            tree = ast.parse(src, filename=str(path))
+        except SyntaxError:
+            return {
+                "name": path.stem,
+                "description": "(SyntaxError while parsing file)",
+                "internal": [],
+                "external": [],
+            }
+
+        def _lit(val):
+            try:
+                return ast.literal_eval(val)
+            except Exception:
+                return None
+
+        for node in tree.body:
+            if not isinstance(node, ast.ClassDef):
+                continue
+            for dec in node.decorator_list:
+                if not isinstance(dec, ast.Call):
+                    continue
+                fn = dec.func
+                if not (isinstance(fn, ast.Name) and fn.id == "service_metadata"):
+                    continue
+
+                kw = {k.arg: k.value for k in dec.keywords if k.arg}
+                desc = _lit(kw.get("description")) if "description" in kw else None
+                internal = _lit(kw.get("internal_dependencies")) if "internal_dependencies" in kw else None
+                external = _lit(kw.get("external_dependencies")) if "external_dependencies" in kw else None
+
+                return {
+                    "name": path.stem,
+                    "class": node.name,
+                    "description": desc or "(No description)",
+                    "internal": internal or [],
+                    "external": external or [],
+                }
+
+        # Fallback if decorator not found
+        return {
+            "name": path.stem,
+            "description": "(No @service_metadata decorator found)",
+            "internal": [],
+            "external": [],
+        }
+
+    def _get_ms_meta(self, path: Path) -> Dict[str, object]:
+        if path in self.ms_meta_cache:
+            return self.ms_meta_cache[path]
+        meta = self._extract_meta_from_ast(path)
+        self.ms_meta_cache[path] = meta
+        return meta
+
+    def _on_ms_select(self, path: Path) -> None:
+        self.last_selected_ms = path
+        meta = self._get_ms_meta(path)
+
+        # Resolve any internal deps that correspond to MS files in the library
+        required_ms = []
+        for dep in (meta.get("internal") or []):
+            # internal deps are module-like names; try to map to known MS files
+            # e.g. "ArchiveBotMS" or "_ArchiveBotMS" or filename keys
+            if dep in self.available_files:
+                p = self.available_files[dep]
+                if p.name.endswith("MS.py"):
+                    required_ms.append(p.name)
+
+        text = (
+            f"File: {path.name}\n"
+            f"Class: {meta.get('class', '(unknown)')}\n\n"
+            f"Description:\n  {meta.get('description')}\n\n"
+            f"Internal deps (vendor):\n  {', '.join(meta.get('internal') or []) or 'None'}\n\n"
+            f"External deps (requirements):\n  {', '.join(meta.get('external') or []) or 'None'}\n\n"
+            f"Required microservices (auto-include when resolvable):\n  {', '.join(required_ms) or 'None'}\n"
+        )
+        self._set_info_text(text)
+
+    def _toggle_ms(self, path: Path) -> None:
+        var = self.check_vars.get(path)
+        if not var:
+            return
+        var.set(not var.get())
+        self._on_check_changed(path)
+
+    def _on_check_changed(self, changed_path: Path) -> None:
+        """When a checkbox changes, auto-include resolvable required MS deps."""
+        # Always keep info panel synced to last click target
+        self._on_ms_select(changed_path)
+
+        # Recompute required set from all checked items
+        required = set()
+        for p, var in self.check_vars.items():
+            if not var.get():
+                continue
+            meta = self._get_ms_meta(p)
+            for dep in (meta.get("internal") or []):
+                if dep in self.available_files:
+                    dep_path = self.available_files[dep]
+                    if dep_path.name.endswith("MS.py"):
+                        required.add(dep_path)
+
+        self.required_paths = required
+
+        # Apply required paths: force checked + disable checkbox so users know it's required
+        for p, cb in self.check_btns.items():
+            if p in self.required_paths:
+                self.check_vars[p].set(True)
+                cb.state(["disabled"])
+            else:
+                cb.state(["!disabled"])
+
+    def _on_canvas_scroll(self, event):
+        self.canvas.yview_scroll(int(-1*(event.delta/120)), "units")
+
+    def _on_browse(self):
+        from tkinter import filedialog
+        path = filedialog.askdirectory(title="Select Target Location", initialdir=str(ROOT_DIR))
+        if path:
+            self.target_path = Path(path)
+            self.lbl_path.config(text=str(self.target_path), foreground="#00FF00")
+            self.btn_create.config(state="normal", bg="#007ACC", fg="white")
+
     def _on_confirm(self):
-        final_selection = set(f for f, var in self.check_vars.items() if var.get())
-        raw_text = self.txt_batch.get("1.0", tk.END).strip()
-        if raw_text:
-            tokens = [t.strip() for t in raw_text.split(",") if t.strip()]
-            for token in tokens:
-                if token in self.available_files: final_selection.add(self.available_files[token])
-        self.selected_files = list(final_selection)
+        name = self.ent_name.get().strip()
+        if not name:
+            messagebox.showerror("Error", "Project name is required.")
+            return
+        self.safe_name = "".join(c for c in name if c.isalnum() or c in ('_', '-')).strip()
+        if not self.target_path:
+            messagebox.showerror("Error", "Target location is required.")
+            return
+        chosen = {f for f, var in self.check_vars.items() if var.get()}
+        chosen |= set(getattr(self, "required_paths", set()))
+        self.selected_files = sorted(list(chosen), key=lambda p: p.name.lower())
         self.confirmed = True
+        self.unbind_all("<MouseWheel>")
         self.destroy()
 
 class AppLauncherUI:
-    def __init__(self, root: tk.Tk, apps: List[AppConfig]):
+    def __init__(self, root: tk.Tk):
         self.root = root
-        self.apps = sorted(apps, key=lambda a: a.name.lower())
-        self.app_by_name = {a.name: a for a in self.apps}
         self.root.title("Useful Helper Apps Launcher")
-        self.root.geometry("850x550")
+        self.root.geometry("1100x700")
+        self.root.minsize(900, 600)
+        self.root.resizable(True, True)
+        self.last_selected_name = None
+        self.colors = {
+            "bg_main": "#1e1e2f",    
+            "bg_dark": "#151521",    
+            "bg_status": "#252538",  
+            "accent": "#007ACC",     
+            "border": "#33334d",     
+            "fg": "#d1d1e0"          
+        }
+        self.root.configure(bg=self.colors["bg_main"])
         self._setup_styles()
+        self.search_var = tk.StringVar()
+        self.search_var.trace_add("write", lambda *args: self._refresh_listbox_only())
+        
         self._build_widgets()
+        self._refresh_all()
+        self._build_context_menu()
 
     def _setup_styles(self):
         style = ttk.Style()
         style.theme_use("clam")
-        bg_main, bg_dark, accent = "#1e1e2f", "#151521", "#007ACC"
-        text_main, text_dim = "white", "lightgray"
         
-        self.root.configure(bg=bg_main)
-        style.configure("TFrame", background=bg_main)
-        style.configure("TLabel", background=bg_main, foreground=text_main)
-        style.configure("TLabelframe", background=bg_main, foreground=text_main)
-        style.configure("TLabelframe.Label", background=bg_main, foreground=text_main)
-        style.configure("TButton", background="#2a2a3f", foreground=text_main, borderwidth=0)
-        style.map("TButton", background=[("active", accent)])
+        style.configure("TFrame", background=self.colors["bg_main"])
+        style.configure("TLabel", background=self.colors["bg_main"], foreground=self.colors["fg"])
+        style.configure("Status.TLabel", background=self.colors["bg_status"], foreground=self.colors["fg"], padding=5)
         
-        self.widget_colors = {"bg": bg_dark, "fg": text_dim, "selectbg": accent, "insertbackground": "white"}
+        style.configure("TCheckbutton", background=self.colors["bg_main"], foreground=self.colors["fg"])
+        style.map("TCheckbutton", background=[('active', self.colors["bg_main"])], foreground=[('active', 'white')])
+
+        style.configure("TButton", background="#2a2a3f", foreground="white", borderwidth=0)
+        style.map("TButton", background=[("active", self.colors["accent"])])
+        
+        self.widget_colors = {"bg": self.colors["bg_dark"], "fg": self.colors["fg"], "selectbg": self.colors["accent"]}
 
     def _build_widgets(self):
-        main_frame = ttk.Frame(self.root, padding=10)
-        main_frame.pack(fill=tk.BOTH, expand=True)
+        # 1. STATUS BAR
+        self.status_bar = ttk.Label(self.root, text=" Ready", style="Status.TLabel", anchor=tk.W)
+        self.status_bar.pack(side=tk.BOTTOM, fill=tk.X)
 
-        # Left List
-        left_frame = ttk.Frame(main_frame)
-        left_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=False)
-        ttk.Label(left_frame, text="Available Apps", font=("Segoe UI", 9, "bold")).pack(anchor="w")
-        self.app_listbox = tk.Listbox(left_frame, height=20, width=40, bg=self.widget_colors["bg"], 
-                                      fg=self.widget_colors["fg"], selectbackground=self.widget_colors["selectbg"], 
-                                      borderwidth=0, highlightthickness=1, highlightbackground="#333333")
-        self.app_listbox.pack(fill=tk.BOTH, expand=True)
-        self.app_listbox.bind("<<ListboxSelect>>", self._on_select)
+        # 2. MAIN CONTENT WRAPPER
+        content_wrapper = tk.Frame(self.root, bg=self.colors["bg_main"], highlightthickness=0)
+        content_wrapper.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        # 3. PANED WINDOW - Surgical Fix: tk.PanedWindow does not support 'highlightthickness'
+        self.paned = tk.PanedWindow(
+            content_wrapper, 
+            orient=tk.HORIZONTAL, 
+            bg=self.colors["bg_main"],
+            borderwidth=0, 
+            sashwidth=4,
+            sashpad=0
+        )
+        self.paned.pack(fill=tk.BOTH, expand=True)
+
+        # LEFT PANEL
+        left_panel = tk.Frame(self.paned, bg=self.colors["bg_main"], highlightthickness=0)
+        self.paned.add(left_panel, width=300)
+
+        left_inner = ttk.Frame(left_panel)
+        left_inner.pack(fill=tk.BOTH, expand=True, padx=(5, 15), pady=5)
+
+        search_container = ttk.Frame(left_inner)
+        search_container.pack(fill=tk.X, pady=(0, 10))
+        ttk.Label(search_container, text="Search Apps", font=("Segoe UI", 8)).pack(anchor="w")
+        ttk.Entry(search_container, textvariable=self.search_var).pack(fill=tk.X)
+
+        ttk.Label(left_inner, text="Available Apps", font=("Segoe UI", 9, "bold")).pack(anchor="w")
+        self.app_listbox = tk.Listbox(
+            left_inner, 
+            bg=self.widget_colors["bg"], 
+            fg=self.widget_colors["fg"], 
+            selectbackground=self.widget_colors["selectbg"], 
+            borderwidth=0, 
+            highlightthickness=1, 
+            highlightbackground=self.colors["border"]
+        )
+        self.app_listbox.pack(fill=tk.BOTH, expand=True, pady=(0, 5))
+        self.app_listbox.bind("<<ListboxSelect>>", lambda e: self._on_select(self.app_listbox))
+        self.app_listbox.bind("<Button-3>", self._show_context_menu)
         self.app_listbox.bind("<Double-1>", self._on_double_click)
-        self._refresh_listbox()
 
-        # Right Details
-        right_frame = ttk.Frame(main_frame, padding=(10, 0))
-        right_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        self.details_text = tk.Text(right_frame, height=10, wrap="word", state="disabled",
-                                    bg=self.widget_colors["bg"], fg=self.widget_colors["fg"], 
-                                    insertbackground="white", borderwidth=0, padx=10, pady=10)
+        self.archive_var = tk.BooleanVar(value=False)
+        self.archive_check = ttk.Checkbutton(
+            left_inner, text="Show Archives", variable=self.archive_var, command=self._toggle_archives
+        )
+        self.archive_check.pack(anchor="w", pady=5)
+
+        self.archive_frame = ttk.Frame(left_inner)
+        self.archive_listbox = tk.Listbox(
+            self.archive_frame, 
+            height=8, 
+            bg=self.widget_colors["bg"],
+            fg=self.widget_colors["fg"], 
+            selectbackground=self.widget_colors["selectbg"],
+            borderwidth=0, 
+            highlightthickness=1, 
+            highlightbackground=self.colors["border"]
+        )
+        self.archive_listbox.pack(fill=tk.X, expand=False)
+        self.archive_listbox.bind("<<ListboxSelect>>", lambda e: self._on_select(self.archive_listbox))
+        self.archive_listbox.bind("<Button-3>", self._show_context_menu)
+        self.archive_listbox.bind("<Double-1>", self._on_double_click)
+
+        # RIGHT PANEL
+        right_panel = tk.Frame(self.paned, bg=self.colors["bg_main"], highlightthickness=0)
+        self.paned.add(right_panel)
+
+        right_inner = ttk.Frame(right_panel)
+        right_inner.pack(fill=tk.BOTH, expand=True, padx=(15, 5), pady=5)
+        
+        self.details_text = tk.Text(
+            right_inner, 
+            height=10, 
+            wrap="word", 
+            state="disabled",
+            bg=self.widget_colors["bg"], 
+            fg=self.widget_colors["fg"], 
+            borderwidth=0, 
+            padx=10, 
+            pady=10, 
+            highlightthickness=1, 
+            highlightbackground=self.colors["border"]
+        )
         self.details_text.pack(fill=tk.BOTH, expand=True)
 
-        btn_frame = ttk.Frame(right_frame)
-        btn_frame.pack(fill=tk.X, pady=(10, 0))
+        btn_row = ttk.Frame(right_inner)
+        btn_row.pack(fill=tk.X, pady=(15, 0))
+
+        left_btn_grp = ttk.Frame(btn_row)
+        left_btn_grp.pack(side=tk.LEFT)
+        ttk.Button(left_btn_grp, text="Launch", command=self._on_launch_clicked).pack(side=tk.LEFT)
+        ttk.Button(left_btn_grp, text="Create New...", command=self._on_create_clicked).pack(side=tk.LEFT, padx=5)
+        ttk.Button(left_btn_grp, text="Refresh", command=self._refresh_all).pack(side=tk.LEFT)
+
+        right_btn_grp = ttk.Frame(btn_row)
+        right_btn_grp.pack(side=tk.RIGHT)
+        ttk.Button(right_btn_grp, text="VENV", width=6, command=self._on_open_venv).pack(side=tk.RIGHT, padx=2)
+        ttk.Button(right_btn_grp, text="PS", width=4, command=self._on_open_ps).pack(side=tk.RIGHT, padx=2)
+        ttk.Button(right_btn_grp, text="CMD", width=5, command=self._on_open_cmd).pack(side=tk.RIGHT, padx=2)
+        ttk.Button(right_btn_grp, text="Folder", command=self._on_open_folder).pack(side=tk.RIGHT)
+
+    def _on_double_click(self, event=None):
+        self._on_launch_clicked()
+
+    def _toggle_archives(self):
+        if self.archive_var.get():
+            self.archive_frame.pack(side=tk.BOTTOM, fill=tk.X, before=self.archive_check)
+        else:
+            self.archive_frame.pack_forget()
+
+    def _set_status(self, text):
+        ts = datetime.datetime.now().strftime("%H:%M:%S")
+        self.status_bar.config(text=f" [{ts}] {text}")
+
+    def _refresh_all(self):
+        self.active_apps = discover_apps(ROOT_DIR)
+        self.archived_apps = discover_apps(ROOT_DIR / "__ARCHIVES__")
+        self._refresh_listbox_only()
+
+    def _refresh_listbox_only(self):
+        query = self.search_var.get().lower()
+        targets = [
+            (self.app_listbox, self.active_apps, '🐍 '), 
+            (self.archive_listbox, self.archived_apps, '📦 ')
+        ]
         
-        # Primary Actions
-        ttk.Button(btn_frame, text="Launch", command=self._on_launch_clicked).pack(side=tk.LEFT)
-        ttk.Button(btn_frame, text="Create New...", command=self._on_create_clicked).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Refresh", command=self._on_refresh_clicked).pack(side=tk.LEFT)
+        for lb, app_list, default_icon in targets:
+            lb.delete(0, tk.END)
+            for a in app_list:
+                if query in a.name.lower():
+                    if default_icon == '📦 ':
+                        icon = '📦 '
+                    else:
+                        icon = '🐍 ' if a.has_src_app else '⭕ '
+                    lb.insert(tk.END, f"{icon}{a.name}")
+            
+            if self.last_selected_name:
+                all_items = lb.get(0, tk.END)
+                for idx, display_val in enumerate(all_items):
+                    if display_val[2:] == self.last_selected_name:
+                        lb.selection_set(idx)
+                        lb.activate(idx)
+                        lb.see(idx) 
+                        break
 
-        # Utility Icons (Right Aligned)
-        ttk.Button(btn_frame, text="VENV", width=5, command=self._on_open_active_terminal).pack(side=tk.RIGHT, padx=2)
-        ttk.Button(btn_frame, text="PS", width=3, command=self._on_open_powershell).pack(side=tk.RIGHT, padx=2)
-        ttk.Button(btn_frame, text="CMD", width=4, command=self._on_open_cmd).pack(side=tk.RIGHT, padx=2)
-        ttk.Button(btn_frame, text="Folder", command=self._on_open_folder).pack(side=tk.RIGHT)
+        self._set_status(f"Refreshed list ({len(self.active_apps)} active, {len(self.archived_apps)} archived)")
 
-    # ---------- Logic Methods ----------
+    def _on_select(self, listbox):
+        sel = listbox.curselection()
+        if not sel: return
+        
+        raw_val = listbox.get(sel[0])
+        self.last_selected_name = raw_val[2:]
+        
+        app = next((a for a in self.active_apps + self.archived_apps if a.name == self.last_selected_name), None)
+        if app:
+            self.selected_app = app
+            self.details_text.config(state="normal")
+            self.details_text.delete("1.0", tk.END)
+            self.details_text.insert("1.0", f"Name: {app.name}\nFolder: {app.folder}\nPython: {' '.join(app.resolve_python())}")
+            self.details_text.config(state="disabled")
 
-    def _refresh_listbox(self):
-        self.app_listbox.delete(0, tk.END)
-        for app in self.apps:
-            suffix = "" if app.has_src_app else " (missing src/app.py)"
-            self.app_listbox.insert(tk.END, f"{app.name}{suffix}")
+    def _build_context_menu(self):
+        self.context_menu = tk.Menu(self.root, tearoff=0, bg=self.widget_colors["bg"], fg="white")
+        self.context_menu.add_command(label="🚀 Launch", command=self._on_launch_clicked)
+        self.context_menu.add_separator()
+        self.context_menu.add_command(label="📂 Open Folder", command=self._on_open_folder)
+        self.context_menu.add_command(label="💻 CMD Terminal", command=self._on_open_cmd)
+        self.context_menu.add_command(label="🐚 PowerShell", command=self._on_open_ps)
+        self.context_menu.add_command(label="🐍 VENV Terminal", command=self._on_open_venv)
+
+    def _show_context_menu(self, event):
+        widget = event.widget
+        index = widget.nearest(event.y)
+        widget.selection_clear(0, tk.END)
+        widget.selection_set(index)
+        self._on_select(widget)
+        self.context_menu.post(event.x_root, event.y_root)
 
     def _on_create_clicked(self):
-        # 1. Ask for Name
-        name = simpledialog.askstring("New App", "Enter project name:")
-        if not name: return
-        safe_name = "".join(c for c in name if c.isalnum() or c in ('_', '-')).strip()
-        
-        # 2. NEW: Ask for Target Location (Folder Selector)
-        from tkinter import filedialog
-        base_path = filedialog.askdirectory(
-            title="Select Parent Directory for New App",
-            initialdir=str(ROOT_DIR)
-        )
-        if not base_path: return # User cancelled
-        
-        target_dir = Path(base_path) / safe_name
-        if target_dir.exists():
-            messagebox.showerror("Error", f"Folder '{safe_name}' already exists at this location.")
-            return
-
-        # 3. Ask for Microservices
         selector = MicroserviceSelector(self.root)
         self.root.wait_window(selector)
-        if not selector.confirmed: return
+        if selector.confirmed:
+            target = selector.target_path / selector.safe_name
+            try:
+                target.mkdir(parents=True, exist_ok=True)
+                self._write_boilerplate(target, selector.selected_files)
+                self._refresh_all()
+                self._set_status(f"Created: {selector.safe_name}")
+                messagebox.showinfo("Success", f"App {selector.safe_name} created.")
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to create app: {e}")
 
-        # 4. Create and Stamp
-        try:
-            # Auto-include documentation services
-            selected_paths = list(selector.selected_files)
-            for req in ["_TreeMapperMS.py", "_ContextAggregatorMS.py"]:
-                path = MICROSERVICE_LIB_PATH / req
-                if path.exists() and path not in [p for p in selected_paths]:
-                    selected_paths.append(path)
-
-            self._write_boilerplate(target_dir, selected_paths)
-            self._generate_project_docs(target_dir, safe_name)
-            
-            # Note: We refresh discovery to see if it's in the suite root, 
-            # otherwise, it won't show in the launcher until added to helper_apps.json
-            self._on_refresh_clicked()
-            messagebox.showinfo("Success", f"App {safe_name} stamped out at:\n{target_dir}")
-        except Exception as e: 
-            messagebox.showerror("Error", f"Creation failed: {e}")
-            
-    def _write_boilerplate(self, root_path: Path, services: List[Path]):
-        template_source = Path(__file__).resolve().parent.parent / "_BoilerPlatePythonTEMPLATE"
-        if template_source.is_dir():
-            shutil.copytree(template_source, root_path, dirs_exist_ok=True)
-        else:
-            root_path.mkdir(parents=True, exist_ok=True)
-            (root_path / "src").mkdir(exist_ok=True)
-            (root_path / "src" / "__init__.py").touch()
-
+    def _write_boilerplate(self, root_path, services):
+        (root_path / "src").mkdir(exist_ok=True)
         ms_dir = root_path / "src" / "microservices"
         ms_dir.mkdir(exist_ok=True)
-        
-        # --- AUTO-VENDORED CORE INFRASTRUCTURE ---
         for dep in ["microservice_std_lib.py", "base_service.py", "document_utils.py"]:
-            source = MICROSERVICE_LIB_PATH / dep
-            if source.exists(): shutil.copy2(source, ms_dir / dep)
-        
-        for svc_path in services:
-            shutil.copy2(svc_path, ms_dir / svc_path.name)
-        
-        self._overwrite_app_py_with_imports(root_path, services)
-
-    def _overwrite_app_py_with_imports(self, root_path: Path, services: List[Path]):
-        app_py = root_path / "src" / "app.py"
-        imports, inits = [], []
-        for svc in services:
-            mod = svc.stem
-            cls = mod[1:] if mod.startswith("_") else mod
-            imports.append(f"from src.microservices.{mod} import {cls}")
-            inits.append(f"    {cls.lower()} = {cls}()\n    print(f'Service Loaded: {cls}')")
-
-        content = [
-            "import sys, os",
-            "sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))",
-            "\n".join(imports),
-            "\ndef main():",
-            "    print('--- Booting Microservice App ---')",
-            "\n".join(inits),
-            "    print('--- System Ready ---')",
-            "\nif __name__ == '__main__':\n    main()"
-        ]
-        with open(app_py, "w", encoding="utf-8") as f: f.write("\n".join(content))
-
-    def _on_open_active_terminal(self):
-        app = self._get_selected_app()
-        if not app: return
-        act = app.folder / ".venv" / "Scripts" / "activate.bat"
-        if act.exists():
-            subprocess.Popen(["cmd.exe", "/k", str(act)], cwd=str(app.folder), creationflags=subprocess.CREATE_NEW_CONSOLE)
-        else: self._on_open_cmd()
-
-    # --- Standard Handlers ---
-    def _on_open_folder(self):
-        app = self._get_selected_app()
-        if app: os.startfile(app.folder) if os.name == "nt" else subprocess.Popen(["xdg-open", str(app.folder)])
-
-    def _on_open_cmd(self):
-        app = self._get_selected_app()
-        if app: subprocess.Popen(["start", "cmd"], shell=True, cwd=app.folder)
-
-    def _on_open_powershell(self):
-        app = self._get_selected_app()
-        if app: subprocess.Popen(["start", "powershell"], shell=True, cwd=app.folder)
-
-    def _get_selected_app(self) -> Optional[AppConfig]:
-        selection = self.app_listbox.curselection()
-        if not selection: return None
-        name = self.app_listbox.get(selection[0]).split(" (missing")[0]
-        return self.app_by_name.get(name)
-
-    def _on_select(self, event=None):
-        app = self._get_selected_app()
-        if not app: return
-        details = f"Name: {app.name}\nFolder: {app.folder}\nPython: {' '.join(app.resolve_python())}"
-        self.details_text.config(state="normal")
-        self.details_text.delete("1.0", tk.END)
-        self.details_text.insert("1.0", details)
-        self.details_text.config(state="disabled")
-
-    def _on_refresh_clicked(self):
-        self.apps = sorted(discover_apps(), key=lambda a: a.name.lower())
-        self.app_by_name = {a.name: a for a in self.apps}
-        self._refresh_listbox()
+            src = MICROSERVICE_LIB_PATH / dep
+            if src.exists(): shutil.copy2(src, ms_dir / dep)
+        for s in services: shutil.copy2(s, ms_dir / s.name)
 
     def _on_launch_clicked(self):
-        app = self._get_selected_app()
-        if app: launch_app(app)
+        if hasattr(self, 'selected_app'): launch_app(self.selected_app)
 
-    def _on_double_click(self, event=None): self._on_launch_clicked()
+    def _on_open_venv(self):
+        if hasattr(self, 'selected_app'):
+            act = self.selected_app.folder / ".venv" / "Scripts" / "activate.bat"
+            subprocess.Popen(["cmd.exe", "/k", str(act)] if act.exists() else ["start", "cmd"], cwd=str(self.selected_app.folder))
 
-    def _generate_project_docs(self, project_path: Path, project_name: str):
-        import importlib.util
-        logs_dir = project_path / "_logs"
-        logs_dir.mkdir(exist_ok=True)
-        try:
-            for ms, out_name in [("_TreeMapperMS.py", "tree"), ("_ContextAggregatorMS.py", "dump")]:
-                path = MICROSERVICE_LIB_PATH / ms
-                spec = importlib.util.spec_from_file_location(ms, path)
-                mod = importlib.util.module_from_spec(spec)
-                spec.loader.exec_module(mod)
-                svc = getattr(mod, ms.replace(".py", "").lstrip("_"))()
-                if "Tree" in ms:
-                    content = svc.generate_tree(str(project_path), additional_exclusions=GLOBAL_IGNORE_PATTERNS)
-                    with open(logs_dir / f"_{project_name}_root-tree.txt", "w") as f: f.write(content)
-                else:
-                    svc.aggregate(str(project_path), str(logs_dir / f"_{project_name}_dump.txt"), extra_exclusions=GLOBAL_IGNORE_PATTERNS)
-        except Exception as e: print(f"Doc Gen Warning: {e}")
+    def _on_open_folder(self):
+        if hasattr(self, 'selected_app'): os.startfile(self.selected_app.folder)
+
+    def _on_open_cmd(self):
+        if hasattr(self, 'selected_app'): subprocess.Popen(["start", "cmd"], shell=True, cwd=self.selected_app.folder)
+
+    def _on_open_ps(self):
+        if hasattr(self, 'selected_app'): subprocess.Popen(["start", "powershell"], shell=True, cwd=self.selected_app.folder)
 
 if __name__ == "__main__":
     root = tk.Tk()
-    AppLauncherUI(root, discover_apps())
+    AppLauncherUI(root)
     root.mainloop()
+
+
 --------------------------------------------------------------------------------
-FILE: src\app.pyw
+FILE: src\app_workingBACKUP_v1.pyw
 --------------------------------------------------------------------------------
 import json
 import os
@@ -755,6 +1260,1683 @@ class AppLauncherUI:
             act = self.selected_app.folder / ".venv" / "Scripts" / "activate.bat"
             if act.exists(): subprocess.Popen(["cmd.exe", "/k", str(act)], cwd=str(self.selected_app.folder))
             else: self._on_open_cmd()
+
+    def _on_open_folder(self):
+        if hasattr(self, 'selected_app'): os.startfile(self.selected_app.folder)
+
+    def _on_open_cmd(self):
+        if hasattr(self, 'selected_app'): subprocess.Popen(["start", "cmd"], shell=True, cwd=self.selected_app.folder)
+
+    def _on_open_ps(self):
+        if hasattr(self, 'selected_app'): subprocess.Popen(["start", "powershell"], shell=True, cwd=self.selected_app.folder)
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    AppLauncherUI(root)
+    root.mainloop()
+--------------------------------------------------------------------------------
+FILE: src\app_workingBACKUP_v2.pyw
+--------------------------------------------------------------------------------
+import json
+import os
+import shutil
+import subprocess
+import sys
+import datetime
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Dict, List, Optional
+
+import tkinter as tk
+from tkinter import ttk, messagebox, simpledialog
+
+# ==============================================================================
+# CONFIGURATION
+# ==============================================================================
+ROOT_DIR = Path(__file__).resolve().parent.parent.parent
+MICROSERVICE_LIB_PATH = ROOT_DIR / "_MicroserviceLIBRARY"
+CONFIG_FILE = ROOT_DIR / "helper_apps.json"
+
+GLOBAL_IGNORE_PATTERNS = [
+    ".git", ".gitignore", ".gitattributes", ".vscode", ".idea",
+    "__pycache__", "*.pyc", "*.pyo", ".DS_Store", "Thumbs.db",
+    ".venv", "venv", "env", "node_modules",
+    "_logs", "*.log", "*.tmp", "dist", "build",
+    "*.exe", "*.dll", "*.so", "*.bin", "*.iso", "*.zip", "*.tar", "*.gz",
+    "package-lock.json", "yarn.lock" 
+]
+
+@dataclass
+class AppConfig:
+    name: str
+    folder: Path
+    python_cmd: Optional[str] = None
+    env: Dict[str, str] = field(default_factory=dict)
+
+    @property
+    def has_src_app(self) -> bool:
+        return (self.folder / "src" / "app.py").is_file()
+
+    def resolve_python(self) -> List[str]:
+        if self.python_cmd:
+            cmd = self.python_cmd
+            if os.path.sep in cmd or "/" in cmd:
+                return [str((self.folder / cmd).resolve())]
+            return [cmd]
+
+        win_candidate = self.folder / ".venv" / "Scripts" / "pythonw.exe"
+        win_fallback = self.folder / ".venv" / "Scripts" / "python.exe"
+        
+        if win_candidate.is_file(): return [str(win_candidate.resolve())]
+        if win_fallback.is_file(): return [str(win_fallback.resolve())]
+        
+        return ["pyw"] if os.name == "nt" else [sys.executable]
+
+# ---------- Discovery & Launch Logic ----------
+
+def discover_apps(base_dir: Path) -> List[AppConfig]:
+    apps = []
+    if base_dir.is_dir():
+        for child in base_dir.iterdir():
+            if child.is_dir() and (child / "src" / "app.py").is_file():
+                apps.append(AppConfig(name=child.name, folder=child))
+    return sorted(apps, key=lambda a: a.name.lower())
+
+def launch_app(app_cfg: AppConfig):
+    if not app_cfg.has_src_app:
+        messagebox.showerror("Error", f"Missing src/app.py in:\n{app_cfg.folder}")
+        return
+    cmd = app_cfg.resolve_python() + ["-m", "src.app"]
+    env = os.environ.copy()
+    env.update(app_cfg.env)
+    try:
+        subprocess.Popen(cmd, cwd=str(app_cfg.folder), env=env)
+    except Exception as e:
+        messagebox.showerror("Launch failed", f"Failed to launch {app_cfg.name}:\n{e}")
+
+# ==============================================================================
+# UI COMPONENTS
+# ==============================================================================
+
+class MicroserviceSelector(tk.Toplevel):
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.title("Scaffolding Details")
+        self.geometry("600x800")
+        self.configure(bg="#1e1e2f")
+        self.colors = getattr(parent, 'widget_colors', {"bg": "#151521", "fg": "white", "selectbg": "#007ACC"})
+        
+        self.confirmed = False
+        self.selected_files = []
+        self.target_path = None
+        self.safe_name = ""
+        self.available_files = {}
+
+        if MICROSERVICE_LIB_PATH.exists():
+            for f in MICROSERVICE_LIB_PATH.glob("*MS.py"):
+                self.available_files[f.name] = f
+                self.available_files[f.stem.lstrip("_")] = f
+
+        self._build_ui()
+        self.transient(parent)
+        self.grab_set()
+
+    def _build_ui(self):
+        # Step 1: Project Name
+        frame_name = ttk.LabelFrame(self, text="Step 1: Project Name", padding=10)
+        frame_name.pack(fill="x", padx=10, pady=5)
+        self.ent_name = ttk.Entry(frame_name)
+        self.ent_name.pack(fill="x")
+
+        # Step 2: Folder Picker Row
+        frame_folder = ttk.LabelFrame(self, text="Step 2: Target Location", padding=10)
+        frame_folder.pack(fill="x", padx=10, pady=5)
+        self.lbl_path = ttk.Label(frame_folder, text="No folder selected...", foreground="#ff6666", wraplength=450)
+        self.lbl_path.pack(side="left", padx=5)
+        ttk.Button(frame_folder, text="Browse...", command=self._on_browse).pack(side="right")
+
+        # Step 3: Microservice Selection
+        ttk.Label(self, text="Step 3: Select Microservices:", font=("Segoe UI", 10, "bold")).pack(pady=5)
+        
+        frame_list = ttk.Frame(self)
+        frame_list.pack(fill="both", expand=True, padx=10, pady=5)
+        canvas = tk.Canvas(frame_list, bg="#1e1e2f", highlightthickness=0)
+        scrollbar = ttk.Scrollbar(frame_list, orient="vertical", command=canvas.yview)
+        scrollable_frame = tk.Frame(canvas, bg="#1e1e2f")
+        scrollable_frame.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
+        canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+        canvas.configure(yscrollcommand=scrollbar.set)
+        
+        canvas.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
+
+        # Mousewheel support
+        canvas.bind_all("<MouseWheel>", lambda e: canvas.yview_scroll(int(-1*(e.delta/120)), "units"))
+
+        self.check_vars = {}
+        unique_paths = sorted(list(set(self.available_files.values())), key=lambda p: p.name)
+        style = ttk.Style()
+        style.configure("TCheckbutton", background="#1e1e2f", foreground="white")
+
+        for f in unique_paths:
+            var = tk.BooleanVar()
+            cb = ttk.Checkbutton(scrollable_frame, text=f.name, variable=var, style="TCheckbutton")
+            cb.pack(anchor="w", padx=5, pady=2)
+            self.check_vars[f] = var
+
+        # Footer
+        btn_frame = ttk.Frame(self)
+        btn_frame.pack(fill="x", pady=10, padx=10)
+        self.btn_create = tk.Button(btn_frame, text="CREATE APP", bg="#444444", fg="gray", 
+                                   state="disabled", command=self._on_confirm, borderwidth=0, padx=15)
+        self.btn_create.pack(side="right", padx=5)
+        ttk.Button(btn_frame, text="Cancel", command=self.destroy).pack(side="right")
+
+    def _on_browse(self):
+        from tkinter import filedialog
+        path = filedialog.askdirectory(title="Select Target Location", initialdir=str(ROOT_DIR))
+        if path:
+            self.target_path = Path(path)
+            self.lbl_path.config(text=str(self.target_path), foreground="#00FF00")
+            self.btn_create.config(state="normal", bg="#007ACC", fg="white")
+
+    def _on_confirm(self):
+        name = self.ent_name.get().strip()
+        if not name:
+            messagebox.showerror("Error", "Project name is required.")
+            return
+        
+        self.safe_name = "".join(c for c in name if c.isalnum() or c in ('_', '-')).strip()
+        if not self.target_path:
+            messagebox.showerror("Error", "Target location is required.")
+            return
+
+        self.selected_files = [f for f, var in self.check_vars.items() if var.get()]
+        self.confirmed = True
+        self.unbind_all("<MouseWheel>")
+        self.destroy()
+
+class AppLauncherUI:
+    def __init__(self, root: tk.Tk):
+        self.root = root
+        self.root.title("Useful Helper Apps Launcher")
+        self.root.geometry("900x600")
+        self.root.minsize(900, 600)
+        
+        self._setup_styles()
+        self.search_var = tk.StringVar()
+        self.search_var.trace_add("write", lambda *args: self._refresh_listbox_only())
+        
+        self._build_widgets()
+        self._refresh_all()
+        self._build_context_menu()
+
+        # Double-click launch bindings
+        self.app_listbox.bind("<Double-1>", self._on_double_click)
+        self.archive_listbox.bind("<Double-1>", self._on_double_click)
+
+    def _setup_styles(self):
+        style = ttk.Style()
+        style.theme_use("clam")
+        bg_main, bg_dark, accent = "#1e1e2f", "#151521", "#007ACC"
+        self.root.configure(bg=bg_main)
+        style.configure("TFrame", background=bg_main)
+        style.configure("TLabel", background=bg_main, foreground="white")
+        style.configure("TLabelframe", background=bg_main, foreground="white")
+        style.configure("TLabelframe.Label", background=bg_main, foreground="white")
+        style.configure("TButton", background="#2a2a3f", foreground="white", borderwidth=0)
+        style.map("TButton", background=[("active", accent)])
+        self.widget_colors = {"bg": bg_dark, "fg": "lightgray", "selectbg": accent}
+
+    def _build_widgets(self):
+        # Status Bar at the bottom
+        self.status_bar = ttk.Label(self.root, text=" Ready", relief=tk.SUNKEN, anchor=tk.W)
+        self.status_bar.pack(side=tk.BOTTOM, fill=tk.X)
+
+        # PanedWindow to allow resizing columns
+        self.paned = ttk.PanedWindow(self.root, orient=tk.HORIZONTAL)
+        self.paned.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        # --- LEFT COLUMN ---
+        left_frame = ttk.Frame(self.paned)
+        self.paned.add(left_frame, weight=1)
+
+        # Search and Available Apps
+        ttk.Label(left_frame, text="Search Apps", font=("Segoe UI", 8)).pack(anchor="w")
+        search_entry = ttk.Entry(left_frame, textvariable=self.search_var)
+        search_entry.pack(fill=tk.X, pady=(0, 10))
+
+        ttk.Label(left_frame, text="Available Apps", font=("Segoe UI", 9, "bold")).pack(anchor="w")
+        self.app_listbox = tk.Listbox(left_frame, bg=self.widget_colors["bg"], 
+                                      fg=self.widget_colors["fg"], selectbackground=self.widget_colors["selectbg"], 
+                                      borderwidth=0, highlightthickness=1, highlightbackground="#333333")
+        self.app_listbox.pack(fill=tk.BOTH, expand=True, pady=(0, 5))
+        self.app_listbox.bind("<<ListboxSelect>>", lambda e: self._on_select(self.app_listbox))
+        self.app_listbox.bind("<Button-3>", self._show_context_menu)
+        self.app_listbox.bind("<MouseWheel>", self._on_mousewheel)
+
+        # Archives Control
+        self.archive_var = tk.BooleanVar(value=False)
+        self.archive_check = ttk.Checkbutton(
+            left_frame, text="Show Archives", variable=self.archive_var, command=self._toggle_archives
+        )
+        self.archive_check.pack(anchor="w", pady=5)
+
+        self.archive_frame = ttk.Frame(left_frame)
+        self.archive_listbox = tk.Listbox(self.archive_frame, height=8, width=40, bg=self.widget_colors["bg"],
+                                          fg=self.widget_colors["fg"], selectbackground=self.widget_colors["selectbg"],
+                                          borderwidth=0, highlightthickness=1, highlightbackground="#333333")
+        self.archive_listbox.pack(fill=tk.X, expand=False)
+        self.archive_listbox.bind("<<ListboxSelect>>", lambda e: self._on_select(self.archive_listbox))
+        self.archive_listbox.bind("<Button-3>", self._show_context_menu)
+        self.archive_listbox.bind("<MouseWheel>", self._on_mousewheel)
+
+        # RIGHT DETAILS
+        right_frame = ttk.Frame(self.paned, padding=(15, 0))
+        self.paned.add(right_frame, weight=2)
+        
+        self.details_text = tk.Text(right_frame, height=10, wrap="word", state="disabled",
+                                    bg=self.widget_colors["bg"], fg=self.widget_colors["fg"], 
+                                    borderwidth=0, padx=10, pady=10)
+        self.details_text.pack(fill=tk.BOTH, expand=True)
+        self.details_text.bind("<MouseWheel>", self._on_mousewheel)
+
+        btn_row = ttk.Frame(right_frame)
+        btn_row.pack(fill=tk.X, pady=(15, 0))
+
+        # Action Group (Left)
+        left_btn_grp = ttk.Frame(btn_row)
+        left_btn_grp.pack(side=tk.LEFT)
+        
+        ttk.Button(left_btn_grp, text="Launch", command=self._on_launch_clicked).pack(side=tk.LEFT)
+        ttk.Button(left_btn_grp, text="Create New...", command=self._on_create_clicked).pack(side=tk.LEFT, padx=5)
+        ttk.Button(left_btn_grp, text="Refresh", command=self._refresh_all).pack(side=tk.LEFT)
+
+        # Utility Group (Right)
+        right_btn_grp = ttk.Frame(btn_row)
+        right_btn_grp.pack(side=tk.RIGHT)
+
+        ttk.Button(right_btn_grp, text="VENV", width=6, command=self._on_open_venv).pack(side=tk.RIGHT, padx=2)
+        ttk.Button(right_btn_grp, text="PS", width=4, command=self._on_open_ps).pack(side=tk.RIGHT, padx=2)
+        ttk.Button(right_btn_grp, text="CMD", width=5, command=self._on_open_cmd).pack(side=tk.RIGHT, padx=2)
+        ttk.Button(right_btn_grp, text="Folder", command=self._on_open_folder).pack(side=tk.RIGHT)
+
+    def _on_mousewheel(self, event):
+        """Universal scroll handler for listboxes and text widgets."""
+        direction = -1 if event.delta > 0 else 1
+        event.widget.yview_scroll(direction * 3, "units")
+
+    def _on_double_click(self, event=None):
+        self._on_launch_clicked()
+
+    def _toggle_archives(self):
+        if self.archive_var.get():
+            self.archive_frame.pack(side=tk.BOTTOM, fill=tk.X, before=self.archive_check)
+        else:
+            self.archive_frame.pack_forget()
+
+    def _set_status(self, text):
+        """Updates the status bar with a timestamped message."""
+        ts = datetime.datetime.now().strftime("%H:%M:%S")
+        self.status_bar.config(text=f" [{ts}] {text}")
+
+    def _refresh_all(self):
+        self.active_apps = discover_apps(ROOT_DIR)
+        self.archived_apps = discover_apps(ROOT_DIR / "__ARCHIVES__")
+        self._refresh_listbox_only()
+
+    def _refresh_listbox_only(self):
+        search_query = self.search_var.get().lower()
+        
+        self.app_listbox.delete(0, tk.END)
+        for a in self.active_apps:
+            if search_query in a.name.lower():
+                icon = "🐍 " if a.has_src_app else "⭕ "
+                self.app_listbox.insert(tk.END, f"{icon}{a.name}")
+        
+        self.archive_listbox.delete(0, tk.END)
+        for a in self.archived_apps:
+            if search_query in a.name.lower():
+                self.archive_listbox.insert(tk.END, f"📦 {a.name}")
+        
+        self._set_status(f"Refreshed list ({len(self.active_apps)} active, {len(self.archived_apps)} archived)")
+
+    def _build_context_menu(self):
+        self.context_menu = tk.Menu(self.root, tearoff=0, bg=self.widget_colors["bg"], fg="white")
+        self.context_menu.add_command(label="🚀 Launch", command=self._on_launch_clicked)
+        self.context_menu.add_separator()
+        self.context_menu.add_command(label="📂 Open Folder", command=self._on_open_folder)
+        self.context_menu.add_command(label="💻 CMD Terminal", command=self._on_open_cmd)
+        self.context_menu.add_command(label="🐚 PowerShell", command=self._on_open_ps)
+        self.context_menu.add_command(label="🐍 VENV Terminal", command=self._on_open_venv)
+
+    def _show_context_menu(self, event):
+        widget = event.widget
+        index = widget.nearest(event.y)
+        widget.selection_clear(0, tk.END)
+        widget.selection_set(index)
+        widget.activate(index)
+        self._on_select(widget)
+        self.context_menu.post(event.x_root, event.y_root)
+
+    def _on_select(self, listbox):
+        selection = listbox.curselection()
+        if not selection: return
+        raw_name = listbox.get(selection[0])
+        # Strip icons to find original app name
+        name = raw_name.replace("🐍 ", "").replace("⭕ ", "").replace("📦 ", "")
+        app = next((a for a in self.active_apps + self.archived_apps if a.name == name), None)
+        if app:
+            self.selected_app = app
+            self.details_text.config(state="normal")
+            self.details_text.delete("1.0", tk.END)
+            self.details_text.insert("1.0", f"Name: {app.name}\nFolder: {app.folder}\nPython: {' '.join(app.resolve_python())}")
+            self.details_text.config(state="disabled")
+
+    def _on_create_clicked(self):
+        selector = MicroserviceSelector(self.root)
+        self.root.wait_window(selector)
+        
+        if not selector.confirmed: 
+            return
+
+        target_dir = selector.target_path / selector.safe_name
+        
+        if target_dir.exists():
+            messagebox.showerror("Error", f"Directory already exists:\n{target_dir}")
+            return
+        
+        try:
+            target_dir.mkdir(parents=True, exist_ok=True)
+            self._write_boilerplate(target_dir, selector.selected_files)
+            self._refresh_all()
+            self._set_status(f"Created app: {selector.safe_name}")
+            messagebox.showinfo("Success", f"App {selector.safe_name} created.")
+        except Exception as e:
+            messagebox.showerror("Creation Failed", f"Could not create project:\n{e}")
+
+    def _write_boilerplate(self, root_path: Path, services: List[Path]):
+        root_path.mkdir(parents=True, exist_ok=True)
+        (root_path / "src").mkdir(exist_ok=True)
+        ms_dir = root_path / "src" / "microservices"
+        ms_dir.mkdir(exist_ok=True)
+        for dep in ["microservice_std_lib.py", "base_service.py", "document_utils.py"]:
+            src = MICROSERVICE_LIB_PATH / dep
+            if src.exists(): shutil.copy2(src, ms_dir / dep)
+        for s in services: shutil.copy2(s, ms_dir / s.name)
+
+    def _on_launch_clicked(self):
+        if hasattr(self, 'selected_app'): 
+            self._set_status(f"Launching {self.selected_app.name}...")
+            launch_app(self.selected_app)
+
+    def _on_open_venv(self):
+        if hasattr(self, 'selected_app'):
+            self._set_status(f"Opening VENV for {self.selected_app.name}")
+            act = self.selected_app.folder / ".venv" / "Scripts" / "activate.bat"
+            if act.exists(): subprocess.Popen(["cmd.exe", "/k", str(act)], cwd=str(self.selected_app.folder))
+            else: self._on_open_cmd()
+
+    def _on_open_folder(self):
+        if hasattr(self, 'selected_app'): os.startfile(self.selected_app.folder)
+
+    def _on_open_cmd(self):
+        if hasattr(self, 'selected_app'): subprocess.Popen(["start", "cmd"], shell=True, cwd=self.selected_app.folder)
+
+    def _on_open_ps(self):
+        if hasattr(self, 'selected_app'): subprocess.Popen(["start", "powershell"], shell=True, cwd=self.selected_app.folder)
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    AppLauncherUI(root)
+    root.mainloop()
+--------------------------------------------------------------------------------
+FILE: src\app_workingBackup_v3.pyw
+--------------------------------------------------------------------------------
+import json
+import os
+import shutil
+import subprocess
+import sys
+import datetime
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Dict, List, Optional
+
+import tkinter as tk
+from tkinter import ttk, messagebox, simpledialog
+
+# ==============================================================================
+# CONFIGURATION
+# ==============================================================================
+ROOT_DIR = Path(__file__).resolve().parent.parent.parent
+MICROSERVICE_LIB_PATH = ROOT_DIR / "_MicroserviceLIBRARY"
+
+@dataclass
+class AppConfig:
+    name: str
+    folder: Path
+    python_cmd: Optional[str] = None
+    env: Dict[str, str] = field(default_factory=dict)
+
+    @property
+    def has_src_app(self) -> bool:
+        return (self.folder / "src" / "app.py").is_file()
+
+    def resolve_python(self) -> List[str]:
+        if self.python_cmd:
+            cmd = self.python_cmd
+            if os.path.sep in cmd or "/" in cmd:
+                return [str((self.folder / cmd).resolve())]
+            return [cmd]
+
+        win_candidate = self.folder / ".venv" / "Scripts" / "pythonw.exe"
+        win_fallback = self.folder / ".venv" / "Scripts" / "python.exe"
+        
+        if win_candidate.is_file(): return [str(win_candidate.resolve())]
+        if win_fallback.is_file(): return [str(win_fallback.resolve())]
+        
+        return ["pyw"] if os.name == "nt" else [sys.executable]
+
+def discover_apps(base_dir: Path) -> List[AppConfig]:
+    apps = []
+    if base_dir.is_dir():
+        for child in base_dir.iterdir():
+            if child.is_dir() and (child / "src" / "app.py").is_file():
+                apps.append(AppConfig(name=child.name, folder=child))
+    return sorted(apps, key=lambda a: a.name.lower())
+
+def launch_app(app_cfg: AppConfig):
+    if not app_cfg.has_src_app:
+        messagebox.showerror("Error", f"Missing src/app.py in:\n{app_cfg.folder}")
+        return
+    cmd = app_cfg.resolve_python() + ["-m", "src.app"]
+    env = os.environ.copy()
+    env.update(app_cfg.env)
+    try:
+        subprocess.Popen(cmd, cwd=str(app_cfg.folder), env=env)
+    except Exception as e:
+        messagebox.showerror("Launch failed", f"Failed to launch {app_cfg.name}:\n{e}")
+
+# ==============================================================================
+# UI COMPONENTS
+# ==============================================================================
+
+class MicroserviceSelector(tk.Toplevel):
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.title("Scaffolding Details")
+        self.geometry("600x800")
+        self.configure(bg="#1e1e2f")
+        
+        self.confirmed = False
+        self.selected_files = []
+        self.target_path = None
+        self.safe_name = ""
+        self.available_files = {}
+
+        if MICROSERVICE_LIB_PATH.exists():
+            for f in MICROSERVICE_LIB_PATH.glob("*MS.py"):
+                self.available_files[f.name] = f
+                self.available_files[f.stem.lstrip("_")] = f
+
+        self._build_ui()
+        self.transient(parent)
+        self.grab_set()
+
+    def _build_ui(self):
+        frame_name = ttk.LabelFrame(self, text="Step 1: Project Name", padding=10)
+        frame_name.pack(fill="x", padx=10, pady=5)
+        self.ent_name = ttk.Entry(frame_name)
+        self.ent_name.pack(fill="x")
+
+        frame_folder = ttk.LabelFrame(self, text="Step 2: Target Location", padding=10)
+        frame_folder.pack(fill="x", padx=10, pady=5)
+        self.lbl_path = ttk.Label(frame_folder, text="No folder selected...", foreground="#ff6666", wraplength=450)
+        self.lbl_path.pack(side="left", padx=5)
+        ttk.Button(frame_folder, text="Browse...", command=self._on_browse).pack(side="right")
+
+        ttk.Label(self, text="Step 3: Select Microservices:", font=("Segoe UI", 10, "bold")).pack(pady=5)
+        
+        frame_list = ttk.Frame(self)
+        frame_list.pack(fill="both", expand=True, padx=10, pady=5)
+        self.canvas = tk.Canvas(frame_list, bg="#1e1e2f", highlightthickness=0)
+        scrollbar = ttk.Scrollbar(frame_list, orient="vertical", command=self.canvas.yview)
+        scrollable_frame = tk.Frame(self.canvas, bg="#1e1e2f")
+        scrollable_frame.bind("<Configure>", lambda e: self.canvas.configure(scrollregion=self.canvas.bbox("all")))
+        self.canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+        self.canvas.configure(yscrollcommand=scrollbar.set)
+        
+        self.canvas.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
+
+        self.canvas.bind_all("<MouseWheel>", self._on_canvas_scroll)
+
+        self.check_vars = {}
+        unique_paths = sorted(list(set(self.available_files.values())), key=lambda p: p.name)
+        
+        for f in unique_paths:
+            var = tk.BooleanVar()
+            cb = ttk.Checkbutton(scrollable_frame, text=f.name, variable=var, style="TCheckbutton")
+            cb.pack(anchor="w", padx=5, pady=2)
+            self.check_vars[f] = var
+
+        btn_frame = ttk.Frame(self)
+        btn_frame.pack(fill="x", pady=10, padx=10)
+        self.btn_create = tk.Button(btn_frame, text="CREATE APP", bg="#444444", fg="gray", 
+                                   state="disabled", command=self._on_confirm, borderwidth=0, padx=15)
+        self.btn_create.pack(side="right", padx=5)
+        ttk.Button(btn_frame, text="Cancel", command=self.destroy).pack(side="right")
+
+    def _on_canvas_scroll(self, event):
+        self.canvas.yview_scroll(int(-1*(event.delta/120)), "units")
+
+    def _on_browse(self):
+        from tkinter import filedialog
+        path = filedialog.askdirectory(title="Select Target Location", initialdir=str(ROOT_DIR))
+        if path:
+            self.target_path = Path(path)
+            self.lbl_path.config(text=str(self.target_path), foreground="#00FF00")
+            self.btn_create.config(state="normal", bg="#007ACC", fg="white")
+
+    def _on_confirm(self):
+        name = self.ent_name.get().strip()
+        if not name:
+            messagebox.showerror("Error", "Project name is required.")
+            return
+        self.safe_name = "".join(c for c in name if c.isalnum() or c in ('_', '-')).strip()
+        if not self.target_path:
+            messagebox.showerror("Error", "Target location is required.")
+            return
+        self.selected_files = [f for f, var in self.check_vars.items() if var.get()]
+        self.confirmed = True
+        self.unbind_all("<MouseWheel>")
+        self.destroy()
+
+class AppLauncherUI:
+    def __init__(self, root: tk.Tk):
+        self.root = root
+        self.root.title("Useful Helper Apps Launcher")
+        self.root.geometry("1100x700")
+        self.root.minsize(900, 600)
+        self.root.resizable(True, True)
+        
+        # --- COLOR PALETTE ---
+        self.colors = {
+            "bg_main": "#1e1e2f",    # Medium-dark blue
+            "bg_dark": "#151521",    # Darkest blue (inner textboxes)
+            "bg_status": "#252538",  # Status bar brightness
+            "accent": "#007ACC",     # Selection Blue
+            "border": "#33334d",     # Subtle border color
+            "fg": "#d1d1e0"          # Soft text
+        }
+
+        self._setup_styles()
+        self.search_var = tk.StringVar()
+        self.search_var.trace_add("write", lambda *args: self._refresh_listbox_only())
+        
+        self._build_widgets()
+        self._refresh_all()
+        self._build_context_menu()
+
+    def _setup_styles(self):
+        style = ttk.Style()
+        style.theme_use("clam")
+        
+        style.configure("TFrame", background=self.colors["bg_main"])
+        style.configure("TLabel", background=self.colors["bg_main"], foreground=self.colors["fg"])
+        style.configure("TLabelframe", background=self.colors["bg_main"], foreground=self.colors["fg"], bordercolor=self.colors["border"])
+        style.configure("TLabelframe.Label", background=self.colors["bg_main"], foreground=self.colors["fg"])
+        
+        # Status Bar - Zeroing out internal padding and relief 
+        style.configure("Status.TLabel", background=self.colors["bg_status"], foreground=self.colors["fg"], padding=5)
+        
+        # Paned Window - Clean borders 
+        style.configure("TPanedwindow", background=self.colors["border"])
+        
+        style.configure("TCheckbutton", background=self.colors["bg_main"], foreground=self.colors["fg"])
+        style.map("TCheckbutton", background=[('active', self.colors["bg_main"])], foreground=[('active', 'white')])
+
+        style.configure("TButton", background="#2a2a3f", foreground="white", borderwidth=0)
+        style.map("TButton", background=[("active", self.colors["accent"])])
+        
+        self.widget_colors = {"bg": self.colors["bg_dark"], "fg": self.colors["fg"], "selectbg": self.colors["accent"]}
+
+    def _build_widgets(self):
+        # 1. STATUS BAR (BOTTOM)
+        self.status_bar = ttk.Label(self.root, text=" Ready", style="Status.TLabel", anchor=tk.W)
+        self.status_bar.pack(side=tk.BOTTOM, fill=tk.X)
+
+        # 2. MAIN CONTENT WRAPPER (CENTER)
+        # This frame provides the padding that keeps everything away from the window edges
+        content_wrapper = tk.Frame(self.root, bg=self.colors["bg_main"], highlightthickness=0)
+        content_wrapper.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        # 3. PANED WINDOW (Within Content)
+        # highlightthickness=0 removes that abrasive grey/white border 
+        self.paned = ttk.PanedWindow(content_wrapper, orient=tk.HORIZONTAL)
+        self.paned.pack(fill=tk.BOTH, expand=True)
+
+        # --- LEFT COLUMN ---
+        # Add internal padding so widgets don't collide with the sash 
+        left_frame = ttk.Frame(self.paned)
+        self.paned.add(left_frame, weight=1)
+
+        # Search - Left Panel Padding
+        search_container = ttk.Frame(left_frame)
+        search_container.pack(fill=tk.X, padx=(5, 15), pady=(5, 10))
+        
+        ttk.Label(search_container, text="Search Apps", font=("Segoe UI", 8)).pack(anchor="w")
+        search_entry = ttk.Entry(search_container, textvariable=self.search_var)
+        search_entry.pack(fill=tk.X)
+
+        # Listboxes - Left Panel Padding
+        list_container = ttk.Frame(left_frame)
+        list_container.pack(fill=tk.BOTH, expand=True, padx=(5, 15))
+
+        ttk.Label(list_container, text="Available Apps", font=("Segoe UI", 9, "bold")).pack(anchor="w")
+        self.app_listbox = tk.Listbox(list_container, bg=self.widget_colors["bg"], 
+                                      fg=self.widget_colors["fg"], selectbackground=self.widget_colors["selectbg"], 
+                                      borderwidth=0, highlightthickness=1, highlightbackground=self.colors["border"])
+        self.app_listbox.pack(fill=tk.BOTH, expand=True, pady=(0, 5))
+        self.app_listbox.bind("<<ListboxSelect>>", lambda e: self._on_select(self.app_listbox))
+        self.app_listbox.bind("<Button-3>", self._show_context_menu)
+        self.app_listbox.bind("<Double-1>", self._on_double_click)
+
+        # Archives with styled checkbox
+        self.archive_var = tk.BooleanVar(value=False)
+        self.archive_check = ttk.Checkbutton(
+            list_container, text="Show Archives", variable=self.archive_var, command=self._toggle_archives
+        )
+        self.archive_check.pack(anchor="w", pady=5)
+
+        self.archive_frame = ttk.Frame(list_container)
+        self.archive_listbox = tk.Listbox(self.archive_frame, height=8, bg=self.widget_colors["bg"],
+                                          fg=self.widget_colors["fg"], selectbackground=self.widget_colors["selectbg"],
+                                          borderwidth=0, highlightthickness=1, highlightbackground=self.colors["border"])
+        self.archive_listbox.pack(fill=tk.X, expand=False)
+        self.archive_listbox.bind("<<ListboxSelect>>", lambda e: self._on_select(self.archive_listbox))
+        self.archive_listbox.bind("<Button-3>", self._show_context_menu)
+        self.archive_listbox.bind("<Double-1>", self._on_double_click)
+
+        # --- RIGHT COLUMN ---
+        right_frame = ttk.Frame(self.paned, padding=(15, 5, 5, 5))
+        self.paned.add(right_frame, weight=2)
+        
+        self.details_text = tk.Text(right_frame, height=10, wrap="word", state="disabled",
+                                    bg=self.widget_colors["bg"], fg=self.widget_colors["fg"], 
+                                    borderwidth=0, padx=10, pady=10, highlightthickness=1, highlightbackground=self.colors["border"])
+        self.details_text.pack(fill=tk.BOTH, expand=True)
+
+        btn_row = ttk.Frame(right_frame)
+        btn_row.pack(fill=tk.X, pady=(15, 0))
+
+        # Buttons
+        left_btn_grp = ttk.Frame(btn_row)
+        left_btn_grp.pack(side=tk.LEFT)
+        ttk.Button(left_btn_grp, text="Launch", command=self._on_launch_clicked).pack(side=tk.LEFT)
+        ttk.Button(left_btn_grp, text="Create New...", command=self._on_create_clicked).pack(side=tk.LEFT, padx=5)
+        ttk.Button(left_btn_grp, text="Refresh", command=self._refresh_all).pack(side=tk.LEFT)
+
+        right_btn_grp = ttk.Frame(btn_row)
+        right_btn_grp.pack(side=tk.RIGHT)
+        ttk.Button(right_btn_grp, text="VENV", width=6, command=self._on_open_venv).pack(side=tk.RIGHT, padx=2)
+        ttk.Button(right_btn_grp, text="PS", width=4, command=self._on_open_ps).pack(side=tk.RIGHT, padx=2)
+        ttk.Button(right_btn_grp, text="CMD", width=5, command=self._on_open_cmd).pack(side=tk.RIGHT, padx=2)
+        ttk.Button(right_btn_grp, text="Folder", command=self._on_open_folder).pack(side=tk.RIGHT)
+
+    def _on_double_click(self, event=None):
+        self._on_launch_clicked()
+
+    def _toggle_archives(self):
+        if self.archive_var.get():
+            self.archive_frame.pack(side=tk.BOTTOM, fill=tk.X, before=self.archive_check)
+        else:
+            self.archive_frame.pack_forget()
+
+    def _set_status(self, text):
+        ts = datetime.datetime.now().strftime("%H:%M:%S")
+        self.status_bar.config(text=f" [{ts}] {text}")
+
+    def _refresh_all(self):
+        self.active_apps = discover_apps(ROOT_DIR)
+        self.archived_apps = discover_apps(ROOT_DIR / "__ARCHIVES__")
+        self._refresh_listbox_only()
+
+    def _refresh_listbox_only(self):
+        query = self.search_var.get().lower()
+        self.app_listbox.delete(0, tk.END)
+        for a in self.active_apps:
+            if query in a.name.lower():
+                self.app_listbox.insert(tk.END, f"{'🐍 ' if a.has_src_app else '⭕ '}{a.name}")
+        
+        self.archive_listbox.delete(0, tk.END)
+        for a in self.archived_apps:
+            if query in a.name.lower():
+                self.archive_listbox.insert(tk.END, f"📦 {a.name}")
+        self._set_status(f"Refreshed list ({len(self.active_apps)} active)")
+
+    def _build_context_menu(self):
+        self.context_menu = tk.Menu(self.root, tearoff=0, bg=self.widget_colors["bg"], fg="white")
+        self.context_menu.add_command(label="🚀 Launch", command=self._on_launch_clicked)
+        self.context_menu.add_separator()
+        self.context_menu.add_command(label="📂 Open Folder", command=self._on_open_folder)
+        self.context_menu.add_command(label="💻 CMD Terminal", command=self._on_open_cmd)
+        self.context_menu.add_command(label="🐚 PowerShell", command=self._on_open_ps)
+        self.context_menu.add_command(label="🐍 VENV Terminal", command=self._on_open_venv)
+
+    def _show_context_menu(self, event):
+        widget = event.widget
+        index = widget.nearest(event.y)
+        widget.selection_clear(0, tk.END)
+        widget.selection_set(index)
+        self._on_select(widget)
+        self.context_menu.post(event.x_root, event.y_root)
+
+    def _on_select(self, listbox):
+        sel = listbox.curselection()
+        if not sel: return
+        name = listbox.get(sel[0])[2:] # Strip icon
+        app = next((a for a in self.active_apps + self.archived_apps if a.name == name), None)
+        if app:
+            self.selected_app = app
+            self.details_text.config(state="normal")
+            self.details_text.delete("1.0", tk.END)
+            self.details_text.insert("1.0", f"Name: {app.name}\nFolder: {app.folder}\nPython: {' '.join(app.resolve_python())}")
+            self.details_text.config(state="disabled")
+
+    def _on_create_clicked(self):
+        selector = MicroserviceSelector(self.root)
+        self.root.wait_window(selector)
+        if selector.confirmed:
+            target = selector.target_path / selector.safe_name
+            target.mkdir(parents=True, exist_ok=True)
+            self._write_boilerplate(target, selector.selected_files)
+            self._refresh_all()
+            self._set_status(f"Created: {selector.safe_name}")
+
+    def _write_boilerplate(self, root_path, services):
+        (root_path / "src").mkdir(exist_ok=True)
+        ms_dir = root_path / "src" / "microservices"
+        ms_dir.mkdir(exist_ok=True)
+        for dep in ["microservice_std_lib.py", "base_service.py", "document_utils.py"]:
+            src = MICROSERVICE_LIB_PATH / dep
+            if src.exists(): shutil.copy2(src, ms_dir / dep)
+        for s in services: shutil.copy2(s, ms_dir / s.name)
+
+    def _on_launch_clicked(self):
+        if hasattr(self, 'selected_app'): launch_app(self.selected_app)
+
+    def _on_open_venv(self):
+        if hasattr(self, 'selected_app'):
+            act = self.selected_app.folder / ".venv" / "Scripts" / "activate.bat"
+            subprocess.Popen(["cmd.exe", "/k", str(act)] if act.exists() else ["start", "cmd"], cwd=str(self.selected_app.folder))
+
+    def _on_open_folder(self):
+        if hasattr(self, 'selected_app'): os.startfile(self.selected_app.folder)
+
+    def _on_open_cmd(self):
+        if hasattr(self, 'selected_app'): subprocess.Popen(["start", "cmd"], shell=True, cwd=self.selected_app.folder)
+
+    def _on_open_ps(self):
+        if hasattr(self, 'selected_app'): subprocess.Popen(["start", "powershell"], shell=True, cwd=self.selected_app.folder)
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    AppLauncherUI(root)
+    root.mainloop()
+--------------------------------------------------------------------------------
+FILE: src\app_workingBACKUP_v4.pyw
+--------------------------------------------------------------------------------
+import json
+import os
+import shutil
+import subprocess
+import sys
+import datetime
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Dict, List, Optional
+
+import tkinter as tk
+from tkinter import ttk, messagebox, simpledialog
+
+# ==============================================================================
+# CONFIGURATION
+# ==============================================================================
+ROOT_DIR = Path(__file__).resolve().parent.parent.parent
+MICROSERVICE_LIB_PATH = ROOT_DIR / "_MicroserviceLIBRARY"
+
+@dataclass
+class AppConfig:
+    name: str
+    folder: Path
+    python_cmd: Optional[str] = None
+    env: Dict[str, str] = field(default_factory=dict)
+
+    @property
+    def has_src_app(self) -> bool:
+        return (self.folder / "src" / "app.py").is_file()
+
+    def resolve_python(self) -> List[str]:
+        if self.python_cmd:
+            cmd = self.python_cmd
+            if os.path.sep in cmd or "/" in cmd:
+                return [str((self.folder / cmd).resolve())]
+            return [cmd]
+
+        win_candidate = self.folder / ".venv" / "Scripts" / "pythonw.exe"
+        win_fallback = self.folder / ".venv" / "Scripts" / "python.exe"
+        
+        if win_candidate.is_file(): return [str(win_candidate.resolve())]
+        if win_fallback.is_file(): return [str(win_fallback.resolve())]
+        
+        return ["pyw"] if os.name == "nt" else [sys.executable]
+
+def discover_apps(base_dir: Path) -> List[AppConfig]:
+    apps = []
+    if base_dir.is_dir():
+        for child in base_dir.iterdir():
+            if child.is_dir() and (child / "src" / "app.py").is_file():
+                apps.append(AppConfig(name=child.name, folder=child))
+    return sorted(apps, key=lambda a: a.name.lower())
+
+def launch_app(app_cfg: AppConfig):
+    if not app_cfg.has_src_app:
+        messagebox.showerror("Error", f"Missing src/app.py in:\n{app_cfg.folder}")
+        return
+    cmd = app_cfg.resolve_python() + ["-m", "src.app"]
+    env = os.environ.copy()
+    env.update(app_cfg.env)
+    try:
+        subprocess.Popen(cmd, cwd=str(app_cfg.folder), env=env)
+    except Exception as e:
+        messagebox.showerror("Launch failed", f"Failed to launch {app_cfg.name}:\n{e}")
+
+# ==============================================================================
+# UI COMPONENTS
+# ==============================================================================
+
+class MicroserviceSelector(tk.Toplevel):
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.title("Scaffolding Details")
+        self.geometry("600x800")
+        self.configure(bg="#1e1e2f")
+        
+        self.confirmed = False
+        self.selected_files = []
+        self.target_path = None
+        self.safe_name = ""
+        self.available_files = {}
+
+        if MICROSERVICE_LIB_PATH.exists():
+            for f in MICROSERVICE_LIB_PATH.glob("*MS.py"):
+                self.available_files[f.name] = f
+                self.available_files[f.stem.lstrip("_")] = f
+
+        self._build_ui()
+        self.transient(parent)
+        self.grab_set()
+
+    def _build_ui(self):
+        frame_name = ttk.LabelFrame(self, text="Step 1: Project Name", padding=10)
+        frame_name.pack(fill="x", padx=10, pady=5)
+        self.ent_name = ttk.Entry(frame_name)
+        self.ent_name.pack(fill="x")
+
+        frame_folder = ttk.LabelFrame(self, text="Step 2: Target Location", padding=10)
+        frame_folder.pack(fill="x", padx=10, pady=5)
+        self.lbl_path = ttk.Label(frame_folder, text="No folder selected...", foreground="#ff6666", wraplength=450)
+        self.lbl_path.pack(side="left", padx=5)
+        ttk.Button(frame_folder, text="Browse...", command=self._on_browse).pack(side="right")
+
+        ttk.Label(self, text="Step 3: Select Microservices:", font=("Segoe UI", 10, "bold")).pack(pady=5)
+        
+        frame_list = ttk.Frame(self)
+        frame_list.pack(fill="both", expand=True, padx=10, pady=5)
+        self.canvas = tk.Canvas(frame_list, bg="#1e1e2f", highlightthickness=0)
+        scrollbar = ttk.Scrollbar(frame_list, orient="vertical", command=self.canvas.yview)
+        scrollable_frame = tk.Frame(self.canvas, bg="#1e1e2f")
+        scrollable_frame.bind("<Configure>", lambda e: self.canvas.configure(scrollregion=self.canvas.bbox("all")))
+        self.canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+        self.canvas.configure(yscrollcommand=scrollbar.set)
+        
+        self.canvas.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
+
+        self.canvas.bind_all("<MouseWheel>", self._on_canvas_scroll)
+
+        self.check_vars = {}
+        unique_paths = sorted(list(set(self.available_files.values())), key=lambda p: p.name)
+        
+        for f in unique_paths:
+            var = tk.BooleanVar()
+            cb = ttk.Checkbutton(scrollable_frame, text=f.name, variable=var, style="TCheckbutton")
+            cb.pack(anchor="w", padx=5, pady=2)
+            self.check_vars[f] = var
+
+        btn_frame = ttk.Frame(self)
+        btn_frame.pack(fill="x", pady=10, padx=10)
+        self.btn_create = tk.Button(btn_frame, text="CREATE APP", bg="#444444", fg="gray", 
+                                   state="disabled", command=self._on_confirm, borderwidth=0, padx=15)
+        self.btn_create.pack(side="right", padx=5)
+        ttk.Button(btn_frame, text="Cancel", command=self.destroy).pack(side="right")
+
+    def _on_canvas_scroll(self, event):
+        self.canvas.yview_scroll(int(-1*(event.delta/120)), "units")
+
+    def _on_browse(self):
+        from tkinter import filedialog
+        path = filedialog.askdirectory(title="Select Target Location", initialdir=str(ROOT_DIR))
+        if path:
+            self.target_path = Path(path)
+            self.lbl_path.config(text=str(self.target_path), foreground="#00FF00")
+            self.btn_create.config(state="normal", bg="#007ACC", fg="white")
+
+    def _on_confirm(self):
+        name = self.ent_name.get().strip()
+        if not name:
+            messagebox.showerror("Error", "Project name is required.")
+            return
+        self.safe_name = "".join(c for c in name if c.isalnum() or c in ('_', '-')).strip()
+        if not self.target_path:
+            messagebox.showerror("Error", "Target location is required.")
+            return
+        self.selected_files = [f for f, var in self.check_vars.items() if var.get()]
+        self.confirmed = True
+        self.unbind_all("<MouseWheel>")
+        self.destroy()
+
+class AppLauncherUI:
+    def __init__(self, root: tk.Tk):
+        self.root = root
+        self.root.title("Useful Helper Apps Launcher")
+        self.root.geometry("1100x700")
+        self.root.minsize(900, 600)
+        self.root.resizable(True, True)
+        self.last_selected_name = None
+        self.colors = {
+            "bg_main": "#1e1e2f",    
+            "bg_dark": "#151521",    
+            "bg_status": "#252538",  
+            "accent": "#007ACC",     
+            "border": "#33334d",     
+            "fg": "#d1d1e0"          
+        }
+        self.root.configure(bg=self.colors["bg_main"])
+        self._setup_styles()
+        self.search_var = tk.StringVar()
+        self.search_var.trace_add("write", lambda *args: self._refresh_listbox_only())
+        
+        self._build_widgets()
+        self._refresh_all()
+        self._build_context_menu()
+
+    def _setup_styles(self):
+        style = ttk.Style()
+        style.theme_use("clam")
+        
+        style.configure("TFrame", background=self.colors["bg_main"])
+        style.configure("TLabel", background=self.colors["bg_main"], foreground=self.colors["fg"])
+        style.configure("Status.TLabel", background=self.colors["bg_status"], foreground=self.colors["fg"], padding=5)
+        
+        style.configure("TCheckbutton", background=self.colors["bg_main"], foreground=self.colors["fg"])
+        style.map("TCheckbutton", background=[('active', self.colors["bg_main"])], foreground=[('active', 'white')])
+
+        style.configure("TButton", background="#2a2a3f", foreground="white", borderwidth=0)
+        style.map("TButton", background=[("active", self.colors["accent"])])
+        
+        self.widget_colors = {"bg": self.colors["bg_dark"], "fg": self.colors["fg"], "selectbg": self.colors["accent"]}
+
+    def _build_widgets(self):
+        # 1. STATUS BAR
+        self.status_bar = ttk.Label(self.root, text=" Ready", style="Status.TLabel", anchor=tk.W)
+        self.status_bar.pack(side=tk.BOTTOM, fill=tk.X)
+
+        # 2. MAIN CONTENT WRAPPER
+        content_wrapper = tk.Frame(self.root, bg=self.colors["bg_main"], highlightthickness=0)
+        content_wrapper.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        # 3. PANED WINDOW - Surgical Fix: tk.PanedWindow does not support 'highlightthickness'
+        self.paned = tk.PanedWindow(
+            content_wrapper, 
+            orient=tk.HORIZONTAL, 
+            bg=self.colors["bg_main"],
+            borderwidth=0, 
+            sashwidth=4,
+            sashpad=0
+        )
+        self.paned.pack(fill=tk.BOTH, expand=True)
+
+        # LEFT PANEL
+        left_panel = tk.Frame(self.paned, bg=self.colors["bg_main"], highlightthickness=0)
+        self.paned.add(left_panel, width=300)
+
+        left_inner = ttk.Frame(left_panel)
+        left_inner.pack(fill=tk.BOTH, expand=True, padx=(5, 15), pady=5)
+
+        search_container = ttk.Frame(left_inner)
+        search_container.pack(fill=tk.X, pady=(0, 10))
+        ttk.Label(search_container, text="Search Apps", font=("Segoe UI", 8)).pack(anchor="w")
+        ttk.Entry(search_container, textvariable=self.search_var).pack(fill=tk.X)
+
+        ttk.Label(left_inner, text="Available Apps", font=("Segoe UI", 9, "bold")).pack(anchor="w")
+        self.app_listbox = tk.Listbox(
+            left_inner, 
+            bg=self.widget_colors["bg"], 
+            fg=self.widget_colors["fg"], 
+            selectbackground=self.widget_colors["selectbg"], 
+            borderwidth=0, 
+            highlightthickness=1, 
+            highlightbackground=self.colors["border"]
+        )
+        self.app_listbox.pack(fill=tk.BOTH, expand=True, pady=(0, 5))
+        self.app_listbox.bind("<<ListboxSelect>>", lambda e: self._on_select(self.app_listbox))
+        self.app_listbox.bind("<Button-3>", self._show_context_menu)
+        self.app_listbox.bind("<Double-1>", self._on_double_click)
+
+        self.archive_var = tk.BooleanVar(value=False)
+        self.archive_check = ttk.Checkbutton(
+            left_inner, text="Show Archives", variable=self.archive_var, command=self._toggle_archives
+        )
+        self.archive_check.pack(anchor="w", pady=5)
+
+        self.archive_frame = ttk.Frame(left_inner)
+        self.archive_listbox = tk.Listbox(
+            self.archive_frame, 
+            height=8, 
+            bg=self.widget_colors["bg"],
+            fg=self.widget_colors["fg"], 
+            selectbackground=self.widget_colors["selectbg"],
+            borderwidth=0, 
+            highlightthickness=1, 
+            highlightbackground=self.colors["border"]
+        )
+        self.archive_listbox.pack(fill=tk.X, expand=False)
+        self.archive_listbox.bind("<<ListboxSelect>>", lambda e: self._on_select(self.archive_listbox))
+        self.archive_listbox.bind("<Button-3>", self._show_context_menu)
+        self.archive_listbox.bind("<Double-1>", self._on_double_click)
+
+        # RIGHT PANEL
+        right_panel = tk.Frame(self.paned, bg=self.colors["bg_main"], highlightthickness=0)
+        self.paned.add(right_panel)
+
+        right_inner = ttk.Frame(right_panel)
+        right_inner.pack(fill=tk.BOTH, expand=True, padx=(15, 5), pady=5)
+        
+        self.details_text = tk.Text(
+            right_inner, 
+            height=10, 
+            wrap="word", 
+            state="disabled",
+            bg=self.widget_colors["bg"], 
+            fg=self.widget_colors["fg"], 
+            borderwidth=0, 
+            padx=10, 
+            pady=10, 
+            highlightthickness=1, 
+            highlightbackground=self.colors["border"]
+        )
+        self.details_text.pack(fill=tk.BOTH, expand=True)
+
+        btn_row = ttk.Frame(right_inner)
+        btn_row.pack(fill=tk.X, pady=(15, 0))
+
+        left_btn_grp = ttk.Frame(btn_row)
+        left_btn_grp.pack(side=tk.LEFT)
+        ttk.Button(left_btn_grp, text="Launch", command=self._on_launch_clicked).pack(side=tk.LEFT)
+        ttk.Button(left_btn_grp, text="Create New...", command=self._on_create_clicked).pack(side=tk.LEFT, padx=5)
+        ttk.Button(left_btn_grp, text="Refresh", command=self._refresh_all).pack(side=tk.LEFT)
+
+        right_btn_grp = ttk.Frame(btn_row)
+        right_btn_grp.pack(side=tk.RIGHT)
+        ttk.Button(right_btn_grp, text="VENV", width=6, command=self._on_open_venv).pack(side=tk.RIGHT, padx=2)
+        ttk.Button(right_btn_grp, text="PS", width=4, command=self._on_open_ps).pack(side=tk.RIGHT, padx=2)
+        ttk.Button(right_btn_grp, text="CMD", width=5, command=self._on_open_cmd).pack(side=tk.RIGHT, padx=2)
+        ttk.Button(right_btn_grp, text="Folder", command=self._on_open_folder).pack(side=tk.RIGHT)
+
+    def _on_double_click(self, event=None):
+        self._on_launch_clicked()
+
+    def _toggle_archives(self):
+        if self.archive_var.get():
+            self.archive_frame.pack(side=tk.BOTTOM, fill=tk.X, before=self.archive_check)
+        else:
+            self.archive_frame.pack_forget()
+
+    def _set_status(self, text):
+        ts = datetime.datetime.now().strftime("%H:%M:%S")
+        self.status_bar.config(text=f" [{ts}] {text}")
+
+    def _refresh_all(self):
+        self.active_apps = discover_apps(ROOT_DIR)
+        self.archived_apps = discover_apps(ROOT_DIR / "__ARCHIVES__")
+        self._refresh_listbox_only()
+
+    def _refresh_listbox_only(self):
+        query = self.search_var.get().lower()
+        targets = [
+            (self.app_listbox, self.active_apps, '🐍 '), 
+            (self.archive_listbox, self.archived_apps, '📦 ')
+        ]
+        
+        for lb, app_list, default_icon in targets:
+            lb.delete(0, tk.END)
+            for a in app_list:
+                if query in a.name.lower():
+                    if default_icon == '📦 ':
+                        icon = '📦 '
+                    else:
+                        icon = '🐍 ' if a.has_src_app else '⭕ '
+                    lb.insert(tk.END, f"{icon}{a.name}")
+            
+            if self.last_selected_name:
+                all_items = lb.get(0, tk.END)
+                for idx, display_val in enumerate(all_items):
+                    if display_val[2:] == self.last_selected_name:
+                        lb.selection_set(idx)
+                        lb.activate(idx)
+                        lb.see(idx) 
+                        break
+
+        self._set_status(f"Refreshed list ({len(self.active_apps)} active, {len(self.archived_apps)} archived)")
+
+    def _on_select(self, listbox):
+        sel = listbox.curselection()
+        if not sel: return
+        
+        raw_val = listbox.get(sel[0])
+        self.last_selected_name = raw_val[2:]
+        
+        app = next((a for a in self.active_apps + self.archived_apps if a.name == self.last_selected_name), None)
+        if app:
+            self.selected_app = app
+            self.details_text.config(state="normal")
+            self.details_text.delete("1.0", tk.END)
+            self.details_text.insert("1.0", f"Name: {app.name}\nFolder: {app.folder}\nPython: {' '.join(app.resolve_python())}")
+            self.details_text.config(state="disabled")
+
+    def _build_context_menu(self):
+        self.context_menu = tk.Menu(self.root, tearoff=0, bg=self.widget_colors["bg"], fg="white")
+        self.context_menu.add_command(label="🚀 Launch", command=self._on_launch_clicked)
+        self.context_menu.add_separator()
+        self.context_menu.add_command(label="📂 Open Folder", command=self._on_open_folder)
+        self.context_menu.add_command(label="💻 CMD Terminal", command=self._on_open_cmd)
+        self.context_menu.add_command(label="🐚 PowerShell", command=self._on_open_ps)
+        self.context_menu.add_command(label="🐍 VENV Terminal", command=self._on_open_venv)
+
+    def _show_context_menu(self, event):
+        widget = event.widget
+        index = widget.nearest(event.y)
+        widget.selection_clear(0, tk.END)
+        widget.selection_set(index)
+        self._on_select(widget)
+        self.context_menu.post(event.x_root, event.y_root)
+
+    def _on_create_clicked(self):
+        selector = MicroserviceSelector(self.root)
+        self.root.wait_window(selector)
+        if selector.confirmed:
+            target = selector.target_path / selector.safe_name
+            try:
+                target.mkdir(parents=True, exist_ok=True)
+                self._write_boilerplate(target, selector.selected_files)
+                self._refresh_all()
+                self._set_status(f"Created: {selector.safe_name}")
+                messagebox.showinfo("Success", f"App {selector.safe_name} created.")
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to create app: {e}")
+
+    def _write_boilerplate(self, root_path, services):
+        (root_path / "src").mkdir(exist_ok=True)
+        ms_dir = root_path / "src" / "microservices"
+        ms_dir.mkdir(exist_ok=True)
+        for dep in ["microservice_std_lib.py", "base_service.py", "document_utils.py"]:
+            src = MICROSERVICE_LIB_PATH / dep
+            if src.exists(): shutil.copy2(src, ms_dir / dep)
+        for s in services: shutil.copy2(s, ms_dir / s.name)
+
+    def _on_launch_clicked(self):
+        if hasattr(self, 'selected_app'): launch_app(self.selected_app)
+
+    def _on_open_venv(self):
+        if hasattr(self, 'selected_app'):
+            act = self.selected_app.folder / ".venv" / "Scripts" / "activate.bat"
+            subprocess.Popen(["cmd.exe", "/k", str(act)] if act.exists() else ["start", "cmd"], cwd=str(self.selected_app.folder))
+
+    def _on_open_folder(self):
+        if hasattr(self, 'selected_app'): os.startfile(self.selected_app.folder)
+
+    def _on_open_cmd(self):
+        if hasattr(self, 'selected_app'): subprocess.Popen(["start", "cmd"], shell=True, cwd=self.selected_app.folder)
+
+    def _on_open_ps(self):
+        if hasattr(self, 'selected_app'): subprocess.Popen(["start", "powershell"], shell=True, cwd=self.selected_app.folder)
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    AppLauncherUI(root)
+    root.mainloop()
+--------------------------------------------------------------------------------
+FILE: src\app_workingBACKUP_v5.pyw
+--------------------------------------------------------------------------------
+import json
+import os
+import shutil
+import subprocess
+import sys
+import datetime
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Dict, List, Optional
+
+import tkinter as tk
+from tkinter import ttk, messagebox, simpledialog
+
+# ==============================================================================
+# CONFIGURATION
+# ==============================================================================
+ROOT_DIR = Path(__file__).resolve().parent.parent.parent
+MICROSERVICE_LIB_PATH = ROOT_DIR / "_MicroserviceLIBRARY"
+
+@dataclass
+class AppConfig:
+    name: str
+    folder: Path
+    python_cmd: Optional[str] = None
+    env: Dict[str, str] = field(default_factory=dict)
+
+    @property
+    def has_src_app(self) -> bool:
+        return (self.folder / "src" / "app.py").is_file()
+
+    def resolve_python(self) -> List[str]:
+        if self.python_cmd:
+            cmd = self.python_cmd
+            if os.path.sep in cmd or "/" in cmd:
+                return [str((self.folder / cmd).resolve())]
+            return [cmd]
+
+        win_candidate = self.folder / ".venv" / "Scripts" / "pythonw.exe"
+        win_fallback = self.folder / ".venv" / "Scripts" / "python.exe"
+        
+        if win_candidate.is_file(): return [str(win_candidate.resolve())]
+        if win_fallback.is_file(): return [str(win_fallback.resolve())]
+        
+        return ["pyw"] if os.name == "nt" else [sys.executable]
+
+def discover_apps(base_dir: Path) -> List[AppConfig]:
+    apps = []
+    if base_dir.is_dir():
+        for child in base_dir.iterdir():
+            if child.is_dir() and (child / "src" / "app.py").is_file():
+                apps.append(AppConfig(name=child.name, folder=child))
+    return sorted(apps, key=lambda a: a.name.lower())
+
+def launch_app(app_cfg: AppConfig):
+    if not app_cfg.has_src_app:
+        messagebox.showerror("Error", f"Missing src/app.py in:\n{app_cfg.folder}")
+        return
+    cmd = app_cfg.resolve_python() + ["-m", "src.app"]
+    env = os.environ.copy()
+    env.update(app_cfg.env)
+    try:
+        subprocess.Popen(cmd, cwd=str(app_cfg.folder), env=env)
+    except Exception as e:
+        messagebox.showerror("Launch failed", f"Failed to launch {app_cfg.name}:\n{e}")
+
+# ==============================================================================
+# UI COMPONENTS
+# ==============================================================================
+
+class MicroserviceSelector(tk.Toplevel):
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.title("Scaffolding Details")
+        self.geometry("600x800")
+        self.configure(bg="#1e1e2f")
+        
+        self.confirmed = False
+        self.selected_files = []
+        self.target_path = None
+        self.safe_name = ""
+        self.available_files = {}
+
+        if MICROSERVICE_LIB_PATH.exists():
+            for f in MICROSERVICE_LIB_PATH.glob("*MS.py"):
+                self.available_files[f.name] = f
+                self.available_files[f.stem.lstrip("_")] = f
+
+        self._build_ui()
+        self.transient(parent)
+        self.grab_set()
+
+    def _build_ui(self):
+        frame_name = ttk.LabelFrame(self, text="Step 1: Project Name", padding=10)
+        frame_name.pack(fill="x", padx=10, pady=5)
+        self.ent_name = ttk.Entry(frame_name)
+        self.ent_name.pack(fill="x")
+
+        frame_folder = ttk.LabelFrame(self, text="Step 2: Target Location", padding=10)
+        frame_folder.pack(fill="x", padx=10, pady=5)
+        self.lbl_path = ttk.Label(frame_folder, text="No folder selected...", foreground="#ff6666", wraplength=450)
+        self.lbl_path.pack(side="left", padx=5)
+        ttk.Button(frame_folder, text="Browse...", command=self._on_browse).pack(side="right")
+
+        ttk.Label(self, text="Step 3: Select Microservices:", font=("Segoe UI", 10, "bold")).pack(pady=5)
+        
+        frame_list = ttk.Frame(self)
+        frame_list.pack(fill="both", expand=True, padx=10, pady=5)
+        self.canvas = tk.Canvas(frame_list, bg="#1e1e2f", highlightthickness=0)
+        scrollbar = ttk.Scrollbar(frame_list, orient="vertical", command=self.canvas.yview)
+        scrollable_frame = tk.Frame(self.canvas, bg="#1e1e2f")
+        scrollable_frame.bind("<Configure>", lambda e: self.canvas.configure(scrollregion=self.canvas.bbox("all")))
+        self.canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+        self.canvas.configure(yscrollcommand=scrollbar.set)
+        
+        self.canvas.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
+
+        self.canvas.bind_all("<MouseWheel>", self._on_canvas_scroll)
+
+        self.check_vars = {}
+        unique_paths = sorted(list(set(self.available_files.values())), key=lambda p: p.name)
+        
+        for f in unique_paths:
+            var = tk.BooleanVar()
+            cb = ttk.Checkbutton(scrollable_frame, text=f.name, variable=var, style="TCheckbutton")
+            cb.pack(anchor="w", padx=5, pady=2)
+            self.check_vars[f] = var
+
+        btn_frame = ttk.Frame(self)
+        btn_frame.pack(fill="x", pady=10, padx=10)
+        self.btn_create = tk.Button(btn_frame, text="CREATE APP", bg="#444444", fg="gray", 
+                                   state="disabled", command=self._on_confirm, borderwidth=0, padx=15)
+        self.btn_create.pack(side="right", padx=5)
+        ttk.Button(btn_frame, text="Cancel", command=self.destroy).pack(side="right")
+
+    def _on_canvas_scroll(self, event):
+        self.canvas.yview_scroll(int(-1*(event.delta/120)), "units")
+
+    def _on_browse(self):
+        from tkinter import filedialog
+        path = filedialog.askdirectory(title="Select Target Location", initialdir=str(ROOT_DIR))
+        if path:
+            self.target_path = Path(path)
+            self.lbl_path.config(text=str(self.target_path), foreground="#00FF00")
+            self.btn_create.config(state="normal", bg="#007ACC", fg="white")
+
+    def _on_confirm(self):
+        name = self.ent_name.get().strip()
+        if not name:
+            messagebox.showerror("Error", "Project name is required.")
+            return
+        self.safe_name = "".join(c for c in name if c.isalnum() or c in ('_', '-')).strip()
+        if not self.target_path:
+            messagebox.showerror("Error", "Target location is required.")
+            return
+        self.selected_files = [f for f, var in self.check_vars.items() if var.get()]
+        self.confirmed = True
+        self.unbind_all("<MouseWheel>")
+        self.destroy()
+
+class AppLauncherUI:
+    def __init__(self, root: tk.Tk):
+        self.root = root
+        self.root.title("Useful Helper Apps Launcher")
+        self.root.geometry("1100x700")
+        self.root.minsize(900, 600)
+        self.root.resizable(True, True)
+        self.last_selected_name = None
+        self.colors = {
+            "bg_main": "#1e1e2f",    
+            "bg_dark": "#151521",    
+            "bg_status": "#252538",  
+            "accent": "#007ACC",     
+            "border": "#33334d",     
+            "fg": "#d1d1e0"          
+        }
+        self.root.configure(bg=self.colors["bg_main"])
+        self._setup_styles()
+        self.search_var = tk.StringVar()
+        self.search_var.trace_add("write", lambda *args: self._refresh_listbox_only())
+        
+        self._build_widgets()
+        self._refresh_all()
+        self._build_context_menu()
+
+    def _setup_styles(self):
+        style = ttk.Style()
+        style.theme_use("clam")
+        
+        style.configure("TFrame", background=self.colors["bg_main"])
+        style.configure("TLabel", background=self.colors["bg_main"], foreground=self.colors["fg"])
+        style.configure("Status.TLabel", background=self.colors["bg_status"], foreground=self.colors["fg"], padding=5)
+        
+        style.configure("TCheckbutton", background=self.colors["bg_main"], foreground=self.colors["fg"])
+        style.map("TCheckbutton", background=[('active', self.colors["bg_main"])], foreground=[('active', 'white')])
+
+        style.configure("TButton", background="#2a2a3f", foreground="white", borderwidth=0)
+        style.map("TButton", background=[("active", self.colors["accent"])])
+        
+        self.widget_colors = {"bg": self.colors["bg_dark"], "fg": self.colors["fg"], "selectbg": self.colors["accent"]}
+
+    def _build_widgets(self):
+        # 1. STATUS BAR
+        self.status_bar = ttk.Label(self.root, text=" Ready", style="Status.TLabel", anchor=tk.W)
+        self.status_bar.pack(side=tk.BOTTOM, fill=tk.X)
+
+        # 2. MAIN CONTENT WRAPPER
+        content_wrapper = tk.Frame(self.root, bg=self.colors["bg_main"], highlightthickness=0)
+        content_wrapper.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        # 3. PANED WINDOW - Surgical Fix: tk.PanedWindow does not support 'highlightthickness'
+        self.paned = tk.PanedWindow(
+            content_wrapper, 
+            orient=tk.HORIZONTAL, 
+            bg=self.colors["bg_main"],
+            borderwidth=0, 
+            sashwidth=4,
+            sashpad=0
+        )
+        self.paned.pack(fill=tk.BOTH, expand=True)
+
+        # LEFT PANEL
+        left_panel = tk.Frame(self.paned, bg=self.colors["bg_main"], highlightthickness=0)
+        self.paned.add(left_panel, width=300)
+
+        left_inner = ttk.Frame(left_panel)
+        left_inner.pack(fill=tk.BOTH, expand=True, padx=(5, 15), pady=5)
+
+        search_container = ttk.Frame(left_inner)
+        search_container.pack(fill=tk.X, pady=(0, 10))
+        ttk.Label(search_container, text="Search Apps", font=("Segoe UI", 8)).pack(anchor="w")
+        ttk.Entry(search_container, textvariable=self.search_var).pack(fill=tk.X)
+
+        ttk.Label(left_inner, text="Available Apps", font=("Segoe UI", 9, "bold")).pack(anchor="w")
+        self.app_listbox = tk.Listbox(
+            left_inner, 
+            bg=self.widget_colors["bg"], 
+            fg=self.widget_colors["fg"], 
+            selectbackground=self.widget_colors["selectbg"], 
+            borderwidth=0, 
+            highlightthickness=1, 
+            highlightbackground=self.colors["border"]
+        )
+        self.app_listbox.pack(fill=tk.BOTH, expand=True, pady=(0, 5))
+        self.app_listbox.bind("<<ListboxSelect>>", lambda e: self._on_select(self.app_listbox))
+        self.app_listbox.bind("<Button-3>", self._show_context_menu)
+        self.app_listbox.bind("<Double-1>", self._on_double_click)
+
+        self.archive_var = tk.BooleanVar(value=False)
+        self.archive_check = ttk.Checkbutton(
+            left_inner, text="Show Archives", variable=self.archive_var, command=self._toggle_archives
+        )
+        self.archive_check.pack(anchor="w", pady=5)
+
+        self.archive_frame = ttk.Frame(left_inner)
+        self.archive_listbox = tk.Listbox(
+            self.archive_frame, 
+            height=8, 
+            bg=self.widget_colors["bg"],
+            fg=self.widget_colors["fg"], 
+            selectbackground=self.widget_colors["selectbg"],
+            borderwidth=0, 
+            highlightthickness=1, 
+            highlightbackground=self.colors["border"]
+        )
+        self.archive_listbox.pack(fill=tk.X, expand=False)
+        self.archive_listbox.bind("<<ListboxSelect>>", lambda e: self._on_select(self.archive_listbox))
+        self.archive_listbox.bind("<Button-3>", self._show_context_menu)
+        self.archive_listbox.bind("<Double-1>", self._on_double_click)
+
+        # RIGHT PANEL
+        right_panel = tk.Frame(self.paned, bg=self.colors["bg_main"], highlightthickness=0)
+        self.paned.add(right_panel)
+
+        right_inner = ttk.Frame(right_panel)
+        right_inner.pack(fill=tk.BOTH, expand=True, padx=(15, 5), pady=5)
+        
+        self.details_text = tk.Text(
+            right_inner, 
+            height=10, 
+            wrap="word", 
+            state="disabled",
+            bg=self.widget_colors["bg"], 
+            fg=self.widget_colors["fg"], 
+            borderwidth=0, 
+            padx=10, 
+            pady=10, 
+            highlightthickness=1, 
+            highlightbackground=self.colors["border"]
+        )
+        self.details_text.pack(fill=tk.BOTH, expand=True)
+
+        btn_row = ttk.Frame(right_inner)
+        btn_row.pack(fill=tk.X, pady=(15, 0))
+
+        left_btn_grp = ttk.Frame(btn_row)
+        left_btn_grp.pack(side=tk.LEFT)
+        ttk.Button(left_btn_grp, text="Launch", command=self._on_launch_clicked).pack(side=tk.LEFT)
+        ttk.Button(left_btn_grp, text="Create New...", command=self._on_create_clicked).pack(side=tk.LEFT, padx=5)
+        ttk.Button(left_btn_grp, text="Refresh", command=self._refresh_all).pack(side=tk.LEFT)
+
+        right_btn_grp = ttk.Frame(btn_row)
+        right_btn_grp.pack(side=tk.RIGHT)
+        ttk.Button(right_btn_grp, text="VENV", width=6, command=self._on_open_venv).pack(side=tk.RIGHT, padx=2)
+        ttk.Button(right_btn_grp, text="PS", width=4, command=self._on_open_ps).pack(side=tk.RIGHT, padx=2)
+        ttk.Button(right_btn_grp, text="CMD", width=5, command=self._on_open_cmd).pack(side=tk.RIGHT, padx=2)
+        ttk.Button(right_btn_grp, text="Folder", command=self._on_open_folder).pack(side=tk.RIGHT)
+
+    def _on_double_click(self, event=None):
+        self._on_launch_clicked()
+
+    def _toggle_archives(self):
+        if self.archive_var.get():
+            self.archive_frame.pack(side=tk.BOTTOM, fill=tk.X, before=self.archive_check)
+        else:
+            self.archive_frame.pack_forget()
+
+    def _set_status(self, text):
+        ts = datetime.datetime.now().strftime("%H:%M:%S")
+        self.status_bar.config(text=f" [{ts}] {text}")
+
+    def _refresh_all(self):
+        self.active_apps = discover_apps(ROOT_DIR)
+        self.archived_apps = discover_apps(ROOT_DIR / "__ARCHIVES__")
+        self._refresh_listbox_only()
+
+    def _refresh_listbox_only(self):
+        query = self.search_var.get().lower()
+        targets = [
+            (self.app_listbox, self.active_apps, '🐍 '), 
+            (self.archive_listbox, self.archived_apps, '📦 ')
+        ]
+        
+        for lb, app_list, default_icon in targets:
+            lb.delete(0, tk.END)
+            for a in app_list:
+                if query in a.name.lower():
+                    if default_icon == '📦 ':
+                        icon = '📦 '
+                    else:
+                        icon = '🐍 ' if a.has_src_app else '⭕ '
+                    lb.insert(tk.END, f"{icon}{a.name}")
+            
+            if self.last_selected_name:
+                all_items = lb.get(0, tk.END)
+                for idx, display_val in enumerate(all_items):
+                    if display_val[2:] == self.last_selected_name:
+                        lb.selection_set(idx)
+                        lb.activate(idx)
+                        lb.see(idx) 
+                        break
+
+        self._set_status(f"Refreshed list ({len(self.active_apps)} active, {len(self.archived_apps)} archived)")
+
+    def _on_select(self, listbox):
+        sel = listbox.curselection()
+        if not sel: return
+        
+        raw_val = listbox.get(sel[0])
+        self.last_selected_name = raw_val[2:]
+        
+        app = next((a for a in self.active_apps + self.archived_apps if a.name == self.last_selected_name), None)
+        if app:
+            self.selected_app = app
+            self.details_text.config(state="normal")
+            self.details_text.delete("1.0", tk.END)
+            self.details_text.insert("1.0", f"Name: {app.name}\nFolder: {app.folder}\nPython: {' '.join(app.resolve_python())}")
+            self.details_text.config(state="disabled")
+
+    def _build_context_menu(self):
+        self.context_menu = tk.Menu(self.root, tearoff=0, bg=self.widget_colors["bg"], fg="white")
+        self.context_menu.add_command(label="🚀 Launch", command=self._on_launch_clicked)
+        self.context_menu.add_separator()
+        self.context_menu.add_command(label="📂 Open Folder", command=self._on_open_folder)
+        self.context_menu.add_command(label="💻 CMD Terminal", command=self._on_open_cmd)
+        self.context_menu.add_command(label="🐚 PowerShell", command=self._on_open_ps)
+        self.context_menu.add_command(label="🐍 VENV Terminal", command=self._on_open_venv)
+
+    def _show_context_menu(self, event):
+        widget = event.widget
+        index = widget.nearest(event.y)
+        widget.selection_clear(0, tk.END)
+        widget.selection_set(index)
+        self._on_select(widget)
+        self.context_menu.post(event.x_root, event.y_root)
+
+    def _on_create_clicked(self):
+        selector = MicroserviceSelector(self.root)
+        self.root.wait_window(selector)
+        if selector.confirmed:
+            target = selector.target_path / selector.safe_name
+            try:
+                target.mkdir(parents=True, exist_ok=True)
+                self._write_boilerplate(target, selector.selected_files)
+                self._refresh_all()
+                self._set_status(f"Created: {selector.safe_name}")
+                messagebox.showinfo("Success", f"App {selector.safe_name} created.")
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to create app: {e}")
+
+    def _write_boilerplate(self, root_path, services):
+        (root_path / "src").mkdir(exist_ok=True)
+        ms_dir = root_path / "src" / "microservices"
+        ms_dir.mkdir(exist_ok=True)
+        for dep in ["microservice_std_lib.py", "base_service.py", "document_utils.py"]:
+            src = MICROSERVICE_LIB_PATH / dep
+            if src.exists(): shutil.copy2(src, ms_dir / dep)
+        for s in services: shutil.copy2(s, ms_dir / s.name)
+
+    def _on_launch_clicked(self):
+        if hasattr(self, 'selected_app'): launch_app(self.selected_app)
+
+    def _on_open_venv(self):
+        if hasattr(self, 'selected_app'):
+            act = self.selected_app.folder / ".venv" / "Scripts" / "activate.bat"
+            subprocess.Popen(["cmd.exe", "/k", str(act)] if act.exists() else ["start", "cmd"], cwd=str(self.selected_app.folder))
 
     def _on_open_folder(self):
         if hasattr(self, 'selected_app'): os.startfile(self.selected_app.folder)

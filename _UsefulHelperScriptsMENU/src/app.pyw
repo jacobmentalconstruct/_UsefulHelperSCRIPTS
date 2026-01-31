@@ -25,11 +25,26 @@ class AppConfig:
     python_cmd: Optional[str] = None
     env: Dict[str, str] = field(default_factory=dict)
 
+    # --- Binary / EXE support ---
+    executable_path: Optional[Path] = None
+    kind: str = "python"  # "python" | "binary"
+
+    @property
+    def is_binary(self) -> bool:
+        return self.kind == "binary" or self.executable_path is not None
+
     @property
     def has_src_app(self) -> bool:
+        # Binary entries do not require src/app.py
+        if self.is_binary:
+            return False
         return (self.folder / "src" / "app.py").is_file()
 
     def resolve_python(self) -> List[str]:
+        # Not applicable for binaries
+        if self.is_binary:
+            return []
+
         if self.python_cmd:
             cmd = self.python_cmd
             if os.path.sep in cmd or "/" in cmd:
@@ -45,14 +60,44 @@ class AppConfig:
         return ["pyw"] if os.name == "nt" else [sys.executable]
 
 def discover_apps(base_dir: Path) -> List[AppConfig]:
-    apps = []
+    apps: List[AppConfig] = []
     if base_dir.is_dir():
         for child in base_dir.iterdir():
             if child.is_dir() and (child / "src" / "app.py").is_file():
-                apps.append(AppConfig(name=child.name, folder=child))
+                apps.append(AppConfig(name=child.name, folder=child, kind="python"))
     return sorted(apps, key=lambda a: a.name.lower())
 
-def launch_app(app_cfg: AppConfig):
+def discover_executables(exe_dir: Path) -> List[AppConfig]:
+    """Discover *.exe files inside a chosen directory (default: ROOT_DIR/__EXECUTABLES__)."""
+    exes: List[AppConfig] = []
+    try:
+        if exe_dir and exe_dir.exists() and exe_dir.is_dir():
+            for exe in sorted(exe_dir.glob("*.exe"), key=lambda p: p.stem.lower()):
+                exes.append(AppConfig(
+                    name=exe.stem,
+                    folder=exe_dir,
+                    executable_path=exe,
+                    kind="binary",
+                ))
+    except Exception:
+        # Silent by design: a broken exe folder shouldn't break the launcher UI
+        pass
+    return exes
+
+def launch_app(app_cfg: AppConfig, run_with_terminal: bool = False):
+    # --- Binary launch path ---
+    if app_cfg.is_binary:
+        exe = app_cfg.executable_path
+        if not exe or not exe.is_file():
+            messagebox.showerror("Error", f"Missing executable file:\n{exe}\n\nFolder:\n{app_cfg.folder}")
+            return
+        try:
+            subprocess.Popen([str(exe)], cwd=str(exe.parent))
+        except Exception as e:
+            messagebox.showerror("Launch failed", f"Failed to launch {app_cfg.name}:\n{e}")
+        return
+
+    # --- Python launch path ---
     if not app_cfg.has_src_app:
         messagebox.showerror("Error", f"Missing src/app.py in:\n{app_cfg.folder}")
         return
@@ -60,7 +105,14 @@ def launch_app(app_cfg: AppConfig):
     env = os.environ.copy()
     env.update(app_cfg.env)
     try:
-        subprocess.Popen(cmd, cwd=str(app_cfg.folder), env=env)
+        popen_kwargs = {
+            "cwd": str(app_cfg.folder),
+            "env": env
+        }
+        if os.name == "nt" and not run_with_terminal:
+            popen_kwargs["creationflags"] = subprocess.CREATE_NO_WINDOW
+
+        subprocess.Popen(cmd, **popen_kwargs)
     except Exception as e:
         messagebox.showerror("Launch failed", f"Failed to launch {app_cfg.name}:\n{e}")
 
@@ -397,6 +449,7 @@ class AppLauncherUI:
         self.root.configure(bg=self.colors["bg_main"])
         self._setup_styles()
         self.search_var = tk.StringVar()
+        self.run_with_terminal = tk.BooleanVar(value=False)
         self.search_var.trace_add("write", lambda *args: self._refresh_listbox_only())
         
         self._build_widgets()
@@ -418,6 +471,7 @@ class AppLauncherUI:
         style.map("TButton", background=[("active", self.colors["accent"])])
         
         self.widget_colors = {"bg": self.colors["bg_dark"], "fg": self.colors["fg"], "selectbg": self.colors["accent"]}
+        self.exe_dir = ROOT_DIR / "__EXECUTABLES__"
 
     def _build_widgets(self):
         # 1. STATUS BAR
@@ -516,6 +570,14 @@ class AppLauncherUI:
         left_btn_grp = ttk.Frame(btn_row)
         left_btn_grp.pack(side=tk.LEFT)
         ttk.Button(left_btn_grp, text="Launch", command=self._on_launch_clicked).pack(side=tk.LEFT)
+
+        terminal_chk = ttk.Checkbutton(
+            left_btn_grp,
+            text="Run with Terminal (debug)",
+            variable=self.run_with_terminal
+        )
+        terminal_chk.pack(side=tk.LEFT, padx=10)
+
         ttk.Button(left_btn_grp, text="Create New...", command=self._on_create_clicked).pack(side=tk.LEFT, padx=5)
         ttk.Button(left_btn_grp, text="Refresh", command=self._refresh_all).pack(side=tk.LEFT)
 
@@ -524,6 +586,7 @@ class AppLauncherUI:
         ttk.Button(right_btn_grp, text="VENV", width=6, command=self._on_open_venv).pack(side=tk.RIGHT, padx=2)
         ttk.Button(right_btn_grp, text="PS", width=4, command=self._on_open_ps).pack(side=tk.RIGHT, padx=2)
         ttk.Button(right_btn_grp, text="CMD", width=5, command=self._on_open_cmd).pack(side=tk.RIGHT, padx=2)
+        ttk.Button(right_btn_grp, text="EXE Dir", command=self._on_set_exe_dir).pack(side=tk.RIGHT, padx=2)
         ttk.Button(right_btn_grp, text="Folder", command=self._on_open_folder).pack(side=tk.RIGHT)
 
     def _on_double_click(self, event=None):
@@ -540,7 +603,14 @@ class AppLauncherUI:
         self.status_bar.config(text=f" [{ts}] {text}")
 
     def _refresh_all(self):
-        self.active_apps = discover_apps(ROOT_DIR)
+        # Active: Python apps at ROOT + any discovered EXEs in the chosen exe_dir
+        python_apps = discover_apps(ROOT_DIR)
+        exe_apps = discover_executables(getattr(self, 'exe_dir', ROOT_DIR / "__EXECUTABLES__"))
+        self.active_apps = sorted(
+            (python_apps + exe_apps),
+            key=lambda a: (1 if a.is_binary else 0, a.name.lower())
+        )
+
         self.archived_apps = discover_apps(ROOT_DIR / "__ARCHIVES__")
         self._refresh_listbox_only()
 
@@ -558,7 +628,7 @@ class AppLauncherUI:
                     if default_icon == '📦 ':
                         icon = '📦 '
                     else:
-                        icon = '🐍 ' if a.has_src_app else '⭕ '
+                        icon = '🧩 ' if a.is_binary else ('🐍 ' if a.has_src_app else '⭕ ')
                     lb.insert(tk.END, f"{icon}{a.name}")
             
             if self.last_selected_name:
@@ -570,7 +640,10 @@ class AppLauncherUI:
                         lb.see(idx) 
                         break
 
-        self._set_status(f"Refreshed list ({len(self.active_apps)} active, {len(self.archived_apps)} archived)")
+        exe_count = sum(1 for a in getattr(self, 'active_apps', []) if getattr(a, 'is_binary', False))
+        self._set_status(
+            f"Refreshed list ({len(self.active_apps)} active incl {exe_count} exe, {len(self.archived_apps)} archived)"
+        )
 
     def _on_select(self, listbox):
         sel = listbox.curselection()
@@ -584,12 +657,26 @@ class AppLauncherUI:
             self.selected_app = app
             self.details_text.config(state="normal")
             self.details_text.delete("1.0", tk.END)
-            self.details_text.insert("1.0", f"Name: {app.name}\nFolder: {app.folder}\nPython: {' '.join(app.resolve_python())}")
+
+            if getattr(app, 'is_binary', False):
+                exe = getattr(app, 'executable_path', None)
+                self.details_text.insert(
+                    "1.0",
+                    f"Name: {app.name}\nType: EXE\nFolder: {app.folder}\nPath: {exe}"
+                )
+            else:
+                self.details_text.insert(
+                    "1.0",
+                    f"Name: {app.name}\nType: Python\nFolder: {app.folder}\nPython: {' '.join(app.resolve_python())}"
+                )
+
             self.details_text.config(state="disabled")
 
     def _build_context_menu(self):
         self.context_menu = tk.Menu(self.root, tearoff=0, bg=self.widget_colors["bg"], fg="white")
         self.context_menu.add_command(label="🚀 Launch", command=self._on_launch_clicked)
+        self.context_menu.add_separator()
+        self.context_menu.add_command(label="🧩 Set EXE Folder...", command=self._on_set_exe_dir)
         self.context_menu.add_separator()
         self.context_menu.add_command(label="📂 Open Folder", command=self._on_open_folder)
         self.context_menu.add_command(label="💻 CMD Terminal", command=self._on_open_cmd)
@@ -628,7 +715,17 @@ class AppLauncherUI:
         for s in services: shutil.copy2(s, ms_dir / s.name)
 
     def _on_launch_clicked(self):
-        if hasattr(self, 'selected_app'): launch_app(self.selected_app)
+            if hasattr(self, 'selected_app'):
+                launch_app(self.selected_app, run_with_terminal=self.run_with_terminal.get())
+
+    def _on_set_exe_dir(self):
+        from tkinter import filedialog
+        start_dir = str(self.exe_dir) if getattr(self, 'exe_dir', None) else str(ROOT_DIR)
+        path = filedialog.askdirectory(title="Select EXE Folder", initialdir=start_dir)
+        if path:
+            self.exe_dir = Path(path)
+            self._refresh_all()
+            self._set_status(f"EXE folder set: {self.exe_dir}")
 
     def _on_open_venv(self):
         if hasattr(self, 'selected_app'):
@@ -648,4 +745,7 @@ if __name__ == "__main__":
     root = tk.Tk()
     AppLauncherUI(root)
     root.mainloop()
+
+
+
 

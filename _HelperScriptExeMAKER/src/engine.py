@@ -29,6 +29,7 @@ import shutil
 import subprocess
 import sys
 import time
+import getpass
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional, List, Tuple
@@ -352,6 +353,44 @@ def parse_args() -> argparse.Namespace:
     return p.parse_args()
 
 
+def create_self_signed_cert(cert_path: Path) -> bool:
+    """Create a local PFX certificate for self-signing on this machine."""
+    cert_name = f"UsefulHelper-{getpass.getuser()}"
+    # PowerShell command to create and export a self-signed cert
+    ps_cmd = (
+        f"$cert = New-SelfSignedCertificate -Type Custom -Subject 'CN={cert_name}' "
+        f"-TextExtension @('2.5.29.37={{text}}1.3.6.1.5.5.7.3.3') -KeyUsage DigitalSignature "
+        f"-FriendlyName '{cert_name}' -CertStoreLocation 'Cert:\\CurrentUser\\My'; "
+        f"$pwd = ConvertTo-SecureString -String 'Password123' -Force -AsPlainText; "
+        f"Export-PfxCertificate -Cert $cert -FilePath '{str(cert_path)}' -Password $pwd"
+    )
+    try:
+        subprocess.run(["powershell", "-Command", ps_cmd], check=True, capture_output=True)
+        print(f"[SUCCESS] Created self-signed certificate at: {cert_path}")
+        print("[IMPORTANT] Double-click the .pfx to install it into 'Trusted Root Certification Authorities'.")
+        return True
+    except Exception as e:
+        eprint(f"[ERROR] Failed to create certificate: {e}")
+        return False
+
+def sign_exe(exe_path: Path, cert_path: Path) -> bool:
+    """Sign the executable using Windows signtool."""
+    if not cert_path.exists():
+        eprint(f"[WARN] Certificate not found at {cert_path}, skipping signature.")
+        return False
+    
+    # signtool is usually in Windows SDK paths. We assume it's in PATH or use a common fallback.
+    cmd = [
+        "signtool", "sign", "/f", str(cert_path), 
+        "/p", "Password123", "/fd", "SHA256", "/v", str(exe_path)
+    ]
+    try:
+        run(cmd)
+        return True
+    except Exception as e:
+        eprint(f"[WARN] Signing failed. Ensure signtool.exe is in PATH. Error: {e}")
+        return False
+
 def build_exe(
     project: Path | str,
     dest: Path | str,
@@ -423,6 +462,22 @@ def build_exe(
     # Copy to destination
     output_path = copy_dist_to_destination(proj.project_root, proj.name, dest_dir, mode)
 
+    # Check for certificate in project root or app root to sign
+    potential_cert = proj.project_root / "developer_cert.pfx"
+    if potential_cert.exists():
+        print(f"[INFO] Found certificate, attempting to sign {output_path.name}...")
+        if mode == "onefile":
+            sign_exe(output_path, potential_cert)
+        else:
+            # onedir output_path is the folder; find the actual exe inside it
+            target_exe = output_path / f"{proj.name}.exe"
+            if target_exe.exists():
+                sign_exe(target_exe, potential_cert)
+            else:
+                # Fallback check if name differs
+                for item in output_path.glob("*.exe"):
+                    sign_exe(item, potential_cert)
+
     # Build a lightweight args-like object for the existing report function
     report_args = argparse.Namespace(
         mode=mode,
@@ -465,6 +520,8 @@ if __name__ == "__main__":
     except Exception as e:
         eprint("\n[ERROR] Unexpected failure:", str(e))
         raise
+
+
 
 
 

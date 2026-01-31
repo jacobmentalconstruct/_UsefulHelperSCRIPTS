@@ -2,10 +2,10 @@
 
 
 a = Analysis(
-    ["C:\\Users\\petya\\Documents\\Jacob's BIN\\_UsefulHelperSCRIPTS\\_ProjectMAPPER\\src\\app.py"],
-    pathex=["C:\\Users\\petya\\Documents\\Jacob's BIN\\_UsefulHelperSCRIPTS\\_ProjectMAPPER"],
+    ['C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_ProjectMAPPER\\src\\app.py'],
+    pathex=['C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_ProjectMAPPER'],
     binaries=[],
-    datas=[("C:\\Users\\petya\\Documents\\Jacob's BIN\\_UsefulHelperSCRIPTS\\_ProjectMAPPER\\assets", 'assets')],
+    datas=[('C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_ProjectMAPPER\\assets', 'assets'), ('C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_ProjectMAPPER\\assets', 'assets'), ('C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_ProjectMAPPER\\src', 'src')],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
@@ -35,5 +35,5 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon=['C:\\Users\\petya\\Documents\\Jacob's BIN\\_UsefulHelperSCRIPTS\\_ProjectMAPPER\\assets\\icons\\projectmapper.ico'],
+    icon=['C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_ProjectMAPPER\\assets\\icons\\projectmapper.ico'],
 )

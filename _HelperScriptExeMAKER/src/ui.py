@@ -242,6 +242,9 @@ class ExeMakerUI:
         self.build_btn = ttk.Button(actions, text="Build EXE", command=self._on_build)
         self.build_btn.pack(side=tk.LEFT)
 
+        self.cert_btn = ttk.Button(actions, text="Setup Self-Sign Cert", command=self._on_setup_cert)
+        self.cert_btn.pack(side=tk.LEFT, padx=(8, 0))
+
         self.status_var = tk.StringVar(value="Ready.")
         ttk.Label(actions, textvariable=self.status_var).pack(side=tk.LEFT, padx=(12, 0))
 
@@ -287,6 +290,62 @@ class ExeMakerUI:
             self.icon_var.set(path)
 
     # ---------- Build workflow ----------
+    def _on_setup_cert(self) -> None:
+        project = self.project_var.get().strip()
+        if not project or not Path(project).exists():
+            messagebox.showerror("Error", "Select a project root first.")
+            return
+        
+        cert_path = Path(project) / "developer_cert.pfx"
+        try:
+            import engine
+            if engine.create_self_signed_cert(cert_path):
+                messagebox.showinfo("Cert Created", f"Certificate created at {cert_path.name}.\n\nIMPORTANT: You must manually install this into your 'Trusted Root Certification Authorities' once for signing to be valid on this PC.")
+            else:
+                messagebox.showerror("Error", "Failed to create cert. Ensure PowerShell is accessible.")
+        except Exception as e:
+            messagebox.showerror("Error", str(e))
+
+    def _on_setup_cert(self) -> None:
+        project = self.project_var.get().strip()
+        if not project or not Path(project).exists():
+            messagebox.showerror("Error", "Select a project root first.")
+            return
+        
+        cert_path = Path(project) / "developer_cert.pfx"
+        try:
+            if __package__:
+                from . import engine
+            else:
+                import engine
+
+            if engine.create_self_signed_cert(cert_path):
+                messagebox.showinfo("Cert Created", f"Certificate created at {cert_path.name}.\n\nIMPORTANT: You must manually install this into your 'Trusted Root Certification Authorities' once for signing to be valid on this PC.")
+            else:
+                messagebox.showerror("Error", "Failed to create cert. Ensure PowerShell is accessible.")
+        except Exception as e:
+            messagebox.showerror("Error", f"Import or Execution Error: {str(e)}")
+
+    def _on_setup_cert(self) -> None:
+        project = self.project_var.get().strip()
+        if not project or not Path(project).exists():
+            messagebox.showerror("Error", "Select a project root first.")
+            return
+        
+        cert_path = Path(project) / "developer_cert.pfx"
+        try:
+            if __package__:
+                from . import engine
+            else:
+                import engine
+
+            if engine.create_self_signed_cert(cert_path):
+                messagebox.showinfo("Cert Created", f"Certificate created at {cert_path.name}.\n\nIMPORTANT: You must manually install this into your 'Trusted Root Certification Authorities' once for signing to be valid on this PC.")
+            else:
+                messagebox.showerror("Error", "Failed to create cert. Ensure PowerShell is accessible.")
+        except Exception as e:
+            messagebox.showerror("Error", f"Import or Execution Error: {str(e)}")
+
     def _on_build(self) -> None:
         if self._build_in_progress:
             messagebox.showinfo("Build in progress", "A build is already running.")
@@ -419,3 +478,5 @@ def main() -> int:
 
 if __name__ == "__main__":
     run()
+
+

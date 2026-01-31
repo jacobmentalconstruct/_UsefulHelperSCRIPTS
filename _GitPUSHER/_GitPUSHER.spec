@@ -2,10 +2,10 @@
 
 
 a = Analysis(
-    ['C:\\Users\\petya\\Documents\\_JacobBIN\\_UsefulHelperSCRIPTS\\_GitPUSHER\\src\\app.py'],
-    pathex=['C:\\Users\\petya\\Documents\\_JacobBIN\\_UsefulHelperSCRIPTS\\_GitPUSHER'],
+    ['C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_GitPUSHER\\src\\app.py'],
+    pathex=['C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_GitPUSHER'],
     binaries=[],
-    datas=[('C:\\Users\\petya\\Documents\\_JacobBIN\\_UsefulHelperSCRIPTS\\_GitPUSHER\\assets', 'assets'), ('C:\\Users\\petya\\Documents\\_JacobBIN\\_UsefulHelperSCRIPTS\\_GitPUSHER\\assets', 'assets')],
+    datas=[('C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_GitPUSHER\\assets', 'assets'), ('C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_GitPUSHER\\assets', 'assets'), ('C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_GitPUSHER\\src', 'src')],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
@@ -35,5 +35,5 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon=['C:\\Users\\petya\\Documents\\_JacobBIN\\_UsefulHelperSCRIPTS\\_GitPUSHER\\assets\\icons\\_GitPUSHER.ico'],
+    icon=['C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_GitPUSHER\\assets\\icons\\_GitPUSHER.ico'],
 )

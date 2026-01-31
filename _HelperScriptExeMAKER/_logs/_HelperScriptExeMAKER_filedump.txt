@@ -1,4 +1,4 @@
-Dump: C:\Users\petya\Documents\Jacob's BIN\_UsefulHelperSCRIPTS\_HelperScriptExeMAKER
+Dump: C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_HelperScriptExeMAKER
 
 
 --------------------------------------------------------------------------------
@@ -33,10 +33,8 @@ FILE: README.md
 --------------------------------------------------------------------------------
 FILE: requirements.txt
 --------------------------------------------------------------------------------
-# Standard Library dependencies only:
-# tkinter, argparse, json, ast, threading, os, sys
-#
-# No external pip packages required.
+pyinstaller>=6.0
+
 --------------------------------------------------------------------------------
 FILE: setup_env.bat
 --------------------------------------------------------------------------------
@@ -61,348 +59,173 @@ echo [SUCCESS] Environment ready!
 echo You can now open this folder in VS Code or launch via scripts_menu.py
 pause
 --------------------------------------------------------------------------------
-FILE: Tasklist_ _HelperScriptExeMAKER Buildable App (Engine + UI + Microservices).md
+FILE: _HelperScriptExeMAKER.spec
 --------------------------------------------------------------------------------
-# **Tasklist: \_HelperScriptExeMAKER Buildable App (Engine \+ UI \+ Microservices)**
-
-## **Phase 0 — Repo hygiene and import stability (prevents packaging hell)**
-
-### **Task 0.1 — Create `src/microservices/__init__.py`**
-
-**Action:** Create file  
-**Goal:** Make `microservices/` a real Python package so imports are stable in CLI, GUI, and frozen `.exe` contexts.
-
-**Details:**
-
-* Empty file is fine (or add a tiny `__all__` list later).  
-* This is foundational for switching services to `from microservices...` imports.
-
----
-
-### **Task 0.2 — Standardize all microservice imports to package-qualified (or relative)**
-
-**Action:** Patch multiple microservice files in `src/microservices/`  
-**Goal:** Eliminate fragile “same-directory import” assumptions.
-
-**Details:**
-
-* Convert imports like:  
-  * `from base_service import BaseService`  
-  * `from microservice_std_lib import service_metadata`  
-* To either:  
-  * `from microservices.base_service import BaseService`  
-  * `from microservices.microservice_std_lib import service_metadata`  
-* Or use relative:  
-  * `from .base_service import BaseService`  
-  * `from .microservice_std_lib import service_metadata`  
-* Pick ONE convention and apply everywhere.
-
-**Deliverable:** All microservices import cleanly when `src/` is on sys.path.
-
----
-
-### **Task 0.3 — Quarantine/remove irrelevant sample module(s) that break imports**
-
-**Action:** Delete file or move to `_archive/` or `_deprecated/`  
-**Goal:** Avoid import errors from unused modules referencing missing services.
-
-**Details:**
-
-* If you have a `document_utils.py` or anything that imports `_ContentExtractorMS` (or other absent MS), quarantine it.  
-* Keep the build system’s dependency footprint tight.
-
----
-
-## **Phase 1 — Define build pipeline service boundaries (no UI yet)**
-
-### **Task 1.1 — Create `src/microservices/project_detect_ms.py`**
-
-**Action:** Create file  
-**Goal:** Extract “project inspection” logic into a reusable service.
-
-**Service responsibilities:**
-
-* Input: `project_root`  
-* Output: a `ProjectInfo` structure (dataclass or dict) containing:  
-  * project name  
-  * entrypoint path (`src/app.pyw` preferred, else `src/app.py`)  
-  * flags: gui/console default  
-  * optional `requirements.txt` path  
-  * optional `assets/` path  
-* Also return a list of candidate “data dirs” found (assets, config folders, etc.) if you want auto-include.
-
-**Notes:**
-
-* Keep the service pure and deterministic.  
-* No subprocess calls here.
-
----
-
-### **Task 1.2 — Create `src/microservices/venv_manager_ms.py`**
-
-**Action:** Create file  
-**Goal:** Own the venv lifecycle and dependency installation.
-
-**Service responsibilities:**
-
-* `ensure_venv(venv_dir) -> (python_exe_path, pip_exe_path)`  
-* `install_requirements(python_exe, requirements_path)`  
-* `ensure_build_tools(python_exe)` (pip/setuptools/wheel)  
-* Optional: support `--wheelhouse` later (offline installs).
-
----
-
-### **Task 1.3 — Create `src/microservices/pyinstaller_ms.py`**
-
-**Action:** Create file  
-**Goal:** Own PyInstaller install \+ command building \+ invocation.
-
-**Service responsibilities:**
-
-* `ensure_pyinstaller(python_exe)`  
-* `build(project_info, build_opts) -> dist_path`  
-* Build opts include:  
-  * mode: onedir/onefile  
-  * noconsole true/false  
-  * icon path  
-  * add\_data list  
-  * clean true/false  
-* Should return useful build artifacts:  
-  * dist folder path  
-  * produced exe/bundle folder path
-
----
-
-### **Task 1.4 — Create `src/microservices/artifact_stager_ms.py`**
-
-**Action:** Create file  
-**Goal:** Copy artifacts from `project_root/dist` into a destination folder, consistently.
-
-**Service responsibilities:**
-
-* `stage_output(project_root, project_name, dest_dir, mode) -> output_path`  
-* Must handle:  
-  * onefile: `dist/<name>.exe`  
-  * onedir: `dist/<name>/...`  
-* Overwrite existing dest output safely.
-
----
-
-### **Task 1.5 — Create `src/microservices/build_report_ms.py`**
-
-**Action:** Create file  
-**Goal:** Emit a build report JSON (traceability \+ debugging).
-
-**Service responsibilities:**
-
-* `write_build_report(dest_dir, project_info, build_opts, output_path) -> report_path`  
-* Include:  
-  * timestamps  
-  * python version  
-  * resolved paths  
-  * build mode/options  
-  * requirements hash (optional)  
-  * list of included data dirs
-
----
-
-## **Phase 2 — Refactor `engine.py` into an orchestrator façade (CLI stays usable)**
-
-### **Task 2.1 — Patch `src/engine.py` to become the orchestrator façade**
-
-**Action:** Patch file  
-**Goal:** `engine.py` becomes the stable public API \+ CLI entry.
-
-**Changes:**
-
-* Keep (or add) a single “high-level” method:  
-  * `build_exe(project_root, dest_dir, mode="onedir", clean=False, console=False, icon=None, include_data=None, venv=None) -> (output_path, report_path)`  
-* Inside `build_exe`, orchestrate calls to:  
-  * ProjectDetectMS  
-  * VenvManagerMS  
-  * PyInstallerMS  
-  * ArtifactStagerMS  
-  * BuildReportMS  
-* Keep the CLI parsing inside `engine.py` (or keep `engine.py` importable and expose CLI via `app.py`—your choice; see Phase 3).
-
-**Important guardrails:**
-
-* Remove any absolute-path fallbacks (those don’t survive sharing).  
-* Avoid calling `logging.basicConfig()` inside every service construction (move config to app entrypoint later).
-
----
-
-### **Task 2.2 — Add a minimal “engine self-test” function**
-
-**Action:** Patch `engine.py` or create `src/tests/test_engine_smoke.py`  
-**Goal:** Quick sanity check that detection and venv setup run without PyInstaller.
-
-**Example test targets:**
-
-* detect project structure  
-* compute add\_data list  
-* validate missing entrypoint errors are clean
-
-(Full build tests can be optional because PyInstaller builds are slow.)
-
----
-
-## **Phase 3 — Implement `app.py` as dumb glue (CLI vs UI)**
-
-### **Task 3.1 — Patch `src/app.py` to be the central entrypoint**
-
-**Action:** Patch file  
-**Goal:** `app.py` decides mode and wires engine \+ UI.
-
-**Behavior:**
-
-* Parse args:  
-  * If CLI args provided (or `--cli`), delegate to `engine.py` (call `engine.main()` or call `engine.build_exe()` and print results)  
-  * Else launch UI via `ui.run()`  
-* Setup logging once here (format, level).  
-* Optionally initialize Telemetry service early and pass log handler into engine later.
-
-**Deliverable:** One entrypoint for both worlds.
-
----
-
-## **Phase 4 — Implement `ui.py` as UI orchestrator (thin, stable, non-freezing)**
-
-### **Task 4.1 — Patch `src/ui.py` to build the UI shell \+ panels**
-
-**Action:** Patch file  
-**Goal:** Provide a usable GUI wrapper around the engine.
-
-**UI must include:**
-
-* Folder picker: `project_root`  
-* Folder picker: `destination_dir`  
-* Options:  
-  * build mode dropdown (onedir/onefile)  
-  * clean checkbox  
-  * console checkbox  
-  * icon picker (optional)  
-  * include-data list editor (optional v1: multiline text box)  
-* “Build” button  
-* A log panel (scrollable text) that shows real-time logs
-
-**Threading:**
-
-* Build must run in a background thread.  
-* UI polls a queue (Telemetry) to append logs without freezing.
-
----
-
-### **Task 4.2 — Integrate TelemetryServiceMS into UI**
-
-**Action:** Patch `ui.py` \+ possibly Telemetry service  
-**Goal:** Engine build steps stream logs into UI.
-
-**Approach options:**
-
-* Option A (simple): in engine, accept a callback `log_fn(msg)` and call it from each service  
-* Option B (more standard): use Python `logging` with a custom handler that writes to Telemetry queue
-
-**Deliverable:** Build progress is visible and UI stays responsive.
-
----
-
-## **Phase 5 — Make UI \+ engine both “microservice orchestrators”**
-
-### **Task 5.1 — Create `src/microservices/build_orchestrator_ms.py` (optional but aligns with your pattern)**
-
-**Action:** Create file  
-**Goal:** Formalize the pipeline orchestration as a service rather than embedded logic.
-
-**Why optional:** You can keep the orchestration in `engine.py` initially; this step just “microservice-ifies” it once stable.
-
-**Service responsibilities:**
-
-* `build_exe(params...) -> results`  
-* Internally wires the other services (detect/venv/pyinstaller/stage/report)
-
----
-
-### **Task 5.2 — Create `src/microservices/ui_orchestrator_ms.py` (optional)**
-
-**Action:** Create file  
-**Goal:** Move UI state \+ actions into a service so `ui.py` is mostly view code.
-
-**Responsibilities:**
-
-* store current project path, dest path, options  
-* validate inputs  
-* launch build thread and update state  
-* expose events/messages to UI layer
-
----
-
-## **Phase 6 — Packaging readiness improvements (for shareable `.exe` output)**
-
-### **Task 6.1 — Replace per-service `logging.basicConfig()` with single centralized config**
-
-**Action:** Patch `src/microservices/base_service.py` and `app.py`  
-**Goal:** Avoid duplicated handlers and inconsistent logs.
-
-**Change:**
-
-* Remove `basicConfig` calls from `BaseService.__init__`  
-* Keep `self.logger = logging.getLogger(name)`  
-* Configure logging in `app.py` once.
-
----
-
-### **Task 6.2 — Add “resource path shim” template (future proof)**
-
-**Action:** Create `src/resource_paths.py` and patch relevant apps later  
-**Goal:** Standard mechanism for assets/config paths in frozen builds.
-
-**Reason:** Many of your other apps rely on repo-relative traversal; this is your standard fix pattern when you start shipping apps broadly.
-
----
-
-## **Phase 7 — Dev ergonomics \+ batch builds**
-
-### **Task 7.1 — Add `build_all` command to `engine.py` CLI**
-
-**Action:** Patch `engine.py`  
-**Goal:** Point at a repo folder and build all child projects that match `src/app.py(w)`.
-
-**Features:**
-
-* list discovered projects  
-* build sequentially  
-* per-project report  
-* summary output
-
----
-
-### **Task 7.2 — Add “profile / presets” support**
-
-**Action:** Create `profiles/` folder \+ patch engine/ui  
-**Goal:** Save build presets (“onedir default”, “onefile minimal”, “include assets”, etc.)
-
----
-
-## **Deliverables checklist (what “done” looks like)**
-
-1. Running CLI:  
-* `python src/app.py --cli --project X --dest Y --mode onedir`  
-2. Running GUI:  
-* `python src/app.py` launches Tk UI, build runs in thread, logs stream live  
-3. Microservices are import-stable:  
-* package imports work consistently  
-4. “Builder produces builder”:  
-* your exe maker tool can build other tools reliably
-
----
-
-If you want, I can also format this tasklist into your preferred “builder-agent handoff” format (e.g., with **explicit patch hunks per file**, staged into iterations: Iteration 1 \= imports \+ quarantine \+ ProjectDetectMS; Iteration 2 \= venv \+ pyinstaller; Iteration 3 \= app.py glue; Iteration 4 \= UI).
-
+# -*- mode: python ; coding: utf-8 -*-
+
+
+a = Analysis(
+    ['C:\\Users\\petya\\Documents\\_JacobBIN\\_UsefulHelperSCRIPTS\\_HelperScriptExeMAKER\\src\\app.py'],
+    pathex=['C:\\Users\\petya\\Documents\\_JacobBIN\\_UsefulHelperSCRIPTS\\_HelperScriptExeMAKER'],
+    binaries=[],
+    datas=[('C:\\Users\\petya\\Documents\\_JacobBIN\\_UsefulHelperSCRIPTS\\_HelperScriptExeMAKER\\assets', 'assets'), ('C:\\Users\\petya\\Documents\\_JacobBIN\\_UsefulHelperSCRIPTS\\_HelperScriptExeMAKER\\assets', 'assets')],
+    hiddenimports=[],
+    hookspath=[],
+    hooksconfig={},
+    runtime_hooks=[],
+    excludes=[],
+    noarchive=False,
+    optimize=0,
+)
+pyz = PYZ(a.pure)
+
+exe = EXE(
+    pyz,
+    a.scripts,
+    a.binaries,
+    a.datas,
+    [],
+    name='_HelperScriptExeMAKER',
+    debug=False,
+    bootloader_ignore_signals=False,
+    strip=False,
+    upx=True,
+    upx_exclude=[],
+    runtime_tmpdir=None,
+    console=False,
+    disable_windowed_traceback=False,
+    argv_emulation=False,
+    target_arch=None,
+    codesign_identity=None,
+    entitlements_file=None,
+    icon=['C:\\Users\\petya\\Documents\\_JacobBIN\\_UsefulHelperSCRIPTS\\_HelperScriptExeMAKER\\assets\\icons\\_HelperScriptExeMAKER.ico'],
+)
 
 --------------------------------------------------------------------------------
 FILE: src\app.py
 --------------------------------------------------------------------------------
+#!/usr/bin/env python3
+"""
+app.py
+
+Dumb interconnection layer between:
+- engine.py (build pipeline orchestrator / CLI-capable)
+- ui.py     (Tkinter wrapper around the engine)
+
+Rules:
+- Logging is configured ONCE here.
+- engine remains usable as a CLI without UI.
+- UI remains a thin wrapper that calls engine.build_exe(...).
+"""
+
+from __future__ import annotations
+
+import argparse
+import logging
+import sys
+from typing import Optional
+
+
+def configure_logging(verbose: bool = False) -> None:
+    """Configure logging once for the entire application."""
+    level = logging.DEBUG if verbose else logging.INFO
+    logging.basicConfig(
+        level=level,
+        format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+        datefmt="%H:%M:%S",
+    )
+
+
+def parse_app_args(argv: Optional[list[str]] = None) -> argparse.Namespace:
+    """
+    Parse only the 'mode' args for the app.
+    All build args are handled by engine.py when running in --cli mode.
+    """
+    p = argparse.ArgumentParser(
+        prog="HelperScriptExeMAKER",
+        add_help=True,
+        description="HelperScriptExeMAKER - GUI wrapper + CLI entrypoint",
+    )
+    p.add_argument(
+        "--cli",
+        action="store_true",
+        help="Run in CLI mode (delegates to engine.py argument parsing and execution).",
+    )
+    p.add_argument(
+        "--verbose",
+        action="store_true",
+        help="Enable verbose logging (DEBUG).",
+    )
+    return p.parse_args(argv)
+
+
+def run_cli_passthrough() -> int:
+    """
+    Run engine's CLI as-is. We do not re-parse build args here.
+    This keeps engine.py as the authoritative CLI interface.
+    """
+    # Package-safe import: works when invoked as `python -m src.app`
+    try:
+        from . import engine  # type: ignore
+    except Exception:
+        import engine  # type: ignore  # fallback for direct execution
+
+    # engine.main() uses engine.parse_args() internally.
+    return int(engine.main())
+
+
+def run_gui() -> int:
+    """
+    Run Tkinter UI wrapper. UI should call engine.build_exe(...) under the hood.
+
+    Rules:
+    - When invoked as a module (python -m src.app), we MUST import as src.ui.
+    - We do NOT fall back to top-level `import ui` in module mode, because that hides
+      the real underlying import error (syntax error, missing dependency, etc.).
+    - When executed as a script (no package), we import `ui` from the same directory.
+    """
+    log = logging.getLogger("app")
+
+    try:
+        if __package__:
+            from . import ui as ui_mod  # type: ignore
+        else:
+            import ui as ui_mod  # type: ignore
+    except Exception as e:
+        log.error(
+            "UI module failed to import. If ui.py is not implemented yet, use --cli. Error: %s",
+            e,
+        )
+        return 2
+
+    # Support either ui.run() or ui.main() as entrypoint
+    if hasattr(ui_mod, "run"):
+        ui_mod.run()
+        return 0
+    if hasattr(ui_mod, "main"):
+        return int(ui_mod.main())
+
+    log.error("ui.py has no run() or main() entrypoint.")
+    return 2
+
+
+def main(argv: Optional[list[str]] = None) -> int:
+    args = parse_app_args(argv)
+
+    configure_logging(verbose=args.verbose)
+
+    if args.cli:
+        return run_cli_passthrough()
+
+    return run_gui()
+
+
+if __name__ == "__main__":
+    raise SystemExit(main(sys.argv[1:]))
+
+
+
+
 
 --------------------------------------------------------------------------------
 FILE: src\engine.py
@@ -438,6 +261,7 @@ import shutil
 import subprocess
 import sys
 import time
+import getpass
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional, List, Tuple
@@ -453,10 +277,44 @@ def now_iso() -> str:
 def eprint(*args):
     print(*args, file=sys.stderr)
 
-def run(cmd: List[str], cwd: Optional[Path] = None, env: Optional[dict] = None) -> None:
-    """Run a command and raise with good context on failure."""
+def run(cmd: List[str], cwd: Optional[Path] = None, env: Optional[dict] = None) -> str:
+    """Run a command, streaming combined stdout/stderr, and return full combined output.
+
+    Why:
+      - PyInstaller (and pip) often fail with the *real* reason only in stdout/stderr.
+      - UI mode needs the text captured so it can be displayed.
+
+    On failure:
+      - Raises subprocess.CalledProcessError with .output containing the combined output.
+    """
     print(f"\n[RUN] {' '.join(cmd)}")
-    subprocess.run(cmd, cwd=str(cwd) if cwd else None, env=env, check=True)
+
+    proc = subprocess.Popen(
+        cmd,
+        cwd=str(cwd) if cwd else None,
+        env=env,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+    )
+
+    assert proc.stdout is not None
+    buf: List[str] = []
+
+    # Stream live output (helps in CLI usage) while also capturing for UI/reporting.
+    for line in proc.stdout:
+        buf.append(line)
+        print(line, end="")
+
+    rc = proc.wait()
+    out = "".join(buf)
+
+    if rc != 0:
+        raise subprocess.CalledProcessError(rc, cmd, output=out)
+
+    return out
 
 def safe_mkdir(p: Path) -> None:
     p.mkdir(parents=True, exist_ok=True)
@@ -575,6 +433,11 @@ def build_pyinstaller_cmd(
     Build a PyInstaller command suitable for running inside the project root.
     """
     cmd = [str(python_exe), "-m", "PyInstaller"]
+
+    # Ensure the *project root* is on the analysis path.
+    # Many of your tools are run as: python -m src.app
+    # That relies on <project_root> being on sys.path so 'import src.*' works.
+    cmd += ["--paths", str(proj.project_root)]
 
     # Clean build artifacts (PyInstaller build cache)
     if clean:
@@ -722,38 +585,90 @@ def parse_args() -> argparse.Namespace:
     return p.parse_args()
 
 
-def main() -> int:
-    args = parse_args()
+def create_self_signed_cert(cert_path: Path) -> bool:
+    """Create a local PFX certificate for self-signing on this machine."""
+    cert_name = f"UsefulHelper-{getpass.getuser()}"
+    # PowerShell command to create and export a self-signed cert
+    ps_cmd = (
+        f"$cert = New-SelfSignedCertificate -Type Custom -Subject 'CN={cert_name}' "
+        f"-TextExtension @('2.5.29.37={{text}}1.3.6.1.5.5.7.3.3') -KeyUsage DigitalSignature "
+        f"-FriendlyName '{cert_name}' -CertStoreLocation 'Cert:\\CurrentUser\\My'; "
+        f"$pwd = ConvertTo-SecureString -String 'Password123' -Force -AsPlainText; "
+        f"Export-PfxCertificate -Cert $cert -FilePath '{str(cert_path)}' -Password $pwd"
+    )
+    try:
+        subprocess.run(["powershell", "-Command", ps_cmd], check=True, capture_output=True)
+        print(f"[SUCCESS] Created self-signed certificate at: {cert_path}")
+        print("[IMPORTANT] Double-click the .pfx to install it into 'Trusted Root Certification Authorities'.")
+        return True
+    except Exception as e:
+        eprint(f"[ERROR] Failed to create certificate: {e}")
+        return False
 
-    project_root = Path(args.project).resolve()
-    dest_dir = Path(args.dest).resolve()
+def sign_exe(exe_path: Path, cert_path: Path) -> bool:
+    """Sign the executable using Windows signtool."""
+    if not cert_path.exists():
+        eprint(f"[WARN] Certificate not found at {cert_path}, skipping signature.")
+        return False
+    
+    # signtool is usually in Windows SDK paths. We assume it's in PATH or use a common fallback.
+    cmd = [
+        "signtool", "sign", "/f", str(cert_path), 
+        "/p", "Password123", "/fd", "SHA256", "/v", str(exe_path)
+    ]
+    try:
+        run(cmd)
+        return True
+    except Exception as e:
+        eprint(f"[WARN] Signing failed. Ensure signtool.exe is in PATH. Error: {e}")
+        return False
+
+def build_exe(
+    project: Path | str,
+    dest: Path | str,
+    mode: str = "onedir",
+    clean: bool = False,
+    console: bool = False,
+    icon: Optional[Path | str] = None,
+    include_data: Optional[List[str]] = None,
+    venv: Optional[Path | str] = None,
+) -> Tuple[Path, Path]:
+    """Build a shareable .exe bundle for a target project and stage it into dest.
+
+    This is the stable façade API that both CLI and Tkinter UI will call.
+
+    Returns:
+        (output_path, report_path)
+    """
+    project_root = Path(project).resolve()
+    dest_dir = Path(dest).resolve()
 
     proj = detect_project(project_root)
 
     # Compute venv location
-    venv_dir = Path(args.venv).resolve() if args.venv else (proj.project_root / ".build_venv")
+    venv_dir = Path(venv).resolve() if venv else (proj.project_root / ".build_venv")
 
     # Extra data dirs: include assets automatically if present, plus user-specified
     extra_data_dirs: List[Path] = []
     if proj.assets_dir:
         extra_data_dirs.append(proj.assets_dir)
 
-    for p in (args.include_data or []):
+    for p in (include_data or []):
         candidate = (proj.project_root / p).resolve() if not Path(p).is_absolute() else Path(p).resolve()
         if candidate.exists() and candidate.is_dir():
             extra_data_dirs.append(candidate)
         else:
             eprint(f"[WARN] include-data path not found or not a directory, skipping: {candidate}")
 
-    icon_path = Path(args.icon).resolve() if args.icon else None
+    icon_path = Path(icon).resolve() if icon else None
 
     print(f"[INFO] Project: {proj.name}")
     print(f"[INFO] Root:    {proj.project_root}")
     print(f"[INFO] Entry:   {proj.entrypoint}")
     print(f"[INFO] Dest:    {dest_dir}")
-    print(f"[INFO] Mode:    {args.mode}")
+    print(f"[INFO] Mode:    {mode}")
 
-    if args.clean:
+    if clean:
         print("[INFO] Cleaning prior build artifacts...")
         clean_project_build_artifacts(proj.project_root)
 
@@ -766,9 +681,9 @@ def main() -> int:
     cmd = build_pyinstaller_cmd(
         python_exe=py,
         proj=proj,
-        build_mode=args.mode,
-        clean=args.clean,
-        console=args.console,
+        build_mode=mode,
+        clean=clean,
+        console=console,
         icon_path=icon_path,
         extra_data_dirs=extra_data_dirs,
     )
@@ -777,11 +692,52 @@ def main() -> int:
     run(cmd, cwd=proj.project_root)
 
     # Copy to destination
-    output_path = copy_dist_to_destination(proj.project_root, proj.name, dest_dir, args.mode)
-    report_path = write_build_report(dest_dir, proj, output_path, args)
+    output_path = copy_dist_to_destination(proj.project_root, proj.name, dest_dir, mode)
+
+    # Check for certificate in project root or app root to sign
+    potential_cert = proj.project_root / "developer_cert.pfx"
+    if potential_cert.exists():
+        print(f"[INFO] Found certificate, attempting to sign {output_path.name}...")
+        if mode == "onefile":
+            sign_exe(output_path, potential_cert)
+        else:
+            # onedir output_path is the folder; find the actual exe inside it
+            target_exe = output_path / f"{proj.name}.exe"
+            if target_exe.exists():
+                sign_exe(target_exe, potential_cert)
+            else:
+                # Fallback check if name differs
+                for item in output_path.glob("*.exe"):
+                    sign_exe(item, potential_cert)
+
+    # Build a lightweight args-like object for the existing report function
+    report_args = argparse.Namespace(
+        mode=mode,
+        console=console,
+        clean=clean,
+        icon=str(icon_path) if icon_path else None,
+        include_data=include_data or [],
+    )
+    report_path = write_build_report(dest_dir, proj, output_path, report_args)
 
     print(f"\n[SUCCESS] Output: {output_path}")
     print(f"[SUCCESS] Report: {report_path}")
+    return output_path, report_path
+
+
+def main() -> int:
+    args = parse_args()
+
+    build_exe(
+        project=args.project,
+        dest=args.dest,
+        mode=args.mode,
+        clean=args.clean,
+        console=args.console,
+        icon=args.icon,
+        include_data=args.include_data,
+        venv=args.venv,
+    )
     return 0
 
 
@@ -797,9 +753,496 @@ if __name__ == "__main__":
         eprint("\n[ERROR] Unexpected failure:", str(e))
         raise
 
+
+
+
+
+
 --------------------------------------------------------------------------------
 FILE: src\ui.py
 --------------------------------------------------------------------------------
+#!/usr/bin/env python3
+"""
+ui.py
+
+Tkinter UI wrapper for _HelperScriptExeMAKER.
+
+Design:
+- Thin wrapper that gathers user inputs and calls engine.build_exe(...)
+- Runs build in a background thread so UI stays responsive
+- Streams logs into UI via a logging.Handler
+"""
+
+from __future__ import annotations
+
+import logging
+import queue
+import threading
+import tkinter as tk
+from dataclasses import dataclass
+from pathlib import Path
+from tkinter import filedialog, messagebox, ttk
+# No changes to imports; assuming 'engine' is available at runtime
+from typing import Optional, List
+
+# -----------------------------
+# Theme
+# -----------------------------
+
+THEME = {
+    "bg": "#151521",
+    "panel": "#1e1e2f",
+    "panel2": "#24243a",
+    "text": "#e6e6e6",
+    "muted": "#b6b6c8",
+    "accent": "#7aa2f7",
+    "entry_bg": "#101019",
+    "entry_fg": "#e6e6e6",
+    "border": "#3a3a5e",
+}
+
+
+# -----------------------------
+# Logging -> Tkinter bridge
+# -----------------------------
+
+class TkQueueHandler(logging.Handler):
+    """Logging handler that writes formatted log records to a queue."""
+    def __init__(self, q: "queue.Queue[str]"):
+        super().__init__()
+        self.q = q
+
+    def emit(self, record: logging.LogRecord) -> None:
+        try:
+            msg = self.format(record)
+            self.q.put(msg)
+        except Exception:
+            # Never crash UI due to logging
+            pass
+
+
+# -----------------------------
+# UI State
+# -----------------------------
+
+@dataclass
+class BuildFormState:
+    project_root: str = ""
+    dest_dir: str = ""
+    mode: str = "onedir"      # onedir | onefile
+    clean: bool = False
+    console: bool = False
+    icon_path: str = ""
+    include_data_text: str = ""  # multiline: relative folder names or absolute paths
+
+
+# -----------------------------
+# Main App
+# -----------------------------
+
+class ExeMakerUI:
+    def __init__(self, root: tk.Tk):
+        self.root = root
+        self.root.title("HelperScriptExeMAKER")
+        self.root.geometry("980x700")
+
+        # Dark theme baseline (applied once)
+        self._apply_dark_theme()
+
+        self.log_queue: "queue.Queue[str]" = queue.Queue()
+        self._build_thread: Optional[threading.Thread] = None
+        self._build_in_progress = False
+
+        self.state = BuildFormState()
+
+        self._setup_logging_bridge()
+        self._build_layout()
+        self._schedule_log_drain()
+
+    def _apply_dark_theme(self) -> None:
+        """Configure a simple dark theme for tk + ttk widgets."""
+        self.colors = THEME.copy()
+
+        try:
+            self.root.configure(bg=self.colors["bg"])
+        except Exception:
+            pass
+
+        style = ttk.Style(self.root)
+
+        try:
+            style.theme_use("clam")
+        except Exception:
+            pass
+
+        bg = self.colors["bg"]
+        panel = self.colors["panel"]
+        panel2 = self.colors["panel2"]
+        fg = self.colors["text"]
+        muted = self.colors["muted"]
+        accent = self.colors["accent"]
+        entry_bg = self.colors["entry_bg"]
+        entry_fg = self.colors["entry_fg"]
+        border = self.colors["border"]
+
+        # Base
+        style.configure("TFrame", background=bg)
+        style.configure("TLabel", background=bg, foreground=fg)
+        style.configure("TLabelframe", background=bg, foreground=fg)
+        style.configure("TLabelframe.Label", background=bg, foreground=fg)
+
+        # Inputs
+        style.configure("TEntry", fieldbackground=entry_bg, foreground=entry_fg)
+        style.configure("TCombobox", fieldbackground=entry_bg, foreground=entry_fg)
+
+        # Buttons
+        style.configure(
+            "TButton",
+            background=panel,
+            foreground=fg,
+            bordercolor=border,
+            focusthickness=1,
+            focuscolor=accent,
+        )
+        try:
+            style.map(
+                "TButton",
+                background=[("active", panel2), ("pressed", panel2)],
+                foreground=[("disabled", muted)],
+            )
+        except Exception:
+            pass
+
+    def _setup_logging_bridge(self) -> None:
+        """Attach a queue handler to root logger so engine logs appear in UI."""
+        handler = TkQueueHandler(self.log_queue)
+        handler.setLevel(logging.DEBUG)
+        fmt = logging.Formatter("%(asctime)s [%(levelname)s] %(name)s: %(message)s", "%H:%M:%S")
+        handler.setFormatter(fmt)
+
+        root_logger = logging.getLogger()
+        root_logger.addHandler(handler)
+
+    def _build_layout(self) -> None:
+        """Construct the UI layout."""
+        # Top frame: form controls
+        top = ttk.Frame(self.root, padding=10)
+        top.pack(side=tk.TOP, fill=tk.X)
+
+        # Middle: include-data + options
+        mid = ttk.Frame(self.root, padding=10)
+        mid.pack(side=tk.TOP, fill=tk.BOTH, expand=False)
+
+        # Bottom: logs
+        bottom = ttk.Frame(self.root, padding=10)
+        bottom.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+
+        # --- Row 0: Project Root
+        ttk.Label(top, text="Target Project Root:").grid(row=0, column=0, sticky="w")
+        self.project_var = tk.StringVar(value=self.state.project_root)
+        project_entry = ttk.Entry(top, textvariable=self.project_var, width=80)
+        project_entry.grid(row=0, column=1, sticky="we", padx=(8, 8))
+        ttk.Button(top, text="Browse…", command=self._browse_project).grid(row=0, column=2, sticky="e")
+
+        # --- Row 1: Destination Dir
+        ttk.Label(top, text="Destination Folder:").grid(row=1, column=0, sticky="w", pady=(8, 0))
+        self.dest_var = tk.StringVar(value=self.state.dest_dir)
+        dest_entry = ttk.Entry(top, textvariable=self.dest_var, width=80)
+        dest_entry.grid(row=1, column=1, sticky="we", padx=(8, 8), pady=(8, 0))
+        ttk.Button(top, text="Browse…", command=self._browse_dest).grid(row=1, column=2, sticky="e", pady=(8, 0))
+
+        # Make column 1 stretch
+        top.grid_columnconfigure(1, weight=1)
+
+        # --- Options row
+        opts = ttk.Frame(mid)
+        opts.pack(side=tk.TOP, fill=tk.X)
+
+        ttk.Label(opts, text="Mode:").grid(row=0, column=0, sticky="w")
+        self.mode_var = tk.StringVar(value=self.state.mode)
+        mode_combo = ttk.Combobox(opts, textvariable=self.mode_var, values=["onedir", "onefile"], width=10, state="readonly")
+        mode_combo.grid(row=0, column=1, sticky="w", padx=(6, 16))
+
+        self.clean_var = tk.BooleanVar(value=self.state.clean)
+        ttk.Checkbutton(opts, text="Clean build artifacts", variable=self.clean_var).grid(row=0, column=2, sticky="w", padx=(0, 16))
+
+        self.console_var = tk.BooleanVar(value=self.state.console)
+        ttk.Checkbutton(opts, text="Console window", variable=self.console_var).grid(row=0, column=3, sticky="w")
+
+        # --- Icon picker row
+        ttk.Label(opts, text="Icon (.ico):").grid(row=1, column=0, sticky="w", pady=(8, 0))
+        self.icon_var = tk.StringVar(value=self.state.icon_path)
+        icon_entry = ttk.Entry(opts, textvariable=self.icon_var, width=60)
+        icon_entry.grid(row=1, column=1, columnspan=2, sticky="we", padx=(6, 8), pady=(8, 0))
+        ttk.Button(opts, text="Browse…", command=self._browse_icon).grid(row=1, column=3, sticky="e", pady=(8, 0))
+
+        opts.grid_columnconfigure(2, weight=1)
+
+        # --- Include-data box
+        inc_label = "Include Data Directories (one per line; relative to project root or absolute paths)"
+        inc = ttk.LabelFrame(mid, text=inc_label)
+        inc.pack(side=tk.TOP, fill=tk.BOTH, expand=False, pady=(10, 0))
+
+        self.include_text = tk.Text(inc, height=6, wrap="none")
+        self.include_text.configure(
+            bg="#1e1e2f",
+            fg="#e6e6e6",
+            insertbackground="#e6e6e6",
+            highlightthickness=1,
+            highlightbackground="#2a2a3f",
+            relief="flat",
+        )
+        self.include_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+        scroll_y = ttk.Scrollbar(inc, orient="vertical", command=self.include_text.yview)
+        scroll_y.pack(side=tk.RIGHT, fill=tk.Y)
+        self.include_text.configure(yscrollcommand=scroll_y.set)
+
+        # --- Action buttons
+        actions = ttk.Frame(self.root, padding=(10, 0, 10, 10))
+        actions.pack(side=tk.TOP, fill=tk.X)
+
+        self.build_btn = ttk.Button(actions, text="Build EXE", command=self._on_build)
+        self.build_btn.pack(side=tk.LEFT)
+
+        self.cert_btn = ttk.Button(actions, text="Setup Self-Sign Cert", command=self._on_setup_cert)
+        self.cert_btn.pack(side=tk.LEFT, padx=(8, 0))
+
+        self.status_var = tk.StringVar(value="Ready.")
+        ttk.Label(actions, textvariable=self.status_var).pack(side=tk.LEFT, padx=(12, 0))
+
+        # --- Logs
+        log_frame = ttk.LabelFrame(bottom, text="Build Log")
+        log_frame.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+
+        self.log_text = tk.Text(log_frame, wrap="word")
+        self.log_text.configure(
+            bg="#0f0f16",
+            fg="#e6e6e6",
+            insertbackground="#e6e6e6",
+            highlightthickness=1,
+            highlightbackground="#2a2a3f",
+            relief="flat",
+        )
+        self.log_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+        log_scroll = ttk.Scrollbar(log_frame, orient="vertical", command=self.log_text.yview)
+        log_scroll.pack(side=tk.RIGHT, fill=tk.Y)
+        self.log_text.configure(yscrollcommand=log_scroll.set)
+
+        # Initial guidance
+        self._append_log("UI ready. Choose a project root and destination, then click Build EXE.\n")
+
+    # ---------- Browse handlers ----------
+    def _browse_project(self) -> None:
+        path = filedialog.askdirectory(title="Select Target Project Root")
+        if path:
+            self.project_var.set(path)
+
+    def _browse_dest(self) -> None:
+        path = filedialog.askdirectory(title="Select Destination Folder")
+        if path:
+            self.dest_var.set(path)
+
+    def _browse_icon(self) -> None:
+        path = filedialog.askopenfilename(
+            title="Select .ico file",
+            filetypes=[("Icon files", "*.ico"), ("All files", "*.*")]
+        )
+        if path:
+            self.icon_var.set(path)
+
+    # ---------- Build workflow ----------
+    def _on_setup_cert(self) -> None:
+        project = self.project_var.get().strip()
+        if not project or not Path(project).exists():
+            messagebox.showerror("Error", "Select a project root first.")
+            return
+        
+        cert_path = Path(project) / "developer_cert.pfx"
+        try:
+            import engine
+            if engine.create_self_signed_cert(cert_path):
+                messagebox.showinfo("Cert Created", f"Certificate created at {cert_path.name}.\n\nIMPORTANT: You must manually install this into your 'Trusted Root Certification Authorities' once for signing to be valid on this PC.")
+            else:
+                messagebox.showerror("Error", "Failed to create cert. Ensure PowerShell is accessible.")
+        except Exception as e:
+            messagebox.showerror("Error", str(e))
+
+    def _on_setup_cert(self) -> None:
+        project = self.project_var.get().strip()
+        if not project or not Path(project).exists():
+            messagebox.showerror("Error", "Select a project root first.")
+            return
+        
+        cert_path = Path(project) / "developer_cert.pfx"
+        try:
+            if __package__:
+                from . import engine
+            else:
+                import engine
+
+            if engine.create_self_signed_cert(cert_path):
+                messagebox.showinfo("Cert Created", f"Certificate created at {cert_path.name}.\n\nIMPORTANT: You must manually install this into your 'Trusted Root Certification Authorities' once for signing to be valid on this PC.")
+            else:
+                messagebox.showerror("Error", "Failed to create cert. Ensure PowerShell is accessible.")
+        except Exception as e:
+            messagebox.showerror("Error", f"Import or Execution Error: {str(e)}")
+
+    def _on_setup_cert(self) -> None:
+        project = self.project_var.get().strip()
+        if not project or not Path(project).exists():
+            messagebox.showerror("Error", "Select a project root first.")
+            return
+        
+        cert_path = Path(project) / "developer_cert.pfx"
+        try:
+            if __package__:
+                from . import engine
+            else:
+                import engine
+
+            if engine.create_self_signed_cert(cert_path):
+                messagebox.showinfo("Cert Created", f"Certificate created at {cert_path.name}.\n\nIMPORTANT: You must manually install this into your 'Trusted Root Certification Authorities' once for signing to be valid on this PC.")
+            else:
+                messagebox.showerror("Error", "Failed to create cert. Ensure PowerShell is accessible.")
+        except Exception as e:
+            messagebox.showerror("Error", f"Import or Execution Error: {str(e)}")
+
+    def _on_build(self) -> None:
+        if self._build_in_progress:
+            messagebox.showinfo("Build in progress", "A build is already running.")
+            return
+
+        project = self.project_var.get().strip()
+        dest = self.dest_var.get().strip()
+        if not project or not Path(project).exists():
+            messagebox.showerror("Invalid Project Root", "Please choose a valid Target Project Root folder.")
+            return
+        if not dest or not Path(dest).exists():
+            messagebox.showerror("Invalid Destination", "Please choose a valid Destination folder.")
+            return
+
+        mode = self.mode_var.get().strip() or "onedir"
+        clean = bool(self.clean_var.get())
+        console = bool(self.console_var.get())
+        icon = self.icon_var.get().strip() or None
+
+        include_data = self._parse_include_data(project)
+
+        self._build_in_progress = True
+        self.build_btn.configure(state="disabled")
+        self.status_var.set("Building…")
+
+        self._append_log("\n--- BUILD START ---\n")
+        self._append_log(f"Project: {project}\nDest:    {dest}\nMode:    {mode}\nClean:   {clean}\nConsole: {console}\n")
+        if icon:
+            self._append_log(f"Icon:    {icon}\n")
+        if include_data:
+            self._append_log(f"Include: {include_data}\n")
+
+        self._build_thread = threading.Thread(
+            target=self._build_worker,
+            args=(project, dest, mode, clean, console, icon, include_data),
+            daemon=True
+        )
+        self._build_thread.start()
+
+    def _parse_include_data(self, project_root: str) -> List[str]:
+        """Read include-data lines from text box."""
+        raw = self.include_text.get("1.0", "end").strip()
+        if not raw:
+            return []
+        lines = []
+        for line in raw.splitlines():
+            s = line.strip()
+            if not s or s.startswith("#"):
+                continue
+            lines.append(s)
+        return lines
+
+    def _build_worker(
+        self,
+        project: str,
+        dest: str,
+        mode: str,
+        clean: bool,
+        console: bool,
+        icon: Optional[str],
+        include_data: List[str],
+    ) -> None:
+        """Background thread: call engine.build_exe and report results."""
+        try:
+            try:
+                from . import engine  # type: ignore
+            except (ImportError, ValueError):
+                import engine  # type: ignore
+
+            output_path, report_path = engine.build_exe(
+                project=project,
+                dest=dest,
+                mode=mode,
+                clean=clean,
+                console=console,
+                icon=icon,
+                include_data=include_data,
+                venv=None,
+            )
+            msg = f"[UI] Build complete.\n[UI] Output: {output_path}\n[UI] Report: {report_path}\n"
+            self.log_queue.put(msg)
+            self._finish_build(success=True)
+
+        except Exception as e:
+            self.log_queue.put(f"[UI] ERROR: {e}\n")
+            self._finish_build(success=False)
+
+    def _finish_build(self, success: bool) -> None:
+        """Marshal UI updates back to the Tk thread."""
+        def _done():
+            self._build_in_progress = False
+            self.build_btn.configure(state="normal")
+            self.status_var.set("Build complete." if success else "Build failed.")
+            self._append_log("--- BUILD END ---\n")
+            if success:
+                messagebox.showinfo("Build complete", "Build completed successfully.")
+            else:
+                messagebox.showerror("Build failed", "Build failed. See log output for details.")
+
+        self.root.after(0, _done)
+
+    # ---------- Log display ----------
+    def _schedule_log_drain(self) -> None:
+        self._drain_logs()
+        self.root.after(100, self._schedule_log_drain)
+
+    def _drain_logs(self) -> None:
+        try:
+            while True:
+                msg = self.log_queue.get_nowait()
+                self._append_log(msg + "\n" if not msg.endswith("\n") else msg)
+        except queue.Empty:
+            return
+
+    def _append_log(self, text: str) -> None:
+        self.log_text.insert("end", text)
+        self.log_text.see("end")
+
+
+def run() -> None:
+    root = tk.Tk()
+    app = ExeMakerUI(root)
+    root.mainloop()
+
+
+def main() -> int:
+    run()
+    return 0
+
+
+if __name__ == "__main__":
+    run()
+
+
 
 --------------------------------------------------------------------------------
 FILE: src\__init__.py
