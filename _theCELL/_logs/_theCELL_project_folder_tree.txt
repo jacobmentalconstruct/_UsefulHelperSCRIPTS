@@ -1,0 +1,23 @@
+Project Tree: C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_theCELL
+Generated: 2026-02-05 21:52:16.344165
+
+├── 📁 src/
+│   ├── 📁 microservices/
+│   │   ├── 📄 _CognitiveMemoryMS.py
+│   │   ├── 📄 _FeedbackValidationMS.py
+│   │   ├── 📄 _IngestEngineMS.py
+│   │   ├── 📄 _LogViewMS.py
+│   │   ├── 📄 _SemanticChunkerMS.py
+│   │   ├── 📄 _TextChunkerMS.py
+│   │   ├── 📄 _TkinterAppShellMS.py
+│   │   ├── 📄 _TkinterThemeManagerMS.py
+│   │   ├── 📄 _VectorFactoryMS.py
+│   │   ├── 📄 base_service.py
+│   │   ├── 📄 document_utils.py
+│   │   └── 📄 microservice_std_lib.py
+│   ├── 📄 app.py
+│   ├── 📄 backend.py
+│   └── 📄 ui.py
+├── 📄 LICENSE.md
+├── 📄 requirements.txt
+└── 📄 setup_env.bat

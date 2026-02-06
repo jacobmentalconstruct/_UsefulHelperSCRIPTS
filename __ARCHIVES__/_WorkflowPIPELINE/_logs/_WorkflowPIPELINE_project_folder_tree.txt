@@ -1,0 +1,44 @@
+Project Tree: C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_WorkflowPIPELINE
+Generated: 2026-02-04 09:00:55.507359
+
+├── 📁 src/
+│   ├── 📁 microservices/
+│   │   ├── 📄 )ErrorNotifierMS.py
+│   │   ├── 📄 _CodeFormatterMS.py
+│   │   ├── 📄 _CodeJanitorMS.py
+│   │   ├── 📄 _ConfigStoreMS.py
+│   │   ├── 📄 _DiffEngineMS.py
+│   │   ├── 📄 _ExplorerWidgetMS.py
+│   │   ├── 📄 _HeuristicSumMS.py
+│   │   ├── 📄 _HeuristicSumMS.py.bak
+│   │   ├── 📄 _IngestEngineMS.py
+│   │   ├── 📄 _IngestEngineMS.py.bak
+│   │   ├── 📄 _LexicalSearchMS.py
+│   │   ├── 📄 _LogViewMS.py
+│   │   ├── 📄 _MonacoHostMS.py
+│   │   ├── 📄 _OllamaModelSelectorMS.py
+│   │   ├── 📄 _PromptComposerMS.py
+│   │   ├── 📄 _RegexWeaverMS.py
+│   │   ├── 📄 _RulesEngineMS.py
+│   │   ├── 📄 _ScannerMS.py
+│   │   ├── 📄 _SearchEngineMS.py
+│   │   ├── 📄 _SemanticChunkerMS.py
+│   │   ├── 📄 _SessionRecorderMS.py
+│   │   ├── 📄 _SignalBusMS.py
+│   │   ├── 📄 _TelemetryServiceMS.py
+│   │   ├── 📄 _TextChunkerMS.py
+│   │   ├── 📄 _ThoughtStreamMS.py
+│   │   ├── 📄 _TkinterAppShellMS.py
+│   │   ├── 📄 _TkinterSmartExplorerMS.py
+│   │   ├── 📄 _TkinterThemeManagerMS.py
+│   │   ├── 📄 _TreeMapperMS.py
+│   │   ├── 📄 base_service.py
+│   │   ├── 📄 diff_engine.db
+│   │   └── 📄 microservice_std_lib.py
+│   ├── 📄 app.py
+│   ├── 📄 backend.py
+│   ├── 📄 state.py
+│   └── 📄 ui.py
+├── 📄 LICENSE.md
+├── 📄 requirements.txt
+└── 📄 setup_env.bat

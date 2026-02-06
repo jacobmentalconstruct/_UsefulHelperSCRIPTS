@@ -1,0 +1,3289 @@
+Dump: C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_FinalPassProjectTIDIER
+
+
+--------------------------------------------------------------------------------
+FILE: LICENSE.md
+--------------------------------------------------------------------------------
+MIT License
+
+Copyright (c) 2025 Jacob Lambert
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+--------------------------------------------------------------------------------
+FILE: README.md
+--------------------------------------------------------------------------------
+# 🧹 Project Tidier (FinalPass)
+
+**Project Tidier** is an automated source code refinement tool within the **_UsefulHelperSCRIPTS** ecosystem. It serves as a final "sanity check" before pushing local code to public repositories like GitHub. By leveraging local AI models (via Ollama) and a suite of specialized microservices, it identifies and removes internal development clutter, LLM-generated chatter, and inconsistent formatting.
+
+## 🚀 Key Features
+
+* 
+**AI-Driven Scrubbing**: Uses local **Qwen 2.5** (1.5b or 3b) models to detect and strip out "LLM fingerprints" and internal scratch-pad comments.
+
+
+* 
+**Semantic Hunking**: Slices Python files into logical units (Classes and Functions) using AST parsing to ensure the AI has complete context for every change.
+
+
+* 
+**Side-by-Side Review**: A dual-pane Tkinter interface powered by the `DiffEngineMS` allows you to manually approve or skip every proposed deletion.
+
+
+* 
+**Structural Linting**: Automatically fixes "staircase" indentation and whitespace issues after the AI pass using the **Architect** engine.
+
+
+* 
+**Privacy Guard**: Performs a final pass to ensure internal naming conventions are standardized to public-facing formats.
+
+
+
+## 🏗️ Technical Architecture
+
+This project follows a decoupled **Triad Pattern** to separate the user interface from the heavy-lifting logic.
+
+* **The Ignition (`app.py`)**: A "dumb" entry point that initializes the shared **Signal Bus** and bridges the two main pillars.
+* **The Brain (`backend.py`)**: An orchestrator that manages the flow of data between the file scanner, the semantic chunker, and the local AI instance.
+* **The Face (`ui.py`)**: A dark-themed Tkinter dashboard that hosts the file explorer, telemetry logs, and the review stage.
+
+## 🛠️ Installation & Setup
+
+1. 
+**Initialize Environment**: Run the provided batch script to set up your local virtual environment.
+
+
+```bash
+setup_env.bat
+
+```
+
+
+2. 
+**Ollama Connection**: Ensure you have [Ollama](https://ollama.com/) running locally with the `qwen2.5:1.5b` or `qwen2.5:3b` models pulled.
+
+
+3. **Launch**:
+```bash
+.venv\Scripts\python.exe app.py
+
+```
+
+
+
+---
+
+## 🧩 Orchestrated Microservices
+
+This app utilizes the following components from the `src/microservices` library:
+
+* 
+**`_SemanticChunkerMS`**: The Surgeon — Logical code splitting.
+
+
+* 
+**`_DiffEngineMS`**: The Timekeeper — Hybrid versioning and delta tracking.
+
+
+* 
+**`_CodeFormatterMS`**: The Architect — Structural normalization.
+
+
+* 
+**`_ExplorerWidgetMS`**: The Navigator — Visual directory selection.
+
+
+* **`_SignalBusMS`**: The Spine — Decoupled event-driven communication.
+
+--------------------------------------------------------------------------------
+FILE: requirements.txt
+--------------------------------------------------------------------------------
+# --- Core Network & AI ---
+# Required for Ollama API communication
+requests>=2.31.0
+
+# --- Database & Search ---
+# Optional: Only if using SearchEngine/LexicalSearch features
+sqlite-vec>=0.1.6
+--------------------------------------------------------------------------------
+FILE: setup_env.bat
+--------------------------------------------------------------------------------
+@echo off
+echo [SYSTEM] Initializing new project environment...
+
+:: 1. Create the venv if it doesn't exist
+if not exist .venv (
+    echo [SYSTEM] Creating .venv...
+    py -m venv .venv
+)
+
+:: 2. Upgrade pip and install requirements
+echo [SYSTEM] Installing dependencies...
+.venv\Scripts\python.exe -m pip install --upgrade pip
+if exist requirements.txt (
+    .venv\Scripts\pip install -r requirements.txt
+)
+
+echo.
+echo [SUCCESS] Environment ready!
+echo You can now open this folder in VS Code or launch via scripts_menu.py
+pause
+--------------------------------------------------------------------------------
+FILE: src\app.py
+--------------------------------------------------------------------------------
+"""
+PROJECT: _UsefulHelperSCRIPTS - Project Tidier
+ROLE: Entry Point & Signal Bridge (The Ignition)
+"""
+import sys
+import os
+import logging
+from pathlib import Path
+
+# --- PATH INJECTION ---
+# This allows microservices to find 'base_service' and each other
+current_dir = Path(__file__).parent.resolve()
+sys.path.insert(0, str(current_dir))                # Adds 'src'
+sys.path.insert(0, str(current_dir / "microservices")) # Adds 'src/microservices'
+
+# Standard Imports
+from _SignalBusMS import SignalBusMS
+from backend import ProjectTidierBackend
+from ui import ProjectTidierUI
+from _SessionRecorderMS import SessionRecorderMS
+
+def main():
+    # 1. Start the Signal Bus
+    bus = SignalBusMS()
+
+    # 2. Start the Auditor (The Black Box)
+    recorder = SessionRecorderMS()
+
+    # 2. Instantiate the Pillars
+    backend = ProjectTidierBackend(bus)
+    ui = ProjectTidierUI(bus)
+
+    # 3. Establish Explicit Wiring
+    bus.subscribe("start_tidy_process", backend._handle_start_request)
+    bus.subscribe("hunk_ready_for_review", ui.display_review_hunk)
+    bus.subscribe("user_approve_hunk", backend._handle_user_decision)
+
+    # Auditor Subscriptions
+    bus.subscribe("start_tidy_process", recorder.on_scan_started)
+    bus.subscribe("hunk_ready_for_review", recorder.on_hunk_detected)
+    bus.subscribe("user_approve_hunk", recorder.on_user_decision)
+    bus.subscribe("commit_success", recorder.on_commit_success)
+
+    # 4. Ignition
+    print("Project Tidier Initialized. Launching UI...")
+    ui.launch()
+
+if __name__ == "__main__":
+    main()
+
+
+
+--------------------------------------------------------------------------------
+FILE: src\backend.py
+--------------------------------------------------------------------------------
+"""
+PROJECT: _UsefulHelperSCRIPTS - Project Tidier
+ROLE: Logic Orchestrator (The Brain)
+"""
+import threading
+import requests
+import logging
+from typing import Dict, Any, List
+
+# Microservice Imports
+from _ScannerMS import ScannerMS
+from _SemanticChunkerMS import SemanticChunkerMS
+from _DiffEngineMS import DiffEngineMS
+from _CodeFormatterMS import CodeFormatterMS
+from _CodeJanitorMS import CodeJanitorMS
+
+OLLAMA_URL = "http://localhost:11434/api/generate"
+
+class ProjectTidierBackend:
+    def __init__(self, signal_bus):
+        self.bus = signal_bus
+        self.logger = logging.getLogger("TidierBackend")
+        self.review_gate = threading.Event()  # THE BARRIER 
+
+        self.scanner = ScannerMS()
+        self.chunker = SemanticChunkerMS()
+        self.diff_engine = DiffEngineMS()
+        self.formatter = CodeFormatterMS()
+        self.janitor = CodeJanitorMS()
+        
+        self.current_model = "qwen2.5:1.5b"
+        self.is_running = False
+        self.pending_approval = None
+        
+
+    def _handle_user_decision(self, approved: bool):
+        """Unblocks the engine after user input."""
+        if approved and self.pending_approval:
+            self._commit_hunk(self.pending_approval)
+
+        self.pending_approval = None
+        self.review_gate.set()  # OPEN THE GATE
+
+    def _handle_start_request(self, data: Dict[str, Any]):
+        """Entry point triggered by the UI 'Start' button via Signal Bus."""
+        if self.is_running:
+            return
+
+        paths = data.get("paths", []) if isinstance(data, dict) else []
+        if not paths:
+            self.logger.warning("No paths selected for tidying.")
+            return
+
+        # Ensure the gate is open before starting a new run
+        self.review_gate.set()
+
+        # Run the heavy lifting in a background thread to keep UI responsive
+        threading.Thread(target=self._run_engine, args=(paths,), daemon=True).start()
+
+    def _update_model(self, data: Dict[str, Any]):
+        """Update model selection when UI swaps models."""
+        model = ""
+        if isinstance(data, dict):
+            model = str(data.get("model") or "").strip()
+        else:
+            model = str(data).strip()
+
+        if model:
+            self.current_model = model
+            self.logger.info(f"Model updated: {self.current_model}")
+
+    def _run_engine(self, paths: List[str]):
+        self.is_running = True
+        self.logger.info("🚀 Tidy Session Started.")
+        PROTECTED_DIRS = {'.venv', '__pycache__', '.git', 'node_modules'}
+
+        for path in paths:
+            if any(p in path for p in PROTECTED_DIRS): continue
+            
+            tree = self.scanner.scan_directory(path)
+            files = self.scanner.flatten_tree(tree)
+            
+            for file_path in files:
+                if any(p in file_path for p in PROTECTED_DIRS): continue
+                self.logger.info(f"🔎 Scanning: {file_path}")
+                
+                content = open(file_path, 'r', encoding='utf-8', errors='ignore').read()
+                chunks = self.chunker.chunk_file(content, file_path)
+                
+                for i, hunk in enumerate(chunks):
+                    # Visual "Neural" Feedback
+                    self.bus.emit("new_ai_thought", {
+                        "file": file_path, "chunk_id": i, "content": hunk['content'],
+                        "vector": [0.1] * 20, "color": "#007ACC" 
+                    })
+                    self._process_hunk(file_path, hunk)
+
+        self.logger.info("🏁 Session Complete.")
+        self.is_running = False
+
+    def _process_hunk(self, file_path, hunk):
+        prompt = f"Remove all internal 'AI conversations' from this code:\n\n{hunk['content']}"
+        try:
+            res = requests.post(OLLAMA_URL, json={"model": self.current_model, "prompt": prompt, "stream": False}, timeout=30)
+            cleaned = res.json().get("response", "").strip()
+
+            if cleaned and cleaned != hunk['content']:
+                self.logger.warning(f"⚠️ Clutter detected in {hunk['name']}. Pausing...")
+                self.pending_approval = {"file": file_path, "before": hunk['content'], "after": cleaned, "hunk_name": hunk['name']}
+                
+                self.review_gate.clear() # CLOSE THE GATE 
+                self.bus.emit("hunk_ready_for_review", self.pending_approval)
+                self.review_gate.wait() # BLOCK UNTIL UI RESPONDS 
+        except Exception as e:
+            # Never allow the worker thread to deadlock on a closed gate.
+            # If something blows up mid-review, fail-open and clear any pending approval payload.
+            self.logger.error(f"AI Error: {e}")
+            self.pending_approval = None
+            try:
+                self.review_gate.set()  # FAIL-OPEN
+            except Exception:
+                pass
+
+    def _commit_hunk(self, data):
+        fmt = self.formatter.normalize_code(data['after'])
+        self.diff_engine.update_file(data['file'], fmt['normalized'], author="TidierAI")
+        self.bus.emit("commit_success", data['file'])
+
+
+
+
+--------------------------------------------------------------------------------
+FILE: src\ui.py
+--------------------------------------------------------------------------------
+"""
+PROJECT: _UsefulHelperSCRIPTS - Project Tidier
+ROLE: UI Orchestrator (Pure Tkinter Edition)
+"""
+import tkinter as tk
+from tkinter import ttk
+import os
+
+# Internal Microservice Imports
+from _TkinterAppShellMS import TkinterAppShellMS
+from _ExplorerWidgetMS import ExplorerWidgetMS
+from _LogViewMS import LogViewMS
+from _OllamaModelSelectorMS import OllamaModelSelectorMS
+from _TkinterThemeManagerMS import TkinterThemeManagerMS
+from _ThoughtStreamMS import ThoughtStreamMS
+
+class ProjectTidierUI:
+    """
+    Manages the layout of the Project Tidier interface using standard Tkinter widgets.
+    """
+    def __init__(self, signal_bus):
+        self.bus = signal_bus
+        
+        # 1. Initialize the AppShell container
+        self.theme_mgr = TkinterThemeManagerMS()
+        self.shell = TkinterAppShellMS({
+            'title': 'Project Tidier | Pure Tkinter',
+            'theme_manager': self.theme_mgr,
+            'geometry': '1400x900'
+        })
+        
+        self.container = self.shell.get_main_container()
+        self.colors = self.theme_mgr.get_theme()
+        
+        self._setup_layout()
+
+    def _setup_layout(self):
+        # --- Top Toolbar (Model Selection & Launch) ---
+        self.top_bar = tk.Frame(self.container, bg=self.colors['panel_bg'], height=50)
+        self.top_bar.pack(side='top', fill='x', pady=(0, 5))
+        
+        self.model_selector = OllamaModelSelectorMS({
+            'parent': self.top_bar,
+            'bg': self.colors['panel_bg'],
+            'on_change': lambda m: self.bus.emit("model_swapped", m)
+        })
+        self.model_selector.pack(side='left', padx=10)
+        
+        self.tidy_btn = tk.Button(
+            self.top_bar, text="🚀 START TIDY", 
+            command=self._on_tidy_click,
+            bg=self.colors['accent'], fg='white', relief='flat', padx=20
+        )
+        self.tidy_btn.pack(side='right', padx=10, pady=5)
+
+        # --- Paned Workspace (Explorer + Review) ---
+        self.workspace = ttk.PanedWindow(self.container, orient='horizontal')
+        self.workspace.pack(fill='both', expand=True)
+
+        # Left Sidebar (Project Explorer)
+        self.explorer_frame = tk.Frame(self.workspace)
+        self.explorer = ExplorerWidgetMS({
+            'parent': self.explorer_frame,
+            'root_path': os.getcwd()
+        })
+        self.explorer.pack(fill='both', expand=True)
+        self.workspace.add(self.explorer_frame, weight=1)
+
+        # Center Stage (Review Pane)
+        self.review_stage = tk.Frame(self.workspace, bg=self.colors['background'])
+        self._setup_review_pane()
+        self.workspace.add(self.review_stage, weight=4)
+
+        # Right Panel (Neural Inspector)
+        self.neural_inspector = ThoughtStreamMS({'parent': self.workspace})
+        self.workspace.add(self.neural_inspector, weight=2)
+
+        # --- Bottom Panel (Log Telemetry) ---
+        self.log_panel = tk.Frame(self.container, height=200)
+        self.log_panel.pack(side='bottom', fill='x', pady=(5, 0))
+        
+        self.console = LogViewMS({'parent': self.log_panel})
+        self.console.pack(fill='both', expand=True)
+
+    def _setup_review_pane(self):
+        """Standard side-by-side text widgets for reviewing AI changes."""
+        self.review_label = tk.Label(self.review_stage, text="Review Hunk: Waiting...", bg=self.colors['background'], fg=self.colors['foreground'])
+        self.review_label.pack(pady=5)
+
+        self.diff_container = tk.Frame(self.review_stage, bg=self.colors['background'])
+        self.diff_container.pack(fill='both', expand=True, padx=10, pady=5)
+
+        # Pure Tkinter Text Widgets for Original vs. Cleaned
+        self.before_txt = tk.Text(self.diff_container, bg='#1e1e1e', fg='#d4d4d4', font=('Consolas', 10))
+        self.after_txt = tk.Text(self.diff_container, bg='#1e1e1e', fg='#d4d4d4', font=('Consolas', 10))
+        self.before_txt.pack(side='left', fill='both', expand=True, padx=5)
+        self.after_txt.pack(side='left', fill='both', expand=True, padx=5)
+
+        # Approval Buttons
+        self.btn_frame = tk.Frame(self.review_stage, bg=self.colors['background'])
+        self.btn_frame.pack(side='bottom', fill='x', pady=10)
+        
+        self.approve_btn = tk.Button(self.btn_frame, text="✅ APPROVE", state='disabled', 
+                                    command=self._on_approve_click,
+                                    bg=self.colors['success'], fg='white', width=15)
+        self.approve_btn.pack(side='right', padx=10)
+
+        self.skip_btn = tk.Button(self.btn_frame, text="❌ SKIP", state='disabled', 
+                                 command=self._on_skip_click,
+                                 bg='#cc3333', fg='white', width=15)
+        self.skip_btn.pack(side='right', padx=10)
+
+    def _on_new_thought(self, data):
+        """Updates the Neural Inspector with a thought bubble."""
+        self.neural_inspector.add_thought_bubble(
+            data['file'], data['chunk_id'], data['content'], 
+            data['vector'], data['color']
+        )
+
+    def display_review_hunk(self, data):
+        """Displays the 'before' and 'after' code for human confirmation."""
+        self.review_label.config(text=f"Reviewing: {data['file']} > {data['hunk_name']}")
+        
+        self.before_txt.delete('1.0', 'end')
+        self.before_txt.insert('1.0', data['before'])
+        
+        self.after_txt.delete('1.0', 'end')
+        self.after_txt.insert('1.0', data['after'])
+        self.approve_btn.config(state='normal')
+        self.skip_btn.config(state='normal')
+
+    def _on_approve_click(self):
+        self.approve_btn.config(state='disabled')
+        self.skip_btn.config(state='disabled')
+        self.bus.emit("user_approve_hunk", True)
+
+    def _on_skip_click(self):
+        self.approve_btn.config(state='disabled')
+        self.skip_btn.config(state='disabled')
+        self.bus.emit("user_approve_hunk", False)
+
+    def _on_tidy_click(self):
+        selected = self.explorer.get_selected_paths()
+        model = self.model_selector.get_selected_model()
+        self.bus.emit("start_tidy_process", {"paths": selected, "model": model})
+
+    def launch(self):
+        self.shell.launch()
+--------------------------------------------------------------------------------
+FILE: src\microservices\base_service.py
+--------------------------------------------------------------------------------
+import logging
+from typing import Dict, Any
+
+class BaseService:
+    """
+    Standard parent class for all microservices. 
+    Provides consistent logging and identity management.
+    """
+    def __init__(self, name: str):
+        self._service_info = {
+            "name": name, 
+            "id": name.lower().replace(" ", "_")
+        }
+        
+        # Setup standard logging
+        logging.basicConfig(
+            level=logging.INFO, 
+            format='%(asctime)s [%(levelname)s] %(message)s',
+            datefmt='%H:%M:%S'
+        )
+        self.logger = logging.getLogger(name)
+
+    def log_info(self, message: str):
+        self.logger.info(message)
+
+    def log_error(self, message: str):
+        self.logger.error(message)
+
+    def log_warning(self, message: str):
+        self.logger.warning(message)
+
+--------------------------------------------------------------------------------
+FILE: src\microservices\microservice_std_lib.py
+--------------------------------------------------------------------------------
+"""
+LIBRARY: Microservice Standard Lib
+VERSION: 2.1.0
+ROLE: Provides decorators for tagging Python classes as AI-discoverable services.
+
+Change (2.1.0):
+- Split dependencies into:
+    internal_dependencies: local modules / microservices to vendor with the app
+    external_dependencies: pip-installable packages (requirements.txt)
+- Keep legacy "dependencies" as an alias for external_dependencies for backward compatibility.
+- Accept unknown keyword args in @service_metadata(...) to prevent older/newer services from crashing
+  (e.g. when a runner passes additional fields).
+"""
+
+import functools
+import inspect
+from typing import Dict, List, Any, Optional, Type
+
+# ==============================================================================
+# DECORATORS (The "Writer" Tools)
+# ==============================================================================
+
+def service_metadata(
+    name: str,
+    version: str,
+    description: str,
+    tags: List[str],
+    capabilities: Optional[List[str]] = None,
+
+    # Legacy field (kept for backward compatibility):
+    # Historically this mixed stdlib + pip deps. Going forward, treat this as *external* deps.
+    dependencies: Optional[List[str]] = None,
+
+    # New fields (preferred):
+    internal_dependencies: Optional[List[str]] = None,
+    external_dependencies: Optional[List[str]] = None,
+
+    # Side effects / operational hints
+    side_effects: Optional[List[str]] = None,
+
+    # Forward-compat: ignore unknown keyword args instead of crashing older/newer services
+    **_ignored_kwargs: Any,
+):
+    """
+    Class Decorator.
+    Labels a Microservice class with high-level metadata for the Catalog.
+
+    Dependency semantics:
+      - internal_dependencies: local modules and/or other microservice modules that must be shipped with an app
+      - external_dependencies: third-party pip packages (requirements.txt)
+      - dependencies (legacy): treated as external_dependencies when external_dependencies is not provided
+    """
+    # Prefer explicit new key, otherwise fall back to legacy dependencies
+    ext = external_dependencies if external_dependencies is not None else (dependencies or [])
+    intl = internal_dependencies or []
+
+    def decorator(cls):
+        cls._is_microservice = True
+        cls._service_info = {
+            "name": name,
+            "version": version,
+            "description": description,
+            "tags": tags,
+            "capabilities": capabilities or [],
+
+            # New keys
+            "internal_dependencies": intl,
+            "external_dependencies": ext,
+
+            # Legacy alias (keep existing tooling working)
+            "dependencies": ext,
+
+            "side_effects": side_effects or []
+        }
+        return cls
+    return decorator
+
+
+def service_endpoint(
+    inputs: Dict[str, str],
+    outputs: Dict[str, str],
+    description: str,
+    tags: Optional[List[str]] = None,
+    side_effects: Optional[List[str]] = None,
+    mode: str = "sync",
+):
+    """
+    Method Decorator.
+    Defines the 'Socket' that the AI Architect can plug into.
+
+    :param inputs: Dict of {arg_name: type_string} (e.g. {"query": "str"})
+    :param outputs: Dict of {return_name: type_string}
+    :param description: What the endpoint does
+    :param tags: List of categories (e.g. ["read", "write"])
+    :param side_effects: List of side effects (e.g. ["filesystem:write", "db:write"])
+    :param mode: "sync" or "async" (informational unless your runtime uses it)
+    """
+
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            return func(*args, **kwargs)
+
+        # Attach metadata to the function object itself
+        wrapper._is_endpoint = True
+        wrapper._endpoint_info = {
+            "name": func.__name__,
+            "inputs": inputs,
+            "outputs": outputs,
+            "description": description,
+            "tags": tags or [],
+            "side_effects": side_effects or [],
+            "mode": mode
+        }
+        return wrapper
+    return decorator
+
+
+# ==============================================================================
+# INTROSPECTION (The "Reader" Tools)
+# ==============================================================================
+
+def extract_service_schema(service_cls: Type) -> Dict[str, Any]:
+    """
+    Scans a decorated Service Class and returns a JSON-serializable schema
+    of its metadata and all its exposed endpoints.
+
+    This is what the AI Agent uses to 'read' the manual.
+    """
+    if not getattr(service_cls, "_is_microservice", False):
+        raise ValueError(f"Class {service_cls.__name__} is not decorated with @service_metadata")
+
+    schema = {
+        "meta": getattr(service_cls, "_service_info", {}),
+        "endpoints": []
+    }
+
+    # Inspect all methods of the class
+    for _, method in inspect.getmembers(service_cls, predicate=inspect.isfunction):
+        endpoint_info = getattr(method, "_endpoint_info", None)
+        if endpoint_info:
+            schema["endpoints"].append(endpoint_info)
+
+    return schema
+
+--------------------------------------------------------------------------------
+FILE: src\microservices\_CodeFormatterMS.py
+--------------------------------------------------------------------------------
+"""
+SERVICE_NAME: _CodeFormatterMS
+ENTRY_POINT: _CodeFormatterMS.py
+INTERNAL_DEPENDENCIES: microservice_std_lib
+EXTERNAL_DEPENDENCIES: None
+"""
+import re
+import json
+import logging
+from pathlib import Path
+from typing import Dict, List, Any, Optional
+from microservice_std_lib import service_metadata, service_endpoint
+logger = logging.getLogger('CodeFormatter')
+
+class WhitespaceEngine:
+    """
+    Parses code into a granular map of (Indent + Content + Trailing).
+    Can Normalize structure and generate 'Hunk' patches.
+    """
+
+    def __init__(self):
+        self.raw_lines = []
+        self.nodes = []
+        self.normalized_text = ''
+        self.patch_data = {'hunks': []}
+
+    def load_source(self, text):
+        self.raw_lines = text.splitlines()
+        self.nodes = []
+        indent_stack = [0]
+        last_line_was_block_starter = False
+        for i, line in enumerate(self.raw_lines):
+            match = re.match('^([ \\t]*)(.*?)([ \\t]*)$', line)
+            if not match:
+                self.nodes.append({'id': i, 'indent': '', 'content': line, 'depth': 0, 'is_empty': True})
+                continue
+            indent, content, trailing = match.groups()
+            is_empty = len(content) == 0
+            current_width = 0
+            for char in indent:
+                current_width += 4 if char == '\t' else 1
+            if is_empty:
+                depth = len(indent_stack) - 1
+            else:
+                if current_width > indent_stack[-1]:
+                    if last_line_was_block_starter:
+                        indent_stack.append(current_width)
+                    else:
+                        pass
+                while len(indent_stack) > 1 and current_width < indent_stack[-1]:
+                    indent_stack.pop()
+                depth = len(indent_stack) - 1
+                clean_content = content.split('#')[0].strip()
+                last_line_was_block_starter = clean_content.endswith(':')
+            self.nodes.append({'id': i, 'raw_indent': indent, 'depth': depth, 'content': content, 'trailing': trailing, 'is_empty': is_empty})
+
+    def normalize(self, use_tabs=False, space_count=4):
+        """Reconstructs the code with strict indentation rules."""
+        char = '\t' if use_tabs else ' ' * space_count
+        clean_lines = []
+        for node in self.nodes:
+            if node['is_empty']:
+                clean_lines.append('')
+            else:
+                new_indent = char * node['depth']
+                clean_lines.append(f"{new_indent}{node['content']}")
+        self.normalized_text = '\n'.join(clean_lines)
+        return self.normalized_text
+
+    def generate_patch(self):
+        """Compares Raw vs Normalized and generates JSON Schema Hunks."""
+        clean_lines = self.normalized_text.splitlines()
+        if not clean_lines:
+            return {'hunks': []}
+        hunks = []
+        current_hunk = None
+        for i, (raw, clean) in enumerate(zip(self.raw_lines, clean_lines)):
+            if raw != clean:
+                if current_hunk is None:
+                    current_hunk = {'start_line': i, 'raw_block': [raw], 'clean_block': [clean]}
+                elif i == current_hunk['start_line'] + len(current_hunk['raw_block']):
+                    current_hunk['raw_block'].append(raw)
+                    current_hunk['clean_block'].append(clean)
+                else:
+                    self._finalize_hunk(hunks, current_hunk)
+                    current_hunk = {'start_line': i, 'raw_block': [raw], 'clean_block': [clean]}
+            elif current_hunk:
+                self._finalize_hunk(hunks, current_hunk)
+                current_hunk = None
+        if current_hunk:
+            self._finalize_hunk(hunks, current_hunk)
+        self.patch_data = {'hunks': hunks}
+        return self.patch_data
+
+    def _finalize_hunk(self, hunks_list, hunk_data):
+        search_txt = '\n'.join(hunk_data['raw_block'])
+        replace_txt = '\n'.join(hunk_data['clean_block'])
+        schema_hunk = {'description': f"Normalize indentation (Lines {hunk_data['start_line']}-{hunk_data['start_line'] + len(hunk_data['raw_block'])})", 'search_block': search_txt, 'replace_block': replace_txt}
+        hunks_list.append(schema_hunk)
+
+@service_metadata(name='CodeFormatter', version='1.0.0', description='The Architect: Intelligent whitespace normalization and structural repair engine.', tags=['formatting', 'code', 'utility'], capabilities=['compute', 'filesystem:write'], internal_dependencies=['microservice_std_lib'], external_dependencies=[])
+class CodeFormatterMS:
+    """
+    The Architect.
+    Uses the WhitespaceEngine to enforce strict indentation rules, 
+    fixing 'staircase' formatting and mixed tabs/spaces.
+    """
+
+    def __init__(self, config: Optional[Dict[str, Any]]=None):
+        self.config = config or {}
+
+    @service_endpoint(inputs={'content': 'str', 'use_tabs': 'bool', 'spaces': 'int'}, outputs={'normalized': 'str', 'patch': 'Dict'}, description='Takes raw code and returns the normalized version plus a JSON patch of changes.', tags=['formatting', 'compute'], side_effects=[])
+    def normalize_code(self, content: str, use_tabs: bool=False, spaces: int=4) -> Dict[str, Any]:
+        """
+        Pure logic endpoint: Takes string, returns string + patch.
+        Does not touch the filesystem.
+        """
+        engine = WhitespaceEngine()
+        engine.load_source(content)
+        normalized = engine.normalize(use_tabs=use_tabs, space_count=spaces)
+        patch = engine.generate_patch()
+        return {'normalized': normalized, 'patch': patch}
+
+    @service_endpoint(inputs={'file_path': 'str', 'use_tabs': 'bool', 'spaces': 'int'}, outputs={'status': 'str', 'changes': 'int'}, description='Reads a file, normalizes it, and overwrites it if changes are needed.', tags=['formatting', 'filesystem'], side_effects=['filesystem:read', 'filesystem:write'])
+    def format_file(self, file_path: str, use_tabs: bool=False, spaces: int=4) -> Dict[str, Any]:
+        """
+        Filesystem endpoint: In-place repair of a file.
+        """
+        path = Path(file_path).resolve()
+        if not path.exists():
+            return {'status': 'error', 'message': 'File not found'}
+        try:
+            content = path.read_text(encoding='utf-8')
+            engine = WhitespaceEngine()
+            engine.load_source(content)
+            normalized = engine.normalize(use_tabs=use_tabs, space_count=spaces)
+            patch = engine.generate_patch()
+            changes = len(patch['hunks'])
+            if changes > 0:
+                path.write_text(normalized, encoding='utf-8')
+                logger.info(f'Formatted {path.name}: {changes} hunks applied.')
+                return {'status': 'modified', 'changes': changes}
+            else:
+                return {'status': 'clean', 'changes': 0}
+        except Exception as e:
+            logger.error(f'Formatting failed for {path}: {e}')
+            return {'status': 'error', 'message': str(e)}
+if __name__ == '__main__':
+    logging.basicConfig(level=logging.INFO)
+    svc = CodeFormatterMS()
+    print('Service ready:', svc)
+    broken_code = '\ndef hello():\n  print("Indented with 2 spaces")\n      print("Suddenly 6 spaces!")\n    '
+    print('\n--- Processing Broken Code ---')
+    result = svc.normalize_code(broken_code, spaces=4)
+    print(f"Hunks Detected: {len(result['patch']['hunks'])}")
+    print('\n--- Normalized Output ---')
+    print(result['normalized'])
+
+--------------------------------------------------------------------------------
+FILE: src\microservices\_CodeJanitorMS.py
+--------------------------------------------------------------------------------
+"""
+SERVICE_NAME: _CodeJanitorMS
+ENTRY_POINT: _CodeJanitorMS.py
+INTERNAL_DEPENDENCIES: microservice_std_lib
+EXTERNAL_DEPENDENCIES: None
+"""
+import re
+import logging
+from pathlib import Path
+from typing import Dict, List, Any, Optional
+from microservice_std_lib import service_metadata, service_endpoint
+logger = logging.getLogger('CodeJanitor')
+RENAME_MAP = {'__AppShellMS': '_TkinterAppShellMS', '_AppShellMS': '_TkinterAppShellMS', '__ThemeManagerMS': '_TkinterThemeManagerMS', '_ThemeManagerMS': '_TkinterThemeManagerMS', '__SmartExplorerMS': '_TkinterSmartExplorerMS', '_SmartExplorerMS': '_TkinterSmartExplorerMS', '__UniButtonMS': '_TkinterUniButtonMS', '_UniButtonMS': '_TkinterUniButtonMS'}
+
+@service_metadata(name='CodeJanitor', version='2.2.0', description='Fast version: Skips backup, high verbosity.', tags=['maintenance'], capabilities=['filesystem:write'], internal_dependencies=['microservice_std_lib'], external_dependencies=[])
+class CodeJanitorMS:
+
+    def __init__(self):
+        self.root = Path('.').resolve()
+
+    def enforce_standards(self, dry_run: bool=True):
+        print(f"--- 🧹 JANITOR STARTED in {('DRY RUN' if dry_run else 'LIVE')} MODE ---")
+        files = list(self.root.glob('*.py'))
+        print(f'Found {len(files)} Python files to scan.\n')
+        generic_import = re.compile('(from|import)\\s+__([A-Z])')
+        generic_string = re.compile('["\\\']__([A-Z]\\w+MS)["\\\']')
+        entry_point = re.compile('ENTRY_POINT:\\s*__([A-Z]\\w+MS\\.py)')
+        for file_path in files:
+            if file_path.name == '_CodeJanitorMS.py':
+                continue
+            try:
+                original = file_path.read_text(encoding='utf-8')
+                new = original
+                new = entry_point.sub('ENTRY_POINT: _\\1', new)
+                for old_name, new_name in RENAME_MAP.items():
+                    pattern = re.compile(f'\\b{old_name}\\b')
+                    if pattern.search(new):
+                        new = pattern.sub(new_name, new)
+                new = generic_import.sub('\\1 _\\2', new)
+                new = generic_string.sub('"_\\1"', new)
+                if new != original:
+                    print(f'🛠️  PATCHING: {file_path.name}')
+                    if not dry_run:
+                        file_path.write_text(new, encoding='utf-8')
+                else:
+                    pass
+            except Exception as e:
+                print(f'❌ ERROR {file_path.name}: {e}')
+        print('\n--- 🏁 JANITOR FINISHED ---')
+if __name__ == '__main__':
+    janitor = CodeJanitorMS()
+    janitor.enforce_standards(dry_run=False)
+
+--------------------------------------------------------------------------------
+FILE: src\microservices\_DiffEngineMS.py
+--------------------------------------------------------------------------------
+"""
+SERVICE_NAME: _DiffEngineMS
+ENTRY_POINT: _DiffEngineMS.py
+INTERNAL_DEPENDENCIES: microservice_std_lib
+EXTERNAL_DEPENDENCIES: None
+"""
+import sqlite3
+import difflib
+import datetime
+import uuid
+import logging
+from pathlib import Path
+from typing import Optional, Dict, List, Tuple, Any
+from microservice_std_lib import service_metadata, service_endpoint
+DB_PATH = Path(__file__).parent / 'diff_engine.db'
+logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(message)s')
+log = logging.getLogger('DiffEngine')
+
+@service_metadata(name='DiffEngineMS', version='1.0.0', description='Implements hybrid versioning (Head + Diff History) for file content.', tags=['version-control', 'diff', 'db'], capabilities=['db:sqlite', 'filesystem:write'], side_effects=['db:read', 'db:write'], internal_dependencies=['microservice_std_lib'], external_dependencies=[])
+class DiffEngineMS:
+    """
+    The Timekeeper: Implements a 'Hybrid' versioning architecture.
+    1. HEAD: Stores full current content for fast read access (UI/RAG).
+    2. HISTORY: Stores diff deltas using difflib for audit trails.
+    """
+
+    def __init__(self, config: Optional[Dict[str, Any]]=None):
+        self.config = config or {}
+        self.db_path = Path(self.config.get('db_path', DB_PATH))
+        self._init_db()
+
+    def _get_conn(self):
+        conn = sqlite3.connect(self.db_path)
+        conn.row_factory = sqlite3.Row
+        return conn
+
+    def _init_db(self):
+        with self._get_conn() as conn:
+            conn.execute('\n                CREATE TABLE IF NOT EXISTS files (\n                    id TEXT PRIMARY KEY,\n                    path TEXT UNIQUE NOT NULL,\n                    content TEXT,\n                    last_updated TIMESTAMP\n                )\n            ')
+            conn.execute("\n                CREATE TABLE IF NOT EXISTS diff_log (\n                    id TEXT PRIMARY KEY,\n                    file_id TEXT NOT NULL,\n                    timestamp TIMESTAMP,\n                    change_type TEXT,  -- 'CREATE', 'EDIT', 'DELETE'\n                    diff_blob TEXT,    -- The text output of difflib\n                    author TEXT,\n                    FOREIGN KEY(file_id) REFERENCES files(id)\n                )\n            ")
+
+    @service_endpoint(inputs={'path': 'str', 'new_content': 'str', 'author': 'str'}, outputs={'status': 'str', 'file_id': 'str'}, description='Updates a file, creating a diff history entry and updating the head state.', tags=['version-control', 'write'], side_effects=['db:write'])
+    def update_file(self, path: str, new_content: str, author: str='agent') -> Dict[str, Any]:
+        """
+        The Atomic Update Operation:
+        1. Checks current state.
+        2. Calculates Diff.
+        3. Writes Diff to History.
+        4. Updates Head to New Content.
+        """
+        path = str(Path(path).as_posix())
+        now = datetime.datetime.utcnow()
+        with self._get_conn() as conn:
+            row = conn.execute('SELECT id, content FROM files WHERE path = ?', (path,)).fetchone()
+            if not row:
+                file_id = str(uuid.uuid4())
+                conn.execute('INSERT INTO files (id, path, content, last_updated) VALUES (?, ?, ?, ?)', (file_id, path, new_content, now))
+                self._log_diff(conn, file_id, 'CREATE', '[New File Created]', author, now)
+                log.info(f'Created new file: {path}')
+                return {'status': 'created', 'file_id': file_id}
+            file_id = row['id']
+            old_content = row['content'] or ''
+            old_lines = old_content.splitlines(keepends=True)
+            new_lines = new_content.splitlines(keepends=True)
+            diff_gen = difflib.unified_diff(old_lines, new_lines, fromfile=f'a/{path}', tofile=f'b/{path}', lineterm='')
+            diff_text = ''.join(diff_gen)
+            if not diff_text:
+                return {'status': 'unchanged', 'file_id': file_id}
+            self._log_diff(conn, file_id, 'EDIT', diff_text, author, now)
+            conn.execute('UPDATE files SET content = ?, last_updated = ? WHERE id = ?', (new_content, now, file_id))
+            log.info(f'Updated file: {path}')
+            return {'status': 'updated', 'file_id': file_id, 'diff_size': len(diff_text)}
+
+    def _log_diff(self, conn, file_id, change_type, diff_text, author, timestamp):
+        diff_id = str(uuid.uuid4())
+        conn.execute('INSERT INTO diff_log (id, file_id, timestamp, change_type, diff_blob, author) VALUES (?, ?, ?, ?, ?, ?)', (diff_id, file_id, timestamp, change_type, diff_text, author))
+
+    @service_endpoint(inputs={'path': 'str'}, outputs={'content': 'Optional[str]'}, description='Fast retrieval of current content.', tags=['version-control', 'read'], side_effects=['db:read'])
+    def get_head(self, path: str) -> Optional[str]:
+        """Fast retrieval of current content."""
+        with self._get_conn() as conn:
+            row = conn.execute('SELECT content FROM files WHERE path = ?', (path,)).fetchone()
+            return row['content'] if row else None
+
+    @service_endpoint(inputs={'path': 'str'}, outputs={'history': 'List[Dict]'}, description='Retrieves the full evolution history of a file.', tags=['version-control', 'read'], side_effects=['db:read'])
+    def get_history(self, path: str) -> List[Dict]:
+        """Retrieves the full evolution history of a file."""
+        with self._get_conn() as conn:
+            row = conn.execute('SELECT id FROM files WHERE path = ?', (path,)).fetchone()
+            if not row:
+                return []
+            rows = conn.execute('SELECT timestamp, change_type, diff_blob, author FROM diff_log WHERE file_id = ? ORDER BY timestamp DESC', (row['id'],)).fetchall()
+            return [dict(r) for r in rows]
+if __name__ == '__main__':
+    import os
+    if DB_PATH.exists():
+        os.remove(DB_PATH)
+    engine = DiffEngineMS()
+    print('Service ready:', engine)
+    print('--- 1. Creating File ---')
+    engine.update_file('notes.txt', 'Todo List:\n1. Buy Milk\n')
+    print('\n--- 2. Updating File (The Rising Edge) ---')
+    new_text = 'Todo List:\n1. Buy Eggs\n2. Code Python\n'
+    res = engine.update_file('notes.txt', new_text, author='Jacob')
+    print(f"Update Result: {res['status']}")
+    print('\n--- 3. Inspecting History ---')
+    history = engine.get_history('notes.txt')
+    for event in history:
+        print(f"\n[{event['timestamp']}] {event['change_type']} by {event['author']}")
+        print(f"Diff Preview:\n{event['diff_blob'].strip()}")
+    print('\n--- 4. Inspecting Head (Cache) ---')
+    print(engine.get_head('notes.txt'))
+    if DB_PATH.exists():
+        os.remove(DB_PATH)
+
+--------------------------------------------------------------------------------
+FILE: src\microservices\_ExplorerWidgetMS.py
+--------------------------------------------------------------------------------
+"""
+SERVICE_NAME: _ExplorerWidgetMS
+ENTRY_POINT: _ExplorerWidgetMS.py
+INTERNAL_DEPENDENCIES: base_service, microservice_std_lib
+EXTERNAL_DEPENDENCIES: ttk
+"""
+import importlib.util, sys
+import os
+import queue
+import threading
+from pathlib import Path
+from typing import Any, Dict, List, Optional
+import tkinter as tk
+from tkinter import ttk
+
+# --- MISSING IMPORTS ADDED HERE ---
+from base_service import BaseService
+from microservice_std_lib import service_metadata, service_endpoint
+
+DEFAULT_EXCLUDED_FOLDERS = {'node_modules', '.git', '__pycache__', '.venv', '.mypy_cache', '_logs', 'dist', 'build', '.vscode', '.idea', 'target', 'out', 'bin', 'obj', 'Debug', 'Release', 'logs'}
+
+@service_metadata(
+    name='ExplorerWidgetMS', 
+    version='1.0.0', 
+    description='A standalone file system tree viewer widget.', 
+    tags=['ui', 'filesystem', 'widget'], 
+    capabilities=['ui:gui', 'filesystem:read'], 
+    internal_dependencies=['base_service', 'microservice_std_lib'], 
+    external_dependencies=['ttk']
+)
+class ExplorerWidgetMS(tk.Frame, BaseService):
+    """
+    A standalone file system tree viewer.
+    """
+    GLYPH_CHECKED = '[X]'
+    GLYPH_UNCHECKED = '[ ]'
+
+    def __init__(self, config: Optional[Dict[str, Any]]=None):
+        # 1. Parse the config dictionary
+        self.config_data: Dict[str, Any] = config or {}
+        parent = self.config_data.get('parent') # Extract the parent widget
+        
+        # 2. Explicitly initialize the Tkinter Frame
+        # We pass 'parent' so Tkinter knows where to draw the widget
+        tk.Frame.__init__(self, parent)
+        
+        # 3. Explicitly initialize the BaseService
+        # We pass the service name string here
+        BaseService.__init__(self, 'ExplorerWidgetMS')
+
+        # 4. Initialize local state
+        self.root_path: Path = Path(self.config_data.get('root_path', '.')).resolve()
+        self.use_defaults: bool = self.config_data.get('use_default_exclusions', True)
+        self.gui_queue: queue.Queue = queue.Queue()
+        self.folder_item_states: Dict[str, str] = {}
+        self.state_lock = threading.RLock()
+        
+        self._setup_styles()
+        self._build_ui()
+        self.process_gui_queue()
+        self.refresh_tree()
+
+    def _setup_styles(self) -> None:
+        style = ttk.Style()
+        if 'clam' in style.theme_names():
+            style.theme_use('clam')
+        style.configure('Explorer.Treeview', background='#252526', foreground='lightgray', fieldbackground='#252526', borderwidth=0, font=('Consolas', 10))
+        style.map('Explorer.Treeview', background=[('selected', '#007ACC')], foreground=[('selected', 'white')])
+
+    def _build_ui(self) -> None:
+        self.columnconfigure(0, weight=1)
+        self.rowconfigure(0, weight=1)
+        self.tree = ttk.Treeview(self, show='tree', columns=('size',), selectmode='none', style='Explorer.Treeview')
+        self.tree.column('size', width=80, anchor='e')
+        ysb = ttk.Scrollbar(self, orient='vertical', command=self.tree.yview)
+        xsb = ttk.Scrollbar(self, orient='horizontal', command=self.tree.xview)
+        self.tree.configure(yscrollcommand=ysb.set, xscrollcommand=xsb.set)
+        self.tree.grid(row=0, column=0, sticky='nsew')
+        ysb.grid(row=0, column=1, sticky='ns')
+        xsb.grid(row=1, column=0, sticky='ew')
+        self.tree.bind('<ButtonRelease-1>', self._on_click)
+
+    @service_endpoint(inputs={}, outputs={}, description='Rescans the directory and refreshes the tree view.', tags=['ui', 'refresh'], side_effects=['filesystem:read', 'ui:update'])
+    def refresh_tree(self) -> None:
+        for item in self.tree.get_children():
+            self.tree.delete(item)
+        with self.state_lock:
+            self.folder_item_states.clear()
+            self.folder_item_states[str(self.root_path)] = 'checked'
+        root_id = str(self.root_path)
+        tree_data: List[Dict[str, Any]] = [{'parent': '', 'iid': root_id, 'text': f' {self.root_path.name} (Root)', 'open': True}]
+        self._scan_recursive(self.root_path, root_id, tree_data)
+        for item in tree_data:
+            self.tree.insert(item['parent'], 'end', iid=item['iid'], text=item['text'], open=item.get('open', False))
+            self.tree.set(item['iid'], 'size', '...')
+        self._refresh_visuals(root_id)
+        threading.Thread(target=self._calc_sizes_thread, args=(root_id,), daemon=True).start()
+
+    def _scan_recursive(self, current_path: Path, parent_id: str, data_list: List[Dict[str, Any]]) -> None:
+        try:
+            items = sorted(current_path.iterdir(), key=lambda x: (not x.is_dir(), x.name.lower()))
+            for item in items:
+                if not item.is_dir():
+                    continue
+                path_str = str(item.resolve())
+                state = 'checked'
+                if self.use_defaults and item.name in DEFAULT_EXCLUDED_FOLDERS:
+                    state = 'unchecked'
+                with self.state_lock:
+                    self.folder_item_states[path_str] = state
+                data_list.append({'parent': parent_id, 'iid': path_str, 'text': f' {item.name}'})
+                self._scan_recursive(item, path_str, data_list)
+        except (PermissionError, OSError):
+            pass
+
+    def _on_click(self, event: tk.Event) -> None:
+        item_id = self.tree.identify_row(event.y)
+        if not item_id:
+            return
+        with self.state_lock:
+            curr = self.folder_item_states.get(item_id, 'unchecked')
+            self.folder_item_states[item_id] = 'checked' if curr == 'unchecked' else 'unchecked'
+        self._refresh_visuals(str(self.root_path))
+
+    def _refresh_visuals(self, start_node: str) -> None:
+
+        def _update(node_id: str) -> None:
+            if not self.tree.exists(node_id):
+                return
+            with self.state_lock:
+                state = self.folder_item_states.get(node_id, 'unchecked')
+            glyph = self.GLYPH_CHECKED if state == 'checked' else self.GLYPH_UNCHECKED
+            name = Path(node_id).name
+            if node_id == str(self.root_path):
+                name += ' (Root)'
+            self.tree.item(node_id, text=f'{glyph} {name}')
+            for child in self.tree.get_children(node_id):
+                _update(child)
+        _update(start_node)
+
+    def _calc_sizes_thread(self, root_id: str) -> None:
+        """
+        Background worker for calculating folder sizes.
+
+        Currently a stub so that the thread exits cleanly without errors.
+        You can later extend this to walk the filesystem and push
+        size updates via self.gui_queue.
+        """
+        return
+
+    @service_endpoint(inputs={}, outputs={'selected_paths': 'List[str]'}, description='Returns a list of currently checked folder paths.', tags=['ui', 'read'], side_effects=['ui:read'])
+    def get_selected_paths(self) -> List[str]:
+        selected: List[str] = []
+        with self.state_lock:
+            for path, state in self.folder_item_states.items():
+                if state == 'checked':
+                    selected.append(path)
+        return selected
+
+    def process_gui_queue(self) -> None:
+        while not self.gui_queue.empty():
+            try:
+                callback = self.gui_queue.get_nowait()
+            except queue.Empty:
+                break
+            else:
+                try:
+                    callback()
+                except Exception:
+                    pass
+        self.after(100, self.process_gui_queue)
+if __name__ == '__main__':
+    root = tk.Tk()
+    root.title('ExplorerWidgetMS Test Harness')
+    widget = ExplorerWidgetMS({'parent': root, 'root_path': os.getcwd()})
+    widget.pack(fill='both', expand=True)
+    root.mainloop()
+
+--------------------------------------------------------------------------------
+FILE: src\microservices\_HeuristicSumMS.py
+--------------------------------------------------------------------------------
+"""
+SERVICE_NAME: _HeuristicSumMS
+ENTRY_POINT: _HeuristicSumMS.py
+INTERNAL_DEPENDENCIES: base_service, microservice_std_lib
+EXTERNAL_DEPENDENCIES: None
+"""
+import os
+import re
+from typing import Any, Dict, List, Optional
+from microservice_std_lib import service_metadata, service_endpoint
+from base_service import BaseService
+SIG_RE = re.compile('^\\s*(def|class|function|interface|struct|impl|func)\\s+([A-Za-z_][A-Za-z0-9_]*)')
+MD_HDR_RE = re.compile('^\\s{0,3}(#{1,3})\\s+(.+)')
+DOC_RE = re.compile('^\\s*("{3}|\\\'{3})(.*)', re.DOTALL)
+
+@service_metadata(name='HeuristicSum', version='1.0.0', description='Generates quick summaries of code/text files using regex heuristics (No AI).', tags=['parsing', 'summary', 'heuristics'], capabilities=['compute'], side_effects=[], internal_dependencies=['base_service', 'microservice_std_lib'], external_dependencies=[])
+class HeuristicSumMS(BaseService):
+    """
+    The Skimmer: Generates quick summaries of code/text files without AI.
+    Scans for high-value lines (headers, signatures, docstrings) and concatenates them.
+    """
+
+    def __init__(self, config: Optional[Dict[str, Any]]=None):
+        super().__init__('HeuristicSum')
+        self.config = config or {}
+
+    @service_endpoint(inputs={'text': 'str', 'filename': 'str', 'max_chars': 'int'}, outputs={'summary': 'str'}, description='Generates a summary string from the provided text.', tags=['summary', 'parsing'])
+    def summarize(self, text: str, filename: str='', max_chars: int=480) -> str:
+        """
+        Generates a summary string from the provided text.
+        """
+        lines = text.splitlines()
+        picks = []
+        for ln in lines[:20]:
+            m = MD_HDR_RE.match(ln)
+            if m:
+                picks.append(f'Heading: {m.group(2).strip()}')
+        for ln in lines[:40]:
+            m = SIG_RE.match(ln)
+            if m:
+                picks.append(f'{m.group(1)} {m.group(2)}')
+        if lines:
+            joined = '\n'.join(lines[:80])
+            m = DOC_RE.match(joined)
+            if m:
+                after = joined.splitlines()[1:3]
+                if after:
+                    clean_doc = ' '.join((s.strip() for s in after)).strip()
+                    picks.append(f'Doc: {clean_doc}')
+        if not picks:
+            head = ' '.join((l.strip() for l in lines[:2] if l.strip()))
+            if head:
+                picks.append(head)
+        if filename:
+            picks.append(f'[{os.path.basename(filename)}]')
+        seen = set()
+        uniq = []
+        for p in picks:
+            if p and p not in seen:
+                uniq.append(p)
+                seen.add(p)
+        summary = ' | '.join(uniq)
+        if len(summary) > max_chars:
+            summary = summary[:max_chars - 3] + '...'
+        return summary.strip() if summary else '[No summary available]'
+if __name__ == '__main__':
+    skimmer = HeuristicSumMS()
+    print(f'Service ready: {skimmer}')
+    py_code = "\n    class DataProcessor:\n        '''\n        Handles the transformation of raw input data into structured formats.\n        '''\n        def process(self, data):\n            pass\n    "
+    print(f"Python Summary: {skimmer.summarize(py_code, 'processor.py')}")
+    md_text = '\n    # Project Roadmap\n    ## Phase 1\n    We begin with ingestion.\n    '
+    print(f"Markdown Summary: {skimmer.summarize(md_text, 'README.md')}")
+
+--------------------------------------------------------------------------------
+FILE: src\microservices\_HeuristicSumMS.py.bak
+--------------------------------------------------------------------------------
+"""
+SERVICE_NAME: _HeuristicSumMS
+ENTRY_POINT: _HeuristicSumMS.py
+INTERNAL_DEPENDENCIES: base_service, microservice_std_lib
+EXTERNAL_DEPENDENCIES: None
+"""
+import os
+import re
+from typing import Any, Dict, List, Optional
+from microservice_std_lib import service_metadata, service_endpoint, BaseService
+SIG_RE = re.compile('^\\s*(def|class|function|interface|struct|impl|func)\\s+([A-Za-z_][A-Za-z0-9_]*)')
+MD_HDR_RE = re.compile('^\\s{0,3}(#{1,3})\\s+(.+)')
+DOC_RE = re.compile('^\\s*("{3}|\\\'{3})(.*)', re.DOTALL)
+
+@service_metadata(name='HeuristicSum', version='1.0.0', description='Generates quick summaries of code/text files using regex heuristics (No AI).', tags=['parsing', 'summary', 'heuristics'], capabilities=['compute'], side_effects=[], internal_dependencies=['base_service', 'microservice_std_lib'], external_dependencies=[])
+class HeuristicSumMS(BaseService):
+    """
+    The Skimmer: Generates quick summaries of code/text files without AI.
+    Scans for high-value lines (headers, signatures, docstrings) and concatenates them.
+    """
+
+    def __init__(self, config: Optional[Dict[str, Any]]=None):
+        super().__init__('HeuristicSum')
+        self.config = config or {}
+
+    @service_endpoint(inputs={'text': 'str', 'filename': 'str', 'max_chars': 'int'}, outputs={'summary': 'str'}, description='Generates a summary string from the provided text.', tags=['summary', 'parsing'])
+    def summarize(self, text: str, filename: str='', max_chars: int=480) -> str:
+        """
+        Generates a summary string from the provided text.
+        """
+        lines = text.splitlines()
+        picks = []
+        for ln in lines[:20]:
+            m = MD_HDR_RE.match(ln)
+            if m:
+                picks.append(f'Heading: {m.group(2).strip()}')
+        for ln in lines[:40]:
+            m = SIG_RE.match(ln)
+            if m:
+                picks.append(f'{m.group(1)} {m.group(2)}')
+        if lines:
+            joined = '\n'.join(lines[:80])
+            m = DOC_RE.match(joined)
+            if m:
+                after = joined.splitlines()[1:3]
+                if after:
+                    clean_doc = ' '.join((s.strip() for s in after)).strip()
+                    picks.append(f'Doc: {clean_doc}')
+        if not picks:
+            head = ' '.join((l.strip() for l in lines[:2] if l.strip()))
+            if head:
+                picks.append(head)
+        if filename:
+            picks.append(f'[{os.path.basename(filename)}]')
+        seen = set()
+        uniq = []
+        for p in picks:
+            if p and p not in seen:
+                uniq.append(p)
+                seen.add(p)
+        summary = ' | '.join(uniq)
+        if len(summary) > max_chars:
+            summary = summary[:max_chars - 3] + '...'
+        return summary.strip() if summary else '[No summary available]'
+if __name__ == '__main__':
+    skimmer = HeuristicSumMS()
+    print(f'Service ready: {skimmer}')
+    py_code = "\n    class DataProcessor:\n        '''\n        Handles the transformation of raw input data into structured formats.\n        '''\n        def process(self, data):\n            pass\n    "
+    print(f"Python Summary: {skimmer.summarize(py_code, 'processor.py')}")
+    md_text = '\n    # Project Roadmap\n    ## Phase 1\n    We begin with ingestion.\n    '
+    print(f"Markdown Summary: {skimmer.summarize(md_text, 'README.md')}")
+
+--------------------------------------------------------------------------------
+FILE: src\microservices\_IngestEngineMS.py
+--------------------------------------------------------------------------------
+"""
+SERVICE_NAME: _IngestEngineMS
+ENTRY_POINT: _IngestEngineMS.py
+INTERNAL_DEPENDENCIES: base_service, microservice_std_lib
+EXTERNAL_DEPENDENCIES: requests
+"""
+import importlib.util
+import sys
+REQUIRED = ['requests']
+MISSING = []
+for lib in REQUIRED:
+    if importlib.util.find_spec(lib) is None:
+        MISSING.append(lib)
+if MISSING:
+    print(f"MISSING DEPENDENCIES: {' '.join(MISSING)}")
+    print('Please run: pip install requests')
+import json
+import os
+import re
+import sqlite3
+import time
+from dataclasses import dataclass
+from typing import Any, Dict, Generator, List, Optional
+import requests
+from microservice_std_lib import service_metadata, service_endpoint
+from base_service import BaseService
+OLLAMA_API_URL = 'http://localhost:11434/api'
+
+@dataclass
+class IngestStatus:
+    current_file: str
+    progress_percent: float
+    processed_files: int
+    total_files: int
+    log_message: str
+    thought_frame: Optional[Dict] = None
+
+class SynapseWeaver:
+    """
+    Parses source code to extract import dependencies.
+    Used to generate the 'DEPENDS_ON' edges in the Knowledge Graph.
+    """
+
+    def __init__(self):
+        self.py_pattern = re.compile('^\\s*(?:from|import)\\s+([\\w\\.]+)')
+        self.js_pattern = re.compile('(?:import\\s+.*?from\\s+[\\\'"]|require\\([\\\'"])([\\.\\/\\w\\-_]+)[\\\'"]')
+
+    def extract_dependencies(self, content: str, file_path: str) -> List[str]:
+        dependencies = []
+        ext = os.path.splitext(file_path)[1].lower()
+        lines = content.split('\n')
+        for line in lines:
+            match = None
+            if ext == '.py':
+                match = self.py_pattern.match(line)
+            elif ext in ['.js', '.ts', '.tsx', '.jsx']:
+                match = self.js_pattern.search(line)
+            if match:
+                raw_dep = match.group(1)
+                clean_dep = raw_dep.split('.')[-1].split('/')[-1]
+                if clean_dep not in dependencies:
+                    dependencies.append(clean_dep)
+        return dependencies
+
+@service_metadata(name='IngestEngine', version='1.0.0', description='Reads files, chunks text, fetches embeddings, and weaves graph edges.', tags=['ingest', 'rag', 'parsing', 'embedding'], capabilities=['filesystem:read', 'network:outbound', 'db:sqlite'], side_effects=['db:write', 'network:outbound'], internal_dependencies=['base_service', 'microservice_std_lib'], external_dependencies=['requests'])
+class IngestEngineMS(BaseService):
+    """
+    The Heavy Lifter: Reads files, chunks text, fetches embeddings,
+    populates the Graph Nodes, and weaves Graph Edges.
+    """
+
+    def __init__(self, config: Optional[Dict[str, Any]]=None):
+        super().__init__('IngestEngine')
+        self.config = config or {}
+        self.db_path = self.config.get('db_path', 'knowledge.db')
+        self.stop_signal = False
+        self.weaver = SynapseWeaver()
+        self._init_db()
+
+    def _init_db(self):
+        """Ensures the target database has the required schema."""
+        conn = sqlite3.connect(self.db_path)
+        conn.execute('CREATE TABLE IF NOT EXISTS files (id INTEGER PRIMARY KEY, path TEXT, last_updated REAL)')
+        conn.execute('CREATE TABLE IF NOT EXISTS chunks (id INTEGER PRIMARY KEY, file_id INT, chunk_index INT, content TEXT, embedding BLOB)')
+        conn.execute('CREATE TABLE IF NOT EXISTS graph_nodes (id TEXT PRIMARY KEY, type TEXT, label TEXT, data_json TEXT)')
+        conn.execute('CREATE TABLE IF NOT EXISTS graph_edges (source TEXT, target TEXT, weight REAL)')
+        conn.close()
+
+    def abort(self):
+        self.stop_signal = True
+
+    def check_ollama_connection(self) -> bool:
+        try:
+            requests.get(f'{OLLAMA_API_URL}/tags', timeout=2)
+            return True
+        except:
+            return False
+
+    def get_available_models(self) -> List[str]:
+        try:
+            res = requests.get(f'{OLLAMA_API_URL}/tags')
+            if res.status_code == 200:
+                data = res.json()
+                return [m['name'] for m in data.get('models', [])]
+        except:
+            pass
+        return []
+
+    @service_endpoint(inputs={'file_paths': 'List[str]', 'model_name': 'str'}, outputs={'status': 'IngestStatus'}, description='Processes a list of files, ingesting them into the knowledge graph.', tags=['ingest', 'processing'], mode='generator', side_effects=['db:write', 'network:outbound'])
+    def process_files(self, file_paths: List[str], model_name: str='none') -> Generator[IngestStatus, None, None]:
+        total = len(file_paths)
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        cursor.execute('PRAGMA synchronous = OFF')
+        cursor.execute('PRAGMA journal_mode = MEMORY')
+        node_registry = {}
+        file_contents = {}
+        for idx, file_path in enumerate(file_paths):
+            if self.stop_signal:
+                yield IngestStatus(file_path, 0, idx, total, 'Ingestion Aborted.')
+                break
+            filename = os.path.basename(file_path)
+            try:
+                with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+                    content = f.read()
+                file_contents[filename] = content
+            except Exception as e:
+                yield IngestStatus(file_path, idx / total * 100, idx, total, f'Error: {e}')
+                continue
+            try:
+                cursor.execute('INSERT OR REPLACE INTO files (path, last_updated) VALUES (?, ?)', (file_path, time.time()))
+                file_id = cursor.lastrowid
+            except sqlite3.Error:
+                continue
+            cursor.execute('\n                INSERT OR REPLACE INTO graph_nodes (id, type, label, data_json)\n                VALUES (?, ?, ?, ?)\n            ', (filename, 'file', filename, json.dumps({'path': file_path})))
+            node_registry[filename] = filename
+            chunks = self._chunk_text(content)
+            for i, chunk_text in enumerate(chunks):
+                if self.stop_signal:
+                    break
+                embedding = None
+                if model_name != 'none':
+                    embedding = self._get_embedding(model_name, chunk_text)
+                emb_blob = json.dumps(embedding).encode('utf-8') if embedding else None
+                cursor.execute('\n                    INSERT INTO chunks (file_id, chunk_index, content, embedding)\n                    VALUES (?, ?, ?, ?)\n                ', (file_id, i, chunk_text, emb_blob))
+                thought_frame = {'id': f'{file_id}_{i}', 'file': filename, 'chunk_index': i, 'content': chunk_text, 'vector_preview': embedding[:20] if embedding else [], 'concept_color': '#007ACC'}
+                yield IngestStatus(current_file=filename, progress_percent=(idx + i / len(chunks)) / total * 100, processed_files=idx, total_files=total, log_message=f'Processing {filename}...', thought_frame=thought_frame)
+            conn.commit()
+        yield IngestStatus('Graph', 100, total, total, 'Weaving Knowledge Graph...')
+        edge_count = 0
+        for filename, content in file_contents.items():
+            if self.stop_signal:
+                break
+            deps = self.weaver.extract_dependencies(content, filename)
+            for dep in deps:
+                target_id = None
+                for potential_match in node_registry.keys():
+                    if potential_match.startswith(dep + '.') or potential_match == dep:
+                        target_id = potential_match
+                        break
+                if target_id and target_id != filename:
+                    try:
+                        cursor.execute('\n                            INSERT OR IGNORE INTO graph_edges (source, target, weight)\n                            VALUES (?, ?, 1.0)\n                        ', (filename, target_id))
+                        edge_count += 1
+                    except:
+                        pass
+        conn.commit()
+        conn.close()
+        yield IngestStatus(current_file='Complete', progress_percent=100, processed_files=total, total_files=total, log_message=f'Ingestion Complete. Created {edge_count} dependency edges.')
+
+    def _chunk_text(self, text: str, chunk_size: int=1000, overlap: int=100) -> List[str]:
+        if len(text) < chunk_size:
+            return [text]
+        chunks = []
+        start = 0
+        while start < len(text):
+            end = start + chunk_size
+            chunks.append(text[start:end])
+            start += chunk_size - overlap
+        return chunks
+
+    def _get_embedding(self, model: str, text: str) -> Optional[List[float]]:
+        try:
+            res = requests.post(f'{OLLAMA_API_URL}/embeddings', json={'model': model, 'prompt': text}, timeout=30)
+            if res.status_code == 200:
+                return res.json().get('embedding')
+        except:
+            return None
+if __name__ == '__main__':
+    TEST_DB = 'test_ingest_v2.db'
+    engine = IngestEngineMS({'db_path': TEST_DB})
+    print(f'Service Ready: {engine}')
+    target_file = '__IngestEngineMS.py'
+    if not os.path.exists(target_file):
+        with open(target_file, 'w') as f:
+            f.write("import os\nimport json\nprint('Hello World')")
+    print(f'Running Ingest on {target_file}...')
+    files = [target_file]
+    for status in engine.process_files(files, 'none'):
+        print(f'[{status.progress_percent:.0f}%] {status.log_message}')
+    conn = sqlite3.connect(TEST_DB)
+    edges = conn.execute('SELECT * FROM graph_edges').fetchall()
+    nodes = conn.execute('SELECT * FROM graph_nodes').fetchall()
+    print(f'\nResult: {len(nodes)} Nodes, {len(edges)} Edges.')
+    conn.close()
+    if os.path.exists(TEST_DB):
+        os.remove(TEST_DB)
+    if os.path.exists(target_file) and 'Hello World' in open(target_file).read():
+        os.remove(target_file)
+
+--------------------------------------------------------------------------------
+FILE: src\microservices\_IngestEngineMS.py.bak
+--------------------------------------------------------------------------------
+"""
+SERVICE_NAME: _IngestEngineMS
+ENTRY_POINT: _IngestEngineMS.py
+INTERNAL_DEPENDENCIES: base_service, microservice_std_lib
+EXTERNAL_DEPENDENCIES: requests
+"""
+import importlib.util
+import sys
+REQUIRED = ['requests']
+MISSING = []
+for lib in REQUIRED:
+    if importlib.util.find_spec(lib) is None:
+        MISSING.append(lib)
+if MISSING:
+    print(f"MISSING DEPENDENCIES: {' '.join(MISSING)}")
+    print('Please run: pip install requests')
+import json
+import os
+import re
+import sqlite3
+import time
+from dataclasses import dataclass
+from typing import Any, Dict, Generator, List, Optional
+import requests
+from microservice_std_lib import service_metadata, service_endpoint, BaseService
+OLLAMA_API_URL = 'http://localhost:11434/api'
+
+@dataclass
+class IngestStatus:
+    current_file: str
+    progress_percent: float
+    processed_files: int
+    total_files: int
+    log_message: str
+    thought_frame: Optional[Dict] = None
+
+class SynapseWeaver:
+    """
+    Parses source code to extract import dependencies.
+    Used to generate the 'DEPENDS_ON' edges in the Knowledge Graph.
+    """
+
+    def __init__(self):
+        self.py_pattern = re.compile('^\\s*(?:from|import)\\s+([\\w\\.]+)')
+        self.js_pattern = re.compile('(?:import\\s+.*?from\\s+[\\\'"]|require\\([\\\'"])([\\.\\/\\w\\-_]+)[\\\'"]')
+
+    def extract_dependencies(self, content: str, file_path: str) -> List[str]:
+        dependencies = []
+        ext = os.path.splitext(file_path)[1].lower()
+        lines = content.split('\n')
+        for line in lines:
+            match = None
+            if ext == '.py':
+                match = self.py_pattern.match(line)
+            elif ext in ['.js', '.ts', '.tsx', '.jsx']:
+                match = self.js_pattern.search(line)
+            if match:
+                raw_dep = match.group(1)
+                clean_dep = raw_dep.split('.')[-1].split('/')[-1]
+                if clean_dep not in dependencies:
+                    dependencies.append(clean_dep)
+        return dependencies
+
+@service_metadata(name='IngestEngine', version='1.0.0', description='Reads files, chunks text, fetches embeddings, and weaves graph edges.', tags=['ingest', 'rag', 'parsing', 'embedding'], capabilities=['filesystem:read', 'network:outbound', 'db:sqlite'], side_effects=['db:write', 'network:outbound'], internal_dependencies=['base_service', 'microservice_std_lib'], external_dependencies=['requests'])
+class IngestEngineMS(BaseService):
+    """
+    The Heavy Lifter: Reads files, chunks text, fetches embeddings,
+    populates the Graph Nodes, and weaves Graph Edges.
+    """
+
+    def __init__(self, config: Optional[Dict[str, Any]]=None):
+        super().__init__('IngestEngine')
+        self.config = config or {}
+        self.db_path = self.config.get('db_path', 'knowledge.db')
+        self.stop_signal = False
+        self.weaver = SynapseWeaver()
+        self._init_db()
+
+    def _init_db(self):
+        """Ensures the target database has the required schema."""
+        conn = sqlite3.connect(self.db_path)
+        conn.execute('CREATE TABLE IF NOT EXISTS files (id INTEGER PRIMARY KEY, path TEXT, last_updated REAL)')
+        conn.execute('CREATE TABLE IF NOT EXISTS chunks (id INTEGER PRIMARY KEY, file_id INT, chunk_index INT, content TEXT, embedding BLOB)')
+        conn.execute('CREATE TABLE IF NOT EXISTS graph_nodes (id TEXT PRIMARY KEY, type TEXT, label TEXT, data_json TEXT)')
+        conn.execute('CREATE TABLE IF NOT EXISTS graph_edges (source TEXT, target TEXT, weight REAL)')
+        conn.close()
+
+    def abort(self):
+        self.stop_signal = True
+
+    def check_ollama_connection(self) -> bool:
+        try:
+            requests.get(f'{OLLAMA_API_URL}/tags', timeout=2)
+            return True
+        except:
+            return False
+
+    def get_available_models(self) -> List[str]:
+        try:
+            res = requests.get(f'{OLLAMA_API_URL}/tags')
+            if res.status_code == 200:
+                data = res.json()
+                return [m['name'] for m in data.get('models', [])]
+        except:
+            pass
+        return []
+
+    @service_endpoint(inputs={'file_paths': 'List[str]', 'model_name': 'str'}, outputs={'status': 'IngestStatus'}, description='Processes a list of files, ingesting them into the knowledge graph.', tags=['ingest', 'processing'], mode='generator', side_effects=['db:write', 'network:outbound'])
+    def process_files(self, file_paths: List[str], model_name: str='none') -> Generator[IngestStatus, None, None]:
+        total = len(file_paths)
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        cursor.execute('PRAGMA synchronous = OFF')
+        cursor.execute('PRAGMA journal_mode = MEMORY')
+        node_registry = {}
+        file_contents = {}
+        for idx, file_path in enumerate(file_paths):
+            if self.stop_signal:
+                yield IngestStatus(file_path, 0, idx, total, 'Ingestion Aborted.')
+                break
+            filename = os.path.basename(file_path)
+            try:
+                with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+                    content = f.read()
+                file_contents[filename] = content
+            except Exception as e:
+                yield IngestStatus(file_path, idx / total * 100, idx, total, f'Error: {e}')
+                continue
+            try:
+                cursor.execute('INSERT OR REPLACE INTO files (path, last_updated) VALUES (?, ?)', (file_path, time.time()))
+                file_id = cursor.lastrowid
+            except sqlite3.Error:
+                continue
+            cursor.execute('\n                INSERT OR REPLACE INTO graph_nodes (id, type, label, data_json)\n                VALUES (?, ?, ?, ?)\n            ', (filename, 'file', filename, json.dumps({'path': file_path})))
+            node_registry[filename] = filename
+            chunks = self._chunk_text(content)
+            for i, chunk_text in enumerate(chunks):
+                if self.stop_signal:
+                    break
+                embedding = None
+                if model_name != 'none':
+                    embedding = self._get_embedding(model_name, chunk_text)
+                emb_blob = json.dumps(embedding).encode('utf-8') if embedding else None
+                cursor.execute('\n                    INSERT INTO chunks (file_id, chunk_index, content, embedding)\n                    VALUES (?, ?, ?, ?)\n                ', (file_id, i, chunk_text, emb_blob))
+                thought_frame = {'id': f'{file_id}_{i}', 'file': filename, 'chunk_index': i, 'content': chunk_text, 'vector_preview': embedding[:20] if embedding else [], 'concept_color': '#007ACC'}
+                yield IngestStatus(current_file=filename, progress_percent=(idx + i / len(chunks)) / total * 100, processed_files=idx, total_files=total, log_message=f'Processing {filename}...', thought_frame=thought_frame)
+            conn.commit()
+        yield IngestStatus('Graph', 100, total, total, 'Weaving Knowledge Graph...')
+        edge_count = 0
+        for filename, content in file_contents.items():
+            if self.stop_signal:
+                break
+            deps = self.weaver.extract_dependencies(content, filename)
+            for dep in deps:
+                target_id = None
+                for potential_match in node_registry.keys():
+                    if potential_match.startswith(dep + '.') or potential_match == dep:
+                        target_id = potential_match
+                        break
+                if target_id and target_id != filename:
+                    try:
+                        cursor.execute('\n                            INSERT OR IGNORE INTO graph_edges (source, target, weight)\n                            VALUES (?, ?, 1.0)\n                        ', (filename, target_id))
+                        edge_count += 1
+                    except:
+                        pass
+        conn.commit()
+        conn.close()
+        yield IngestStatus(current_file='Complete', progress_percent=100, processed_files=total, total_files=total, log_message=f'Ingestion Complete. Created {edge_count} dependency edges.')
+
+    def _chunk_text(self, text: str, chunk_size: int=1000, overlap: int=100) -> List[str]:
+        if len(text) < chunk_size:
+            return [text]
+        chunks = []
+        start = 0
+        while start < len(text):
+            end = start + chunk_size
+            chunks.append(text[start:end])
+            start += chunk_size - overlap
+        return chunks
+
+    def _get_embedding(self, model: str, text: str) -> Optional[List[float]]:
+        try:
+            res = requests.post(f'{OLLAMA_API_URL}/embeddings', json={'model': model, 'prompt': text}, timeout=30)
+            if res.status_code == 200:
+                return res.json().get('embedding')
+        except:
+            return None
+if __name__ == '__main__':
+    TEST_DB = 'test_ingest_v2.db'
+    engine = IngestEngineMS({'db_path': TEST_DB})
+    print(f'Service Ready: {engine}')
+    target_file = '__IngestEngineMS.py'
+    if not os.path.exists(target_file):
+        with open(target_file, 'w') as f:
+            f.write("import os\nimport json\nprint('Hello World')")
+    print(f'Running Ingest on {target_file}...')
+    files = [target_file]
+    for status in engine.process_files(files, 'none'):
+        print(f'[{status.progress_percent:.0f}%] {status.log_message}')
+    conn = sqlite3.connect(TEST_DB)
+    edges = conn.execute('SELECT * FROM graph_edges').fetchall()
+    nodes = conn.execute('SELECT * FROM graph_nodes').fetchall()
+    print(f'\nResult: {len(nodes)} Nodes, {len(edges)} Edges.')
+    conn.close()
+    if os.path.exists(TEST_DB):
+        os.remove(TEST_DB)
+    if os.path.exists(target_file) and 'Hello World' in open(target_file).read():
+        os.remove(target_file)
+
+--------------------------------------------------------------------------------
+FILE: src\microservices\_LexicalSearchMS.py
+--------------------------------------------------------------------------------
+import sqlite3
+import json
+import os
+from pathlib import Path
+from typing import List, Dict, Any, Optional
+from microservice_std_lib import service_metadata, service_endpoint
+
+@service_metadata(name='LexicalSearch', version='1.0.0', description='Lightweight BM25 keyword search using SQLite FTS5 (No AI required).', tags=['search', 'index', 'sqlite'], capabilities=['db:sqlite', 'filesystem:read', 'filesystem:write'], internal_dependencies=['microservice_std_lib'], external_dependencies=[])
+class LexicalSearchMS:
+    """
+    The Librarian's Index: A lightweight, AI-free search engine.
+    
+    Uses SQLite's FTS5 extension to provide fast, ranked keyword search (BM25).
+    Ideal for environments where installing PyTorch/Transformers is impossible
+    or overkill.
+    """
+
+    def __init__(self, config: Optional[Dict[str, Any]]=None):
+        self.config = config or {}
+        default_db = str(Path(__file__).parent / 'lexical_index.db')
+        self.db_path = self.config.get('db_path', default_db)
+        self._init_db()
+
+    def _init_db(self):
+        """
+        Sets up the schema. 
+        Uses Triggers to automatically keep the FTS index in sync with the main table.
+        """
+        conn = sqlite3.connect(self.db_path)
+        cur = conn.cursor()
+        cur.execute('\n            CREATE TABLE IF NOT EXISTS documents (\n                id TEXT PRIMARY KEY,\n                content TEXT,\n                metadata TEXT  -- JSON blob for extra info (path, author, etc)\n            );\n        ')
+        cur.execute("\n            CREATE VIRTUAL TABLE IF NOT EXISTS documents_fts USING fts5(\n                content,\n                content='documents',\n                content_rowid='rowid'  -- Internal SQLite mapping\n            );\n        ")
+        cur.execute('\n            CREATE TRIGGER IF NOT EXISTS doc_ai AFTER INSERT ON documents BEGIN\n                INSERT INTO documents_fts(rowid, content) VALUES (new.rowid, new.content);\n            END;\n        ')
+        cur.execute("\n            CREATE TRIGGER IF NOT EXISTS doc_ad AFTER DELETE ON documents BEGIN\n                INSERT INTO documents_fts(documents_fts, rowid, content) VALUES('delete', old.rowid, old.content);\n            END;\n        ")
+        cur.execute("\n            CREATE TRIGGER IF NOT EXISTS doc_au AFTER UPDATE ON documents BEGIN\n                INSERT INTO documents_fts(documents_fts, rowid, content) VALUES('delete', old.rowid, old.content);\n                INSERT INTO documents_fts(rowid, content) VALUES (new.rowid, new.content);\n            END;\n        ")
+        conn.commit()
+        conn.close()
+
+    @service_endpoint(inputs={'doc_id': 'str', 'text': 'str', 'metadata': 'Dict'}, outputs={}, description='Adds or updates a document in the FTS index.', tags=['search', 'write'], side_effects=['db:write'])
+    def add_document(self, doc_id: str, text: str, metadata: Optional[Dict[str, Any]]=None):
+        """
+        Adds or updates a document in the index.
+        """
+        conn = sqlite3.connect(self.db_path)
+        cur = conn.cursor()
+        meta_json = json.dumps(metadata or {})
+        cur.execute('\n            INSERT OR REPLACE INTO documents (id, content, metadata)\n            VALUES (?, ?, ?)\n        ', (doc_id, text, meta_json))
+        conn.commit()
+        conn.close()
+
+    @service_endpoint(inputs={'query': 'str', 'top_k': 'int'}, outputs={'results': 'List[Dict]'}, description='Performs a BM25 ranked keyword search.', tags=['search', 'read'], side_effects=['db:read'])
+    def search(self, query: str, top_k: int=20) -> List[Dict[str, Any]]:
+        """
+        Performs a BM25 Ranked Search.
+        """
+        conn = sqlite3.connect(self.db_path)
+        conn.row_factory = sqlite3.Row
+        cur = conn.cursor()
+        try:
+            sql = "\n                SELECT \n                    d.id, \n                    d.content, \n                    d.metadata,\n                    snippet(documents_fts, 0, '<b>', '</b>', '...', 15) as preview,\n                    bm25(documents_fts) as score\n                FROM documents_fts \n                JOIN documents d ON d.rowid = documents_fts.rowid\n                WHERE documents_fts MATCH ? \n                ORDER BY score ASC\n                LIMIT ?\n            "
+            safe_query = f'"{query}"'
+            rows = cur.execute(sql, (safe_query, top_k)).fetchall()
+            results = []
+            for r in rows:
+                results.append({'id': r['id'], 'score': round(r['score'], 4), 'preview': r['preview'], 'metadata': json.loads(r['metadata']), 'full_content': r['content']})
+            return results
+        except sqlite3.OperationalError as e:
+            print(f'Search syntax error: {e}')
+            return []
+        finally:
+            conn.close()
+if __name__ == '__main__':
+    import os
+    db_name = 'test_lexical.db'
+    engine = LexicalSearchMS({'db_path': db_name})
+    print('Service ready:', engine)
+    print('Ingesting test data...')
+    engine.add_document('doc1', 'Python is a great language for data science.', {'category': 'coding'})
+    engine.add_document('doc2', 'The snake python is a reptile found in jungles.', {'category': 'biology'})
+    engine.add_document('doc3', 'Data science involves python, pandas, and SQL.', {'category': 'coding'})
+    query = 'python data'
+    print(f"\nSearching for: '{query}'")
+    hits = engine.search(query)
+    for hit in hits:
+        print(f"[{hit['score']:.4f}] {hit['id']} ({hit['metadata']['category']})")
+        print(f"   Preview: {hit['preview']}")
+    if os.path.exists(db_name):
+        os.remove(db_name)
+
+--------------------------------------------------------------------------------
+FILE: src\microservices\_LogViewMS.py
+--------------------------------------------------------------------------------
+import tkinter as tk
+from tkinter import scrolledtext, filedialog
+import queue
+import logging
+import datetime
+from typing import Any, Dict, Optional
+from microservice_std_lib import service_metadata, service_endpoint
+
+class QueueHandler(logging.Handler):
+    """
+    Sends log records to a thread-safe queue.
+    Used to bridge the gap between Python's logging system and the Tkinter UI.
+    """
+
+    def __init__(self, log_queue: queue.Queue):
+        super().__init__()
+        self.log_queue = log_queue
+
+    def emit(self, record):
+        self.log_queue.put(record)
+
+@service_metadata(name='LogView', version='1.0.0', description='A thread-safe log viewer widget for Tkinter.', tags=['ui', 'logs', 'widget'], capabilities=['ui:gui', 'filesystem:write'], internal_dependencies=['microservice_std_lib'], external_dependencies=[])
+class LogViewMS(tk.Frame):
+    """
+    The Console: A professional log viewer widget.
+    Features:
+    - Thread-safe (consumes from a Queue).
+    - Message Consolidation ("Error occurred (x5)").
+    - Level Filtering (Toggle INFO/DEBUG/ERROR).
+    """
+
+    def __init__(self, config: Optional[Dict[str, Any]]=None):
+        self.config = config or {}
+        parent = self.config.get('parent')
+        super().__init__(parent)
+        self.log_queue: queue.Queue = self.config.get('log_queue')
+        if self.log_queue is None:
+            self.log_queue = queue.Queue()
+        self.last_msg = None
+        self.last_count = 0
+        self.last_line_index = None
+        self._build_ui()
+        self._poll_queue()
+
+    def _build_ui(self):
+        toolbar = tk.Frame(self, bg='#2d2d2d', height=30)
+        toolbar.pack(fill='x', side='top')
+        self.filters = {'INFO': tk.BooleanVar(value=True), 'DEBUG': tk.BooleanVar(value=True), 'WARNING': tk.BooleanVar(value=True), 'ERROR': tk.BooleanVar(value=True)}
+        for level, var in self.filters.items():
+            cb = tk.Checkbutton(toolbar, text=level, variable=var, bg='#2d2d2d', fg='white', selectcolor='#444', activebackground='#2d2d2d', activeforeground='white')
+            cb.pack(side='left', padx=5)
+        tk.Button(toolbar, text='Clear', command=self.clear, bg='#444', fg='white', relief='flat').pack(side='right', padx=5)
+        tk.Button(toolbar, text='Save', command=self.save, bg='#444', fg='white', relief='flat').pack(side='right')
+        self.text = scrolledtext.ScrolledText(self, state='disabled', bg='#1e1e1e', fg='#d4d4d4', font=('Consolas', 10), insertbackground='white')
+        self.text.pack(fill='both', expand=True)
+        self.text.tag_config('INFO', foreground='#d4d4d4')
+        self.text.tag_config('DEBUG', foreground='#569cd6')
+        self.text.tag_config('WARNING', foreground='#ce9178')
+        self.text.tag_config('ERROR', foreground='#f44747')
+        self.text.tag_config('timestamp', foreground='#608b4e')
+
+    def _poll_queue(self):
+        """Pulls logs from the queue and updates UI."""
+        try:
+            while True:
+                record = self.log_queue.get_nowait()
+                self._display(record)
+        except queue.Empty:
+            pass
+        finally:
+            self.after(100, self._poll_queue)
+
+    def _display(self, record):
+        level = record.levelname
+        if not self.filters.get(level, tk.BooleanVar(value=True)).get():
+            return
+        msg = record.getMessage()
+        ts = datetime.datetime.fromtimestamp(record.created).strftime('%H:%M:%S')
+        self.text.config(state='normal')
+        if msg == self.last_msg:
+            self.last_count += 1
+        else:
+            self.last_msg = msg
+            self.last_count = 1
+        self.text.insert('end', f'[{ts}] ', 'timestamp')
+        self.text.insert('end', f'{msg}\n', level)
+        self.text.see('end')
+        self.text.config(state='disabled')
+
+    @service_endpoint(inputs={}, outputs={}, description='Clears the log console.', tags=['ui', 'logs'], side_effects=['ui:update'])
+    def clear(self):
+        self.text.config(state='normal')
+        self.text.delete('1.0', 'end')
+        self.text.config(state='disabled')
+
+    @service_endpoint(inputs={}, outputs={}, description='Opens a dialog to save logs to a file.', tags=['ui', 'filesystem'], side_effects=['filesystem:write', 'ui:dialog'])
+    def save(self):
+        path = filedialog.asksaveasfilename(defaultextension='.log', filetypes=[('Log Files', '*.log')])
+        if path:
+            try:
+                with open(path, 'w', encoding='utf-8') as f:
+                    f.write(self.text.get('1.0', 'end'))
+            except Exception as e:
+                print(f'Save failed: {e}')
+if __name__ == '__main__':
+    root = tk.Tk()
+    root.title('Log View Test')
+    root.geometry('600x400')
+    q = queue.Queue()
+    logger = logging.getLogger('TestApp')
+    logger.setLevel(logging.DEBUG)
+    logger.addHandler(QueueHandler(q))
+    log_view = LogViewMS({'parent': root, 'log_queue': q})
+    print('Service ready:', log_view)
+    log_view.pack(fill='both', expand=True)
+
+    def generate_noise():
+        logger.info('System initializing...')
+        logger.debug('Checking sensors...')
+        logger.warning('Sensor 4 response slow.')
+        logger.error('Connection failed!')
+        root.after(2000, generate_noise)
+    generate_noise()
+    root.mainloop()
+
+--------------------------------------------------------------------------------
+FILE: src\microservices\_MonacoHostMS.py
+--------------------------------------------------------------------------------
+import importlib.util
+import sys
+import threading
+import json
+import logging
+from typing import Any, Dict, Optional, Callable
+REQUIRED = ['webview']
+MISSING = []
+if importlib.util.find_spec('webview') is None:
+    MISSING.append('pywebview')
+if MISSING:
+    print('\n' + '!' * 60)
+    print(f'MISSING DEPENDENCIES for _MonacoHostMS:')
+    print(f"Run:  pip install {' '.join(MISSING)}")
+    print('!' * 60 + '\n')
+import webview
+from microservice_std_lib import service_metadata, service_endpoint
+logger = logging.getLogger('MonacoHost')
+MONACO_HTML = '\n<!DOCTYPE html>\n<html>\n<head>\n    <meta charset="UTF-8">\n    <title>Monaco Host</title>\n    <style>\n        html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #1e1e1e; font-family: sans-serif; }\n        #container { display: flex; flex-direction: column; height: 100%; }\n        #tabs { background: #252526; display: flex; overflow-x: auto; height: 35px; border-bottom: 1px solid #3e3e3e; }\n        .tab { \n            padding: 8px 15px; color: #969696; background: #2d2d2d; cursor: pointer; border-right: 1px solid #1e1e1e; font-size: 12px;\n            display: flex; align-items: center; white-space: nowrap;\n        }\n        .tab.active { background: #1e1e1e; color: #fff; border-top: 1px solid #007acc; }\n        .tab:hover { background: #323233; color: #fff; }\n        #editor { flex-grow: 1; }\n    </style>\n</head>\n<body>\n    <div id="container">\n        <div id="tabs"></div>\n        <div id="editor"></div>\n    </div>\n    <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.41.0/min/vs/loader.js"></script>\n    <script>\n        require.config({ paths: { \'vs\': \'https://cdn.jsdelivr.net/npm/monaco-editor@0.41.0/min/vs\' }});\n        let editor;\n        let models = {}; \n        let currentPath = null;\n\n        require([\'vs/editor/editor.main\'], function() {\n            editor = monaco.editor.create(document.getElementById(\'editor\'), {\n                value: "# Monaco Editor Ready\\n",\n                language: \'python\',\n                theme: \'vs-dark\',\n                automaticLayout: true,\n                fontSize: 14\n            });\n\n            if (window.pywebview) window.pywebview.api.signal_editor_ready();\n\n            editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, function() {\n                if (currentPath) {\n                    window.pywebview.api.save_file(currentPath, editor.getValue());\n                }\n            });\n        });\n\n        window.pywebview = window.pywebview || {};\n        window.pywebview.api = window.pywebview.api || {};\n\n        window.pywebview.api.open_in_tab = function(filepath, content) {\n            let ext = filepath.split(\'.\').pop();\n            let langMap = { \'py\': \'python\', \'js\': \'javascript\', \'html\': \'html\', \'json\': \'json\', \'css\': \'css\' };\n            let lang = langMap[ext] || \'plaintext\';\n\n            if (!models[filepath]) {\n                models[filepath] = monaco.editor.createModel(content, lang, monaco.Uri.file(filepath));\n                const tab = document.createElement(\'div\');\n                tab.className = \'tab\';\n                tab.innerText = filepath.split(/[\\\\/]/).pop();\n                tab.title = filepath;\n                tab.onclick = () => switchTo(filepath);\n                tab.dataset.path = filepath;\n                document.getElementById(\'tabs\').appendChild(tab);\n            }\n            switchTo(filepath);\n        };\n\n        window.pywebview.api.reveal_range = function(filepath, startLine, endLine) {\n            if (filepath !== currentPath) switchTo(filepath);\n            editor.revealLineInCenter(startLine);\n            editor.setSelection({ startLineNumber: startLine, startColumn: 1, endLineNumber: endLine, endColumn: 1000 });\n        };\n\n        function switchTo(filepath) {\n            if (!models[filepath]) return;\n            editor.setModel(models[filepath]);\n            currentPath = filepath;\n            document.querySelectorAll(\'.tab\').forEach(t => t.classList.toggle(\'active\', t.dataset.path === filepath));\n        }\n    </script>\n</body>\n</html>\n'
+
+class MonacoApiBridge:
+    """
+    Acts as the bridge between Python and the JavaScript running inside the webview.
+    Methods here are callable from JS via `window.pywebview.api.methodName()`.
+    """
+
+    def __init__(self):
+        self._window = None
+        self._ready_event = threading.Event()
+        self.on_save_callback: Optional[Callable[[str, str], None]] = None
+
+    def set_window(self, window):
+        self._window = window
+
+    def signal_editor_ready(self):
+        """Called by JS when Monaco is fully loaded."""
+        self._ready_event.set()
+        logger.info('Monaco Editor reported ready.')
+
+    def save_file(self, filepath: str, content: str):
+        """Called by JS when Ctrl+S is pressed."""
+        if self.on_save_callback:
+            self.on_save_callback(filepath, content)
+        else:
+            logger.warning(f'Saved {filepath} (No callback registered)')
+
+    def open_file_in_js(self, filepath: str, content: str):
+        """Python helper to push data to JS."""
+        self._ready_event.wait(timeout=10)
+        if not self._window:
+            return
+        js = f'window.pywebview.api.open_in_tab({json.dumps(filepath)}, {json.dumps(content)})'
+        self._window.evaluate_js(js)
+
+@service_metadata(name='MonacoHost', version='1.1.0', description='Hosts an embedded Monaco Editor instance using PyWebview.', tags=['ui', 'editor', 'webview'], capabilities=['ui:gui'], internal_dependencies=['microservice_std_lib'], external_dependencies=['webview'])
+class MonacoHostMS:
+    """
+    Hosts the Monaco Editor.
+    This service spawns a GUI window and cannot be run in headless environments.
+    """
+
+    def __init__(self, config: Optional[Dict[str, Any]]=None):
+        self.config = config or {}
+        self.api = MonacoApiBridge()
+        self.window = None
+
+    @service_endpoint(inputs={'title': 'str', 'width': 'int', 'height': 'int'}, outputs={}, description='Launches the editor window. Blocking call.', tags=['ui', 'launch'], side_effects=['ui:window'])
+    def launch(self, title='Monaco Editor', width=1000, height=700, func=None):
+        """
+        Create and launch the window.
+        :param func: Optional function to run in a separate thread after launch.
+        """
+        self.window = webview.create_window(title, html=MONACO_HTML, js_api=self.api, width=width, height=height)
+        self.api.set_window(self.window)
+        webview.start(func, debug=True) if func else webview.start(debug=True)
+
+    def set_save_callback(self, callback: Callable[[str, str], None]):
+        """Sets the function to trigger when Ctrl+S is pressed in the editor."""
+        self.api.on_save_callback = callback
+
+    def open_file(self, filepath: str, content: str):
+        """Opens a file in the editor (must be called from a background thread or callback)."""
+        self.api.open_file_in_js(filepath, content)
+if __name__ == '__main__':
+    host = MonacoHostMS()
+
+    def background_actions():
+        host.api._ready_event.wait()
+        print('Opening demo file...')
+        host.open_file('demo.py', "print('Hello World')\n# Try Ctrl+S to save!")
+        host.set_save_callback(lambda p, c: print(f'File: {p} was saved with {len(c)} chars.'))
+    print('Launching Monaco Host...')
+    host.launch(func=background_actions)
+
+--------------------------------------------------------------------------------
+FILE: src\microservices\_OllamaModelSelectorMS.py
+--------------------------------------------------------------------------------
+"""
+SERVICE_NAME: _OllamaModelSelectorMS
+ENTRY_POINT: _OllamaModelSelectorMS.py
+INTERNAL_DEPENDENCIES: base_service, microservice_std_lib
+EXTERNAL_DEPENDENCIES: requests
+"""
+import tkinter as tk
+from tkinter import ttk
+import requests
+import threading
+import logging
+from typing import Dict, Any, List, Optional, Callable
+from base_service import BaseService
+from microservice_std_lib import service_metadata, service_endpoint
+
+OLLAMA_TAGS_URL = "http://localhost:11434/api/tags"
+
+@service_metadata(
+    name='OllamaModelSelector', 
+    version='1.0.0', 
+    description='The Lens: A UI widget that fetches and displays available local Ollama models.', 
+    tags=['ui', 'ai', 'ollama', 'widget'], 
+    capabilities=['ui:gui', 'network:outbound'], 
+    internal_dependencies=['base_service', 'microservice_std_lib'], 
+    external_dependencies=['requests']
+)
+class OllamaModelSelectorMS(tk.Frame, BaseService):
+    """
+    The Lens.
+    A dropdown widget that automatically polls the local Ollama API for models.
+    """
+
+    def __init__(self, config: Optional[Dict[str, Any]] = None):
+        # Initialize BaseService first for logging
+        BaseService.__init__(self, 'OllamaModelSelector')
+        
+        self.config_data = config or {}
+        parent = self.config_data.get('parent')
+        self.on_change_callback = self.config_data.get('on_change')
+        
+        # Initialize the Tkinter Frame
+        tk.Frame.__init__(self, parent, bg=self.config_data.get('bg', '#252526'))
+        
+        self.models: List[str] = ["Scanning..."]
+        self._build_ui()
+        
+        # Start background scan so the UI doesn't hang
+        threading.Thread(target=self.refresh_models, daemon=True).start()
+
+    def _build_ui(self):
+        """Creates the label and combobox."""
+        tk.Label(
+            self, text="AI MODEL:", bg=self.cget('bg'), fg='white', 
+            font=('Segoe UI', 9, 'bold')
+        ).pack(side='left', padx=(5, 10))
+
+        self.combo = ttk.Combobox(self, values=self.models, state="readonly", width=25)
+        self.combo.set(self.models[0])
+        self.combo.pack(side='left', padx=5)
+        self.combo.bind("<<ComboboxSelected>>", self._on_selection)
+
+    @service_endpoint(
+        inputs={}, 
+        outputs={'models': 'List[str]'}, 
+        description='Queries local Ollama API to refresh the list of available models.', 
+        tags=['network', 'refresh']
+    )
+    def refresh_models(self) -> List[str]:
+        """Fetches models from Ollama tags endpoint."""
+        try:
+            response = requests.get(OLLAMA_TAGS_URL, timeout=3)
+            if response.status_code == 200:
+                data = response.json()
+                self.models = [m['name'] for m in data.get('models', [])]
+                self.log_info(f"Discovered {len(self.models)} local models.")
+            else:
+                self.models = ["Ollama Offline"]
+        except Exception as e:
+            self.log_error(f"Failed to reach Ollama: {e}")
+            self.models = ["Connection Error"]
+
+        # Update the UI from the main thread
+        self.after(0, lambda: self.combo.config(values=self.models))
+        if self.models and self.models[0] not in ["Connection Error", "Ollama Offline"]:
+            self.after(0, lambda: self.combo.current(0))
+        
+        return self.models
+
+    def _on_selection(self, event):
+        """Triggered when the user picks a new model."""
+        selected = self.combo.get()
+        self.log_info(f"Model selected: {selected}")
+        if self.on_change_callback:
+            self.on_change_callback(selected)
+
+    @service_endpoint(
+        inputs={}, 
+        outputs={'selected_model': 'str'}, 
+        description='Returns the currently selected model string.', 
+        tags=['ui', 'read']
+    )
+    def get_selected_model(self) -> str:
+        """Retrieves current selection from the combobox."""
+        return self.combo.get()
+
+if __name__ == '__main__':
+    root = tk.Tk()
+    root.title("Ollama Selector Test")
+    root.geometry("400x100")
+    
+    # Simple callback test
+    def log_change(m): print(f"Signal emitted for model: {m}")
+    
+    selector = OllamaModelSelectorMS({'parent': root, 'on_change': log_change})
+    selector.pack(pady=20)
+    
+    root.mainloop()
+--------------------------------------------------------------------------------
+FILE: src\microservices\_RegexWeaverMS.py
+--------------------------------------------------------------------------------
+import re
+import logging
+from typing import Any, Dict, List, Optional, Set
+from microservice_std_lib import service_metadata, service_endpoint
+PY_IMPORT = re.compile('^\\s*(?:from|import)\\s+([\\w\\.]+)')
+JS_IMPORT = re.compile('(?:import\\s+.*?from\\s+[\\\'"]|require\\([\\\'"])([\\.\\/\\w\\-_]+)[\\\'"]')
+logger = logging.getLogger('RegexWeaver')
+
+@service_metadata(name='RegexWeaver', version='1.0.0', description='Fault-tolerant dependency extractor using Regex.', tags=['parsing', 'dependencies', 'regex'], capabilities=['compute'], internal_dependencies=['microservice_std_lib'], external_dependencies=[])
+class RegexWeaverMS:
+    """
+    The Weaver: A fault-tolerant dependency extractor.
+    Uses Regex to find imports, making it faster and more permissive
+    than AST parsers (works on broken code).
+    """
+
+    def __init__(self, config: Optional[Dict[str, Any]]=None):
+        self.config = config or {}
+
+    @service_endpoint(inputs={'content': 'str', 'language': 'str'}, outputs={'dependencies': 'List[str]'}, description='Scans code content for import statements.', tags=['parsing', 'dependencies'], side_effects=[])
+    def extract_dependencies(self, content: str, language: str) -> List[str]:
+        """
+        Scans code content for import statements.
+        :param language: 'python' or 'javascript' (includes ts/jsx).
+        """
+        dependencies: Set[str] = set()
+        lines = content.splitlines()
+        pattern = PY_IMPORT if language == 'python' else JS_IMPORT
+        for line in lines:
+            if line.strip().startswith(('#', '//')):
+                continue
+            if language == 'python':
+                match = pattern.match(line)
+            else:
+                match = pattern.search(line)
+            if match:
+                raw_dep = match.group(1)
+                clean_dep = raw_dep.split('.')[-1].split('/')[-1]
+                dependencies.add(clean_dep)
+        return sorted(list(dependencies))
+if __name__ == '__main__':
+    logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(message)s')
+    weaver = RegexWeaverMS()
+    print('Service ready:', weaver)
+    py_code = '\n    import os\n    from backend.utils import helper\n    # from commented.out import ignore_me\n    import pandas as pd\n    '
+    print(f"Python Deps: {weaver.extract_dependencies(py_code, 'python')}")
+    js_code = "\n    import React from 'react';\n    const utils = require('./lib/utils');\n    // import hidden from 'hidden';\n    "
+    print(f"JS Deps:     {weaver.extract_dependencies(js_code, 'javascript')}")
+
+--------------------------------------------------------------------------------
+FILE: src\microservices\_ScannerMS.py
+--------------------------------------------------------------------------------
+"""
+SERVICE_NAME: _ScannerMS
+ENTRY_POINT: _ScannerMS.py
+INTERNAL_DEPENDENCIES: base_service, microservice_std_lib
+EXTERNAL_DEPENDENCIES: None
+"""
+import os
+import time
+from typing import Dict, List, Any, Optional
+from microservice_std_lib import service_metadata, service_endpoint
+from base_service import BaseService
+
+@service_metadata(name='ScannerMS', version='1.0.0', description='Recursively scans directories, filters junk, and detects binaries.', tags=['filesystem', 'scanner', 'tree'], capabilities=['filesystem:read'], side_effects=['filesystem:read'], internal_dependencies=['base_service', 'microservice_std_lib'], external_dependencies=[])
+class ScannerMS(BaseService):
+    """
+    The Scanner: Walks the file system, filters junk, and detects binary files.
+    Generates the tree structure used by the UI.
+    """
+
+    def __init__(self, config: Optional[Dict[str, Any]]=None):
+        super().__init__('ScannerMS')
+        self.config = config or {}
+        self.IGNORE_DIRS = {'.git', '__pycache__', 'node_modules', 'venv', '.env', '.idea', '.vscode', 'dist', 'build', 'coverage'}
+        self.BINARY_EXTENSIONS = {'.pyc', '.pyd', '.exe', '.dll', '.so', '.dylib', '.class', '.jpg', '.png', '.gif', '.ico', '.zip', '.tar', '.gz'}
+
+    @service_endpoint(inputs={'path': 'str', 'depth': 'int'}, outputs={'tree': 'Dict'}, description='Scans the target directory and returns a nested dictionary tree of valid files.', tags=['filesystem', 'scan'], side_effects=['filesystem:read'])
+    def scan_directory(self, path: str, depth: int=0) -> Dict[str, Any]:
+        """
+        Recursively scans a directory, building a tree.
+        Excludes ignored directories and binary files.
+        """
+        if not os.path.exists(path):
+            self.log_error(f'Path not found: {path}')
+            return {}
+        root_name = os.path.basename(path) or path
+        tree = {'name': root_name, 'path': path, 'type': 'folder', 'children': []}
+        try:
+            with os.scandir(path) as it:
+                entries = sorted(it, key=lambda e: (not e.is_dir(), e.name.lower()))
+                for entry in entries:
+                    if entry.name in self.IGNORE_DIRS:
+                        continue
+                    if entry.is_dir():
+                        child_tree = self.scan_directory(entry.path, depth + 1)
+                        if child_tree:
+                            tree['children'].append(child_tree)
+                    elif entry.is_file():
+                        _, ext = os.path.splitext(entry.name)
+                        if ext.lower() in self.BINARY_EXTENSIONS:
+                            continue
+                        tree['children'].append({'name': entry.name, 'path': entry.path, 'type': 'file', 'size': entry.stat().st_size})
+        except PermissionError:
+            self.log_warning(f'Permission denied: {path}')
+        return tree
+
+    @service_endpoint(inputs={'tree_node': 'Dict'}, outputs={'files': 'List[str]'}, description='Flattens a tree node into a list of file paths.', tags=['filesystem', 'utility'], side_effects=[])
+    def flatten_tree(self, tree_node: Dict[str, Any]) -> List[str]:
+        """
+        Helper to extract all valid file paths from a tree node 
+        (e.g., when the user clicks 'Start Ingest').
+        """
+        files = []
+        if not tree_node:
+            return []
+        if tree_node.get('type') == 'file':
+            files.append(tree_node['path'])
+        elif tree_node.get('type') == 'folder' and 'children' in tree_node:
+            for child in tree_node['children']:
+                files.extend(self.flatten_tree(child))
+        return files
+if __name__ == '__main__':
+    scanner = ScannerMS()
+    print('Service ready:', scanner._service_info)
+    cwd = os.getcwd()
+    print(f'Scanning: {cwd} ...')
+    start_time = time.time()
+    tree = scanner.scan_directory(cwd)
+    duration = time.time() - start_time
+    if tree:
+        file_count = len(scanner.flatten_tree(tree))
+        print(f'Scan complete in {duration:.4f}s')
+        print(f'Found {file_count} files.')
+
+--------------------------------------------------------------------------------
+FILE: src\microservices\_SearchEngineMS.py
+--------------------------------------------------------------------------------
+import importlib.util
+import sys
+import sqlite3
+import json
+import struct
+import requests
+import os
+import logging
+from typing import List, Dict, Any, Optional
+REQUIRED = ['requests', 'sqlite_vec']
+MISSING = []
+for lib in REQUIRED:
+    import_name = lib.replace('-', '_')
+    if importlib.util.find_spec(import_name) is None:
+        MISSING.append(lib)
+if MISSING:
+    print('\n' + '!' * 60)
+    print(f'MISSING DEPENDENCIES for _SearchEngineMS:')
+    print(f"Run:  pip install {' '.join(MISSING)}")
+    print('!' * 60 + '\n')
+from microservice_std_lib import service_metadata, service_endpoint
+DEFAULT_OLLAMA_URL = 'http://localhost:11434/api'
+logger = logging.getLogger('SearchEngine')
+
+@service_metadata(name='SearchEngine', version='1.0.0', description='The Oracle: Performs Hybrid Search (Vector Similarity + Keyword Matching) on SQLite databases.', tags=['search', 'vector', 'hybrid', 'rag'], capabilities=['db:sqlite', 'network:outbound', 'compute'], internal_dependencies=['microservice_std_lib'], external_dependencies=['requests', 'sqlite_vec'])
+class SearchEngineMS:
+    """
+    The Oracle: Performs Hybrid Search (Vector Similarity + Keyword Matching).
+    
+    Architecture:
+    1. Vector Search: Uses sqlite-vec (vec0) for fast nearest neighbor search.
+    2. Keyword Search: Uses SQLite FTS5 for BM25-style text matching.
+    3. Reranking: Combines scores using Reciprocal Rank Fusion (RRF).
+    """
+
+    def __init__(self, config: Optional[Dict[str, Any]]=None):
+        self.config = config or {}
+        self.model_name = self.config.get('model_name', 'phi3:mini-128k')
+        self.ollama_url = self.config.get('ollama_url', DEFAULT_OLLAMA_URL)
+
+    @service_endpoint(inputs={'db_path': 'str', 'query': 'str', 'limit': 'int'}, outputs={'results': 'List[Dict]'}, description='Main entry point. Returns a list of results sorted by relevance (RRF).', tags=['search', 'query'], side_effects=['db:read', 'network:outbound'])
+    def search(self, db_path: str, query: str, limit: int=10) -> List[Dict[str, Any]]:
+        """
+        Main entry point. Returns a list of results sorted by relevance.
+        """
+        if not os.path.exists(db_path):
+            logger.warning(f'Database not found at: {db_path}')
+            return []
+        conn = sqlite3.connect(db_path)
+        try:
+            conn.enable_load_extension(True)
+            import sqlite_vec
+            sqlite_vec.load(conn)
+        except Exception as e:
+            logger.warning(f'Warning: sqlite_vec not loaded. Vector search may fail. Error: {e}')
+        cursor = conn.cursor()
+        query_vec = self._get_query_embedding(query)
+        if not query_vec:
+            logger.info('Vectorization failed. Falling back to keyword-only search.')
+            conn.close()
+            return self._keyword_search_only(db_path, query, limit)
+        vec_bytes = struct.pack(f'{len(query_vec)}f', *query_vec)
+        sql = '\n        WITH \n        vec_matches AS (\n            SELECT rowid, distance,\n            row_number() OVER (ORDER BY distance) as rank\n            FROM knowledge_vectors\n            WHERE embedding MATCH ? \n            AND k = 50\n        ),\n        fts_matches AS (\n            SELECT rowid, rank as fts_score,\n            row_number() OVER (ORDER BY rank) as rank\n            FROM documents_fts\n            WHERE documents_fts MATCH ?\n            ORDER BY rank\n            LIMIT 50\n        )\n        SELECT \n            kc.file_path,\n            kc.content,\n            (\n                -- RRF Formula: 1 / (k + rank)\n                COALESCE(1.0 / (60 + v.rank), 0.0) +\n                COALESCE(1.0 / (60 + f.rank), 0.0)\n            ) as rrf_score\n        FROM knowledge_chunks kc\n        LEFT JOIN vec_matches v ON kc.id = v.rowid\n        LEFT JOIN fts_matches f ON kc.id = f.rowid\n        WHERE v.rowid IS NOT NULL OR f.rowid IS NOT NULL\n        ORDER BY rrf_score DESC\n        LIMIT ?;\n        '
+        try:
+            fts_query = f'"{query}"'
+            rows = cursor.execute(sql, (vec_bytes, fts_query, limit)).fetchall()
+        except sqlite3.OperationalError as e:
+            logger.error(f'Search Error (likely missing schema or sqlite-vec): {e}')
+            return []
+        finally:
+            conn.close()
+        results = []
+        for r in rows:
+            path, content, score = r
+            snippet = self._extract_snippet(content, query)
+            results.append({'path': path, 'score': round(score, 4), 'snippet': snippet})
+        return results
+
+    def _keyword_search_only(self, db_path: str, query: str, limit: int) -> List[Dict[str, Any]]:
+        """Fallback if embeddings are offline."""
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+        sql = '\n            SELECT file_path, content\n            FROM documents_fts\n            WHERE documents_fts MATCH ?\n            ORDER BY rank\n            LIMIT ?\n        '
+        try:
+            rows = cursor.execute(sql, (f'"{query}"', limit)).fetchall()
+            return [{'path': r[0], 'score': 0.0, 'snippet': self._extract_snippet(r[1], query)} for r in rows]
+        except sqlite3.OperationalError as e:
+            logger.error(f'Keyword Search Error: {e}')
+            return []
+        finally:
+            conn.close()
+
+    def _get_query_embedding(self, text: str) -> Optional[List[float]]:
+        """Call Ollama to get the vector for the search query."""
+        try:
+            res = requests.post(f'{self.ollama_url}/embeddings', json={'model': self.model_name, 'prompt': text}, timeout=5)
+            if res.status_code == 200:
+                return res.json().get('embedding')
+        except Exception as e:
+            logger.error(f'Embedding request failed: {e}')
+            return None
+        return None
+
+    def _extract_snippet(self, content: str, query: str) -> str:
+        """Finds the best window of text around the keyword."""
+        if not content:
+            return ''
+        lower_content = content.lower()
+        parts = query.lower().split()
+        lower_query = parts[0] if parts else ''
+        idx = lower_content.find(lower_query)
+        if idx == -1:
+            return content[:200].replace('\n', ' ') + '...'
+        start = max(0, idx - 60)
+        end = min(len(content), idx + 140)
+        snippet = content[start:end].replace('\n', ' ')
+        return f'...{snippet}...'
+if __name__ == '__main__':
+    print('Initializing Search Engine...')
+    engine = SearchEngineMS({'model_name': 'phi3:mini-128k'})
+    print('Service ready:', engine)
+
+--------------------------------------------------------------------------------
+FILE: src\microservices\_SemanticChunkerMS.py
+--------------------------------------------------------------------------------
+import ast
+from dataclasses import dataclass, asdict
+from typing import List, Dict, Any, Optional
+from microservice_std_lib import service_metadata, service_endpoint
+
+@dataclass
+class CodeChunk:
+    name: str
+    type: str
+    content: str
+    start_line: int
+    end_line: int
+    docstring: str = ''
+
+@service_metadata(name='SemanticChunker', version='1.0.0', description='The Surgeon: Intelligent Code Splitter that parses source code into logical semantic units (Classes, Functions) using AST.', tags=['utility', 'nlp', 'parser'], capabilities=['python-ast', 'semantic-chunking'], internal_dependencies=['microservice_std_lib'], external_dependencies=[])
+class SemanticChunkerMS:
+    """
+    Intelligent Code Splitter.
+    Parses source code into logical units (Classes, Functions) 
+    rather than arbitrary text windows.
+    """
+
+    def __init__(self, config: Optional[Dict[str, Any]]=None):
+        self.config = config or {}
+
+    @service_endpoint(inputs={'content': 'str', 'filename': 'str'}, outputs={'chunks': 'List[Dict]'}, description='Main entry point to split a file into semantic chunks based on its extension and content.', tags=['processing', 'chunking'], side_effects=[])
+    def chunk_file(self, content: str, filename: str) -> List[Dict[str, Any]]:
+        """
+        Splits file content into chunks.
+        Returns a list of dictionaries suitable for JSON response.
+        """
+        chunks: List[CodeChunk] = []
+        if filename.endswith('.py'):
+            chunks = self._chunk_python(content)
+        elif filename.lower().endswith(('.md', '.txt', '.pdf', '.html', '.htm', '.rst')):
+            chunks = self._chunk_generic(content, window_size=800)
+        else:
+            chunks = self._chunk_generic(content, window_size=1500)
+        return [asdict(c) for c in chunks]
+
+    def _chunk_python(self, source: str) -> List[CodeChunk]:
+        chunks = []
+        try:
+            tree = ast.parse(source)
+            lines = source.splitlines(keepends=True)
+
+            def get_segment(node):
+                start = node.lineno - 1
+                end = node.end_lineno if hasattr(node, 'end_lineno') and node.end_lineno else start + 1
+                return (''.join(lines[start:end]), start + 1, end)
+            for node in tree.body:
+                if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                    text, s, e = get_segment(node)
+                    doc = ast.get_docstring(node) or ''
+                    chunks.append(CodeChunk(name=f'def {node.name}', type='function', content=text, start_line=s, end_line=e, docstring=doc))
+                elif isinstance(node, ast.ClassDef):
+                    text, s, e = get_segment(node)
+                    doc = ast.get_docstring(node) or ''
+                    chunks.append(CodeChunk(name=f'class {node.name}', type='class', content=text, start_line=s, end_line=e, docstring=doc))
+            if not chunks:
+                return self._chunk_generic(source)
+        except SyntaxError:
+            return self._chunk_generic(source)
+        return chunks
+
+    def _chunk_generic(self, text: str, window_size: int=1500) -> List[CodeChunk]:
+        """Sliding window for non-code files."""
+        chunks = []
+        text = text.replace('\r\n', '\n').replace('\r', '\n')
+        lines = text.splitlines(keepends=True)
+        current_chunk = []
+        current_size = 0
+        chunk_idx = 1
+        start_line = 1
+        for i, line in enumerate(lines):
+            current_chunk.append(line)
+            current_size += len(line)
+            if current_size >= window_size:
+                chunks.append(CodeChunk(name=f'Chunk {chunk_idx}', type='text_block', content=''.join(current_chunk), start_line=start_line, end_line=i + 1))
+                current_chunk = []
+                current_size = 0
+                chunk_idx += 1
+                start_line = i + 2
+        if current_chunk:
+            chunks.append(CodeChunk(name=f'Chunk {chunk_idx}', type='text_block', content=''.join(current_chunk), start_line=start_line, end_line=len(lines)))
+        return chunks
+if __name__ == '__main__':
+    svc = SemanticChunkerMS()
+    print('Service ready:', svc)
+    test_code = "def hello():\n    print('world')\n\nclass Test:\n    pass"
+    results = svc.chunk_file(test_code, 'test.py')
+    print(f'Extracted {len(results)} semantic chunks.')
+    for c in results:
+        print(f" - [{c['type']}] {c['name']} ({c['start_line']}-{c['end_line']})")
+        print(f" - [{c['type']}] {c['name']} ({c['start_line']}-{c['end_line']})")
+
+--------------------------------------------------------------------------------
+FILE: src\microservices\_SessionRecorderMS.py
+--------------------------------------------------------------------------------
+"""
+SERVICE_NAME: _SessionRecorderMS
+ENTRY_POINT: _SessionRecorderMS.py
+INTERNAL_DEPENDENCIES: base_service, microservice_std_lib
+EXTERNAL_DEPENDENCIES: None
+"""
+import os
+import datetime
+import json
+from typing import Dict, Any, Optional
+from base_service import BaseService
+from microservice_std_lib import service_metadata, service_endpoint
+
+@service_metadata(
+    name='SessionRecorder', 
+    version='1.0.0', 
+    description='The Black Box: Records all project tidying events to a persistent audit log.', 
+    tags=['utility', 'logging', 'audit'], 
+    capabilities=['filesystem:write'], 
+    internal_dependencies=['base_service', 'microservice_std_lib'], 
+    external_dependencies=[]
+)
+class SessionRecorderMS(BaseService):
+    """
+    The Black Box.
+    Listens to the SignalBus and writes a chronological record of all actions to disk.
+    """
+
+    def __init__(self, config: Optional[Dict[str, Any]] = None):
+        super().__init__('SessionRecorder')
+        self.config = config or {}
+        
+        # Set up the log directory
+        self.logs_dir = self.config.get('logs_dir', 'tidy_logs')
+        os.makedirs(self.logs_dir, exist_ok=True)
+        
+        # Create a unique filename for this session
+        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        self.log_file = os.path.join(self.logs_dir, f"tidy_session_{timestamp}.log")
+        
+        self.log_info(f"Session Recorder initialized. Logging to: {self.log_file}")
+        self._write_entry("SESSION_START", {"msg": "Project Tidier session initiated."})
+
+    def _write_entry(self, event_type: str, data: Any):
+        """Writes a structured, timestamped entry to the log file."""
+        timestamp = datetime.datetime.now().isoformat()
+        entry = {
+            "timestamp": timestamp,
+            "event": event_type,
+            "data": data
+        }
+        try:
+            with open(self.log_file, 'a', encoding='utf-8') as f:
+                f.write(json.dumps(entry) + "\n")
+        except Exception as e:
+            self.log_error(f"Failed to write to audit log: {e}")
+
+    # --- Signal Handlers ---
+
+    def on_scan_started(self, data: Dict[str, Any]):
+        self._write_entry("SCAN_INITIATED", data)
+
+    def on_hunk_detected(self, data: Dict[str, Any]):
+        # Log that clutter was found, including the filename and hunk name
+        log_payload = {
+            "file": data.get("file"),
+            "hunk": data.get("hunk_name"),
+            "chars_before": len(data.get("before", "")),
+            "chars_after": len(data.get("after", ""))
+        }
+        self._write_entry("CLUTTER_DETECTED", log_payload)
+
+    def on_user_decision(self, approved: bool):
+        status = "APPROVED" if approved else "SKIPPED"
+        self._write_entry("USER_DECISION", {"status": status})
+
+    def on_commit_success(self, file_path: str):
+        self._write_entry("FILE_COMMITTED", {"path": file_path})
+
+if __name__ == '__main__':
+    # Test Harness
+    recorder = SessionRecorderMS({'logs_dir': '_test_logs'})
+    recorder.on_scan_started({"paths": ["C:/test/project"]})
+    recorder.on_hunk_detected({"file": "test.py", "hunk_name": "def test()", "before": "...", "after": ".."})
+    print(f"Test entries written to: {recorder.log_file}")
+--------------------------------------------------------------------------------
+FILE: src\microservices\_SignalBusMS.py
+--------------------------------------------------------------------------------
+"""
+SERVICE_NAME: _SignalBusMS
+ENTRY_POINT: _SignalBusMS.py
+INTERNAL_DEPENDENCIES: base_service, microservice_std_lib
+EXTERNAL_DEPENDENCIES: None
+"""
+import logging
+import threading
+from typing import Dict, List, Any, Optional, Callable
+from base_service import BaseService
+from microservice_std_lib import service_metadata, service_endpoint
+
+@service_metadata(
+    name='SignalBus', 
+    version='1.0.0', 
+    description='The Spine: A central pub/sub event hub for decoupled communication between services.', 
+    tags=['utility', 'events', 'communication'], 
+    capabilities=['pub-sub', 'event-routing'], 
+    internal_dependencies=['base_service', 'microservice_std_lib'], 
+    external_dependencies=[]
+)
+class SignalBusMS(BaseService):
+    """
+    The Spine.
+    Provides a thread-safe mechanism for services to subscribe to and emit named signals.
+    """
+
+    def __init__(self, config: Optional[Dict[str, Any]] = None):
+        super().__init__('SignalBus')
+        self.config = config or {}
+        self._subscribers: Dict[str, List[Callable]] = {}
+        self._lock = threading.RLock()
+
+    @service_endpoint(
+        inputs={'signal_name': 'str', 'callback': 'Callable'}, 
+        outputs={}, 
+        description='Registers a callback function to trigger when a specific signal is emitted.', 
+        tags=['events', 'subscribe']
+    )
+    def subscribe(self, signal_name: str, callback: Callable):
+        """Adds a listener for a specific signal."""
+        with self._lock:
+            if signal_name not in self._subscribers:
+                self._subscribers[signal_name] = []
+            if callback not in self._subscribers[signal_name]:
+                self._subscribers[signal_name].append(callback)
+                self.log_info(f"New subscriber for signal: {signal_name}")
+
+    @service_endpoint(
+        inputs={'signal_name': 'str', 'data': 'Any'}, 
+        outputs={'delivered_to': 'int'}, 
+        description='Broadcasts data to all subscribers of a specific signal.', 
+        tags=['events', 'emit']
+    )
+    def emit(self, signal_name: str, data: Any = None) -> int:
+        """Broadcasts a signal to all registered listeners."""
+        count = 0
+        with self._lock:
+            listeners = self._subscribers.get(signal_name, []).copy()
+        
+        if listeners:
+            self.log_info(f"Emitting signal: {signal_name}")
+            for callback in listeners:
+                try:
+                    # Trigger the callback with the data payload
+                    callback(data)
+                    count += 1
+                except Exception as e:
+                    self.log_error(f"Error in signal '{signal_name}' callback: {e}")
+        
+        return count
+
+    @service_endpoint(
+        inputs={'signal_name': 'str', 'callback': 'Callable'}, 
+        outputs={}, 
+        description='Removes a previously registered callback.', 
+        tags=['events', 'unsubscribe']
+    )
+    def unsubscribe(self, signal_name: str, callback: Callable):
+        """Removes a listener from a signal."""
+        with self._lock:
+            if signal_name in self._subscribers:
+                try:
+                    self._subscribers[signal_name].remove(callback)
+                    self.log_info(f"Unsubscribed from signal: {signal_name}")
+                except ValueError:
+                    pass
+
+if __name__ == '__main__':
+    # Test Harness
+    bus = SignalBusMS()
+    
+    def on_hunk_ready(data):
+        print(f"UI received hunk: {data}")
+
+    print("--- Testing SignalBusMS ---")
+    bus.subscribe("hunk_processed", on_hunk_ready)
+    
+    # Simulate a backend event
+    delivered = bus.emit("hunk_processed", {"file": "app.py", "lines": 50})
+    print(f"Signal delivered to {delivered} listeners.")
+--------------------------------------------------------------------------------
+FILE: src\microservices\_TelemetryServiceMS.py
+--------------------------------------------------------------------------------
+import logging
+import queue
+import time
+from typing import Dict, Any, Optional
+from microservice_std_lib import service_metadata, service_endpoint
+logger = logging.getLogger('TelemetryService')
+
+class QueueHandler(logging.Handler):
+    """
+    Custom logging handler that pushes log records into a thread-safe queue.
+    """
+
+    def __init__(self, log_queue: queue.Queue):
+        super().__init__()
+        self.log_queue = log_queue
+
+    def emit(self, record):
+        self.format(record)
+        self.log_queue.put(record)
+
+@service_metadata(name='TelemetryService', version='1.0.0', description='The Nervous System: Watches the thread-safe LogQueue and updates GUI components with real-time status.', tags=['utility', 'logging', 'telemetry'], capabilities=['log-redirection', 'real-time-updates'], internal_dependencies=['microservice_std_lib'], external_dependencies=[])
+class TelemetryServiceMS:
+    """
+    The Nervous System.
+    Watches the thread-safe LogQueue and updates the GUI Panels.
+    """
+
+    def __init__(self, config: Optional[Dict[str, Any]]=None):
+        self.config = config or {}
+        self.root = self.config.get('root')
+        self.panels = self.config.get('panels')
+        self.log_queue = queue.Queue()
+        self.start_time = time.time()
+        self._heartbeat_count = 0
+        self._setup_logging_hook()
+
+    @service_endpoint(inputs={}, outputs={'status': 'str', 'uptime': 'float', 'queue_depth': 'int'}, description='Standardized health check to verify the operational state of the telemetry pipeline.', tags=['diagnostic', 'health'], side_effects=[])
+    def get_health(self) -> Dict[str, Any]:
+        """Returns the operational status of the TelemetryServiceMS."""
+        return {'status': 'online', 'uptime': time.time() - self.start_time, 'queue_depth': self.log_queue.qsize()}
+
+    def _setup_logging_hook(self):
+        """Redirects Python's standard logging to our Queue."""
+        root_logger = logging.getLogger()
+        root_logger.setLevel(logging.INFO)
+        q_handler = QueueHandler(self.log_queue)
+        formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s', datefmt='%H:%M:%S')
+        q_handler.setFormatter(formatter)
+        root_logger.addHandler(q_handler)
+
+    @service_endpoint(inputs={}, outputs={}, description='Initiates the telemetry service and begins the asynchronous GUI log-polling loop.', tags=['lifecycle', 'event-loop'], mode='async', side_effects=['ui:update'])
+    def start(self):
+        """Begins the GUI update loop."""
+        logger.info('Telemetry Service starting...')
+        self._poll_queue()
+
+    @service_endpoint(inputs={}, outputs={'alive': 'bool', 'heartbeat': 'int'}, description='Verifies that the GUI polling loop is actively processing the log queue.', tags=['diagnostic', 'heartbeat'], side_effects=[])
+    def ping(self) -> Dict[str, Any]:
+        """Allows an agent to verify the pulse of the UI loop."""
+        return {'alive': True, 'heartbeat': self._heartbeat_count}
+
+    def _poll_queue(self):
+        """The heartbeat that drains the queue into the GUI."""
+        if not self.root or not self.panels:
+            return
+        self._heartbeat_count += 1
+        try:
+            while True:
+                record = self.log_queue.get_nowait()
+                msg = f'[{record.levelname}] {record.message}'
+                if hasattr(self.panels, 'log'):
+                    self.panels.log(msg)
+        except queue.Empty:
+            pass
+        finally:
+            if hasattr(self.root, 'after'):
+                self.root.after(100, self._poll_queue)
+if __name__ == '__main__':
+
+    class MockRoot:
+
+        def after(self, ms, func):
+            pass
+
+    class MockPanels:
+
+        def log(self, msg):
+            print(f'[UI LOG]: {msg}')
+    svc = TelemetryServiceMS({'root': MockRoot(), 'panels': MockPanels()})
+    print('Service ready:', svc)
+    logger.info('Internal test message')
+    svc._poll_queue()
+
+--------------------------------------------------------------------------------
+FILE: src\microservices\_TextChunkerMS.py
+--------------------------------------------------------------------------------
+import logging
+from typing import Any, Dict, List, Optional, Tuple
+from microservice_std_lib import service_metadata, service_endpoint
+logger = logging.getLogger('TextChunker')
+
+@service_metadata(name='TextChunker', version='1.0.0', description='Splits text into chunks using various strategies (chars, lines).', tags=['chunking', 'nlp', 'rag'], capabilities=['compute'], internal_dependencies=['microservice_std_lib'], external_dependencies=[])
+class TextChunkerMS:
+    """
+    The Butcher: A unified service for splitting text into digestible chunks
+    for RAG (Retrieval Augmented Generation).
+    """
+
+    def __init__(self, config: Optional[Dict[str, Any]]=None):
+        self.config = config or {}
+
+    @service_endpoint(inputs={'text': 'str', 'chunk_size': 'int', 'chunk_overlap': 'int'}, outputs={'chunks': 'List[str]'}, description='Standard sliding window split by character count.', tags=['chunking', 'chars'], side_effects=[])
+    def chunk_by_chars(self, text: str, chunk_size: int=500, chunk_overlap: int=50) -> List[str]:
+        """
+        Standard Sliding Window. Best for prose/documentation.
+        Splits purely by character count.
+        """
+        if chunk_size <= 0:
+            raise ValueError('chunk_size must be positive')
+        chunks = []
+        start = 0
+        text_length = len(text)
+        while start < text_length:
+            end = start + chunk_size
+            chunk = text[start:end]
+            chunks.append(chunk)
+            if end >= text_length:
+                break
+            start += chunk_size - chunk_overlap
+        return chunks
+
+    @service_endpoint(inputs={'text': 'str', 'max_lines': 'int', 'max_chars': 'int'}, outputs={'chunks': 'List[Dict]'}, description='Line-preserving chunker, best for code.', tags=['chunking', 'lines', 'code'], side_effects=[])
+    def chunk_by_lines(self, text: str, max_lines: int=200, max_chars: int=4000) -> List[Dict[str, Any]]:
+        """
+        Line-Preserving Chunker. Best for Code.
+        Respects line boundaries and returns metadata about line numbers.
+        """
+        lines = text.splitlines()
+        chunks = []
+        start = 0
+        while start < len(lines):
+            end = min(start + max_lines, len(lines))
+            chunk_str = '\n'.join(lines[start:end])
+            while len(chunk_str) > max_chars and end > start + 1:
+                end -= 1
+                chunk_str = '\n'.join(lines[start:end])
+            chunks.append({'text': chunk_str, 'start_line': start + 1, 'end_line': end})
+            start = end
+        return chunks
+if __name__ == '__main__':
+    logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(message)s')
+    chunker = TextChunkerMS()
+    print('Service ready:', chunker)
+    print('--- Prose Chunking ---')
+    lorem = 'A' * 100
+    result = chunker.chunk_by_chars(lorem, chunk_size=40, chunk_overlap=10)
+    for i, c in enumerate(result):
+        print(f'Chunk {i}: len={len(c)}')
+    print('\n--- Code Chunking ---')
+    code = '\n'.join([f"print('Line {i}')" for i in range(1, 10)])
+    result_code = chunker.chunk_by_lines(code, max_lines=3, max_chars=100)
+    for i, c in enumerate(result_code):
+        print(f"Chunk {i}: Lines {c['start_line']}-{c['end_line']}")
+
+--------------------------------------------------------------------------------
+FILE: src\microservices\_ThoughtStreamMS.py
+--------------------------------------------------------------------------------
+import tkinter as tk
+from tkinter import ttk
+import datetime
+from typing import Any, Dict, Optional, List
+from microservice_std_lib import service_metadata, service_endpoint
+
+@service_metadata(name='ThoughtStream', version='1.0.0', description='A UI widget for displaying a stream of AI thoughts/logs.', tags=['ui', 'stream', 'logs', 'widget'], capabilities=['ui:gui'], internal_dependencies=['microservice_std_lib'], external_dependencies=[])
+class ThoughtStreamMS(ttk.Frame):
+    """
+    The Neural Inspector: A UI widget for displaying a stream of AI thoughts/logs
+    visualized as 'bubbles' with sparklines.
+    """
+
+    def __init__(self, config: Optional[Dict[str, Any]]=None):
+        self.config = config or {}
+        parent = self.config.get('parent')
+        super().__init__(parent)
+        self.header = ttk.Label(self, text='NEURAL INSPECTOR', font=('Consolas', 10, 'bold'))
+        self.header.pack(fill='x', padx=5, pady=5)
+        self.canvas = tk.Canvas(self, bg='#13131f', highlightthickness=0)
+        self.scrollbar = ttk.Scrollbar(self, orient='vertical', command=self.canvas.yview)
+        self.scrollable_frame = tk.Frame(self.canvas, bg='#13131f')
+        self.scrollable_frame.bind('<Configure>', lambda e: self.canvas.configure(scrollregion=self.canvas.bbox('all')))
+        self.canvas.create_window((0, 0), window=self.scrollable_frame, anchor='nw', width=340)
+        self.canvas.configure(yscrollcommand=self.scrollbar.set)
+        self.canvas.pack(side='left', fill='both', expand=True)
+        self.scrollbar.pack(side='right', fill='y')
+
+    @service_endpoint(inputs={'filename': 'str', 'chunk_id': 'int', 'content': 'str', 'vector_preview': 'List[float]', 'color': 'str'}, outputs={}, description='Adds a new thought bubble to the visual stream.', tags=['ui', 'update'], side_effects=['ui:update'])
+    def add_thought_bubble(self, filename: str, chunk_id: int, content: str, vector_preview: List[float], color: str):
+        """
+        Mimics the 'InspectorFrame' from your React code.
+        """
+        bubble = tk.Frame(self.scrollable_frame, bg='#1a1a25', highlightbackground='#444', highlightthickness=1)
+        bubble.pack(fill='x', padx=5, pady=5)
+        ts = datetime.datetime.now().strftime('%H:%M:%S')
+        header_lbl = tk.Label(bubble, text=f'{filename} #{chunk_id} [{ts}]', fg='#007ACC', bg='#1a1a25', font=('Consolas', 8))
+        header_lbl.pack(anchor='w', padx=5, pady=2)
+        snippet = content[:400] + '...' if len(content) > 400 else content
+        content_lbl = tk.Label(bubble, text=snippet, fg='#ccc', bg='#10101a', font=('Consolas', 8), justify='left', wraplength=300)
+        content_lbl.pack(fill='x', padx=5, pady=2)
+        self._draw_sparkline(bubble, vector_preview, color)
+
+    def _draw_sparkline(self, parent, vector: List[float], color: str):
+        """
+        Recreates the 'vector_preview' visual from React using a micro-canvas.
+        """
+        h = 30
+        w = 300
+        cv = tk.Canvas(parent, height=h, width=w, bg='#1a1a25', highlightthickness=0)
+        cv.pack(padx=5, pady=2)
+        if not vector:
+            return
+        bar_w = w / len(vector) if len(vector) > 0 else 0
+        for i, val in enumerate(vector):
+            mag = abs(val)
+            bar_h = mag * h
+            x0 = i * bar_w
+            y0 = h - bar_h
+            x1 = x0 + bar_w
+            y1 = h
+            cv.create_rectangle(x0, y0, x1, y1, fill=color, outline='')
+if __name__ == '__main__':
+    import random
+    root = tk.Tk()
+    root.title('Thought Stream Test')
+    root.geometry('400x600')
+    stream = ThoughtStreamMS({'parent': root})
+    print('Service ready:', stream)
+    stream.pack(fill='both', expand=True)
+    fake_vector = [random.uniform(-1, 1) for _ in range(20)]
+    stream.add_thought_bubble('ExplorerView.tsx', 1, "import React from 'react'...", fake_vector, '#FF00FF')
+    fake_vector_2 = [random.uniform(-1, 1) for _ in range(20)]
+    stream.add_thought_bubble('Backend.py', 42, 'def process_data(self): pass', fake_vector_2, '#00FF00')
+    root.mainloop()
+
+--------------------------------------------------------------------------------
+FILE: src\microservices\_TkinterAppShellMS.py
+--------------------------------------------------------------------------------
+"""
+SERVICE_NAME: _TkinterAppShellMS
+ENTRY_POINT: _TkinterAppShellMS.py
+INTERNAL_DEPENDENCIES: _TkinterThemeManagerMS, microservice_std_lib
+EXTERNAL_DEPENDENCIES: None
+"""
+import tkinter as tk
+from tkinter import ttk
+import logging
+from typing import Dict, Any, Optional
+from microservice_std_lib import service_metadata, service_endpoint
+try:
+    from _TkinterThemeManagerMS import TkinterThemeManagerMS
+except ImportError:
+    TkinterThemeManagerMS = None
+logger = logging.getLogger('AppShell')
+
+@service_metadata(name='TkinterAppShell', version='2.0.0', description='The Application Container. Manages the root window, main loop, and global layout.', tags=['ui', 'core', 'lifecycle'], capabilities=['ui:root', 'ui:gui'], internal_dependencies=['_TkinterThemeManagerMS', 'microservice_std_lib'], external_dependencies=[])
+class TkinterAppShellMS:
+    """
+    The Mother Ship.
+    Owns the Tkinter Root. All other UI microservices dock into this.
+    """
+
+    def __init__(self, config: Optional[Dict[str, Any]]=None):
+        self.config = config or {}
+        self.root = tk.Tk()
+        self.root.withdraw()
+        self.theme_svc = self.config.get('theme_manager')
+        if not self.theme_svc and TkinterThemeManagerMS:
+            self.theme_svc = TkinterThemeManagerMS()
+        self.colors = self.theme_svc.get_theme() if self.theme_svc else {}
+        self._configure_root()
+
+    def _configure_root(self):
+        self.root.title(self.config.get('title', 'Microservice OS'))
+        self.root.geometry(self.config.get('geometry', '1200x800'))
+        bg = self.colors.get('background', '#1e1e1e')
+        self.root.configure(bg=bg)
+        style = ttk.Style()
+        style.theme_use('clam')
+        style.configure('TFrame', background=bg)
+        style.configure('TLabel', background=bg, foreground=self.colors.get('foreground', '#ccc'))
+        style.configure('TButton', background=self.colors.get('panel_bg', '#333'), foreground='white')
+        self.main_container = tk.Frame(self.root, bg=bg)
+        self.main_container.pack(fill='both', expand=True, padx=5, pady=5)
+
+    @service_endpoint(inputs={}, outputs={}, description='Starts the GUI Main Loop.', tags=['lifecycle', 'start'], mode='sync', side_effects=['ui:block'])
+    def launch(self):
+        """Ignition sequence start."""
+        self.root.deiconify()
+        logger.info('AppShell Launched.')
+        self.root.mainloop()
+
+    @service_endpoint(inputs={}, outputs={'container': 'tk.Frame'}, description='Returns the main content area for other services to dock into.', tags=['ui', 'layout'])
+    def get_main_container(self):
+        """Other services call this to know where to .pack() themselves."""
+        return self.main_container
+
+    @service_endpoint(inputs={}, outputs={}, description='Gracefully shuts down the application.', tags=['lifecycle', 'stop'], side_effects=['ui:close'])
+    def shutdown(self):
+        self.root.quit()
+if __name__ == '__main__':
+    shell = TkinterAppShellMS({'title': 'Test Shell'})
+    shell.launch()
+
+--------------------------------------------------------------------------------
+FILE: src\microservices\_TkinterSmartExplorerMS.py
+--------------------------------------------------------------------------------
+"""
+SERVICE_NAME: _TkinterSmartExplorerMS
+ENTRY_POINT: _TkinterSmartExplorerMS.py
+INTERNAL_DEPENDENCIES: microservice_std_lib
+EXTERNAL_DEPENDENCIES: None
+"""
+import tkinter as tk
+from tkinter import ttk
+from typing import Dict, Any, Optional, List
+from microservice_std_lib import service_metadata, service_endpoint
+
+@service_metadata(name='TkinterSmartExplorer', version='1.0.0', description='A hierarchical tree viewer capable of displaying file systems or JSON data structures.', tags=['ui', 'widget', 'explorer'], capabilities=['ui:gui'], internal_dependencies=['microservice_std_lib'], external_dependencies=[])
+class TkinterSmartExplorerMS(tk.Frame):
+    """
+    The Navigator.
+    A TreeView widget that expects standard 'Node' dictionaries (name, type, children).
+    """
+
+    def __init__(self, config: Optional[Dict[str, Any]]=None):
+        self.config = config or {}
+        parent = self.config.get('parent')
+        theme = self.config.get('theme', {})
+        super().__init__(parent, bg=theme.get('panel_bg', '#252526'))
+        self.tree = ttk.Treeview(self, show='tree headings', selectmode='browse')
+        self.tree.heading('#0', text='Explorer', anchor='w')
+        vsb = ttk.Scrollbar(self, orient='vertical', command=self.tree.yview)
+        hsb = ttk.Scrollbar(self, orient='horizontal', command=self.tree.xview)
+        self.tree.configure(yscrollcommand=vsb.set, xscrollcommand=hsb.set)
+        self.tree.pack(side='left', fill='both', expand=True)
+        vsb.pack(side='right', fill='y')
+        self.icons = {'folder': '📁', 'file': '📄', 'web': '🌐', 'unknown': '❓'}
+
+    @service_endpoint(inputs={'data': 'Dict'}, outputs={}, description="Populates the tree view with a nested dictionary structure (Standard 'Node' format).", tags=['ui', 'update'], side_effects=['ui:update'])
+    def load_data(self, data: Dict[str, Any]):
+        """
+        Ingests a dictionary tree (like from _ScoutMS or _TreeMapperMS).
+        """
+        for item in self.tree.get_children():
+            self.tree.delete(item)
+        self._build_node('', data)
+
+    def _build_node(self, parent_id, node_data):
+        ntype = node_data.get('type', 'unknown')
+        icon = self.icons.get(ntype, self.icons['unknown'])
+        text = f"{icon} {node_data.get('name', '???')}"
+        item_id = self.tree.insert(parent_id, 'end', text=text, open=True)
+        for child in node_data.get('children', []):
+            self._build_node(item_id, child)
+if __name__ == '__main__':
+    root = tk.Tk()
+    explorer = TkinterSmartExplorerMS({'parent': root})
+    explorer.pack(fill='both', expand=True)
+    dummy_data = {'name': 'Project Root', 'type': 'folder', 'children': [{'name': 'src', 'type': 'folder', 'children': []}, {'name': 'README.md', 'type': 'file'}]}
+    explorer.load_data(dummy_data)
+    root.mainloop()
+
+--------------------------------------------------------------------------------
+FILE: src\microservices\_TkinterThemeManagerMS.py
+--------------------------------------------------------------------------------
+"""
+SERVICE_NAME: _TkinterThemeManagerMS
+ENTRY_POINT: _TkinterThemeManagerMS.py
+INTERNAL_DEPENDENCIES: microservice_std_lib
+EXTERNAL_DEPENDENCIES: None
+"""
+from typing import Dict, Any, Optional
+from microservice_std_lib import service_metadata, service_endpoint
+DEFAULT_THEME = {'background': '#1e1e1e', 'foreground': '#d4d4d4', 'panel_bg': '#252526', 'border': '#3c3c3c', 'accent': '#007acc', 'error': '#f48771', 'success': '#89d185', 'font_main': ('Segoe UI', 10), 'font_mono': ('Consolas', 10)}
+
+@service_metadata(name='TkinterThemeManager', version='1.0.0', description='Centralized configuration for UI colors and fonts.', tags=['ui', 'config', 'theme'], capabilities=['ui:style'], internal_dependencies=['microservice_std_lib'], external_dependencies=[])
+class TkinterThemeManagerMS:
+    """
+    The Stylist: Holds the color palette and font settings.
+    All UI components query this service to decide how to draw themselves.
+    """
+
+    def __init__(self, config: Optional[Dict[str, Any]]=None):
+        self.config = config or {}
+        self.theme = DEFAULT_THEME.copy()
+        if 'overrides' in self.config:
+            self.theme.update(self.config['overrides'])
+
+    @service_endpoint(inputs={}, outputs={'theme': 'Dict'}, description='Returns the current active theme dictionary.', tags=['ui', 'read'])
+    def get_theme(self) -> Dict[str, Any]:
+        return self.theme
+
+    @service_endpoint(inputs={'key': 'str', 'value': 'Any'}, outputs={}, description='Updates a specific theme attribute (e.g., changing accent color).', tags=['ui', 'write'], side_effects=['ui:refresh'])
+    def update_key(self, key: str, value: Any):
+        self.theme[key] = value
+if __name__ == '__main__':
+    svc = TkinterThemeManagerMS()
+    print('Theme Ready:', svc.get_theme()['accent'])
+
+--------------------------------------------------------------------------------
+FILE: src\microservices\_TreeMapperMS.py
+--------------------------------------------------------------------------------
+import os
+import datetime
+import logging
+from pathlib import Path
+from typing import Any, Dict, List, Set, Optional
+from microservice_std_lib import service_metadata, service_endpoint
+DEFAULT_EXCLUDES = {'.git', '__pycache__', '.idea', '.vscode', 'node_modules', '.venv', 'env', 'venv', 'dist', 'build', '.DS_Store'}
+logger = logging.getLogger('TreeMapper')
+
+@service_metadata(name='TreeMapper', version='1.0.0', description='Generates ASCII-art style directory maps of the file system.', tags=['filesystem', 'map', 'visualization'], capabilities=['filesystem:read'], internal_dependencies=['microservice_std_lib'], external_dependencies=[])
+class TreeMapperMS:
+    """
+    The Cartographer: Generates ASCII-art style directory maps.
+    Useful for creating context snapshots for LLMs.
+    """
+
+    def __init__(self, config: Optional[Dict[str, Any]]=None):
+        self.config = config or {}
+
+    @service_endpoint(inputs={'root_path': 'str', 'additional_exclusions': 'Set[str]', 'use_default_exclusions': 'bool'}, outputs={'tree_map': 'str'}, description='Generates an ASCII tree map of the directory.', tags=['filesystem', 'visualization'], side_effects=['filesystem:read'])
+    def generate_tree(self, root_path: str, additional_exclusions: Optional[Set[str]]=None, use_default_exclusions: bool=True) -> str:
+        start_path = Path(root_path).resolve()
+        if not start_path.exists():
+            return f"Error: Path '{root_path}' does not exist."
+        exclusions = set()
+        if use_default_exclusions:
+            exclusions.update(DEFAULT_EXCLUDES)
+        if additional_exclusions:
+            exclusions.update(additional_exclusions)
+        timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        lines = [f'Project Map: {start_path.name}', f'Generated: {timestamp}', '-' * 40, f'📁 {start_path.name}/']
+        logger.info(f'Mapping directory: {start_path}')
+        self._walk(start_path, '', lines, exclusions)
+        return '\n'.join(lines)
+
+    def _walk(self, directory: Path, prefix: str, lines: List[str], exclusions: Set[str]):
+        try:
+            children = sorted([p for p in directory.iterdir() if p.name not in exclusions], key=lambda x: (not x.is_dir(), x.name.lower()))
+        except PermissionError:
+            lines.append(f'{prefix}└── 🚫 [Permission Denied]')
+            return
+        count = len(children)
+        for index, path in enumerate(children):
+            is_last = index == count - 1
+            connector = '└── ' if is_last else '├── '
+            if path.is_dir():
+                lines.append(f'{prefix}{connector}📁 {path.name}/')
+                extension = '    ' if is_last else '│   '
+                self._walk(path, prefix + extension, lines, exclusions)
+            else:
+                lines.append(f'{prefix}{connector}📄 {path.name}')
+if __name__ == '__main__':
+    logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(message)s')
+    svc = TreeMapperMS()
+    print('Service ready:', svc)
+    print('\n--- Map of Current Dir ---')
+    tree = svc.generate_tree('.', additional_exclusions={'__pycache__'})
+    print(tree)
+
+--------------------------------------------------------------------------------
+FILE: tidy_logs\tidy_session_20260201_070919.log
+--------------------------------------------------------------------------------
+{"timestamp": "2026-02-01T07:09:19.131656", "event": "SESSION_START", "data": {"msg": "Project Tidier session initiated."}}
+
+--------------------------------------------------------------------------------
+FILE: tidy_logs\tidy_session_20260201_070934.log
+--------------------------------------------------------------------------------
+{"timestamp": "2026-02-01T07:09:34.856183", "event": "SESSION_START", "data": {"msg": "Project Tidier session initiated."}}
+
+--------------------------------------------------------------------------------
+FILE: tidy_logs\tidy_session_20260201_071550.log
+--------------------------------------------------------------------------------
+{"timestamp": "2026-02-01T07:15:50.191423", "event": "SESSION_START", "data": {"msg": "Project Tidier session initiated."}}
+{"timestamp": "2026-02-01T07:15:55.566823", "event": "SCAN_INITIATED", "data": {"paths": ["C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Include", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\certifi", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\certifi-2026.1.4.dist-info", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\certifi-2026.1.4.dist-info\\licenses", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\charset_normalizer", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\charset_normalizer\\cli", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\charset_normalizer-3.4.4.dist-info", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\charset_normalizer-3.4.4.dist-info\\licenses", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\idna", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\idna-3.11.dist-info", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\idna-3.11.dist-info\\licenses", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip\\_internal", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip\\_internal\\cli", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip\\_internal\\commands", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip\\_internal\\distributions", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip\\_internal\\index", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip\\_internal\\locations", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip\\_internal\\metadata", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip\\_internal\\metadata\\importlib", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip\\_internal\\models", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip\\_internal\\network", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip\\_internal\\operations", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip\\_internal\\operations\\install", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip\\_internal\\req", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip\\_internal\\resolution", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip\\_internal\\resolution\\legacy", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip\\_internal\\resolution\\resolvelib", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip\\_internal\\utils", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip\\_internal\\vcs", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip\\_vendor", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip\\_vendor\\cachecontrol", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip\\_vendor\\cachecontrol\\caches", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip\\_vendor\\certifi", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip\\_vendor\\dependency_groups", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip\\_vendor\\distlib", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip\\_vendor\\distro", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip\\_vendor\\idna", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip\\_vendor\\msgpack", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip\\_vendor\\packaging", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip\\_vendor\\packaging\\licenses", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip\\_vendor\\pkg_resources", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip\\_vendor\\platformdirs", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip\\_vendor\\pygments", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip\\_vendor\\pygments\\filters", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip\\_vendor\\pygments\\formatters", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip\\_vendor\\pygments\\lexers", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip\\_vendor\\pygments\\styles", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip\\_vendor\\pyproject_hooks", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip\\_vendor\\pyproject_hooks\\_in_process", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip\\_vendor\\requests", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip\\_vendor\\resolvelib", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip\\_vendor\\resolvelib\\resolvers", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip\\_vendor\\rich", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip\\_vendor\\tomli", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip\\_vendor\\tomli_w", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip\\_vendor\\truststore", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip\\_vendor\\urllib3", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip\\_vendor\\urllib3\\contrib", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip\\_vendor\\urllib3\\contrib\\_securetransport", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip\\_vendor\\urllib3\\packages", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip\\_vendor\\urllib3\\packages\\backports", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip\\_vendor\\urllib3\\util", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip-26.0.dist-info", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip-26.0.dist-info\\licenses", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip-26.0.dist-info\\licenses\\src", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip-26.0.dist-info\\licenses\\src\\pip", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip-26.0.dist-info\\licenses\\src\\pip\\_vendor", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip-26.0.dist-info\\licenses\\src\\pip\\_vendor\\cachecontrol", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip-26.0.dist-info\\licenses\\src\\pip\\_vendor\\certifi", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip-26.0.dist-info\\licenses\\src\\pip\\_vendor\\dependency_groups", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip-26.0.dist-info\\licenses\\src\\pip\\_vendor\\distlib", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip-26.0.dist-info\\licenses\\src\\pip\\_vendor\\distro", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip-26.0.dist-info\\licenses\\src\\pip\\_vendor\\idna", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip-26.0.dist-info\\licenses\\src\\pip\\_vendor\\msgpack", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip-26.0.dist-info\\licenses\\src\\pip\\_vendor\\packaging", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip-26.0.dist-info\\licenses\\src\\pip\\_vendor\\pkg_resources", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip-26.0.dist-info\\licenses\\src\\pip\\_vendor\\platformdirs", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip-26.0.dist-info\\licenses\\src\\pip\\_vendor\\pygments", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip-26.0.dist-info\\licenses\\src\\pip\\_vendor\\pyproject_hooks", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip-26.0.dist-info\\licenses\\src\\pip\\_vendor\\requests", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip-26.0.dist-info\\licenses\\src\\pip\\_vendor\\resolvelib", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip-26.0.dist-info\\licenses\\src\\pip\\_vendor\\rich", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip-26.0.dist-info\\licenses\\src\\pip\\_vendor\\tomli", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip-26.0.dist-info\\licenses\\src\\pip\\_vendor\\tomli_w", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip-26.0.dist-info\\licenses\\src\\pip\\_vendor\\truststore", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip-26.0.dist-info\\licenses\\src\\pip\\_vendor\\urllib3", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\requests", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\requests-2.32.5.dist-info", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\requests-2.32.5.dist-info\\licenses", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\sqlite_vec", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\sqlite_vec-0.1.6.dist-info", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\urllib3", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\urllib3\\contrib", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\urllib3\\contrib\\emscripten", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\urllib3\\http2", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\urllib3\\util", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\urllib3-2.6.3.dist-info", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\urllib3-2.6.3.dist-info\\licenses", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Scripts", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\_tools", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\src", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\src\\microservices", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\tidy_logs"], "model": "qwen2.5-coder:3b"}}
+{"timestamp": "2026-02-01T07:16:00.798920", "event": "CLUTTER_DETECTED", "data": {"file": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\_logs\\_FinalPassProjectTIDIER_filedump.txt", "hunk": "Chunk 1", "chars_before": 817, "chars_after": 803}}
+{"timestamp": "2026-02-01T07:18:08.688209", "event": "FILE_COMMITTED", "data": {"path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\_logs\\_FinalPassProjectTIDIER_filedump.txt"}}
+{"timestamp": "2026-02-01T07:18:08.688544", "event": "USER_DECISION", "data": {"status": "APPROVED"}}
+{"timestamp": "2026-02-01T07:18:10.653176", "event": "USER_DECISION", "data": {"status": "APPROVED"}}
+{"timestamp": "2026-02-01T07:18:13.811541", "event": "CLUTTER_DETECTED", "data": {"file": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\_logs\\_FinalPassProjectTIDIER_filedump.txt", "hunk": "Chunk 2", "chars_before": 1122, "chars_after": 1920}}
+{"timestamp": "2026-02-01T07:18:55.252019", "event": "FILE_COMMITTED", "data": {"path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\_logs\\_FinalPassProjectTIDIER_filedump.txt"}}
+{"timestamp": "2026-02-01T07:18:55.252315", "event": "USER_DECISION", "data": {"status": "APPROVED"}}
+{"timestamp": "2026-02-01T07:18:59.214028", "event": "CLUTTER_DETECTED", "data": {"file": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\_logs\\_FinalPassProjectTIDIER_filedump.txt", "hunk": "Chunk 3", "chars_before": 905, "chars_after": 960}}
+{"timestamp": "2026-02-01T07:19:01.972098", "event": "FILE_COMMITTED", "data": {"path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\_logs\\_FinalPassProjectTIDIER_filedump.txt"}}
+{"timestamp": "2026-02-01T07:19:01.972399", "event": "USER_DECISION", "data": {"status": "APPROVED"}}
+{"timestamp": "2026-02-01T07:19:05.391759", "event": "CLUTTER_DETECTED", "data": {"file": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\_logs\\_FinalPassProjectTIDIER_filedump.txt", "hunk": "Chunk 4", "chars_before": 819, "chars_after": 878}}
+{"timestamp": "2026-02-01T07:19:07.263893", "event": "FILE_COMMITTED", "data": {"path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\_logs\\_FinalPassProjectTIDIER_filedump.txt"}}
+{"timestamp": "2026-02-01T07:19:07.264176", "event": "USER_DECISION", "data": {"status": "APPROVED"}}
+{"timestamp": "2026-02-01T07:19:13.588013", "event": "CLUTTER_DETECTED", "data": {"file": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\_logs\\_FinalPassProjectTIDIER_filedump.txt", "hunk": "Chunk 5", "chars_before": 812, "chars_after": 2417}}
+{"timestamp": "2026-02-01T07:19:16.384051", "event": "FILE_COMMITTED", "data": {"path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\_logs\\_FinalPassProjectTIDIER_filedump.txt"}}
+{"timestamp": "2026-02-01T07:19:16.384324", "event": "USER_DECISION", "data": {"status": "APPROVED"}}
+{"timestamp": "2026-02-01T07:19:19.897627", "event": "CLUTTER_DETECTED", "data": {"file": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\_logs\\_FinalPassProjectTIDIER_filedump.txt", "hunk": "Chunk 6", "chars_before": 809, "chars_after": 781}}
+
+--------------------------------------------------------------------------------
+FILE: tidy_logs\tidy_session_20260201_072123.log
+--------------------------------------------------------------------------------
+{"timestamp": "2026-02-01T07:21:23.448810", "event": "SESSION_START", "data": {"msg": "Project Tidier session initiated."}}
+{"timestamp": "2026-02-01T07:21:40.868858", "event": "SCAN_INITIATED", "data": {"paths": ["C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Include", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\certifi", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\certifi-2026.1.4.dist-info", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\certifi-2026.1.4.dist-info\\licenses", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\charset_normalizer", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\charset_normalizer\\cli", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\charset_normalizer-3.4.4.dist-info", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\charset_normalizer-3.4.4.dist-info\\licenses", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\idna", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\idna-3.11.dist-info", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\idna-3.11.dist-info\\licenses", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip\\_internal", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip\\_internal\\cli", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip\\_internal\\commands", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip\\_internal\\distributions", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip\\_internal\\index", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip\\_internal\\locations", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip\\_internal\\metadata", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip\\_internal\\metadata\\importlib", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip\\_internal\\models", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip\\_internal\\network", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip\\_internal\\operations", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip\\_internal\\operations\\install", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip\\_internal\\req", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip\\_internal\\resolution", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip\\_internal\\resolution\\legacy", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip\\_internal\\resolution\\resolvelib", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip\\_internal\\utils", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip\\_internal\\vcs", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip\\_vendor", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip\\_vendor\\cachecontrol", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip\\_vendor\\cachecontrol\\caches", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip\\_vendor\\certifi", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip\\_vendor\\dependency_groups", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip\\_vendor\\distlib", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip\\_vendor\\distro", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip\\_vendor\\idna", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip\\_vendor\\msgpack", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip\\_vendor\\packaging", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip\\_vendor\\packaging\\licenses", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip\\_vendor\\pkg_resources", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip\\_vendor\\platformdirs", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip\\_vendor\\pygments", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip\\_vendor\\pygments\\filters", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip\\_vendor\\pygments\\formatters", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip\\_vendor\\pygments\\lexers", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip\\_vendor\\pygments\\styles", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip\\_vendor\\pyproject_hooks", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip\\_vendor\\pyproject_hooks\\_in_process", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip\\_vendor\\requests", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip\\_vendor\\resolvelib", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip\\_vendor\\resolvelib\\resolvers", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip\\_vendor\\rich", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip\\_vendor\\tomli", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip\\_vendor\\tomli_w", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip\\_vendor\\truststore", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip\\_vendor\\urllib3", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip\\_vendor\\urllib3\\contrib", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip\\_vendor\\urllib3\\contrib\\_securetransport", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip\\_vendor\\urllib3\\packages", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip\\_vendor\\urllib3\\packages\\backports", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip\\_vendor\\urllib3\\util", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip-26.0.dist-info", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip-26.0.dist-info\\licenses", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip-26.0.dist-info\\licenses\\src", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip-26.0.dist-info\\licenses\\src\\pip", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip-26.0.dist-info\\licenses\\src\\pip\\_vendor", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip-26.0.dist-info\\licenses\\src\\pip\\_vendor\\cachecontrol", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip-26.0.dist-info\\licenses\\src\\pip\\_vendor\\certifi", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip-26.0.dist-info\\licenses\\src\\pip\\_vendor\\dependency_groups", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip-26.0.dist-info\\licenses\\src\\pip\\_vendor\\distlib", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip-26.0.dist-info\\licenses\\src\\pip\\_vendor\\distro", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip-26.0.dist-info\\licenses\\src\\pip\\_vendor\\idna", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip-26.0.dist-info\\licenses\\src\\pip\\_vendor\\msgpack", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip-26.0.dist-info\\licenses\\src\\pip\\_vendor\\packaging", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip-26.0.dist-info\\licenses\\src\\pip\\_vendor\\pkg_resources", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip-26.0.dist-info\\licenses\\src\\pip\\_vendor\\platformdirs", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip-26.0.dist-info\\licenses\\src\\pip\\_vendor\\pygments", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip-26.0.dist-info\\licenses\\src\\pip\\_vendor\\pyproject_hooks", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip-26.0.dist-info\\licenses\\src\\pip\\_vendor\\requests", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip-26.0.dist-info\\licenses\\src\\pip\\_vendor\\resolvelib", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip-26.0.dist-info\\licenses\\src\\pip\\_vendor\\rich", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip-26.0.dist-info\\licenses\\src\\pip\\_vendor\\tomli", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip-26.0.dist-info\\licenses\\src\\pip\\_vendor\\tomli_w", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip-26.0.dist-info\\licenses\\src\\pip\\_vendor\\truststore", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\pip-26.0.dist-info\\licenses\\src\\pip\\_vendor\\urllib3", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\requests", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\requests-2.32.5.dist-info", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\requests-2.32.5.dist-info\\licenses", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\sqlite_vec", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\sqlite_vec-0.1.6.dist-info", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\urllib3", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\urllib3\\contrib", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\urllib3\\contrib\\emscripten", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\urllib3\\http2", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\urllib3\\util", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\urllib3-2.6.3.dist-info", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Lib\\site-packages\\urllib3-2.6.3.dist-info\\licenses", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\.venv\\Scripts", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\_tools", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\src", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\src\\microservices", "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\tidy_logs"], "model": "qwen2.5:7b"}}
+{"timestamp": "2026-02-01T07:22:37.869797", "event": "CLUTTER_DETECTED", "data": {"file": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\_logs\\_FinalPassProjectTIDIER_filedump.txt", "hunk": "Chunk 2", "chars_before": 1122, "chars_after": 1191}}
+{"timestamp": "2026-02-01T07:23:17.392822", "event": "FILE_COMMITTED", "data": {"path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\_logs\\_FinalPassProjectTIDIER_filedump.txt"}}
+{"timestamp": "2026-02-01T07:23:17.393120", "event": "USER_DECISION", "data": {"status": "APPROVED"}}
+{"timestamp": "2026-02-01T07:23:33.384206", "event": "CLUTTER_DETECTED", "data": {"file": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\_logs\\_FinalPassProjectTIDIER_filedump.txt", "hunk": "Chunk 3", "chars_before": 905, "chars_after": 995}}
+{"timestamp": "2026-02-01T07:23:36.114855", "event": "FILE_COMMITTED", "data": {"path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\_logs\\_FinalPassProjectTIDIER_filedump.txt"}}
+{"timestamp": "2026-02-01T07:23:36.115145", "event": "USER_DECISION", "data": {"status": "APPROVED"}}
+{"timestamp": "2026-02-01T07:23:54.181868", "event": "CLUTTER_DETECTED", "data": {"file": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\_logs\\_FinalPassProjectTIDIER_filedump.txt", "hunk": "Chunk 4", "chars_before": 819, "chars_after": 2623}}
+{"timestamp": "2026-02-01T07:24:13.127456", "event": "FILE_COMMITTED", "data": {"path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\_logs\\_FinalPassProjectTIDIER_filedump.txt"}}
+{"timestamp": "2026-02-01T07:24:13.127734", "event": "USER_DECISION", "data": {"status": "APPROVED"}}
+{"timestamp": "2026-02-01T07:24:20.725497", "event": "CLUTTER_DETECTED", "data": {"file": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\_logs\\_FinalPassProjectTIDIER_filedump.txt", "hunk": "Chunk 5", "chars_before": 812, "chars_after": 885}}
+{"timestamp": "2026-02-01T07:24:23.648912", "event": "FILE_COMMITTED", "data": {"path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\_logs\\_FinalPassProjectTIDIER_filedump.txt"}}
+{"timestamp": "2026-02-01T07:24:23.649213", "event": "USER_DECISION", "data": {"status": "APPROVED"}}
+{"timestamp": "2026-02-01T07:24:31.073419", "event": "CLUTTER_DETECTED", "data": {"file": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\_logs\\_FinalPassProjectTIDIER_filedump.txt", "hunk": "Chunk 6", "chars_before": 809, "chars_after": 775}}
+{"timestamp": "2026-02-01T07:24:37.342231", "event": "FILE_COMMITTED", "data": {"path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\_logs\\_FinalPassProjectTIDIER_filedump.txt"}}
+{"timestamp": "2026-02-01T07:24:37.342505", "event": "USER_DECISION", "data": {"status": "APPROVED"}}
+{"timestamp": "2026-02-01T07:24:45.842875", "event": "CLUTTER_DETECTED", "data": {"file": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\_logs\\_FinalPassProjectTIDIER_filedump.txt", "hunk": "Chunk 7", "chars_before": 818, "chars_after": 949}}
+{"timestamp": "2026-02-01T07:25:00.036415", "event": "FILE_COMMITTED", "data": {"path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\_logs\\_FinalPassProjectTIDIER_filedump.txt"}}
+{"timestamp": "2026-02-01T07:25:00.036711", "event": "USER_DECISION", "data": {"status": "APPROVED"}}
+{"timestamp": "2026-02-01T07:25:13.384116", "event": "CLUTTER_DETECTED", "data": {"file": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\_logs\\_FinalPassProjectTIDIER_filedump.txt", "hunk": "Chunk 8", "chars_before": 811, "chars_after": 1823}}
+{"timestamp": "2026-02-01T07:25:15.195752", "event": "FILE_COMMITTED", "data": {"path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\_logs\\_FinalPassProjectTIDIER_filedump.txt"}}
+{"timestamp": "2026-02-01T07:25:15.196036", "event": "USER_DECISION", "data": {"status": "APPROVED"}}
+{"timestamp": "2026-02-01T07:25:24.853930", "event": "CLUTTER_DETECTED", "data": {"file": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\_logs\\_FinalPassProjectTIDIER_filedump.txt", "hunk": "Chunk 9", "chars_before": 863, "chars_after": 1169}}
+{"timestamp": "2026-02-01T07:25:27.993468", "event": "FILE_COMMITTED", "data": {"path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\_logs\\_FinalPassProjectTIDIER_filedump.txt"}}
+{"timestamp": "2026-02-01T07:25:27.993743", "event": "USER_DECISION", "data": {"status": "APPROVED"}}
+{"timestamp": "2026-02-01T07:25:31.347094", "event": "USER_DECISION", "data": {"status": "APPROVED"}}
+{"timestamp": "2026-02-01T07:25:36.506727", "event": "CLUTTER_DETECTED", "data": {"file": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_FinalPassProjectTIDIER\\_logs\\_FinalPassProjectTIDIER_filedump.txt", "hunk": "Chunk 10", "chars_before": 835, "chars_after": 959}}

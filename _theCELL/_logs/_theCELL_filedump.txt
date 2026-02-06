@@ -1,0 +1,1537 @@
+Dump: C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_theCELL
+
+
+--------------------------------------------------------------------------------
+FILE: LICENSE.md
+--------------------------------------------------------------------------------
+MIT License
+
+Copyright (c) 2025 Jacob Lambert
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+--------------------------------------------------------------------------------
+FILE: requirements.txt
+--------------------------------------------------------------------------------
+requests>=2.28.0
+pydantic>=1.10.0,<2.0.0
+chromadb>=0.3.21
+faiss-cpu>=1.7.4
+numpy>=1.21.0
+
+
+--------------------------------------------------------------------------------
+FILE: setup_env.bat
+--------------------------------------------------------------------------------
+@echo off
+setlocal
+
+echo [STATUS] Searching for Python 3.10...
+py -3.10 --version >nul 2>&1
+if %errorlevel% neq 0 (
+    echo [ERROR] Python 3.10 was not found. Please install it from python.org.
+    pause
+    exit /b
+)
+
+echo [STATUS] Setting up _theCELL Environment with Python 3.10...
+if not exist .venv (
+    py -3.10 -m venv .venv
+)
+
+call .venv\Scripts\activate
+
+echo [STATUS] Installing dependencies from requirements.txt...
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+
+echo [STATUS] Setup Complete.
+echo ----------------------------------------------------------------------
+echo  Starting _theCELL Idea Ingestor...
+echo ----------------------------------------------------------------------
+python -m src.app
+pause
+
+--------------------------------------------------------------------------------
+FILE: src\app.py
+--------------------------------------------------------------------------------
+from .backend import Backend
+from .ui import CELL_UI
+from src.microservices._TkinterAppShellMS import TkinterAppShellMS
+
+def main():
+    # Initialize the logic hub
+    backend = Backend()
+    
+    # Initialize the Mother Ship (Shell)
+    shell = TkinterAppShellMS({
+        "title": "_theCELL - Idea Ingestor",
+        "geometry": "1000x800"
+    })
+    
+    # Dock the UI into the shell
+    app_ui = CELL_UI(shell, backend)
+    
+    # Ignition
+    shell.launch()
+
+if __name__ == "__main__":
+    main()
+
+--------------------------------------------------------------------------------
+FILE: src\backend.py
+--------------------------------------------------------------------------------
+from src.microservices._IngestEngineMS import IngestEngineMS
+
+class Backend:
+    def __init__(self):
+        # Use the existing IngestEngine to talk to Ollama [cite: 46]
+        self.engine = IngestEngineMS()
+        self.system_role = "You are a helpful AI assistant."
+
+    def get_models(self):
+        """Fetches available Ollama models."""
+        models = self.engine.get_available_models()
+        return models if models else ["No Models Found"]
+
+    def set_system_role(self, role_text):
+        self.system_role = role_text
+
+    def process_submission(self, content, model):
+        """
+        Refined submission logic.
+        1. Strips UI-only whitespace.
+        2. Prepared for Cognitive Memory short-term persistence.
+        """
+        clean_content = content.strip()
+        
+        # Debug indicators
+        print(f"[SENT TO MEMORY] Role: {self.system_role}")
+        print(f"[INFERENCE] Model: {model}")
+        print(f"[CONTENT] {clean_content[:50]}...")
+
+--------------------------------------------------------------------------------
+FILE: src\ui.py
+--------------------------------------------------------------------------------
+import tkinter as tk
+from tkinter import ttk, messagebox
+
+class CELL_UI:
+    def __init__(self, shell, backend):
+        self.shell = shell
+        self.backend = backend
+        self.container = shell.get_main_container() # [cite: 104]
+        self.colors = shell.colors # [cite: 102]
+        
+        self._setup_main_window()
+        self._build_context_menu()
+
+    def _setup_main_window(self):
+        # --- Top Label ---
+        tk.Label(self.container, text="Type in your idea HERE.", 
+                 fg=self.colors.get('foreground'), bg=self.colors.get('background'),
+                 font=("Segoe UI", 12, "bold")).pack(pady=(10, 5))
+
+        # --- Formatting Toolbar ---
+        toolbar = tk.Frame(self.container, bg=self.colors.get('panel_bg'))
+        toolbar.pack(fill='x', padx=10)
+        
+        btn_opts = {"bg": self.colors.get('panel_bg'), "fg": "white", "relief": "flat", "padx": 5}
+        tk.Button(toolbar, text="B", font=("TkDefaultFont", 9, "bold"), **btn_opts, command=self._bold_text).pack(side='left')
+        tk.Button(toolbar, text="I", font=("TkDefaultFont", 9, "italic"), **btn_opts, command=self._italic_text).pack(side='left')
+        tk.Button(toolbar, text="• List", **btn_opts, command=self._bullet_list).pack(side='left')
+        
+        # Gear Icon for Settings (Unicode placeholder)
+        tk.Button(toolbar, text="⚙", **btn_opts, command=self._open_settings).pack(side='right')
+
+        # --- Main Input Box ---
+        self.input_box = tk.Text(self.container, undo=True, wrap="word",
+                                 bg="#252526", fg="#d4d4d4", 
+                                 insertbackground="white", # Visible blinking cursor
+                                 selectbackground="#264f78", # Highlight color
+                                 font=("Consolas", 11))
+        self.input_box.pack(fill='both', expand=True, padx=10, pady=5)
+        self.input_box.focus_set()
+
+        # --- Inference Config Bar ---
+        config_bar = tk.Frame(self.container, bg=self.colors.get('background'))
+        config_bar.pack(fill='x', padx=10, pady=10)
+
+        self.model_var = tk.StringVar()
+        model_dropdown = ttk.Combobox(config_bar, textvariable=self.model_var)
+        model_dropdown['values'] = self.backend.get_models()
+        model_dropdown.pack(side='left', padx=5)
+
+        tk.Button(config_bar, text="Set System Role", command=self._open_role_popup).pack(side='left', padx=5)
+        
+        # --- Submit Button ---
+        tk.Button(self.container, text="SUBMIT", bg="#007acc", fg="white", 
+                  font=("Segoe UI", 10, "bold"), command=self._submit).pack(fill='x', padx=10, pady=(0, 10))
+
+    # --- UI Logic Stubs ---
+    def _apply_markdown_style(self, prefix, suffix=""):
+        """Wraps selected text in Markdown markers for AI readability."""
+        try:
+            start = self.input_box.index("sel.first")
+            end = self.input_box.index("sel.second")
+            selected_text = self.input_box.get(start, end)
+            self.input_box.delete(start, end)
+            self.input_box.insert(start, f"{prefix}{selected_text}{suffix or prefix}")
+        except tk.TclError:
+            pass
+
+    def _bold_text(self):
+        self._apply_markdown_style("**")
+
+    def _italic_text(self):
+        self._apply_markdown_style("_")
+
+    def _bullet_list(self):
+        """Converts selected lines into a Markdown bulleted list."""
+        try:
+            start = self.input_box.index("sel.first linestart")
+            end = self.input_box.index("sel.second lineend")
+            lines = self.input_box.get(start, end).splitlines()
+            bulleted_lines = [f"* {line.lstrip('* ')}" for line in lines]
+            self.input_box.delete(start, end)
+            self.input_box.insert(start, "\n".join(bulleted_lines))
+        except tk.TclError:
+            self.input_box.insert("insert", "* ")
+
+    def _open_settings(self):
+        settings = tk.Toplevel(self.shell.root)
+        settings.title("Settings")
+        settings.geometry("300x200")
+        tk.Label(settings, text="Theme:").pack()
+        ttk.Combobox(settings, values=["Dark", "Light"]).pack()
+        tk.Label(settings, text="Window Size:").pack()
+        tk.Entry(settings).pack() # Width x Height
+
+    def _open_role_popup(self):
+        role_win = tk.Toplevel(self.shell.root)
+        role_win.title("System Role")
+        role_text = tk.Text(role_win, height=5)
+        role_text.insert("1.0", self.backend.system_role)
+        role_text.pack()
+        tk.Button(role_win, text="Save", command=lambda: self.backend.set_system_role(role_text.get("1.0", "end-1c"))).pack()
+
+    def _build_context_menu(self):
+        self.menu = tk.Menu(self.input_box, tearoff=0)
+        self.menu.add_command(label="Cut", command=lambda: self.input_box.event_generate("<<Cut>>"))
+        self.menu.add_command(label="Copy", command=lambda: self.input_box.event_generate("<<Copy>>"))
+        self.menu.add_command(label="Paste", command=lambda: self.input_box.event_generate("<<Paste>>"))
+        self.input_box.bind("<Button-3>", lambda e: self.menu.post(e.x_root, e.y_root))
+
+    def _submit(self):
+        content = self.input_box.get("1.0", "end-1c")
+        model = self.model_var.get()
+        self.backend.process_submission(content, model)
+
+--------------------------------------------------------------------------------
+FILE: src\microservices\base_service.py
+--------------------------------------------------------------------------------
+import logging
+from typing import Dict, Any
+
+class BaseService:
+    """
+    Standard parent class for all microservices. 
+    Provides consistent logging and identity management.
+    """
+    def __init__(self, name: str):
+        self._service_info = {
+            "name": name, 
+            "id": name.lower().replace(" ", "_")
+        }
+        
+        # Setup standard logging
+        logging.basicConfig(
+            level=logging.INFO, 
+            format='%(asctime)s [%(levelname)s] %(message)s',
+            datefmt='%H:%M:%S'
+        )
+        self.logger = logging.getLogger(name)
+
+    def log_info(self, message: str):
+        self.logger.info(message)
+
+    def log_error(self, message: str):
+        self.logger.error(message)
+
+    def log_warning(self, message: str):
+        self.logger.warning(message)
+
+--------------------------------------------------------------------------------
+FILE: src\microservices\document_utils.py
+--------------------------------------------------------------------------------
+from _ContentExtractorMS import ContentExtractorMS
+
+# Singleton instance to reuse the extractor logic
+_extractor = ContentExtractorMS()
+
+def extract_text_from_pdf(blob: bytes) -> str:
+    """Proxy to ContentExtractorMS PDF logic."""
+    return _extractor._extract_pdf(blob)
+
+def extract_text_from_html(html_text: str) -> str:
+    """Proxy to ContentExtractorMS HTML logic."""
+    return _extractor._extract_html(html_text)
+
+--------------------------------------------------------------------------------
+FILE: src\microservices\microservice_std_lib.py
+--------------------------------------------------------------------------------
+"""
+LIBRARY: Microservice Standard Lib
+VERSION: 2.1.0
+ROLE: Provides decorators for tagging Python classes as AI-discoverable services.
+
+Change (2.1.0):
+- Split dependencies into:
+    internal_dependencies: local modules / microservices to vendor with the app
+    external_dependencies: pip-installable packages (requirements.txt)
+- Keep legacy "dependencies" as an alias for external_dependencies for backward compatibility.
+- Accept unknown keyword args in @service_metadata(...) to prevent older/newer services from crashing
+  (e.g. when a runner passes additional fields).
+"""
+
+import functools
+import inspect
+from typing import Dict, List, Any, Optional, Type
+
+# ==============================================================================
+# DECORATORS (The "Writer" Tools)
+# ==============================================================================
+
+def service_metadata(
+    name: str,
+    version: str,
+    description: str,
+    tags: List[str],
+    capabilities: Optional[List[str]] = None,
+
+    # Legacy field (kept for backward compatibility):
+    # Historically this mixed stdlib + pip deps. Going forward, treat this as *external* deps.
+    dependencies: Optional[List[str]] = None,
+
+    # New fields (preferred):
+    internal_dependencies: Optional[List[str]] = None,
+    external_dependencies: Optional[List[str]] = None,
+
+    # Side effects / operational hints
+    side_effects: Optional[List[str]] = None,
+
+    # Forward-compat: ignore unknown keyword args instead of crashing older/newer services
+    **_ignored_kwargs: Any,
+):
+    """
+    Class Decorator.
+    Labels a Microservice class with high-level metadata for the Catalog.
+
+    Dependency semantics:
+      - internal_dependencies: local modules and/or other microservice modules that must be shipped with an app
+      - external_dependencies: third-party pip packages (requirements.txt)
+      - dependencies (legacy): treated as external_dependencies when external_dependencies is not provided
+    """
+    # Prefer explicit new key, otherwise fall back to legacy dependencies
+    ext = external_dependencies if external_dependencies is not None else (dependencies or [])
+    intl = internal_dependencies or []
+
+    def decorator(cls):
+        cls._is_microservice = True
+        cls._service_info = {
+            "name": name,
+            "version": version,
+            "description": description,
+            "tags": tags,
+            "capabilities": capabilities or [],
+
+            # New keys
+            "internal_dependencies": intl,
+            "external_dependencies": ext,
+
+            # Legacy alias (keep existing tooling working)
+            "dependencies": ext,
+
+            "side_effects": side_effects or []
+        }
+        return cls
+    return decorator
+
+
+def service_endpoint(
+    inputs: Dict[str, str],
+    outputs: Dict[str, str],
+    description: str,
+    tags: Optional[List[str]] = None,
+    side_effects: Optional[List[str]] = None,
+    mode: str = "sync",
+):
+    """
+    Method Decorator.
+    Defines the 'Socket' that the AI Architect can plug into.
+
+    :param inputs: Dict of {arg_name: type_string} (e.g. {"query": "str"})
+    :param outputs: Dict of {return_name: type_string}
+    :param description: What the endpoint does
+    :param tags: List of categories (e.g. ["read", "write"])
+    :param side_effects: List of side effects (e.g. ["filesystem:write", "db:write"])
+    :param mode: "sync" or "async" (informational unless your runtime uses it)
+    """
+
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            return func(*args, **kwargs)
+
+        # Attach metadata to the function object itself
+        wrapper._is_endpoint = True
+        wrapper._endpoint_info = {
+            "name": func.__name__,
+            "inputs": inputs,
+            "outputs": outputs,
+            "description": description,
+            "tags": tags or [],
+            "side_effects": side_effects or [],
+            "mode": mode
+        }
+        return wrapper
+    return decorator
+
+
+# ==============================================================================
+# INTROSPECTION (The "Reader" Tools)
+# ==============================================================================
+
+def extract_service_schema(service_cls: Type) -> Dict[str, Any]:
+    """
+    Scans a decorated Service Class and returns a JSON-serializable schema
+    of its metadata and all its exposed endpoints.
+
+    This is what the AI Agent uses to 'read' the manual.
+    """
+    if not getattr(service_cls, "_is_microservice", False):
+        raise ValueError(f"Class {service_cls.__name__} is not decorated with @service_metadata")
+
+    schema = {
+        "meta": getattr(service_cls, "_service_info", {}),
+        "endpoints": []
+    }
+
+    # Inspect all methods of the class
+    for _, method in inspect.getmembers(service_cls, predicate=inspect.isfunction):
+        endpoint_info = getattr(method, "_endpoint_info", None)
+        if endpoint_info:
+            schema["endpoints"].append(endpoint_info)
+
+    return schema
+
+--------------------------------------------------------------------------------
+FILE: src\microservices\_CognitiveMemoryMS.py
+--------------------------------------------------------------------------------
+"""
+SERVICE_NAME: _CognitiveMemoryMS
+ENTRY_POINT: _CognitiveMemoryMS.py
+INTERNAL_DEPENDENCIES: base_service, microservice_std_lib
+EXTERNAL_DEPENDENCIES: pydantic
+"""
+import importlib.util
+import sys
+REQUIRED = ['pydantic']
+MISSING = []
+for lib in REQUIRED:
+    if importlib.util.find_spec(lib) is None:
+        MISSING.append(lib)
+if MISSING:
+    print(f"MISSING DEPENDENCIES: {' '.join(MISSING)}")
+    print('Please run: pip install pydantic')
+import datetime
+import json
+import logging
+import uuid
+import os
+from pathlib import Path
+from typing import Any, Callable, Dict, List, Optional
+from pydantic import BaseModel, Field
+from microservice_std_lib import service_metadata, service_endpoint, BaseService
+DEFAULT_MEMORY_FILE = Path('working_memory.jsonl')
+FLUSH_THRESHOLD = 5
+logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(message)s')
+log = logging.getLogger('CognitiveMem')
+
+class MemoryEntry(BaseModel):
+    """Atomic unit of memory."""
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    timestamp: datetime.datetime = Field(default_factory=datetime.datetime.utcnow)
+    role: str
+    content: str
+    metadata: Dict[str, Any] = Field(default_factory=dict)
+
+@service_metadata(name='CognitiveMemory', version='1.0.0', description='Manages Short-Term (Working) Memory and orchestrates flushing to Long-Term Memory.', tags=['memory', 'history', 'context'], capabilities=['filesystem:read', 'filesystem:write'], side_effects=['filesystem:write'], internal_dependencies=['base_service', 'microservice_std_lib'], external_dependencies=['pydantic'])
+class CognitiveMemoryMS(BaseService):
+    """
+    The Hippocampus: Manages Short-Term (Working) Memory and orchestrates 
+    flushing to Long-Term Memory (Vector Store).
+    """
+
+    def __init__(self, config: Optional[Dict[str, Any]]=None):
+        super().__init__('CognitiveMemory')
+        self.config = config or {}
+        self.file_path = Path(self.config.get('persistence_path', DEFAULT_MEMORY_FILE))
+        self.summarizer = self.config.get('summarizer_func')
+        self.ingestor = self.config.get('long_term_ingest_func')
+        self.working_memory: List[MemoryEntry] = []
+        self._load_working_memory()
+
+    @service_endpoint(inputs={'role': 'str', 'content': 'str', 'metadata': 'Dict'}, outputs={'entry': 'MemoryEntry'}, description='Adds an item to working memory and persists it.', tags=['memory', 'write'], side_effects=['filesystem:write'])
+    def add_entry(self, role: str, content: str, metadata: Dict=None) -> MemoryEntry:
+        """Adds an item to working memory and persists it."""
+        entry = MemoryEntry(role=role, content=content, metadata=metadata or {})
+        self.working_memory.append(entry)
+        self._append_to_file(entry)
+        log.info(f'Added memory: [{role}] {content[:30]}...')
+        return entry
+
+    @service_endpoint(inputs={'limit': 'int'}, outputs={'context': 'str'}, description='Returns the most recent conversation history formatted for an LLM.', tags=['memory', 'read', 'llm'], side_effects=['filesystem:read'])
+    def get_context(self, limit: int=10) -> str:
+        """
+        Returns the most recent conversation history formatted for an LLM.
+        """
+        recent = self.working_memory[-limit:]
+        return '\n'.join([f'{e.role.upper()}: {e.content}' for e in recent])
+
+    def get_full_history(self) -> List[Dict]:
+        """Returns the raw list of memory objects."""
+        return [e.dict() for e in self.working_memory]
+
+    @service_endpoint(inputs={}, outputs={}, description='Signals that a turn is complete; checks if memory flush is needed.', tags=['memory', 'maintenance'], side_effects=['filesystem:write'])
+    def commit_turn(self):
+        """
+        Signal that a "Turn" (User + AI response) is complete.
+        Checks if memory is full and triggers a flush if needed.
+        """
+        if len(self.working_memory) >= FLUSH_THRESHOLD:
+            self._flush_to_long_term()
+
+    def _flush_to_long_term(self):
+        """
+        Compresses working memory into a summary and moves it to Long-Term storage.
+        """
+        if not self.summarizer or not self.ingestor:
+            log.warning('Flush triggered but Summarizer/Ingestor not configured. Skipping.')
+            return
+        log.info('🌀 Flushing Working Memory to Long-Term Storage...')
+        full_text = '\n'.join([f'{e.role}: {e.content}' for e in self.working_memory])
+        try:
+            summary = self.summarizer(full_text)
+            log.info(f'Summary generated: {summary[:50]}...')
+        except Exception as e:
+            log.error(f'Summarization failed: {e}')
+            return
+        try:
+            meta = {'source': 'cognitive_memory_flush', 'date': datetime.datetime.utcnow().isoformat(), 'original_entry_count': len(self.working_memory)}
+            self.ingestor(summary, meta)
+            log.info('✅ Saved to Long-Term Memory.')
+        except Exception as e:
+            log.error(f'Ingestion failed: {e}')
+            return
+        self.working_memory.clear()
+        self._rotate_log_file()
+
+    def _load_working_memory(self):
+        """Rehydrates memory from the JSONL file."""
+        if not self.file_path.exists():
+            return
+        try:
+            with open(self.file_path, 'r', encoding='utf-8') as f:
+                for line in f:
+                    if line.strip():
+                        self.working_memory.append(MemoryEntry.parse_raw(line))
+            log.info(f'Loaded {len(self.working_memory)} items from {self.file_path}')
+        except Exception as e:
+            log.error(f'Corrupt memory file: {e}')
+
+    def _append_to_file(self, entry: MemoryEntry):
+        """Appends a single entry to the JSONL log."""
+        with open(self.file_path, 'a', encoding='utf-8') as f:
+            f.write(entry.json() + '\n')
+
+    def _rotate_log_file(self):
+        """Renames the current log to an archive timestamp."""
+        if self.file_path.exists():
+            timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+            archive_name = self.file_path.with_name(f'memory_archive_{timestamp}.jsonl')
+            self.file_path.rename(archive_name)
+            log.info(f'Rotated memory log to {archive_name}')
+if __name__ == '__main__':
+
+    def mock_summarizer(text):
+        return f'SUMMARY OF {len(text)} CHARS: The user and AI discussed AI architecture.'
+
+    def mock_ingest(text, metadata):
+        print(f"\n[VectorDB] Indexing: '{text}'\n[VectorDB] Meta: {metadata}")
+    print('--- Initializing Cognitive Memory ---')
+    mem = CognitiveMemoryMS({'summarizer_func': mock_summarizer, 'long_term_ingest_func': mock_ingest})
+    print(f'Service ready: {mem}')
+    print('\n--- Simulating Conversation ---')
+    mem.add_entry('user', 'Hello, who are you?')
+    mem.add_entry('assistant', 'I am a Cognitive Agent.')
+    mem.add_entry('user', 'What is your memory capacity?')
+    mem.add_entry('assistant', 'I have a tiered memory system.')
+    mem.add_entry('user', 'That sounds complex.')
+    print(f'\nCurrent Context:\n{mem.get_context()}')
+    print('\n--- Triggering Memory Flush ---')
+    mem.commit_turn()
+    print(f'\nWorking Memory after flush: {len(mem.working_memory)} items')
+    if Path('working_memory.jsonl').exists():
+        os.remove('working_memory.jsonl')
+    for p in Path('.').glob('memory_archive_*.jsonl'):
+        os.remove(p)
+
+--------------------------------------------------------------------------------
+FILE: src\microservices\_FeedbackValidationMS.py
+--------------------------------------------------------------------------------
+"""
+SERVICE_NAME: _FeedbackValidationMS
+ENTRY_POINT: _FeedbackValidationMS.py
+INTERNAL_DEPENDENCIES: base_service, microservice_std_lib
+EXTERNAL_DEPENDENCIES: sqlite3, json
+"""
+import sqlite3
+import json
+import datetime
+from typing import Dict, Any, List, Optional
+from microservice_std_lib import service_metadata, service_endpoint, BaseService
+
+@service_metadata(
+    name='FeedbackValidation', 
+    version='1.0.0', 
+    description='System-level memory layer for recording HITL feedback and transaction validation.',
+    tags=['hitl', 'training', 'validation', 'context'],
+    capabilities=['db:sqlite', 'training-data:export'],
+    side_effects=['db:write'],
+    internal_dependencies=['base_service', 'microservice_std_lib']
+)
+class FeedbackValidationMS(BaseService):
+    """
+    The Validator: Records accepted/rejected transactions into a dedicated
+    training table within the knowledge graph for future prompt context.
+    """
+
+    def __init__(self, config: Optional[Dict[str, Any]] = None):
+        super().__init__('FeedbackValidation')
+        self.config = config or {}
+        self.db_path = self.config.get('db_path', 'knowledge.db')
+        self._init_training_table()
+
+    def _init_training_table(self):
+        """Ensures the knowledge graph can store validated transactions."""
+        conn = sqlite3.connect(self.db_path)
+        # Create a specific table for training pairs
+        conn.execute('''
+            CREATE TABLE IF NOT EXISTS training_data (
+                id INTEGER PRIMARY KEY,
+                timestamp TEXT,
+                prompt TEXT,
+                response TEXT,
+                is_accepted INTEGER,
+                metadata_json TEXT
+            )
+        ''')
+        conn.close()
+
+    @service_endpoint(
+        inputs={'prompt': 'str', 'response': 'str', 'is_accepted': 'bool', 'meta': 'Dict'},
+        outputs={'success': 'bool'},
+        description='Records a validated or rejected transaction as training context.',
+        tags=['write', 'hitl'],
+        side_effects=['db:write']
+    )
+    def submit_feedback(self, prompt: str, response: str, is_accepted: bool, meta: Dict = None) -> bool:
+        """
+        Main entry point for the HITL UI to deposit the result of an inference turn.
+        """
+        try:
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+            timestamp = datetime.datetime.utcnow().isoformat()
+            
+            # 1. Insert into raw training table
+            cursor.execute(
+                'INSERT INTO training_data (timestamp, prompt, response, is_accepted, metadata_json) VALUES (?, ?, ?, ?, ?)',
+                (timestamp, prompt, response, 1 if is_accepted else 0, json.dumps(meta or {}))
+            )
+            
+            # 2. Also register as a Graph Node for high-level mapping
+            node_id = f"tx_{cursor.lastrowid}"
+            cursor.execute(
+                'INSERT OR REPLACE INTO graph_nodes (id, type, label, data_json) VALUES (?, ?, ?, ?)',
+                (node_id, 'validated_transaction', f"Feedback: {'Accepted' if is_accepted else 'Rejected'}", json.dumps({'is_accepted': is_accepted}))
+            )
+            
+            conn.commit()
+            conn.close()
+            self.log_info(f"Transaction recorded: {'ACCEPTED' if is_accepted else 'REJECTED'}")
+            return True
+        except Exception as e:
+            self.log_error(f"Failed to record feedback: {e}")
+            return False
+
+    @service_endpoint(
+        inputs={'limit': 'int', 'only_accepted': 'bool'},
+        outputs={'history': 'List[Dict]'},
+        description='Retrieves past validated transactions to build few-shot prompts.',
+        tags=['read', 'prompt-builder'],
+        side_effects=['db:read']
+    )
+    def get_validated_context(self, limit: int = 5, only_accepted: bool = True) -> List[Dict]:
+        """
+        Called by the system building the prompt to find 'Gold Standard' examples.
+        """
+        conn = sqlite3.connect(self.db_path)
+        query = "SELECT prompt, response FROM training_data WHERE 1=1"
+        if only_accepted:
+            query += " AND is_accepted = 1"
+        query += " ORDER BY id DESC LIMIT ?"
+        
+        results = conn.execute(query, (limit,)).fetchall()
+        conn.close()
+        
+        return [{"prompt": r[0], "response": r[1]} for r in results]
+
+--------------------------------------------------------------------------------
+FILE: src\microservices\_IngestEngineMS.py
+--------------------------------------------------------------------------------
+"""
+SERVICE_NAME: _IngestEngineMS
+ENTRY_POINT: _IngestEngineMS.py
+INTERNAL_DEPENDENCIES: base_service, microservice_std_lib
+EXTERNAL_DEPENDENCIES: requests
+"""
+import importlib.util
+import sys
+REQUIRED = ['requests']
+MISSING = []
+for lib in REQUIRED:
+    if importlib.util.find_spec(lib) is None:
+        MISSING.append(lib)
+if MISSING:
+    print(f"MISSING DEPENDENCIES: {' '.join(MISSING)}")
+    print('Please run: pip install requests')
+import json
+import os
+import re
+import sqlite3
+import time
+from dataclasses import dataclass
+from typing import Any, Dict, Generator, List, Optional
+import requests
+from microservice_std_lib import service_metadata, service_endpoint, BaseService
+OLLAMA_API_URL = 'http://localhost:11434/api'
+
+@dataclass
+class IngestStatus:
+    current_file: str
+    progress_percent: float
+    processed_files: int
+    total_files: int
+    log_message: str
+    thought_frame: Optional[Dict] = None
+
+class SynapseWeaver:
+    """
+    Parses source code to extract import dependencies.
+    Used to generate the 'DEPENDS_ON' edges in the Knowledge Graph.
+    """
+
+    def __init__(self):
+        self.py_pattern = re.compile('^\\s*(?:from|import)\\s+([\\w\\.]+)')
+        self.js_pattern = re.compile('(?:import\\s+.*?from\\s+[\\\'"]|require\\([\\\'"])([\\.\\/\\w\\-_]+)[\\\'"]')
+
+    def extract_dependencies(self, content: str, file_path: str) -> List[str]:
+        dependencies = []
+        ext = os.path.splitext(file_path)[1].lower()
+        lines = content.split('\n')
+        for line in lines:
+            match = None
+            if ext == '.py':
+                match = self.py_pattern.match(line)
+            elif ext in ['.js', '.ts', '.tsx', '.jsx']:
+                match = self.js_pattern.search(line)
+            if match:
+                raw_dep = match.group(1)
+                clean_dep = raw_dep.split('.')[-1].split('/')[-1]
+                if clean_dep not in dependencies:
+                    dependencies.append(clean_dep)
+        return dependencies
+
+@service_metadata(name='IngestEngine', version='1.0.0', description='Reads files, chunks text, fetches embeddings, and weaves graph edges.', tags=['ingest', 'rag', 'parsing', 'embedding'], capabilities=['filesystem:read', 'network:outbound', 'db:sqlite'], side_effects=['db:write', 'network:outbound'], internal_dependencies=['base_service', 'microservice_std_lib'], external_dependencies=['requests'])
+class IngestEngineMS(BaseService):
+    """
+    The Heavy Lifter: Reads files, chunks text, fetches embeddings,
+    populates the Graph Nodes, and weaves Graph Edges.
+    """
+
+    def __init__(self, config: Optional[Dict[str, Any]]=None):
+        super().__init__('IngestEngine')
+        self.config = config or {}
+        self.db_path = self.config.get('db_path', 'knowledge.db')
+        self.stop_signal = False
+        self.weaver = SynapseWeaver()
+        self._init_db()
+
+    def _init_db(self):
+        """Ensures the target database has the required schema."""
+        conn = sqlite3.connect(self.db_path)
+        conn.execute('CREATE TABLE IF NOT EXISTS files (id INTEGER PRIMARY KEY, path TEXT, last_updated REAL)')
+        conn.execute('CREATE TABLE IF NOT EXISTS chunks (id INTEGER PRIMARY KEY, file_id INT, chunk_index INT, content TEXT, embedding BLOB)')
+        conn.execute('CREATE TABLE IF NOT EXISTS graph_nodes (id TEXT PRIMARY KEY, type TEXT, label TEXT, data_json TEXT)')
+        conn.execute('CREATE TABLE IF NOT EXISTS graph_edges (source TEXT, target TEXT, weight REAL)')
+        conn.close()
+
+    def abort(self):
+        self.stop_signal = True
+
+    def check_ollama_connection(self) -> bool:
+        try:
+            requests.get(f'{OLLAMA_API_URL}/tags', timeout=2)
+            return True
+        except:
+            return False
+
+    def get_available_models(self) -> List[str]:
+        try:
+            res = requests.get(f'{OLLAMA_API_URL}/tags')
+            if res.status_code == 200:
+                data = res.json()
+                return [m['name'] for m in data.get('models', [])]
+        except:
+            pass
+        return []
+
+    @service_endpoint(inputs={'file_paths': 'List[str]', 'model_name': 'str'}, outputs={'status': 'IngestStatus'}, description='Processes a list of files, ingesting them into the knowledge graph.', tags=['ingest', 'processing'], mode='generator', side_effects=['db:write', 'network:outbound'])
+    def process_files(self, file_paths: List[str], model_name: str='none') -> Generator[IngestStatus, None, None]:
+        total = len(file_paths)
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        cursor.execute('PRAGMA synchronous = OFF')
+        cursor.execute('PRAGMA journal_mode = MEMORY')
+        node_registry = {}
+        file_contents = {}
+        for idx, file_path in enumerate(file_paths):
+            if self.stop_signal:
+                yield IngestStatus(file_path, 0, idx, total, 'Ingestion Aborted.')
+                break
+            filename = os.path.basename(file_path)
+            try:
+                with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+                    content = f.read()
+                file_contents[filename] = content
+            except Exception as e:
+                yield IngestStatus(file_path, idx / total * 100, idx, total, f'Error: {e}')
+                continue
+            try:
+                cursor.execute('INSERT OR REPLACE INTO files (path, last_updated) VALUES (?, ?)', (file_path, time.time()))
+                file_id = cursor.lastrowid
+            except sqlite3.Error:
+                continue
+            cursor.execute('\n                INSERT OR REPLACE INTO graph_nodes (id, type, label, data_json)\n                VALUES (?, ?, ?, ?)\n            ', (filename, 'file', filename, json.dumps({'path': file_path})))
+            node_registry[filename] = filename
+            chunks = self._chunk_text(content)
+            for i, chunk_text in enumerate(chunks):
+                if self.stop_signal:
+                    break
+                embedding = None
+                if model_name != 'none':
+                    embedding = self._get_embedding(model_name, chunk_text)
+                emb_blob = json.dumps(embedding).encode('utf-8') if embedding else None
+                cursor.execute('\n                    INSERT INTO chunks (file_id, chunk_index, content, embedding)\n                    VALUES (?, ?, ?, ?)\n                ', (file_id, i, chunk_text, emb_blob))
+                thought_frame = {'id': f'{file_id}_{i}', 'file': filename, 'chunk_index': i, 'content': chunk_text, 'vector_preview': embedding[:20] if embedding else [], 'concept_color': '#007ACC'}
+                yield IngestStatus(current_file=filename, progress_percent=(idx + i / len(chunks)) / total * 100, processed_files=idx, total_files=total, log_message=f'Processing {filename}...', thought_frame=thought_frame)
+            conn.commit()
+        yield IngestStatus('Graph', 100, total, total, 'Weaving Knowledge Graph...')
+        edge_count = 0
+        for filename, content in file_contents.items():
+            if self.stop_signal:
+                break
+            deps = self.weaver.extract_dependencies(content, filename)
+            for dep in deps:
+                target_id = None
+                for potential_match in node_registry.keys():
+                    if potential_match.startswith(dep + '.') or potential_match == dep:
+                        target_id = potential_match
+                        break
+                if target_id and target_id != filename:
+                    try:
+                        cursor.execute('\n                            INSERT OR IGNORE INTO graph_edges (source, target, weight)\n                            VALUES (?, ?, 1.0)\n                        ', (filename, target_id))
+                        edge_count += 1
+                    except:
+                        pass
+        conn.commit()
+        conn.close()
+        yield IngestStatus(current_file='Complete', progress_percent=100, processed_files=total, total_files=total, log_message=f'Ingestion Complete. Created {edge_count} dependency edges.')
+
+    def _chunk_text(self, text: str, chunk_size: int=1000, overlap: int=100) -> List[str]:
+        if len(text) < chunk_size:
+            return [text]
+        chunks = []
+        start = 0
+        while start < len(text):
+            end = start + chunk_size
+            chunks.append(text[start:end])
+            start += chunk_size - overlap
+        return chunks
+
+    def _get_embedding(self, model: str, text: str) -> Optional[List[float]]:
+        try:
+            res = requests.post(f'{OLLAMA_API_URL}/embeddings', json={'model': model, 'prompt': text}, timeout=30)
+            if res.status_code == 200:
+                return res.json().get('embedding')
+        except:
+            return None
+if __name__ == '__main__':
+    TEST_DB = 'test_ingest_v2.db'
+    engine = IngestEngineMS({'db_path': TEST_DB})
+    print(f'Service Ready: {engine}')
+    target_file = '__IngestEngineMS.py'
+    if not os.path.exists(target_file):
+        with open(target_file, 'w') as f:
+            f.write("import os\nimport json\nprint('Hello World')")
+    print(f'Running Ingest on {target_file}...')
+    files = [target_file]
+    for status in engine.process_files(files, 'none'):
+        print(f'[{status.progress_percent:.0f}%] {status.log_message}')
+    conn = sqlite3.connect(TEST_DB)
+    edges = conn.execute('SELECT * FROM graph_edges').fetchall()
+    nodes = conn.execute('SELECT * FROM graph_nodes').fetchall()
+    print(f'\nResult: {len(nodes)} Nodes, {len(edges)} Edges.')
+    conn.close()
+    if os.path.exists(TEST_DB):
+        os.remove(TEST_DB)
+    if os.path.exists(target_file) and 'Hello World' in open(target_file).read():
+        os.remove(target_file)
+
+--------------------------------------------------------------------------------
+FILE: src\microservices\_LogViewMS.py
+--------------------------------------------------------------------------------
+import tkinter as tk
+from tkinter import scrolledtext, filedialog
+import queue
+import logging
+import datetime
+from typing import Any, Dict, Optional
+from microservice_std_lib import service_metadata, service_endpoint
+
+class QueueHandler(logging.Handler):
+    """
+    Sends log records to a thread-safe queue.
+    Used to bridge the gap between Python's logging system and the Tkinter UI.
+    """
+
+    def __init__(self, log_queue: queue.Queue):
+        super().__init__()
+        self.log_queue = log_queue
+
+    def emit(self, record):
+        self.log_queue.put(record)
+
+@service_metadata(name='LogView', version='1.0.0', description='A thread-safe log viewer widget for Tkinter.', tags=['ui', 'logs', 'widget'], capabilities=['ui:gui', 'filesystem:write'], internal_dependencies=['microservice_std_lib'], external_dependencies=[])
+class LogViewMS(tk.Frame):
+    """
+    The Console: A professional log viewer widget.
+    Features:
+    - Thread-safe (consumes from a Queue).
+    - Message Consolidation ("Error occurred (x5)").
+    - Level Filtering (Toggle INFO/DEBUG/ERROR).
+    """
+
+    def __init__(self, config: Optional[Dict[str, Any]]=None):
+        self.config = config or {}
+        parent = self.config.get('parent')
+        super().__init__(parent)
+        self.log_queue: queue.Queue = self.config.get('log_queue')
+        if self.log_queue is None:
+            self.log_queue = queue.Queue()
+        self.last_msg = None
+        self.last_count = 0
+        self.last_line_index = None
+        self._build_ui()
+        self._poll_queue()
+
+    def _build_ui(self):
+        toolbar = tk.Frame(self, bg='#2d2d2d', height=30)
+        toolbar.pack(fill='x', side='top')
+        self.filters = {'INFO': tk.BooleanVar(value=True), 'DEBUG': tk.BooleanVar(value=True), 'WARNING': tk.BooleanVar(value=True), 'ERROR': tk.BooleanVar(value=True)}
+        for level, var in self.filters.items():
+            cb = tk.Checkbutton(toolbar, text=level, variable=var, bg='#2d2d2d', fg='white', selectcolor='#444', activebackground='#2d2d2d', activeforeground='white')
+            cb.pack(side='left', padx=5)
+        tk.Button(toolbar, text='Clear', command=self.clear, bg='#444', fg='white', relief='flat').pack(side='right', padx=5)
+        tk.Button(toolbar, text='Save', command=self.save, bg='#444', fg='white', relief='flat').pack(side='right')
+        self.text = scrolledtext.ScrolledText(self, state='disabled', bg='#1e1e1e', fg='#d4d4d4', font=('Consolas', 10), insertbackground='white')
+        self.text.pack(fill='both', expand=True)
+        self.text.tag_config('INFO', foreground='#d4d4d4')
+        self.text.tag_config('DEBUG', foreground='#569cd6')
+        self.text.tag_config('WARNING', foreground='#ce9178')
+        self.text.tag_config('ERROR', foreground='#f44747')
+        self.text.tag_config('timestamp', foreground='#608b4e')
+
+    def _poll_queue(self):
+        """Pulls logs from the queue and updates UI."""
+        try:
+            while True:
+                record = self.log_queue.get_nowait()
+                self._display(record)
+        except queue.Empty:
+            pass
+        finally:
+            self.after(100, self._poll_queue)
+
+    def _display(self, record):
+        level = record.levelname
+        if not self.filters.get(level, tk.BooleanVar(value=True)).get():
+            return
+        msg = record.getMessage()
+        ts = datetime.datetime.fromtimestamp(record.created).strftime('%H:%M:%S')
+        self.text.config(state='normal')
+        if msg == self.last_msg:
+            self.last_count += 1
+        else:
+            self.last_msg = msg
+            self.last_count = 1
+        self.text.insert('end', f'[{ts}] ', 'timestamp')
+        self.text.insert('end', f'{msg}\n', level)
+        self.text.see('end')
+        self.text.config(state='disabled')
+
+    @service_endpoint(inputs={}, outputs={}, description='Clears the log console.', tags=['ui', 'logs'], side_effects=['ui:update'])
+    def clear(self):
+        self.text.config(state='normal')
+        self.text.delete('1.0', 'end')
+        self.text.config(state='disabled')
+
+    @service_endpoint(inputs={}, outputs={}, description='Opens a dialog to save logs to a file.', tags=['ui', 'filesystem'], side_effects=['filesystem:write', 'ui:dialog'])
+    def save(self):
+        path = filedialog.asksaveasfilename(defaultextension='.log', filetypes=[('Log Files', '*.log')])
+        if path:
+            try:
+                with open(path, 'w', encoding='utf-8') as f:
+                    f.write(self.text.get('1.0', 'end'))
+            except Exception as e:
+                print(f'Save failed: {e}')
+if __name__ == '__main__':
+    root = tk.Tk()
+    root.title('Log View Test')
+    root.geometry('600x400')
+    q = queue.Queue()
+    logger = logging.getLogger('TestApp')
+    logger.setLevel(logging.DEBUG)
+    logger.addHandler(QueueHandler(q))
+    log_view = LogViewMS({'parent': root, 'log_queue': q})
+    print('Service ready:', log_view)
+    log_view.pack(fill='both', expand=True)
+
+    def generate_noise():
+        logger.info('System initializing...')
+        logger.debug('Checking sensors...')
+        logger.warning('Sensor 4 response slow.')
+        logger.error('Connection failed!')
+        root.after(2000, generate_noise)
+    generate_noise()
+    root.mainloop()
+
+--------------------------------------------------------------------------------
+FILE: src\microservices\_SemanticChunkerMS.py
+--------------------------------------------------------------------------------
+import ast
+from dataclasses import dataclass, asdict
+from typing import List, Dict, Any, Optional
+from microservice_std_lib import service_metadata, service_endpoint
+
+@dataclass
+class CodeChunk:
+    name: str
+    type: str
+    content: str
+    start_line: int
+    end_line: int
+    docstring: str = ''
+
+@service_metadata(name='SemanticChunker', version='1.0.0', description='The Surgeon: Intelligent Code Splitter that parses source code into logical semantic units (Classes, Functions) using AST.', tags=['utility', 'nlp', 'parser'], capabilities=['python-ast', 'semantic-chunking'], internal_dependencies=['microservice_std_lib'], external_dependencies=[])
+class SemanticChunkerMS:
+    """
+    Intelligent Code Splitter.
+    Parses source code into logical units (Classes, Functions) 
+    rather than arbitrary text windows.
+    """
+
+    def __init__(self, config: Optional[Dict[str, Any]]=None):
+        self.config = config or {}
+
+    @service_endpoint(inputs={'content': 'str', 'filename': 'str'}, outputs={'chunks': 'List[Dict]'}, description='Main entry point to split a file into semantic chunks based on its extension and content.', tags=['processing', 'chunking'], side_effects=[])
+    def chunk_file(self, content: str, filename: str) -> List[Dict[str, Any]]:
+        """
+        Splits file content into chunks.
+        Returns a list of dictionaries suitable for JSON response.
+        """
+        chunks: List[CodeChunk] = []
+        if filename.endswith('.py'):
+            chunks = self._chunk_python(content)
+        elif filename.lower().endswith(('.md', '.txt', '.pdf', '.html', '.htm', '.rst')):
+            chunks = self._chunk_generic(content, window_size=800)
+        else:
+            chunks = self._chunk_generic(content, window_size=1500)
+        return [asdict(c) for c in chunks]
+
+    def _chunk_python(self, source: str) -> List[CodeChunk]:
+        chunks = []
+        try:
+            tree = ast.parse(source)
+            lines = source.splitlines(keepends=True)
+
+            def get_segment(node):
+                start = node.lineno - 1
+                end = node.end_lineno if hasattr(node, 'end_lineno') and node.end_lineno else start + 1
+                return (''.join(lines[start:end]), start + 1, end)
+            for node in tree.body:
+                if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                    text, s, e = get_segment(node)
+                    doc = ast.get_docstring(node) or ''
+                    chunks.append(CodeChunk(name=f'def {node.name}', type='function', content=text, start_line=s, end_line=e, docstring=doc))
+                elif isinstance(node, ast.ClassDef):
+                    text, s, e = get_segment(node)
+                    doc = ast.get_docstring(node) or ''
+                    chunks.append(CodeChunk(name=f'class {node.name}', type='class', content=text, start_line=s, end_line=e, docstring=doc))
+            if not chunks:
+                return self._chunk_generic(source)
+        except SyntaxError:
+            return self._chunk_generic(source)
+        return chunks
+
+    def _chunk_generic(self, text: str, window_size: int=1500) -> List[CodeChunk]:
+        """Sliding window for non-code files."""
+        chunks = []
+        text = text.replace('\r\n', '\n').replace('\r', '\n')
+        lines = text.splitlines(keepends=True)
+        current_chunk = []
+        current_size = 0
+        chunk_idx = 1
+        start_line = 1
+        for i, line in enumerate(lines):
+            current_chunk.append(line)
+            current_size += len(line)
+            if current_size >= window_size:
+                chunks.append(CodeChunk(name=f'Chunk {chunk_idx}', type='text_block', content=''.join(current_chunk), start_line=start_line, end_line=i + 1))
+                current_chunk = []
+                current_size = 0
+                chunk_idx += 1
+                start_line = i + 2
+        if current_chunk:
+            chunks.append(CodeChunk(name=f'Chunk {chunk_idx}', type='text_block', content=''.join(current_chunk), start_line=start_line, end_line=len(lines)))
+        return chunks
+if __name__ == '__main__':
+    svc = SemanticChunkerMS()
+    print('Service ready:', svc)
+    test_code = "def hello():\n    print('world')\n\nclass Test:\n    pass"
+    results = svc.chunk_file(test_code, 'test.py')
+    print(f'Extracted {len(results)} semantic chunks.')
+    for c in results:
+        print(f" - [{c['type']}] {c['name']} ({c['start_line']}-{c['end_line']})")
+        print(f" - [{c['type']}] {c['name']} ({c['start_line']}-{c['end_line']})")
+
+--------------------------------------------------------------------------------
+FILE: src\microservices\_TextChunkerMS.py
+--------------------------------------------------------------------------------
+import logging
+from typing import Any, Dict, List, Optional, Tuple
+from microservice_std_lib import service_metadata, service_endpoint
+logger = logging.getLogger('TextChunker')
+
+@service_metadata(name='TextChunker', version='1.0.0', description='Splits text into chunks using various strategies (chars, lines).', tags=['chunking', 'nlp', 'rag'], capabilities=['compute'], internal_dependencies=['microservice_std_lib'], external_dependencies=[])
+class TextChunkerMS:
+    """
+    The Butcher: A unified service for splitting text into digestible chunks
+    for RAG (Retrieval Augmented Generation).
+    """
+
+    def __init__(self, config: Optional[Dict[str, Any]]=None):
+        self.config = config or {}
+
+    @service_endpoint(inputs={'text': 'str', 'chunk_size': 'int', 'chunk_overlap': 'int'}, outputs={'chunks': 'List[str]'}, description='Standard sliding window split by character count.', tags=['chunking', 'chars'], side_effects=[])
+    def chunk_by_chars(self, text: str, chunk_size: int=500, chunk_overlap: int=50) -> List[str]:
+        """
+        Standard Sliding Window. Best for prose/documentation.
+        Splits purely by character count.
+        """
+        if chunk_size <= 0:
+            raise ValueError('chunk_size must be positive')
+        chunks = []
+        start = 0
+        text_length = len(text)
+        while start < text_length:
+            end = start + chunk_size
+            chunk = text[start:end]
+            chunks.append(chunk)
+            if end >= text_length:
+                break
+            start += chunk_size - chunk_overlap
+        return chunks
+
+    @service_endpoint(inputs={'text': 'str', 'max_lines': 'int', 'max_chars': 'int'}, outputs={'chunks': 'List[Dict]'}, description='Line-preserving chunker, best for code.', tags=['chunking', 'lines', 'code'], side_effects=[])
+    def chunk_by_lines(self, text: str, max_lines: int=200, max_chars: int=4000) -> List[Dict[str, Any]]:
+        """
+        Line-Preserving Chunker. Best for Code.
+        Respects line boundaries and returns metadata about line numbers.
+        """
+        lines = text.splitlines()
+        chunks = []
+        start = 0
+        while start < len(lines):
+            end = min(start + max_lines, len(lines))
+            chunk_str = '\n'.join(lines[start:end])
+            while len(chunk_str) > max_chars and end > start + 1:
+                end -= 1
+                chunk_str = '\n'.join(lines[start:end])
+            chunks.append({'text': chunk_str, 'start_line': start + 1, 'end_line': end})
+            start = end
+        return chunks
+if __name__ == '__main__':
+    logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(message)s')
+    chunker = TextChunkerMS()
+    print('Service ready:', chunker)
+    print('--- Prose Chunking ---')
+    lorem = 'A' * 100
+    result = chunker.chunk_by_chars(lorem, chunk_size=40, chunk_overlap=10)
+    for i, c in enumerate(result):
+        print(f'Chunk {i}: len={len(c)}')
+    print('\n--- Code Chunking ---')
+    code = '\n'.join([f"print('Line {i}')" for i in range(1, 10)])
+    result_code = chunker.chunk_by_lines(code, max_lines=3, max_chars=100)
+    for i, c in enumerate(result_code):
+        print(f"Chunk {i}: Lines {c['start_line']}-{c['end_line']}")
+
+--------------------------------------------------------------------------------
+FILE: src\microservices\_TkinterAppShellMS.py
+--------------------------------------------------------------------------------
+"""
+SERVICE_NAME: _TkinterAppShellMS
+ENTRY_POINT: _TkinterAppShellMS.py
+INTERNAL_DEPENDENCIES: _TkinterThemeManagerMS, microservice_std_lib
+EXTERNAL_DEPENDENCIES: None
+"""
+import tkinter as tk
+from tkinter import ttk
+import logging
+from typing import Dict, Any, Optional
+from microservice_std_lib import service_metadata, service_endpoint
+try:
+    from _TkinterThemeManagerMS import TkinterThemeManagerMS
+except ImportError:
+    TkinterThemeManagerMS = None
+logger = logging.getLogger('AppShell')
+
+@service_metadata(name='TkinterAppShell', version='2.0.0', description='The Application Container. Manages the root window, main loop, and global layout.', tags=['ui', 'core', 'lifecycle'], capabilities=['ui:root', 'ui:gui'], internal_dependencies=['_TkinterThemeManagerMS', 'microservice_std_lib'], external_dependencies=[])
+class TkinterAppShellMS:
+    """
+    The Mother Ship.
+    Owns the Tkinter Root. All other UI microservices dock into this.
+    """
+
+    def __init__(self, config: Optional[Dict[str, Any]]=None):
+        self.config = config or {}
+        self.root = tk.Tk()
+        self.root.withdraw()
+        self.theme_svc = self.config.get('theme_manager')
+        if not self.theme_svc and TkinterThemeManagerMS:
+            self.theme_svc = TkinterThemeManagerMS()
+        self.colors = self.theme_svc.get_theme() if self.theme_svc else {}
+        self._configure_root()
+
+    def _configure_root(self):
+        self.root.title(self.config.get('title', 'Microservice OS'))
+        self.root.geometry(self.config.get('geometry', '1200x800'))
+        bg = self.colors.get('background', '#1e1e1e')
+        self.root.configure(bg=bg)
+        style = ttk.Style()
+        style.theme_use('clam')
+        style.configure('TFrame', background=bg)
+        style.configure('TLabel', background=bg, foreground=self.colors.get('foreground', '#ccc'))
+        style.configure('TButton', background=self.colors.get('panel_bg', '#333'), foreground='white')
+        self.main_container = tk.Frame(self.root, bg=bg)
+        self.main_container.pack(fill='both', expand=True, padx=5, pady=5)
+
+    @service_endpoint(inputs={}, outputs={}, description='Starts the GUI Main Loop.', tags=['lifecycle', 'start'], mode='sync', side_effects=['ui:block'])
+    def launch(self):
+        """Ignition sequence start."""
+        self.root.deiconify()
+        logger.info('AppShell Launched.')
+        self.root.mainloop()
+
+    @service_endpoint(inputs={}, outputs={'container': 'tk.Frame'}, description='Returns the main content area for other services to dock into.', tags=['ui', 'layout'])
+    def get_main_container(self):
+        """Other services call this to know where to .pack() themselves."""
+        return self.main_container
+
+    @service_endpoint(inputs={}, outputs={}, description='Gracefully shuts down the application.', tags=['lifecycle', 'stop'], side_effects=['ui:close'])
+    def shutdown(self):
+        self.root.quit()
+if __name__ == '__main__':
+    shell = TkinterAppShellMS({'title': 'Test Shell'})
+    shell.launch()
+
+--------------------------------------------------------------------------------
+FILE: src\microservices\_TkinterThemeManagerMS.py
+--------------------------------------------------------------------------------
+"""
+SERVICE_NAME: _TkinterThemeManagerMS
+ENTRY_POINT: _TkinterThemeManagerMS.py
+INTERNAL_DEPENDENCIES: microservice_std_lib
+EXTERNAL_DEPENDENCIES: None
+"""
+from typing import Dict, Any, Optional
+from microservice_std_lib import service_metadata, service_endpoint
+DEFAULT_THEME = {'background': '#1e1e1e', 'foreground': '#d4d4d4', 'panel_bg': '#252526', 'border': '#3c3c3c', 'accent': '#007acc', 'error': '#f48771', 'success': '#89d185', 'font_main': ('Segoe UI', 10), 'font_mono': ('Consolas', 10)}
+
+@service_metadata(name='TkinterThemeManager', version='1.0.0', description='Centralized configuration for UI colors and fonts.', tags=['ui', 'config', 'theme'], capabilities=['ui:style'], internal_dependencies=['microservice_std_lib'], external_dependencies=[])
+class TkinterThemeManagerMS:
+    """
+    The Stylist: Holds the color palette and font settings.
+    All UI components query this service to decide how to draw themselves.
+    """
+
+    def __init__(self, config: Optional[Dict[str, Any]]=None):
+        self.config = config or {}
+        self.theme = DEFAULT_THEME.copy()
+        if 'overrides' in self.config:
+            self.theme.update(self.config['overrides'])
+
+    @service_endpoint(inputs={}, outputs={'theme': 'Dict'}, description='Returns the current active theme dictionary.', tags=['ui', 'read'])
+    def get_theme(self) -> Dict[str, Any]:
+        return self.theme
+
+    @service_endpoint(inputs={'key': 'str', 'value': 'Any'}, outputs={}, description='Updates a specific theme attribute (e.g., changing accent color).', tags=['ui', 'write'], side_effects=['ui:refresh'])
+    def update_key(self, key: str, value: Any):
+        self.theme[key] = value
+if __name__ == '__main__':
+    svc = TkinterThemeManagerMS()
+    print('Theme Ready:', svc.get_theme()['accent'])
+
+--------------------------------------------------------------------------------
+FILE: src\microservices\_VectorFactoryMS.py
+--------------------------------------------------------------------------------
+import importlib.util
+import sys
+import os
+import uuid
+import logging
+import shutil
+from typing import List, Dict, Any, Optional, Protocol, Union
+from pathlib import Path
+REQUIRED = ['chromadb', 'faiss-cpu', 'numpy']
+MISSING = []
+for lib in REQUIRED:
+    clean_lib = lib.split('>=')[0].replace('-', '_')
+    if clean_lib == 'faiss_cpu':
+        clean_lib = 'faiss'
+    if importlib.util.find_spec(clean_lib) is None:
+        MISSING.append(lib)
+if MISSING:
+    print('\n' + '!' * 60)
+    print(f'MISSING DEPENDENCIES for _VectorFactoryMS:')
+    print(f"Run:  pip install {' '.join(MISSING)}")
+    print('!' * 60 + '\n')
+from microservice_std_lib import service_metadata, service_endpoint
+logger = logging.getLogger('VectorFactory')
+
+class VectorStore(Protocol):
+    """The contract that all vector backends must fulfill."""
+
+    def add(self, embeddings: List[List[float]], metadatas: List[Dict[str, Any]]) -> None:
+        ...
+
+    def search(self, query_vector: List[float], k: int) -> List[Dict[str, Any]]:
+        ...
+
+    def count(self) -> int:
+        ...
+
+    def clear(self) -> None:
+        ...
+
+class FaissVectorStore:
+    """Local, RAM-heavy, fast vector store using FAISS."""
+
+    def __init__(self, index_path: str, dimension: int):
+        import numpy as np
+        import faiss
+        self.np = np
+        self.faiss = faiss
+        self.index_path = index_path
+        self.dim = dimension
+        self.metadata_store = []
+        if os.path.exists(index_path):
+            try:
+                self.index = faiss.read_index(index_path)
+                meta_path = index_path + '.meta.json'
+                if os.path.exists(meta_path):
+                    import json
+                    with open(meta_path, 'r') as f:
+                        self.metadata_store = json.load(f)
+            except Exception as e:
+                logger.error(f'Failed to load FAISS index: {e}')
+                self.index = faiss.IndexFlatL2(dimension)
+        else:
+            self.index = faiss.IndexFlatL2(dimension)
+
+    def add(self, embeddings: List[List[float]], metadatas: List[Dict[str, Any]]):
+        if not embeddings:
+            return
+        vecs = self.np.array(embeddings).astype('float32')
+        self.index.add(vecs)
+        self.metadata_store.extend(metadatas)
+        self._save()
+
+    def search(self, query_vector: List[float], k: int) -> List[Dict[str, Any]]:
+        if self.index.ntotal == 0:
+            return []
+        q_vec = self.np.array([query_vector]).astype('float32')
+        distances, indices = self.index.search(q_vec, k)
+        results = []
+        for dist, idx in zip(distances[0], indices[0]):
+            if idx != -1 and idx < len(self.metadata_store):
+                entry = self.metadata_store[idx].copy()
+                entry['score'] = float(dist)
+                results.append(entry)
+        return results
+
+    def count(self) -> int:
+        return self.index.ntotal
+
+    def clear(self):
+        self.index.reset()
+        self.metadata_store = []
+        self._save()
+
+    def _save(self):
+        self.faiss.write_index(self.index, self.index_path)
+        import json
+        with open(self.index_path + '.meta.json', 'w') as f:
+            json.dump(self.metadata_store, f)
+
+class ChromaVectorStore:
+    """Persistent, feature-rich vector store using ChromaDB."""
+
+    def __init__(self, persist_dir: str, collection_name: str):
+        import chromadb
+        logging.getLogger('chromadb').setLevel(logging.ERROR)
+        self.client = chromadb.PersistentClient(path=persist_dir)
+        self.collection = self.client.get_or_create_collection(collection_name)
+
+    def add(self, embeddings: List[List[float]], metadatas: List[Dict[str, Any]]):
+        if not embeddings:
+            return
+        ids = [str(uuid.uuid4()) for _ in embeddings]
+        clean_metas = [{k: str(v) if isinstance(v, (list, dict)) else v for k, v in m.items()} for m in metadatas]
+        docs = [m.get('content', '') for m in metadatas]
+        self.collection.add(ids=ids, embeddings=embeddings, metadatas=clean_metas, documents=docs)
+
+    def search(self, query_vector: List[float], k: int) -> List[Dict[str, Any]]:
+        results = self.collection.query(query_embeddings=[query_vector], n_results=k)
+        output = []
+        if not results['ids']:
+            return []
+        for i in range(len(results['ids'][0])):
+            meta = results['metadatas'][0][i]
+            if meta:
+                entry = meta.copy()
+                entry['score'] = results['distances'][0][i] if results['distances'] else 0.0
+                entry['id'] = results['ids'][0][i]
+                output.append(entry)
+        return output
+
+    def count(self) -> int:
+        return self.collection.count()
+
+    def clear(self):
+        name = self.collection.name
+        self.client.delete_collection(name)
+        self.collection = self.client.get_or_create_collection(name)
+
+@service_metadata(name='VectorFactory', version='1.0.0', description='Factory for creating VectorStore instances (FAISS, Chroma).', tags=['vector', 'factory', 'db'], capabilities=['filesystem:read', 'filesystem:write'], internal_dependencies=['microservice_std_lib'], external_dependencies=['chromadb', 'faiss', 'numpy'])
+class VectorFactoryMS:
+    """
+    The Switchboard: Returns the appropriate VectorStore implementation
+    based on configuration.
+    """
+
+    def __init__(self, config: Optional[Dict[str, Any]]=None):
+        self.config = config or {}
+
+    @service_endpoint(inputs={'backend': 'str', 'config': 'Dict'}, outputs={'store': 'VectorStore'}, description='Creates and returns a configured VectorStore instance.', tags=['vector', 'create'], side_effects=[])
+    def create(self, backend: str, config: Dict[str, Any]) -> VectorStore:
+        """
+        :param backend: 'faiss' or 'chroma'
+        :param config: Dict containing 'path', 'dim' (for FAISS), or 'collection' (for Chroma)
+        """
+        logger.info(f'Initializing Vector Store: {backend.upper()}')
+        if backend == 'faiss':
+            path = config.get('path', 'vector_index.bin')
+            dim = config.get('dim', 384)
+            return FaissVectorStore(path, dim)
+        elif backend == 'chroma':
+            path = config.get('path', './chroma_db')
+            name = config.get('collection', 'default_collection')
+            return ChromaVectorStore(path, name)
+        else:
+            raise ValueError(f'Unknown backend: {backend}')
+if __name__ == '__main__':
+    logging.basicConfig(level=logging.INFO)
+    print('--- Testing VectorFactoryMS ---')
+    mock_vec = [0.1, 0.2, 0.3, 0.4]
+    mock_meta = {'text': 'Hello World', 'source': 'test'}
+    factory = VectorFactoryMS()
+    print('Service ready:', factory)
+    print('\n[Testing FAISS]')
+    try:
+        faiss_store = factory.create('faiss', {'path': 'test_faiss.index', 'dim': 4})
+        faiss_store.add([mock_vec], [mock_meta])
+        print(f'Count: {faiss_store.count()}')
+        res = faiss_store.search(mock_vec, 1)
+        if res:
+            print(f"Search Result: {res[0]['text']}")
+        if os.path.exists('test_faiss.index'):
+            os.remove('test_faiss.index')
+        if os.path.exists('test_faiss.index.meta.json'):
+            os.remove('test_faiss.index.meta.json')
+    except ImportError:
+        print('Skipping FAISS test (library not installed)')
+    except Exception as e:
+        print(f'FAISS Test Failed: {e}')
+    print('\n[Testing Chroma]')
+    try:
+        chroma_store = factory.create('chroma', {'path': './test_chroma_db', 'collection': 'test_col'})
+        chroma_store.add([mock_vec], [mock_meta])
+        print(f'Count: {chroma_store.count()}')
+        res = chroma_store.search(mock_vec, 1)
+        if res:
+            print(f"Search Result: {res[0]['text']}")
+        if os.path.exists('./test_chroma_db'):
+            shutil.rmtree('./test_chroma_db')
+    except ImportError:
+        print('Skipping Chroma test (library not installed)')
+    except Exception as e:
+        print(f'Chroma Test Failed: {e}')

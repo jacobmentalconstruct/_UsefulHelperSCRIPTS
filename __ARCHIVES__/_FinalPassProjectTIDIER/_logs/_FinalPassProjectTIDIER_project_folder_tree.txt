@@ -1,0 +1,46 @@
+Project Tree: C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_FinalPassProjectTIDIER
+Generated: 2026-02-01 09:08:34.192622
+
+├── 📁 src/
+│   ├── 📁 microservices/
+│   │   ├── 📄 _CodeFormatterMS.py
+│   │   ├── 📄 _CodeJanitorMS.py
+│   │   ├── 📄 _DiffEngineMS.py
+│   │   ├── 📄 _ExplorerWidgetMS.py
+│   │   ├── 📄 _HeuristicSumMS.py
+│   │   ├── 📄 _HeuristicSumMS.py.bak
+│   │   ├── 📄 _IngestEngineMS.py
+│   │   ├── 📄 _IngestEngineMS.py.bak
+│   │   ├── 📄 _LexicalSearchMS.py
+│   │   ├── 📄 _LogViewMS.py
+│   │   ├── 📄 _MonacoHostMS.py
+│   │   ├── 📄 _OllamaModelSelectorMS.py
+│   │   ├── 📄 _RegexWeaverMS.py
+│   │   ├── 📄 _ScannerMS.py
+│   │   ├── 📄 _SearchEngineMS.py
+│   │   ├── 📄 _SemanticChunkerMS.py
+│   │   ├── 📄 _SessionRecorderMS.py
+│   │   ├── 📄 _SignalBusMS.py
+│   │   ├── 📄 _TelemetryServiceMS.py
+│   │   ├── 📄 _TextChunkerMS.py
+│   │   ├── 📄 _ThoughtStreamMS.py
+│   │   ├── 📄 _TkinterAppShellMS.py
+│   │   ├── 📄 _TkinterSmartExplorerMS.py
+│   │   ├── 📄 _TkinterThemeManagerMS.py
+│   │   ├── 📄 _TreeMapperMS.py
+│   │   ├── 📄 base_service.py
+│   │   ├── 📄 diff_engine.db
+│   │   └── 📄 microservice_std_lib.py
+│   ├── 📄 app.py
+│   ├── 📄 backend.py
+│   └── 📄 ui.py
+├── 📁 tidy_logs/
+│   ├── 📄 tidy_session_20260201_070919.log
+│   ├── 📄 tidy_session_20260201_070934.log
+│   ├── 📄 tidy_session_20260201_071550.log
+│   └── 📄 tidy_session_20260201_072123.log
+├── 📄 _FinalPassProjectTIDIER.7z
+├── 📄 LICENSE.md
+├── 📄 README.md
+├── 📄 requirements.txt
+└── 📄 setup_env.bat

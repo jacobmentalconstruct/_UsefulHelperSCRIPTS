@@ -1,0 +1,15 @@
+{
+  "folder_states": {
+    ".": "checked",
+    "assets": "checked",
+    "assets\\icons": "checked",
+    "src": "checked",
+    "src\\__init__.py": "checked",
+    "src\\app.py": "checked",
+    ".gitignore": "checked",
+    "LICENSE.md": "checked",
+    "requirements.txt": "checked",
+    "setup_env.bat": "checked"
+  },
+  "dynamic_exclusions": []
+}
