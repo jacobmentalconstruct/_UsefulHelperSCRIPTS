@@ -1,75 +1,8 @@
-Dump: C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_theCELL
+Dump: C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_theCELL\src
 
 
 --------------------------------------------------------------------------------
-FILE: LICENSE.md
---------------------------------------------------------------------------------
-MIT License
-
-Copyright (c) 2025 Jacob Lambert
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-
---------------------------------------------------------------------------------
-FILE: requirements.txt
---------------------------------------------------------------------------------
-requests>=2.28.0
-pydantic>=1.10.0,<2.0.0
-chromadb>=0.3.21
-faiss-cpu>=1.7.4
-numpy>=1.21.0
-
-
---------------------------------------------------------------------------------
-FILE: setup_env.bat
---------------------------------------------------------------------------------
-@echo off
-setlocal
-
-echo [STATUS] Searching for Python 3.10...
-py -3.10 --version >nul 2>&1
-if %errorlevel% neq 0 (
-    echo [ERROR] Python 3.10 was not found. Please install it from python.org.
-    pause
-    exit /b
-)
-
-echo [STATUS] Setting up _theCELL Environment with Python 3.10...
-if not exist .venv (
-    py -3.10 -m venv .venv
-)
-
-call .venv\Scripts\activate
-
-echo [STATUS] Installing dependencies from requirements.txt...
-python -m pip install --upgrade pip
-python -m pip install -r requirements.txt
-
-echo [STATUS] Setup Complete.
-echo ----------------------------------------------------------------------
-echo  Starting _theCELL Idea Ingestor...
-echo ----------------------------------------------------------------------
-python -m src.app
-pause
-
---------------------------------------------------------------------------------
-FILE: src\app.py
+FILE: app.py
 --------------------------------------------------------------------------------
 from .backend import Backend
 from .ui import CELL_UI
@@ -102,7 +35,7 @@ if __name__ == "__main__":
 
 
 --------------------------------------------------------------------------------
-FILE: src\backend.py
+FILE: backend.py
 --------------------------------------------------------------------------------
 import sqlite3
 import os
@@ -300,7 +233,7 @@ class Backend:
 
 
 --------------------------------------------------------------------------------
-FILE: src\ui.py
+FILE: ui.py
 --------------------------------------------------------------------------------
 import tkinter as tk
 from tkinter import ttk, messagebox
@@ -727,11 +660,11 @@ class CELL_UI:
 
 
 --------------------------------------------------------------------------------
-FILE: src\__init__.py
+FILE: __init__.py
 --------------------------------------------------------------------------------
 
 --------------------------------------------------------------------------------
-FILE: src\microservices\base_service.py
+FILE: microservices\base_service.py
 --------------------------------------------------------------------------------
 import logging
 from typing import Dict, Any
@@ -765,7 +698,7 @@ class BaseService:
         self.logger.warning(message)
 
 --------------------------------------------------------------------------------
-FILE: src\microservices\document_utils.py
+FILE: microservices\document_utils.py
 --------------------------------------------------------------------------------
 from ._ContentExtractorMS import ContentExtractorMS
 
@@ -781,7 +714,7 @@ def extract_text_from_html(html_text: str) -> str:
     return _extractor._extract_html(html_text)
 
 --------------------------------------------------------------------------------
-FILE: src\microservices\microservice_std_lib.py
+FILE: microservices\microservice_std_lib.py
 --------------------------------------------------------------------------------
 """
 LIBRARY: Microservice Standard Lib
@@ -929,7 +862,7 @@ def extract_service_schema(service_cls: Type) -> Dict[str, Any]:
     return schema
 
 --------------------------------------------------------------------------------
-FILE: src\microservices\_CognitiveMemoryMS.py
+FILE: microservices\_CognitiveMemoryMS.py
 --------------------------------------------------------------------------------
 """
 SERVICE_NAME: _CognitiveMemoryMS
@@ -1092,7 +1025,7 @@ if __name__ == '__main__':
         os.remove(p)
 
 --------------------------------------------------------------------------------
-FILE: src\microservices\_FeedbackValidationMS.py
+FILE: microservices\_FeedbackValidationMS.py
 --------------------------------------------------------------------------------
 """
 SERVICE_NAME: _FeedbackValidationMS
@@ -1204,7 +1137,7 @@ class FeedbackValidationMS(BaseService):
         return [{"prompt": r[0], "response": r[1]} for r in results]
 
 --------------------------------------------------------------------------------
-FILE: src\microservices\_IngestEngineMS.py
+FILE: microservices\_IngestEngineMS.py
 --------------------------------------------------------------------------------
 """
 SERVICE_NAME: _IngestEngineMS
@@ -1417,7 +1350,7 @@ if __name__ == '__main__':
         os.remove(target_file)
 
 --------------------------------------------------------------------------------
-FILE: src\microservices\_LogViewMS.py
+FILE: microservices\_LogViewMS.py
 --------------------------------------------------------------------------------
 import tkinter as tk
 from tkinter import scrolledtext, filedialog
@@ -1545,7 +1478,7 @@ if __name__ == '__main__':
     root.mainloop()
 
 --------------------------------------------------------------------------------
-FILE: src\microservices\_MicroSpinnerMS.py
+FILE: microservices\_MicroSpinnerMS.py
 --------------------------------------------------------------------------------
 import tkinter as tk
 import math
@@ -1620,7 +1553,7 @@ class MicroSpinner:
     def stop(self):
         self.is_running = False
 --------------------------------------------------------------------------------
-FILE: src\microservices\_SemanticChunkerMS.py
+FILE: microservices\_SemanticChunkerMS.py
 --------------------------------------------------------------------------------
 import ast
 from dataclasses import dataclass, asdict
@@ -1719,7 +1652,7 @@ if __name__ == '__main__':
         print(f" - [{c['type']}] {c['name']} ({c['start_line']}-{c['end_line']})")
 
 --------------------------------------------------------------------------------
-FILE: src\microservices\_TextChunkerMS.py
+FILE: microservices\_TextChunkerMS.py
 --------------------------------------------------------------------------------
 import logging
 from typing import Any, Dict, List, Optional, Tuple
@@ -1790,7 +1723,7 @@ if __name__ == '__main__':
         print(f"Chunk {i}: Lines {c['start_line']}-{c['end_line']}")
 
 --------------------------------------------------------------------------------
-FILE: src\microservices\_TkinterAppShellMS.py
+FILE: microservices\_TkinterAppShellMS.py
 --------------------------------------------------------------------------------
 """
 SERVICE_NAME: _TkinterAppShellMS
@@ -1937,7 +1870,7 @@ if __name__ == '__main__':
 
 
 --------------------------------------------------------------------------------
-FILE: src\microservices\_TkinterThemeManagerMS.py
+FILE: microservices\_TkinterThemeManagerMS.py
 --------------------------------------------------------------------------------
 """
 SERVICE_NAME: _TkinterThemeManagerMS
@@ -2057,7 +1990,7 @@ class TkinterThemeManagerMS:
 
 
 --------------------------------------------------------------------------------
-FILE: src\microservices\_VectorFactoryMS.py
+FILE: microservices\_VectorFactoryMS.py
 --------------------------------------------------------------------------------
 import importlib.util
 import sys
@@ -2263,5 +2196,5 @@ if __name__ == '__main__':
         print(f'Chroma Test Failed: {e}')
 
 --------------------------------------------------------------------------------
-FILE: src\microservices\__init__.py
+FILE: microservices\__init__.py
 --------------------------------------------------------------------------------

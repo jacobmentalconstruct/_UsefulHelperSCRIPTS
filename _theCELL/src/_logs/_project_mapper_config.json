@@ -1,0 +1,25 @@
+{
+  "folder_states": {
+    ".": "checked",
+    "microservices": "checked",
+    "microservices\\__init__.py": "checked",
+    "microservices\\_CognitiveMemoryMS.py": "checked",
+    "microservices\\_FeedbackValidationMS.py": "checked",
+    "microservices\\_IngestEngineMS.py": "checked",
+    "microservices\\_LogViewMS.py": "checked",
+    "microservices\\_MicroSpinnerMS.py": "checked",
+    "microservices\\_SemanticChunkerMS.py": "checked",
+    "microservices\\_TextChunkerMS.py": "checked",
+    "microservices\\_TkinterAppShellMS.py": "checked",
+    "microservices\\_TkinterThemeManagerMS.py": "checked",
+    "microservices\\_VectorFactoryMS.py": "checked",
+    "microservices\\base_service.py": "checked",
+    "microservices\\document_utils.py": "checked",
+    "microservices\\microservice_std_lib.py": "checked",
+    "__init__.py": "checked",
+    "app.py": "checked",
+    "backend.py": "checked",
+    "ui.py": "checked"
+  },
+  "dynamic_exclusions": []
+}
