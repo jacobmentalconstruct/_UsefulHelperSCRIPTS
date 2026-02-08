@@ -326,6 +326,42 @@ class CELL_UI:
         self.backend = backend
         self.container = shell.get_main_container()
         self.colors = shell.colors
+
+        # Track singleton modals / key widgets
+        self._settings_window = None
+        self.model_lbl = None
+        self.btn_save_template = None
+        self.btn_load_template = None
+        self.btn_submit = None
+
+        # Panels (Step 2 stubs)
+        self.panel_prompt = None
+        self.panel_inference = None
+        self.panel_result = None
+        self.panel_export = None
+
+        # Two-column layout containers (Step 1 layout)
+        self.main_row = None
+        self.left_col = None
+        self.right_col = None
+
+        # Action bar ref (so it can be themed)
+        self.action_frame = None
+
+        # Panel widgets (stubs)
+        self.infer_log = None
+        self.result_text = None
+        self.btn_accept = None
+        self.btn_reject = None
+        self.btn_exit = None
+
+        # Export Router (inline) widgets
+        self.export_router_frame = None
+        self.export_dest_var = None
+        self.export_dest_cb = None
+        self.export_options_frame = None
+        self.export_execute_btn = None
+        self._export_selected = None
         
         # Restore window state from DB
         saved_geo = self.backend.get_setting('window_geometry')
@@ -336,14 +372,29 @@ class CELL_UI:
         self._restore_component_state()
 
     def _setup_main_window(self):
+        # PANEL 1 (Prompt Setup): left column
+        # Panels 2-4 (Inference / HITL / Export): right column
+        self.main_row = tk.Frame(self.container, bg=self.colors.get('background'))
+        self.main_row.pack(fill='both', expand=True)
+
+        self.left_col = tk.Frame(self.main_row, bg=self.colors.get('background'))
+        self.left_col.pack(side='left', fill='both', expand=True)
+
+        self.right_col = tk.Frame(self.main_row, bg=self.colors.get('background'))
+        self.right_col.pack(side='right', fill='y', padx=(8, 0))
+
+        # PANEL 1 (Prompt Setup)
+        self.panel_prompt = tk.Frame(self.container, bg=self.colors.get('background'))
+        self.panel_prompt.pack(in_=self.left_col, fill='both', expand=True)
+
         # --- Top Label ---
-        self.top_label = tk.Label(self.container, text="Type in your idea HERE.", 
+        self.top_label = tk.Label(self.panel_prompt, text="Type in your idea HERE.", 
                  fg=self.colors.get('foreground'), bg=self.colors.get('background'),
                  font=("Segoe UI", 12, "bold"))
         self.top_label.pack(pady=(10, 5))
 
         # --- Formatting Toolbar ---
-        self.toolbar = tk.Frame(self.container, bg=self.colors.get('panel_bg'))
+        self.toolbar = tk.Frame(self.panel_prompt, bg=self.colors.get('panel_bg'))
         self.toolbar.pack(fill='x', padx=10)
         
         btn_opts = {"bg": self.colors.get('panel_bg'), "fg": self.colors.get('foreground', 'white'), "relief": "flat", "padx": 5}
@@ -358,12 +409,13 @@ class CELL_UI:
         self.btn_settings.pack(side='right')
 
         # --- Inference Config Section ---
-        self.config_frame = tk.LabelFrame(self.container, text=" Inference Parameters ", 
+        self.config_frame = tk.LabelFrame(self.panel_prompt, text=" Inference Parameters ", 
                                      fg=self.colors.get('foreground'), bg=self.colors.get('background'))
         self.config_frame.pack(fill='x', padx=10, pady=10)
 
         # Model Selection
-        tk.Label(self.config_frame, text="Model:", bg=self.colors.get('background'), fg=self.colors.get('foreground', 'white')).grid(row=0, column=0, sticky='w', padx=5)
+        self.model_lbl = tk.Label(self.config_frame, text="Model:", bg=self.colors.get('background'), fg=self.colors.get('foreground', 'white'))
+        self.model_lbl.grid(row=0, column=0, sticky='w', padx=5)
         self.model_var = tk.StringVar()
         self.model_dropdown = ttk.Combobox(self.config_frame, textvariable=self.model_var)
         self.model_dropdown['values'] = self.backend.get_models()
@@ -420,7 +472,7 @@ class CELL_UI:
 
         # --- Main Input Box ---
         self.input_box = tk.Text(
-            self.container,
+            self.panel_prompt,
             undo=True,
             wrap="word",
             bg=self.colors.get('entry_bg', '#252526'),
@@ -433,17 +485,168 @@ class CELL_UI:
         self.input_box.focus_set()
 
         # --- Action Bar ---
-        action_frame = tk.Frame(self.container, bg=self.colors.get('background'))
-        action_frame.pack(fill='x', padx=10, pady=(0, 10))
+        self.action_frame = tk.Frame(self.panel_prompt, bg=self.colors.get('background'))
+        self.action_frame.pack(fill='x', padx=10, pady=(0, 10))
 
-        tk.Button(action_frame, text="SAVE AS TEMPLATE", bg=self.colors.get('panel_bg'), fg=self.colors.get('button_fg', self.colors.get('foreground', 'white')),
-                  font=("Segoe UI", 9), command=self._save_full_template).pack(side='left', fill='x', expand=True, padx=(0, 2))
+        self.btn_save_template = tk.Button(
+            self.action_frame,
+            text="SAVE AS TEMPLATE",
+            bg=self.colors.get('panel_bg'),
+            fg=self.colors.get('button_fg', self.colors.get('foreground', 'white')),
+            font=("Segoe UI", 9),
+            command=self._save_full_template
+        )
+        self.btn_save_template.pack(side='left', fill='x', expand=True, padx=(0, 2))
 
-        tk.Button(action_frame, text="LOAD TEMPLATE", bg=self.colors.get('panel_bg'), fg=self.colors.get('button_fg', self.colors.get('foreground', 'white')),
-                  font=("Segoe UI", 9), command=lambda: self._open_viewer('personas', None)).pack(side='left', fill='x', expand=True, padx=(2, 5))
+        self.btn_load_template = tk.Button(
+            self.action_frame,
+            text="LOAD TEMPLATE",
+            bg=self.colors.get('panel_bg'),
+            fg=self.colors.get('button_fg', self.colors.get('foreground', 'white')),
+            font=("Segoe UI", 9),
+            command=lambda: self._open_viewer('personas', None)
+        )
+        self.btn_load_template.pack(side='left', fill='x', expand=True, padx=(2, 5))
 
-        tk.Button(action_frame, text="SUBMIT", bg=self.colors.get('accent', '#007acc'), fg="white", 
-                  font=("Segoe UI", 10, "bold"), command=self._submit).pack(side='left', fill='x', expand=True)
+        self.btn_submit = tk.Button(
+            self.action_frame,
+            text="RUN CELL",
+            bg=self.colors.get('accent', '#007acc'),
+            fg="white",
+            font=("Segoe UI", 10, "bold"),
+            command=self._submit
+        )
+        self.btn_submit.pack(side='left', fill='x', expand=True)
+
+        # ------------------------------------------------------------------
+        # PANEL 2 — Inference Console (stub)
+        # ------------------------------------------------------------------
+        self.panel_inference = tk.LabelFrame(
+            self.container,
+            text=" Inference Console ",
+            fg=self.colors.get('foreground'),
+            bg=self.colors.get('background')
+        )
+        self.panel_inference.pack(in_=self.right_col, fill='x', padx=10, pady=(0, 10))
+
+        self.infer_log = tk.Text(
+            self.panel_inference,
+            height=6,
+            wrap="word",
+            bg=self.colors.get('entry_bg', '#252526'),
+            fg=self.colors.get('entry_fg', '#d4d4d4'),
+            insertbackground=self.colors.get('entry_fg', 'white'),
+            font=("Consolas", 10)
+        )
+        self.infer_log.insert('1.0', "[Stub] Inference logs will stream here during the run.\n")
+        self.infer_log.configure(state='disabled')
+        self.infer_log.pack(fill='x', expand=False, padx=10, pady=8)
+
+        # ------------------------------------------------------------------
+        # PANEL 3 — Result + HITL (stub)
+        # ------------------------------------------------------------------
+        self.panel_result = tk.LabelFrame(
+            self.container,
+            text=" Result + HITL ",
+            fg=self.colors.get('foreground'),
+            bg=self.colors.get('background')
+        )
+        self.panel_result.pack(in_=self.right_col, fill='both', expand=True, padx=10, pady=(0, 10))
+
+        self.result_text = tk.Text(
+            self.panel_result,
+            height=8,
+            wrap="word",
+            bg=self.colors.get('entry_bg', '#252526'),
+            fg=self.colors.get('entry_fg', '#d4d4d4'),
+            insertbackground=self.colors.get('entry_fg', 'white'),
+            font=("Consolas", 11)
+        )
+        self.result_text.insert('1.0', "[Stub] Model response will appear here.\n")
+        self.result_text.configure(state='disabled')
+        self.result_text.pack(fill='both', expand=True, padx=10, pady=(8, 6))
+
+        hitl_bar = tk.Frame(self.panel_result, bg=self.colors.get('background'))
+        hitl_bar.pack(fill='x', padx=10, pady=(0, 10))
+
+        self.btn_accept = tk.Button(
+            hitl_bar,
+            text="ACCEPT",
+            bg=self.colors.get('accent', '#007acc'),
+            fg="white",
+            relief="flat",
+            state='disabled',
+            command=lambda: None
+        )
+        self.btn_accept.pack(side='left', padx=(0, 6))
+
+        self.btn_reject = tk.Button(
+            hitl_bar,
+            text="REJECT & EDIT",
+            bg=self.colors.get('panel_bg'),
+            fg=self.colors.get('button_fg', self.colors.get('foreground', 'white')),
+            relief="flat",
+            state='disabled',
+            command=lambda: None
+        )
+        self.btn_reject.pack(side='left', padx=(0, 6))
+
+        self.btn_exit = tk.Button(
+            hitl_bar,
+            text="EXIT CELL",
+            bg=self.colors.get('panel_bg'),
+            fg=self.colors.get('button_fg', self.colors.get('foreground', 'white')),
+            relief="flat",
+            command=self.shell.root.destroy
+        )
+        self.btn_exit.pack(side='right')
+
+        # PANEL 4 — Export / Spawn (inline router)
+        self.panel_export = tk.LabelFrame(
+            self.container,
+            text=" Export / Spawn ",
+            fg=self.colors.get('foreground'),
+            bg=self.colors.get('background')
+        )
+        self.panel_export.pack(in_=self.right_col, fill='x', padx=10, pady=(0, 12))
+
+        self.export_router_frame = tk.Frame(self.panel_export, bg=self.colors.get('background'))
+        self.export_router_frame.pack(fill='x', padx=10, pady=10)
+
+        top_row = tk.Frame(self.export_router_frame, bg=self.colors.get('background'))
+        top_row.pack(fill='x')
+
+        tk.Label(top_row, text="Destination:", bg=self.colors.get('background'), fg=self.colors.get('foreground', 'white')).pack(side='left')
+
+        self.export_dest_var = tk.StringVar(value="Spawn")
+        self.export_dest_cb = ttk.Combobox(
+            top_row, 
+            textvariable=self.export_dest_var, 
+            state='readonly', 
+            values=["Spawn", "File", "Database", "Vector", "Code", "Patch", "Logs"]
+        )
+        self.export_dest_cb.pack(side='left', padx=8, fill='x', expand=True)
+
+        self.export_execute_btn = tk.Button(
+            top_row, text="EXECUTE", bg=self.colors.get('panel_bg'),
+            fg=self.colors.get('button_fg', self.colors.get('foreground', 'white')),
+            relief="flat", state='disabled', command=lambda: None
+        )
+        self.export_execute_btn.pack(side='right')
+
+        self.export_options_frame = tk.Frame(self.export_router_frame, bg=self.colors.get('background'))
+        self.export_options_frame.pack(fill='x', pady=(8, 0))
+
+        def _build_export_options(dest: str):
+            for w in self.export_options_frame.winfo_children(): w.destroy()
+            if dest == "Spawn":
+                tk.Button(self.export_options_frame, text="Spawn Child Cell", bg=self.colors.get('panel_bg'), fg=self.colors.get('button_fg', self.colors.get('foreground')), relief='flat', state='disabled').pack(fill='x', pady=2)
+            elif dest == "File":
+                for fmt in ("JSON", "Markdown", "Text"):
+                    tk.Button(self.export_options_frame, text=f"Save {fmt}", bg=self.colors.get('panel_bg'), fg=self.colors.get('button_fg', self.colors.get('foreground')), relief='flat', state='disabled').pack(fill='x', pady=2)
+
+        self.export_dest_cb.bind('<<ComboboxSelected>>', lambda _e: _build_export_options(self.export_dest_var.get()))
+        _build_export_options("Spawn")
 
     def _apply_markdown_style(self, prefix, suffix=""):
         """Wraps selected text in Markdown markers for AI readability."""
@@ -479,8 +682,31 @@ class CELL_UI:
             widget.delete(0, 'end')
             widget.insert(0, content)
         elif isinstance(widget, tk.Text):
+            widget.configure(state='normal')
             widget.delete('1.0', 'end')
             widget.insert('1.0', content)
+            widget.configure(state='disabled')
+
+    def append_log(self, message: str):
+        """Thread-safe way to append to the inference console."""
+        self.infer_log.configure(state='normal')
+        self.infer_log.insert('end', f"{message}\n")
+        self.infer_log.see('end')
+        self.infer_log.configure(state='disabled')
+
+    def display_result(self, text: str):
+        """Displays the final artifact and enables HITL buttons."""
+        self.result_text.configure(state='normal')
+        self.result_text.delete('1.0', 'end')
+        self.result_text.insert('1.0', text)
+        self.result_text.configure(state='disabled')
+        
+        if self.btn_accept:
+            self.btn_accept.configure(state='normal')
+        if self.btn_reject:
+            self.btn_reject.configure(state='normal')
+        if self.export_execute_btn:
+            self.export_execute_btn.configure(state='normal')
 
     def _save_repo_dialog(self, table, content):
         """Modular save dialog for individual repositories."""
@@ -544,10 +770,31 @@ class CELL_UI:
         CellViewerModal(self.shell.root, self.colors, table, self.backend, callback)
 
     def _open_settings(self):
+        # Enforce singleton Settings modal
+        if self._settings_window is not None:
+            try:
+                if self._settings_window.winfo_exists():
+                    self._settings_window.deiconify()
+                    self._settings_window.lift()
+                    self._settings_window.focus_force()
+                    return
+            except Exception:
+                self._settings_window = None
+
         settings = tk.Toplevel(self.shell.root)
+        self._settings_window = settings
         settings.title("Settings")
         settings.geometry("350x250")
         settings.configure(bg=self.colors.get('background'))
+
+        def _close_settings():
+            self._settings_window = None
+            try:
+                settings.destroy()
+            except Exception:
+                pass
+
+        settings.protocol("WM_DELETE_WINDOW", _close_settings)
 
         # Load persisted theme (default Dark)
         current_theme = (self.backend.get_setting('theme_preference') or 'Dark').strip().title()
@@ -584,10 +831,10 @@ class CELL_UI:
                 self.colors = self.shell.colors
                 self.refresh_theme()
 
-            settings.destroy()
+            _close_settings()
 
         tk.Button(btn_frame, text="Accept", command=save, width=10).pack(side='left', padx=5)
-        tk.Button(btn_frame, text="Cancel", command=settings.destroy, width=10).pack(side='left', padx=5)
+        tk.Button(btn_frame, text="Cancel", command=_close_settings, width=10).pack(side='left', padx=5)
 
     def _build_context_menu(self):
         self.menu = tk.Menu(self.input_box, tearoff=0)
@@ -618,32 +865,76 @@ class CELL_UI:
             self.model_var.set(last_model)
 
     def _submit(self):
-        """Process submission and persist current parameters."""
+        """Process submission, persist parameters, and update UI consoles."""
         content = self.input_box.get("1.0", "end-1c")
         model = self.model_var.get()
         role = self.role_entry.get()
         prompt = self.prompt_text.get("1.0", "end-1c")
         
+        # Persist settings via backend
         self.backend.save_setting('last_model', model)
         self.backend.save_setting('last_system_role', role)
         self.backend.save_setting('last_system_prompt', prompt)
+
+        # Prepare Inference Log
+        self.infer_log.configure(state='normal')
+        self.infer_log.delete('1.0', 'end')
+        self.infer_log.insert('1.0', f"[System] Initiating run with {model}...\n")
+        self.infer_log.configure(state='disabled')
+
+        # Prepare Result Box
+        self.result_text.configure(state='normal')
+        self.result_text.delete('1.0', 'end')
+        self.result_text.insert('1.0', "Waiting for model response...\n")
+        self.result_text.configure(state='disabled')
         
+        # Trigger backend processing
         self.backend.process_submission(content, model, role, prompt)
 
     def refresh_theme(self):
         """Re-applies the current shell colors to all primary UI widgets."""
         self.colors = self.shell.colors
-        
+
         # Update Containers
         self.container.configure(bg=self.colors.get('background'))
+
+        if self.main_row is not None:
+            self.main_row.configure(bg=self.colors.get('background'))
+        if self.left_col is not None:
+            self.left_col.configure(bg=self.colors.get('background'))
+        if self.right_col is not None:
+            self.right_col.configure(bg=self.colors.get('background'))
+
+        if self.panel_prompt is not None:
+            self.panel_prompt.configure(bg=self.colors.get('background'))
+
+        if self.action_frame is not None:
+            self.action_frame.configure(bg=self.colors.get('background'))
         self.toolbar.configure(bg=self.colors.get('panel_bg'))
         self.config_frame.configure(fg=self.colors.get('foreground'), bg=self.colors.get('background'))
         self.role_inner.configure(bg=self.colors.get('background'))
         self.prompt_inner.configure(bg=self.colors.get('background'))
         self.prompt_btns_frame.configure(bg=self.colors.get('background'))
-        
+
+        if self.action_frame is not None:
+            self.action_frame.configure(bg=self.colors.get('background'))
+
+        # Right-column panels
+        if self.panel_inference is not None:
+            self.panel_inference.configure(bg=self.colors.get('background'), fg=self.colors.get('foreground'))
+        if self.panel_result is not None:
+            self.panel_result.configure(bg=self.colors.get('background'), fg=self.colors.get('foreground'))
+        if self.panel_export is not None:
+            self.panel_export.configure(bg=self.colors.get('background'), fg=self.colors.get('foreground'))
+        if self.export_router_frame is not None:
+            self.export_router_frame.configure(bg=self.colors.get('background'))
+        if self.export_options_frame is not None:
+            self.export_options_frame.configure(bg=self.colors.get('background'))
+
         # Update Labels
         self.top_label.configure(fg=self.colors.get('foreground'), bg=self.colors.get('background'))
+        if self.model_lbl is not None:
+            self.model_lbl.configure(bg=self.colors.get('background'), fg=self.colors.get('foreground'))
         self.role_lbl.configure(bg=self.colors.get('background'), fg=self.colors.get('foreground'))
         self.prompt_lbl.configure(bg=self.colors.get('background'), fg=self.colors.get('foreground'))
 
@@ -652,10 +943,54 @@ class CELL_UI:
         self.prompt_text.configure(bg=self.colors.get('entry_bg'), fg=self.colors.get('entry_fg'), insertbackground=self.colors.get('entry_fg'))
         self.input_box.configure(bg=self.colors.get('entry_bg'), fg=self.colors.get('entry_fg'), insertbackground=self.colors.get('entry_fg'), selectbackground=self.colors.get('select_bg'))
 
-        # Update Buttons
+        # Panel 2/3 stubs
+        if self.infer_log is not None:
+            self.infer_log.configure(bg=self.colors.get('entry_bg'), fg=self.colors.get('entry_fg'), insertbackground=self.colors.get('entry_fg'))
+        if self.result_text is not None:
+            self.result_text.configure(bg=self.colors.get('entry_bg'), fg=self.colors.get('entry_fg'), insertbackground=self.colors.get('entry_fg'), selectbackground=self.colors.get('select_bg'))
+
+        # Update Buttons (toolbar + small repo buttons)
         btn_list = [self.btn_bold, self.btn_italic, self.btn_list, self.btn_settings, self.btn_role_save, self.btn_role_open, self.btn_prompt_save, self.btn_prompt_open]
         for btn in btn_list:
             btn.configure(bg=self.colors.get('panel_bg'), fg=self.colors.get('foreground'))
+
+        # Update Action Bar buttons
+        if self.btn_save_template is not None:
+            self.btn_save_template.configure(
+                bg=self.colors.get('panel_bg'),
+                fg=self.colors.get('button_fg', self.colors.get('foreground'))
+            )
+        if self.btn_load_template is not None:
+            self.btn_load_template.configure(
+                bg=self.colors.get('panel_bg'),
+                fg=self.colors.get('button_fg', self.colors.get('foreground'))
+            )
+        if self.btn_submit is not None:
+            self.btn_submit.configure(
+                bg=self.colors.get('accent', '#007acc'),
+                fg='white'
+            )
+
+        # HITL stub buttons
+        if self.btn_accept is not None:
+            self.btn_accept.configure(bg=self.colors.get('accent', '#007acc'), fg='white')
+        if self.btn_reject is not None:
+            self.btn_reject.configure(bg=self.colors.get('panel_bg'), fg=self.colors.get('button_fg', self.colors.get('foreground')))
+        if self.btn_exit is not None:
+            self.btn_exit.configure(bg=self.colors.get('panel_bg'), fg=self.colors.get('button_fg', self.colors.get('foreground')))
+
+        # Export stub buttons
+        if self.btn_spawn_child is not None:
+            self.btn_spawn_child.configure(bg=self.colors.get('panel_bg'), fg=self.colors.get('button_fg', self.colors.get('foreground')))
+        if self.btn_export_json is not None:
+            self.btn_export_json.configure(bg=self.colors.get('panel_bg'), fg=self.colors.get('button_fg', self.colors.get('foreground')))
+
+
+
+
+
+
+
 
 
 
@@ -712,6 +1047,57 @@ def extract_text_from_pdf(blob: bytes) -> str:
 def extract_text_from_html(html_text: str) -> str:
     """Proxy to ContentExtractorMS HTML logic."""
     return _extractor._extract_html(html_text)
+
+--------------------------------------------------------------------------------
+FILE: microservices\ErrorNotifierMS.py
+--------------------------------------------------------------------------------
+"""
+SERVICE_NAME: _ErrorNotifierMS
+ROLE: Reactive Error Dispatcher (Task 3)
+"""
+import logging
+from typing import Dict, Any, Optional
+from microservice_std_lib import service_metadata, service_endpoint
+
+@service_metadata(
+    name='ErrorNotifier', 
+    version='1.0.0', 
+    description='Reactive service that normalizes and dispatches engine errors to UI/Logs.', 
+    tags=['utility', 'error-handling'], 
+    capabilities=['ui-notification'], 
+    internal_dependencies=['microservice_std_lib']
+)
+class ErrorNotifierMS:
+    def __init__(self, bus):
+        self.bus = bus
+        self.logger = logging.getLogger("ErrorNotifier")
+
+    def on_engine_error(self, payload: Dict[str, Any]):
+        """
+        Subscribed handler for engine failures.
+        Safely extracts error details and emits normalized UI/Logging events.
+        """
+        # 1. Safely extract message with fallback
+        msg = payload.get('message') or payload.get('msg') or "Unknown Engine Error"
+        file_ctx = f" in {payload['file']}" if 'file' in payload else ""
+        hunk_ctx = f" (Hunk: {payload['hunk_name']})" if 'hunk_name' in payload else ""
+        
+        full_report = f"❌ ENGINE ERROR: {msg}{file_ctx}{hunk_ctx}"
+
+        # 2. Dispatch to the UI via the Signal Bus
+        # This keeps the notifier decoupled from the UI implementation details
+        self.bus.emit("notify_error", {"message": full_report, "level": "ERROR"})
+        
+        # 3. Log internally for standard output
+        self.logger.error(full_report)
+
+    def on_commit_failed(self, payload: Dict[str, Any]):
+        """Handles failures during file write operations."""
+        file_path = payload.get('file', 'unknown file')
+        error = payload.get('error', 'unknown write error')
+        
+        report = f"💾 COMMIT FAILED: Could not update {file_path}. Error: {error}"
+        self.bus.emit("notify_error", {"message": report, "level": "CRITICAL"})
 
 --------------------------------------------------------------------------------
 FILE: microservices\microservice_std_lib.py
@@ -860,6 +1246,167 @@ def extract_service_schema(service_cls: Type) -> Dict[str, Any]:
             schema["endpoints"].append(endpoint_info)
 
     return schema
+
+--------------------------------------------------------------------------------
+FILE: microservices\_CodeFormatterMS.py
+--------------------------------------------------------------------------------
+"""
+SERVICE_NAME: _CodeFormatterMS
+ENTRY_POINT: _CodeFormatterMS.py
+INTERNAL_DEPENDENCIES: microservice_std_lib
+EXTERNAL_DEPENDENCIES: None
+"""
+import re
+import json
+import logging
+from pathlib import Path
+from typing import Dict, List, Any, Optional
+from microservice_std_lib import service_metadata, service_endpoint
+logger = logging.getLogger('CodeFormatter')
+
+class WhitespaceEngine:
+    """
+    Parses code into a granular map of (Indent + Content + Trailing).
+    Can Normalize structure and generate 'Hunk' patches.
+    """
+
+    def __init__(self):
+        self.raw_lines = []
+        self.nodes = []
+        self.normalized_text = ''
+        self.patch_data = {'hunks': []}
+
+    def load_source(self, text):
+        self.raw_lines = text.splitlines()
+        self.nodes = []
+        indent_stack = [0]
+        last_line_was_block_starter = False
+        for i, line in enumerate(self.raw_lines):
+            match = re.match('^([ \\t]*)(.*?)([ \\t]*)$', line)
+            if not match:
+                self.nodes.append({'id': i, 'indent': '', 'content': line, 'depth': 0, 'is_empty': True})
+                continue
+            indent, content, trailing = match.groups()
+            is_empty = len(content) == 0
+            current_width = 0
+            for char in indent:
+                current_width += 4 if char == '\t' else 1
+            if is_empty:
+                depth = len(indent_stack) - 1
+            else:
+                if current_width > indent_stack[-1]:
+                    if last_line_was_block_starter:
+                        indent_stack.append(current_width)
+                    else:
+                        pass
+                while len(indent_stack) > 1 and current_width < indent_stack[-1]:
+                    indent_stack.pop()
+                depth = len(indent_stack) - 1
+                clean_content = content.split('#')[0].strip()
+                last_line_was_block_starter = clean_content.endswith(':')
+            self.nodes.append({'id': i, 'raw_indent': indent, 'depth': depth, 'content': content, 'trailing': trailing, 'is_empty': is_empty})
+
+    def normalize(self, use_tabs=False, space_count=4):
+        """Reconstructs the code with strict indentation rules."""
+        char = '\t' if use_tabs else ' ' * space_count
+        clean_lines = []
+        for node in self.nodes:
+            if node['is_empty']:
+                clean_lines.append('')
+            else:
+                new_indent = char * node['depth']
+                clean_lines.append(f"{new_indent}{node['content']}")
+        self.normalized_text = '\n'.join(clean_lines)
+        return self.normalized_text
+
+    def generate_patch(self):
+        """Compares Raw vs Normalized and generates JSON Schema Hunks."""
+        clean_lines = self.normalized_text.splitlines()
+        if not clean_lines:
+            return {'hunks': []}
+        hunks = []
+        current_hunk = None
+        for i, (raw, clean) in enumerate(zip(self.raw_lines, clean_lines)):
+            if raw != clean:
+                if current_hunk is None:
+                    current_hunk = {'start_line': i, 'raw_block': [raw], 'clean_block': [clean]}
+                elif i == current_hunk['start_line'] + len(current_hunk['raw_block']):
+                    current_hunk['raw_block'].append(raw)
+                    current_hunk['clean_block'].append(clean)
+                else:
+                    self._finalize_hunk(hunks, current_hunk)
+                    current_hunk = {'start_line': i, 'raw_block': [raw], 'clean_block': [clean]}
+            elif current_hunk:
+                self._finalize_hunk(hunks, current_hunk)
+                current_hunk = None
+        if current_hunk:
+            self._finalize_hunk(hunks, current_hunk)
+        self.patch_data = {'hunks': hunks}
+        return self.patch_data
+
+    def _finalize_hunk(self, hunks_list, hunk_data):
+        search_txt = '\n'.join(hunk_data['raw_block'])
+        replace_txt = '\n'.join(hunk_data['clean_block'])
+        schema_hunk = {'description': f"Normalize indentation (Lines {hunk_data['start_line']}-{hunk_data['start_line'] + len(hunk_data['raw_block'])})", 'search_block': search_txt, 'replace_block': replace_txt}
+        hunks_list.append(schema_hunk)
+
+@service_metadata(name='CodeFormatter', version='1.0.0', description='The Architect: Intelligent whitespace normalization and structural repair engine.', tags=['formatting', 'code', 'utility'], capabilities=['compute', 'filesystem:write'], internal_dependencies=['microservice_std_lib'], external_dependencies=[])
+class CodeFormatterMS:
+    """
+    The Architect.
+    Uses the WhitespaceEngine to enforce strict indentation rules, 
+    fixing 'staircase' formatting and mixed tabs/spaces.
+    """
+
+    def __init__(self, config: Optional[Dict[str, Any]]=None):
+        self.config = config or {}
+
+    @service_endpoint(inputs={'content': 'str', 'use_tabs': 'bool', 'spaces': 'int'}, outputs={'normalized': 'str', 'patch': 'Dict'}, description='Takes raw code and returns the normalized version plus a JSON patch of changes.', tags=['formatting', 'compute'], side_effects=[])
+    def normalize_code(self, content: str, use_tabs: bool=False, spaces: int=4) -> Dict[str, Any]:
+        """
+        Pure logic endpoint: Takes string, returns string + patch.
+        Does not touch the filesystem.
+        """
+        engine = WhitespaceEngine()
+        engine.load_source(content)
+        normalized = engine.normalize(use_tabs=use_tabs, space_count=spaces)
+        patch = engine.generate_patch()
+        return {'normalized': normalized, 'patch': patch}
+
+    @service_endpoint(inputs={'file_path': 'str', 'use_tabs': 'bool', 'spaces': 'int'}, outputs={'status': 'str', 'changes': 'int'}, description='Reads a file, normalizes it, and overwrites it if changes are needed.', tags=['formatting', 'filesystem'], side_effects=['filesystem:read', 'filesystem:write'])
+    def format_file(self, file_path: str, use_tabs: bool=False, spaces: int=4) -> Dict[str, Any]:
+        """
+        Filesystem endpoint: In-place repair of a file.
+        """
+        path = Path(file_path).resolve()
+        if not path.exists():
+            return {'status': 'error', 'message': 'File not found'}
+        try:
+            content = path.read_text(encoding='utf-8')
+            engine = WhitespaceEngine()
+            engine.load_source(content)
+            normalized = engine.normalize(use_tabs=use_tabs, space_count=spaces)
+            patch = engine.generate_patch()
+            changes = len(patch['hunks'])
+            if changes > 0:
+                path.write_text(normalized, encoding='utf-8')
+                logger.info(f'Formatted {path.name}: {changes} hunks applied.')
+                return {'status': 'modified', 'changes': changes}
+            else:
+                return {'status': 'clean', 'changes': 0}
+        except Exception as e:
+            logger.error(f'Formatting failed for {path}: {e}')
+            return {'status': 'error', 'message': str(e)}
+if __name__ == '__main__':
+    logging.basicConfig(level=logging.INFO)
+    svc = CodeFormatterMS()
+    print('Service ready:', svc)
+    broken_code = '\ndef hello():\n  print("Indented with 2 spaces")\n      print("Suddenly 6 spaces!")\n    '
+    print('\n--- Processing Broken Code ---')
+    result = svc.normalize_code(broken_code, spaces=4)
+    print(f"Hunks Detected: {len(result['patch']['hunks'])}")
+    print('\n--- Normalized Output ---')
+    print(result['normalized'])
 
 --------------------------------------------------------------------------------
 FILE: microservices\_CognitiveMemoryMS.py
@@ -1023,6 +1570,173 @@ if __name__ == '__main__':
         os.remove('working_memory.jsonl')
     for p in Path('.').glob('memory_archive_*.jsonl'):
         os.remove(p)
+
+--------------------------------------------------------------------------------
+FILE: microservices\_ConfigStoreMS.py
+--------------------------------------------------------------------------------
+"""
+SERVICE_NAME: _ConfigStoreMS
+ROLE: App Settings Persistence (Task 4.2)
+"""
+import json
+import os
+import logging
+from typing import Dict, Any, Optional
+
+class ConfigStoreMS:
+    def __init__(self, filename="app_config.json"):
+        self.filename = filename
+        self.logger = logging.getLogger("ConfigStore")
+        self.data = self._load_from_disk()
+
+    def _load_from_disk(self) -> Dict[str, Any]:
+        """Loads the JSON config or returns defaults if missing/corrupt."""
+        if not os.path.exists(self.filename):
+            return {}
+        try:
+            with open(self.filename, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        except Exception as e:
+            self.logger.error(f"Failed to load config: {e}")
+            return {}
+
+    def get(self, key: str, default: Any = None) -> Any:
+        return self.data.get(key, default)
+
+    def set(self, key: str, value: Any):
+        """Updates internal data and triggers an atomic save."""
+        self.data[key] = value
+        self.save()
+
+    def save(self):
+        """Atomic write: Save to temp, then rename to original."""
+        temp_file = f"{self.filename}.tmp"
+        try:
+            with open(temp_file, 'w', encoding='utf-8') as f:
+                json.dump(self.data, f, indent=4)
+            os.replace(temp_file, self.filename)
+        except Exception as e:
+            self.logger.error(f"Atomic save failed: {e}")
+            if os.path.exists(temp_file):
+                os.remove(temp_file)
+
+--------------------------------------------------------------------------------
+FILE: microservices\_DiffEngineMS.py
+--------------------------------------------------------------------------------
+"""
+SERVICE_NAME: _DiffEngineMS
+ENTRY_POINT: _DiffEngineMS.py
+INTERNAL_DEPENDENCIES: microservice_std_lib
+EXTERNAL_DEPENDENCIES: None
+"""
+import sqlite3
+import difflib
+import datetime
+import uuid
+import logging
+from pathlib import Path
+from typing import Optional, Dict, List, Tuple, Any
+from microservice_std_lib import service_metadata, service_endpoint
+DB_PATH = Path(__file__).parent / 'diff_engine.db'
+logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(message)s')
+log = logging.getLogger('DiffEngine')
+
+@service_metadata(name='DiffEngineMS', version='1.0.0', description='Implements hybrid versioning (Head + Diff History) for file content.', tags=['version-control', 'diff', 'db'], capabilities=['db:sqlite', 'filesystem:write'], side_effects=['db:read', 'db:write'], internal_dependencies=['microservice_std_lib'], external_dependencies=[])
+class DiffEngineMS:
+    """
+    The Timekeeper: Implements a 'Hybrid' versioning architecture.
+    1. HEAD: Stores full current content for fast read access (UI/RAG).
+    2. HISTORY: Stores diff deltas using difflib for audit trails.
+    """
+
+    def __init__(self, config: Optional[Dict[str, Any]]=None):
+        self.config = config or {}
+        self.db_path = Path(self.config.get('db_path', DB_PATH))
+        self._init_db()
+
+    def _get_conn(self):
+        conn = sqlite3.connect(self.db_path)
+        conn.row_factory = sqlite3.Row
+        return conn
+
+    def _init_db(self):
+        with self._get_conn() as conn:
+            conn.execute('\n                CREATE TABLE IF NOT EXISTS files (\n                    id TEXT PRIMARY KEY,\n                    path TEXT UNIQUE NOT NULL,\n                    content TEXT,\n                    last_updated TIMESTAMP\n                )\n            ')
+            conn.execute("\n                CREATE TABLE IF NOT EXISTS diff_log (\n                    id TEXT PRIMARY KEY,\n                    file_id TEXT NOT NULL,\n                    timestamp TIMESTAMP,\n                    change_type TEXT,  -- 'CREATE', 'EDIT', 'DELETE'\n                    diff_blob TEXT,    -- The text output of difflib\n                    author TEXT,\n                    FOREIGN KEY(file_id) REFERENCES files(id)\n                )\n            ")
+
+    @service_endpoint(inputs={'path': 'str', 'new_content': 'str', 'author': 'str'}, outputs={'status': 'str', 'file_id': 'str'}, description='Updates a file, creating a diff history entry and updating the head state.', tags=['version-control', 'write'], side_effects=['db:write'])
+    def update_file(self, path: str, new_content: str, author: str='agent') -> Dict[str, Any]:
+        """
+        The Atomic Update Operation:
+        1. Checks current state.
+        2. Calculates Diff.
+        3. Writes Diff to History.
+        4. Updates Head to New Content.
+        """
+        path = str(Path(path).as_posix())
+        now = datetime.datetime.utcnow()
+        with self._get_conn() as conn:
+            row = conn.execute('SELECT id, content FROM files WHERE path = ?', (path,)).fetchone()
+            if not row:
+                file_id = str(uuid.uuid4())
+                conn.execute('INSERT INTO files (id, path, content, last_updated) VALUES (?, ?, ?, ?)', (file_id, path, new_content, now))
+                self._log_diff(conn, file_id, 'CREATE', '[New File Created]', author, now)
+                log.info(f'Created new file: {path}')
+                return {'status': 'created', 'file_id': file_id}
+            file_id = row['id']
+            old_content = row['content'] or ''
+            old_lines = old_content.splitlines(keepends=True)
+            new_lines = new_content.splitlines(keepends=True)
+            diff_gen = difflib.unified_diff(old_lines, new_lines, fromfile=f'a/{path}', tofile=f'b/{path}', lineterm='')
+            diff_text = ''.join(diff_gen)
+            if not diff_text:
+                return {'status': 'unchanged', 'file_id': file_id}
+            self._log_diff(conn, file_id, 'EDIT', diff_text, author, now)
+            conn.execute('UPDATE files SET content = ?, last_updated = ? WHERE id = ?', (new_content, now, file_id))
+            log.info(f'Updated file: {path}')
+            return {'status': 'updated', 'file_id': file_id, 'diff_size': len(diff_text)}
+
+    def _log_diff(self, conn, file_id, change_type, diff_text, author, timestamp):
+        diff_id = str(uuid.uuid4())
+        conn.execute('INSERT INTO diff_log (id, file_id, timestamp, change_type, diff_blob, author) VALUES (?, ?, ?, ?, ?, ?)', (diff_id, file_id, timestamp, change_type, diff_text, author))
+
+    @service_endpoint(inputs={'path': 'str'}, outputs={'content': 'Optional[str]'}, description='Fast retrieval of current content.', tags=['version-control', 'read'], side_effects=['db:read'])
+    def get_head(self, path: str) -> Optional[str]:
+        """Fast retrieval of current content."""
+        with self._get_conn() as conn:
+            row = conn.execute('SELECT content FROM files WHERE path = ?', (path,)).fetchone()
+            return row['content'] if row else None
+
+    @service_endpoint(inputs={'path': 'str'}, outputs={'history': 'List[Dict]'}, description='Retrieves the full evolution history of a file.', tags=['version-control', 'read'], side_effects=['db:read'])
+    def get_history(self, path: str) -> List[Dict]:
+        """Retrieves the full evolution history of a file."""
+        with self._get_conn() as conn:
+            row = conn.execute('SELECT id FROM files WHERE path = ?', (path,)).fetchone()
+            if not row:
+                return []
+            rows = conn.execute('SELECT timestamp, change_type, diff_blob, author FROM diff_log WHERE file_id = ? ORDER BY timestamp DESC', (row['id'],)).fetchall()
+            return [dict(r) for r in rows]
+if __name__ == '__main__':
+    import os
+    if DB_PATH.exists():
+        os.remove(DB_PATH)
+    engine = DiffEngineMS()
+    print('Service ready:', engine)
+    print('--- 1. Creating File ---')
+    engine.update_file('notes.txt', 'Todo List:\n1. Buy Milk\n')
+    print('\n--- 2. Updating File (The Rising Edge) ---')
+    new_text = 'Todo List:\n1. Buy Eggs\n2. Code Python\n'
+    res = engine.update_file('notes.txt', new_text, author='Jacob')
+    print(f"Update Result: {res['status']}")
+    print('\n--- 3. Inspecting History ---')
+    history = engine.get_history('notes.txt')
+    for event in history:
+        print(f"\n[{event['timestamp']}] {event['change_type']} by {event['author']}")
+        print(f"Diff Preview:\n{event['diff_blob'].strip()}")
+    print('\n--- 4. Inspecting Head (Cache) ---')
+    print(engine.get_head('notes.txt'))
+    if DB_PATH.exists():
+        os.remove(DB_PATH)
 
 --------------------------------------------------------------------------------
 FILE: microservices\_FeedbackValidationMS.py
@@ -1553,6 +2267,220 @@ class MicroSpinner:
     def stop(self):
         self.is_running = False
 --------------------------------------------------------------------------------
+FILE: microservices\_OllamaModelSelectorMS.py
+--------------------------------------------------------------------------------
+"""
+SERVICE_NAME: _OllamaModelSelectorMS
+ENTRY_POINT: _OllamaModelSelectorMS.py
+INTERNAL_DEPENDENCIES: base_service, microservice_std_lib
+EXTERNAL_DEPENDENCIES: requests
+"""
+import tkinter as tk
+from tkinter import ttk
+import requests
+import threading
+import logging
+from typing import Dict, Any, List, Optional, Callable
+from base_service import BaseService
+from microservice_std_lib import service_metadata, service_endpoint
+
+OLLAMA_TAGS_URL = "http://localhost:11434/api/tags"
+
+@service_metadata(
+    name='OllamaModelSelector', 
+    version='1.0.0', 
+    description='The Lens: A UI widget that fetches and displays available local Ollama models.', 
+    tags=['ui', 'ai', 'ollama', 'widget'], 
+    capabilities=['ui:gui', 'network:outbound'], 
+    internal_dependencies=['base_service', 'microservice_std_lib'], 
+    external_dependencies=['requests']
+)
+class OllamaModelSelectorMS(tk.Frame, BaseService):
+    """
+    The Lens.
+    A dropdown widget that automatically polls the local Ollama API for models.
+    """
+
+    def __init__(self, config: Optional[Dict[str, Any]] = None):
+        # Initialize BaseService first for logging
+        BaseService.__init__(self, 'OllamaModelSelector')
+        
+        self.config_data = config or {}
+        parent = self.config_data.get('parent')
+        self.on_change_callback = self.config_data.get('on_change')
+        
+        # Initialize the Tkinter Frame
+        tk.Frame.__init__(self, parent, bg=self.config_data.get('bg', '#252526'))
+        
+        self.models: List[str] = ["Scanning..."]
+        self._build_ui()
+        
+        # Start background scan so the UI doesn't hang
+        threading.Thread(target=self.refresh_models, daemon=True).start()
+
+    def _build_ui(self):
+        """Creates the label and combobox."""
+        tk.Label(
+            self, text="AI MODEL:", bg=self.cget('bg'), fg='white', 
+            font=('Segoe UI', 9, 'bold')
+        ).pack(side='left', padx=(5, 10))
+
+        self.combo = ttk.Combobox(self, values=self.models, state="readonly", width=25)
+        self.combo.set(self.models[0])
+        self.combo.pack(side='left', padx=5)
+        self.combo.bind("<<ComboboxSelected>>", self._on_selection)
+
+    @service_endpoint(
+        inputs={}, 
+        outputs={'models': 'List[str]'}, 
+        description='Queries local Ollama API to refresh the list of available models.', 
+        tags=['network', 'refresh']
+    )
+    def refresh_models(self) -> List[str]:
+        """Fetches models from Ollama tags endpoint."""
+        try:
+            response = requests.get(OLLAMA_TAGS_URL, timeout=3)
+            if response.status_code == 200:
+                data = response.json()
+                self.models = [m['name'] for m in data.get('models', [])]
+                self.log_info(f"Discovered {len(self.models)} local models.")
+            else:
+                self.models = ["Ollama Offline"]
+        except Exception as e:
+            self.log_error(f"Failed to reach Ollama: {e}")
+            self.models = ["Connection Error"]
+
+        # Update the UI from the main thread
+        self.after(0, lambda: self.combo.config(values=self.models))
+        if self.models and self.models[0] not in ["Connection Error", "Ollama Offline"]:
+            self.after(0, lambda: self.combo.current(0))
+        
+        return self.models
+
+    def _on_selection(self, event):
+        """Triggered when the user picks a new model."""
+        selected = self.combo.get()
+        self.log_info(f"Model selected: {selected}")
+        if self.on_change_callback:
+            self.on_change_callback(selected)
+
+    @service_endpoint(
+        inputs={}, 
+        outputs={'selected_model': 'str'}, 
+        description='Returns the currently selected model string.', 
+        tags=['ui', 'read']
+    )
+    def get_selected_model(self) -> str:
+        """Retrieves current selection from the combobox."""
+        return self.combo.get()
+
+if __name__ == '__main__':
+    root = tk.Tk()
+    root.title("Ollama Selector Test")
+    root.geometry("400x100")
+    
+    # Simple callback test
+    def log_change(m): print(f"Signal emitted for model: {m}")
+    
+    selector = OllamaModelSelectorMS({'parent': root, 'on_change': log_change})
+    selector.pack(pady=20)
+    
+    root.mainloop()
+--------------------------------------------------------------------------------
+FILE: microservices\_RegexWeaverMS.py
+--------------------------------------------------------------------------------
+import re
+import logging
+from typing import Any, Dict, List, Optional, Set
+from microservice_std_lib import service_metadata, service_endpoint
+PY_IMPORT = re.compile('^\\s*(?:from|import)\\s+([\\w\\.]+)')
+JS_IMPORT = re.compile('(?:import\\s+.*?from\\s+[\\\'"]|require\\([\\\'"])([\\.\\/\\w\\-_]+)[\\\'"]')
+logger = logging.getLogger('RegexWeaver')
+
+@service_metadata(name='RegexWeaver', version='1.0.0', description='Fault-tolerant dependency extractor using Regex.', tags=['parsing', 'dependencies', 'regex'], capabilities=['compute'], internal_dependencies=['microservice_std_lib'], external_dependencies=[])
+class RegexWeaverMS:
+    """
+    The Weaver: A fault-tolerant dependency extractor.
+    Uses Regex to find imports, making it faster and more permissive
+    than AST parsers (works on broken code).
+    """
+
+    def __init__(self, config: Optional[Dict[str, Any]]=None):
+        self.config = config or {}
+
+    @service_endpoint(inputs={'content': 'str', 'language': 'str'}, outputs={'dependencies': 'List[str]'}, description='Scans code content for import statements.', tags=['parsing', 'dependencies'], side_effects=[])
+    def extract_dependencies(self, content: str, language: str) -> List[str]:
+        """
+        Scans code content for import statements.
+        :param language: 'python' or 'javascript' (includes ts/jsx).
+        """
+        dependencies: Set[str] = set()
+        lines = content.splitlines()
+        pattern = PY_IMPORT if language == 'python' else JS_IMPORT
+        for line in lines:
+            if line.strip().startswith(('#', '//')):
+                continue
+            if language == 'python':
+                match = pattern.match(line)
+            else:
+                match = pattern.search(line)
+            if match:
+                raw_dep = match.group(1)
+                clean_dep = raw_dep.split('.')[-1].split('/')[-1]
+                dependencies.add(clean_dep)
+        return sorted(list(dependencies))
+if __name__ == '__main__':
+    logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(message)s')
+    weaver = RegexWeaverMS()
+    print('Service ready:', weaver)
+    py_code = '\n    import os\n    from backend.utils import helper\n    # from commented.out import ignore_me\n    import pandas as pd\n    '
+    print(f"Python Deps: {weaver.extract_dependencies(py_code, 'python')}")
+    js_code = "\n    import React from 'react';\n    const utils = require('./lib/utils');\n    // import hidden from 'hidden';\n    "
+    print(f"JS Deps:     {weaver.extract_dependencies(js_code, 'javascript')}")
+
+--------------------------------------------------------------------------------
+FILE: microservices\_RulesEngineMS.py
+--------------------------------------------------------------------------------
+"""
+SERVICE_NAME: _RulesEngineMS
+ROLE: Operator Governance (Task 4.3)
+"""
+import logging
+from typing import Dict, Any, Optional
+from rules_contracts import get_default_rules
+
+class RulesEngineMS:
+    def __init__(self, config: Optional[Dict[str, Any]] = None):
+        self.rules = get_default_rules()
+        self.logger = logging.getLogger("RulesEngine")
+
+    def get_rules(self) -> Dict[str, Any]:
+        return self.rules.copy()
+
+    def set_rules(self, new_rules: Dict[str, Any]):
+        self.rules.update(new_rules)
+        self.logger.info("Ruleset updated.")
+
+    def evaluate_file(self, file_path: str) -> tuple:
+        """Checks if a file is protected."""
+        for p in self.rules.get("protected_files", []):
+            if p in file_path:
+                return False, f"File is protected by rule: {p}"
+        return True, ""
+
+    def evaluate_hunk(self, hunk: dict) -> tuple:
+        """Checks hunk constraints like size or forbidden patterns."""
+        content = hunk.get('content', '')
+        if len(content) > self.rules.get("max_hunk_size", 99999):
+            return False, "Hunk exceeds max_hunk_size"
+            
+        for pattern in self.rules.get("forbidden_patterns", []):
+            if pattern in content:
+                return False, f"Hunk contains forbidden pattern: {pattern}"
+                
+        return True, ""
+
+--------------------------------------------------------------------------------
 FILE: microservices\_SemanticChunkerMS.py
 --------------------------------------------------------------------------------
 import ast
@@ -1652,6 +2580,320 @@ if __name__ == '__main__':
         print(f" - [{c['type']}] {c['name']} ({c['start_line']}-{c['end_line']})")
 
 --------------------------------------------------------------------------------
+FILE: microservices\_SessionRecorderMS.py
+--------------------------------------------------------------------------------
+"""
+SERVICE_NAME: _SessionRecorderMS
+ENTRY_POINT: _SessionRecorderMS.py
+INTERNAL_DEPENDENCIES: base_service, microservice_std_lib
+EXTERNAL_DEPENDENCIES: None
+"""
+import os
+import datetime
+import json
+from typing import Dict, Any, Optional
+from base_service import BaseService
+from microservice_std_lib import service_metadata, service_endpoint
+
+@service_metadata(
+    name='SessionRecorder', 
+    version='1.0.0', 
+    description='The Black Box: Records all project tidying events to a persistent audit log.', 
+    tags=['utility', 'logging', 'audit'], 
+    capabilities=['filesystem:write'], 
+    internal_dependencies=['base_service', 'microservice_std_lib'], 
+    external_dependencies=[]
+)
+class SessionRecorderMS(BaseService):
+    """
+    The Black Box.
+    Listens to the SignalBus and writes a chronological record of all actions to disk.
+    """
+
+    def __init__(self, state, config: Optional[Dict[str, Any]] = None):
+        super().__init__('SessionRecorder')
+        self.state = state
+        self.config = config or {}
+        
+        # Set up the log directory
+        self.logs_dir = self.config.get('logs_dir', 'tidy_logs')
+        os.makedirs(self.logs_dir, exist_ok=True)
+        
+        # Create a unique filename for this session
+        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        self.log_file = os.path.join(self.logs_dir, f"tidy_session_{timestamp}.log")
+        
+        self.log_info(f"Session Recorder initialized. Logging to: {self.log_file}")
+        self._write_entry("SESSION_START", {"msg": "Project Tidier session initiated."})
+
+    def _write_entry(self, event_type: str, data: Any):
+        """Writes a structured, timestamped entry to the log file."""
+        timestamp = datetime.datetime.now().isoformat()
+        entry = {
+            "timestamp": timestamp,
+            "event": event_type,
+            "data": data
+        }
+        try:
+            with open(self.log_file, 'a', encoding='utf-8') as f:
+                f.write(json.dumps(entry) + "\n")
+        except Exception as e:
+            self.log_error(f"Failed to write to audit log: {e}")
+
+    # --- Signal Handlers ---
+
+    def on_scan_started(self, data: Dict[str, Any]):
+        self._write_entry("SCAN_INITIATED", data)
+
+    def on_hunk_detected(self, data: Dict[str, Any]):
+        # Log that clutter was found, including the filename and hunk name
+        log_payload = {
+            "file": data.get("file"),
+            "hunk": data.get("hunk_name"),
+            "chars_before": len(data.get("before", "")),
+            "chars_after": len(data.get("after", ""))
+        }
+        self._write_entry("CLUTTER_DETECTED", log_payload)
+
+    def on_user_decision(self, approved: bool):
+        status = "APPROVED" if approved else "SKIPPED"
+        # Record decision alongside the current authoritative state phase
+        log_payload = {
+            "status": status,
+            "phase_at_decision": self.state.phase.name,
+            "file_affected": self.state.pending_review.get('file') if self.state.pending_review else None
+        }
+        self._write_entry("USER_DECISION", log_payload)
+
+    def on_commit_success(self, file_path: str):
+        self._write_entry("FILE_COMMITTED", {"path": file_path})
+
+if __name__ == '__main__':
+    # Test Harness
+    recorder = SessionRecorderMS({'logs_dir': '_test_logs'})
+    recorder.on_scan_started({"paths": ["C:/test/project"]})
+    recorder.on_hunk_detected({"file": "test.py", "hunk_name": "def test()", "before": "...", "after": ".."})
+    print(f"Test entries written to: {recorder.log_file}")
+
+--------------------------------------------------------------------------------
+FILE: microservices\_SignalBusMS.py
+--------------------------------------------------------------------------------
+"""
+SERVICE_NAME: _SignalBusMS
+ENTRY_POINT: _SignalBusMS.py
+INTERNAL_DEPENDENCIES: base_service, microservice_std_lib
+EXTERNAL_DEPENDENCIES: None
+"""
+import logging
+import threading
+from typing import Dict, List, Any, Optional, Callable
+from base_service import BaseService
+from microservice_std_lib import service_metadata, service_endpoint
+
+@service_metadata(
+    name='SignalBus', 
+    version='1.0.0', 
+    description='The Spine: A central pub/sub event hub for decoupled communication between services.', 
+    tags=['utility', 'events', 'communication'], 
+    capabilities=['pub-sub', 'event-routing'], 
+    internal_dependencies=['base_service', 'microservice_std_lib'], 
+    external_dependencies=[]
+)
+class SignalBusMS(BaseService):
+    """
+    The Spine.
+    Provides a thread-safe mechanism for services to subscribe to and emit named signals.
+    """
+
+    def __init__(self, config: Optional[Dict[str, Any]] = None):
+        super().__init__('SignalBus')
+        self.config = config or {}
+        self._subscribers: Dict[str, List[Callable]] = {}
+        self._lock = threading.RLock()
+
+    @service_endpoint(
+        inputs={'signal_name': 'str', 'callback': 'Callable'}, 
+        outputs={}, 
+        description='Registers a callback function to trigger when a specific signal is emitted.', 
+        tags=['events', 'subscribe']
+    )
+    def subscribe(self, signal_name: str, callback: Callable):
+        """Adds a listener for a specific signal."""
+        with self._lock:
+            if signal_name not in self._subscribers:
+                self._subscribers[signal_name] = []
+            if callback not in self._subscribers[signal_name]:
+                self._subscribers[signal_name].append(callback)
+                self.log_info(f"New subscriber for signal: {signal_name}")
+
+    @service_endpoint(
+        inputs={'signal_name': 'str', 'data': 'Any'}, 
+        outputs={'delivered_to': 'int'}, 
+        description='Broadcasts data to all subscribers of a specific signal.', 
+        tags=['events', 'emit']
+    )
+    def emit(self, signal_name: str, data: Any = None) -> int:
+        """Broadcasts a signal to all registered listeners."""
+        count = 0
+        with self._lock:
+            listeners = self._subscribers.get(signal_name, []).copy()
+        
+        if listeners:
+            self.log_info(f"Emitting signal: {signal_name}")
+            for callback in listeners:
+                try:
+                    # Trigger the callback with the data payload
+                    callback(data)
+                    count += 1
+                except Exception as e:
+                    self.log_error(f"Error in signal '{signal_name}' callback: {e}")
+        
+        return count
+
+    @service_endpoint(
+        inputs={'signal_name': 'str', 'callback': 'Callable'}, 
+        outputs={}, 
+        description='Removes a previously registered callback.', 
+        tags=['events', 'unsubscribe']
+    )
+    def unsubscribe(self, signal_name: str, callback: Callable):
+        """Removes a listener from a signal."""
+        with self._lock:
+            if signal_name in self._subscribers:
+                try:
+                    self._subscribers[signal_name].remove(callback)
+                    self.log_info(f"Unsubscribed from signal: {signal_name}")
+                except ValueError:
+                    pass
+
+if __name__ == '__main__':
+    # Test Harness
+    bus = SignalBusMS()
+    
+    def on_hunk_ready(data):
+        print(f"UI received hunk: {data}")
+
+    print("--- Testing SignalBusMS ---")
+    bus.subscribe("hunk_processed", on_hunk_ready)
+    
+    # Simulate a backend event
+    delivered = bus.emit("hunk_processed", {"file": "app.py", "lines": 50})
+    print(f"Signal delivered to {delivered} listeners.")
+--------------------------------------------------------------------------------
+FILE: microservices\_TelemetryServiceMS.py
+--------------------------------------------------------------------------------
+"""
+SERVICE_NAME: _TelemetryServiceMS
+ROLE: Authoritative Session Journal (Task 3)
+"""
+import logging
+import queue
+import time
+import datetime
+from typing import Dict, Any, Optional, List
+from microservice_std_lib import service_metadata, service_endpoint
+from event_contract import summarize_event, normalize_error
+
+logger = logging.getLogger('TelemetryService')
+
+@service_metadata(
+    name='TelemetryService', 
+    version='2.0.0', 
+    description='Authoritative Session Journal: Maintains a structured event buffer and state snapshot.', 
+    tags=['utility', 'logging', 'telemetry'], 
+    capabilities=['event-journaling', 'state-snapshotting']
+)
+class TelemetryServiceMS:
+    def __init__(self, state, config: Optional[Dict[str, Any]]=None):
+        self.state_authority = state # The AppRuntimeState object
+        self.config = config or {}
+        
+        # 1. Authoritative Journal Storage
+        self.event_buffer: List[Dict[str, Any]] = []
+        self.buffer_limit = self.config.get('buffer_limit', 1000)
+        
+        # 2. Local State Snapshot (Enriched for UI consumption)
+        self.snapshot = {
+            "phase": "IDLE",
+            "active_file": None,
+            "waiting_for_review": False,
+            "current_model": "unknown",
+            "last_error": None,
+            "counters": {"errors": 0, "commits": 0, "hunks": 0}
+        }
+
+    def track(self, event_name: str, payload: Any = None, source: str = "system"):
+        """Records a structured event into the ring buffer."""
+        try:
+            timestamp = datetime.datetime.now().strftime("%H:%M:%S")
+            
+            # Normalize payload if it's an error
+            safe_payload = payload
+            if "error" in event_name:
+                safe_payload = normalize_error(payload)
+                self.snapshot["last_error"] = safe_payload.get("message")
+            
+            if event_name == "model_swapped":
+                self.snapshot["current_model"] = str(payload)
+            
+            entry = {
+                "ts": timestamp,
+                "event": event_name,
+                "source": source,
+                "payload": self._sanitize_payload(safe_payload),
+                "summary": self._generate_summary(event_name, safe_payload)
+            }
+
+        self.event_buffer.append(entry)
+        if len(self.event_buffer) > self.buffer_limit:
+            self.event_buffer.pop(0)
+
+        # Update local counters based on event type
+        self._update_counters(event_name)
+        
+        # Emit signal that telemetry has updated (for future UI refresh)
+        # Note: We use a try/except in case the bus isn't available during tests
+        try:
+            if hasattr(self, 'bus'):
+                self.bus.emit("telemetry_updated", self.get_snapshot())
+        except:
+            pass
+
+    def _sanitize_payload(self, payload: Any) -> Any:
+        """Ensures payload is safe for storage and serialization."""
+        if isinstance(payload, (str, int, float, bool, type(None))):
+            return payload
+        if isinstance(payload, dict):
+            return {k: str(v)[:100] for k, v in payload.items()} # Limit string size
+        return str(payload)[:200]
+
+    def _generate_summary(self, event: str, payload: Any) -> str:
+        """Uses the central event contract to generate a summary."""
+        try:
+            return summarize_event(event, payload)
+        except Exception as e:
+            return f"Event: {event} (Summary Error: {e})"
+
+    def _update_counters(self, event: str):
+        if "error" in event: self.snapshot["counters"]["errors"] += 1
+        if "commit_success" == event: self.snapshot["counters"]["commits"] += 1
+        if "hunk_ready_for_review" == event: self.snapshot["counters"]["hunks"] += 1
+
+    def get_snapshot(self) -> Dict[str, Any]:
+        """Returns a combined view of the authority state and local counters."""
+        return {
+            "phase": self.state_authority.phase.name,
+            "engine_blocked": self.state_authority.engine_blocked,
+            "active_file": self.state_authority.pending_review.get('file') if self.state_authority.pending_review else None,
+            "current_model": self.snapshot["current_model"],
+            "last_error": self.snapshot["last_error"],
+            "counters": self.snapshot["counters"]
+        }
+
+    def get_recent_events(self, limit: int = 50) -> List[Dict[str, Any]]:
+        return self.event_buffer[-limit:]
+
+--------------------------------------------------------------------------------
 FILE: microservices\_TextChunkerMS.py
 --------------------------------------------------------------------------------
 import logging
@@ -1730,56 +2972,104 @@ SERVICE_NAME: _TkinterAppShellMS
 ENTRY_POINT: _TkinterAppShellMS.py
 INTERNAL_DEPENDENCIES: _TkinterThemeManagerMS, microservice_std_lib
 EXTERNAL_DEPENDENCIES: None
+
+This module provides the root Tkinter application shell.  It owns the
+Tkinter root window, manages global theme propagation and hosts
+embedded UI components.  The accompanying theme manager can be
+configured via the ``theme`` parameter in the configuration dictionary
+passed to ``TkinterAppShellMS``.  Themes can be switched at runtime
+through the ``set_theme`` method.
 """
+
 import tkinter as tk
 from tkinter import ttk
 import logging
 from typing import Dict, Any, Optional
+
 from .microservice_std_lib import service_metadata, service_endpoint
+
+# Attempt to import our theme manager.  If unavailable (e.g. missing
+# dependencies), theme switching will be disabled and default colours
+# will be used.  Import failures are logged for easier debugging.
 try:
-    from ._TkinterThemeManagerMS import TkinterThemeManagerMS
-except ImportError:
-    TkinterThemeManagerMS = None
+    from ._TkinterThemeManagerMS import TkinterThemeManagerMS  # type: ignore
+except Exception as ex:  # pragma: no cover - runtime import guard
+    TkinterThemeManagerMS = None  # type: ignore
+    logging.getLogger('AppShell').warning(
+        'Theme manager could not be imported: %s.  Falling back to defaults.', ex
+    )
+
 logger = logging.getLogger('AppShell')
 
-@service_metadata(name='TkinterAppShell', version='2.0.0', description='The Application Container. Manages the root window, main loop, and global layout.', tags=['ui', 'core', 'lifecycle'], capabilities=['ui:root', 'ui:gui'], internal_dependencies=['_TkinterThemeManagerMS', 'microservice_std_lib'], external_dependencies=[])
+
+@service_metadata(
+    name='TkinterAppShell',
+    version='2.1.0',
+    description='The Application Container. Manages the root window, main loop, and global layout.',
+    tags=['ui', 'core', 'lifecycle'],
+    capabilities=['ui:root', 'ui:gui'],
+    internal_dependencies=['_TkinterThemeManagerMS', 'microservice_std_lib'],
+    external_dependencies=[],
+)
 class TkinterAppShellMS:
     """
     The Mother Ship.
-    Owns the Tkinter Root. All other UI microservices dock into this.
+
+    Owns the Tkinter root.  All other UI microservices dock into this
+    container.  It initialises and applies theme settings, creates a
+    main content frame, and exposes lifecycle hooks such as
+    ``launch`` and ``shutdown``.
     """
 
-    def __init__(self, config: Optional[Dict[str, Any]]=None):
-        self.config = config or {}
-        self.root = tk.Tk()
+    def __init__(self, config: Optional[Dict[str, Any]] = None) -> None:
+        self.config: Dict[str, Any] = config or {}
+
+        # Create the root window.  Withdraw initially to avoid a flash
+        # of the default theme before we have a chance to apply our
+        # selected colours.
+        self.root: tk.Tk = tk.Tk()
         self.root.withdraw()
 
-        # Theme manager (microservice)
+        # Theme manager (microservice).  Allow callers to supply
+        # their own instance via ``theme_manager`` to support custom
+        # themes or stub implementations.  Otherwise fall back to our
+        # built‑in manager if available.
         self.theme_svc = self.config.get('theme_manager')
-        if not self.theme_svc and TkinterThemeManagerMS:
+        if not self.theme_svc and TkinterThemeManagerMS is not None:
             # Pass through initial theme selection to the theme service
             self.theme_svc = TkinterThemeManagerMS({'theme': self.config.get('theme', 'Dark')})
 
-        # Initialize colors (and apply requested theme if supported)
-        self.colors = self.theme_svc.get_theme() if self.theme_svc else {}
+        # Initialise colours from the theme manager.  ``get_theme()``
+        # returns a mutable dictionary.  If no theme manager is
+        # available, use an empty dict and rely on default Tk
+        # colours.
+        self.colors: Dict[str, Any] = self.theme_svc.get_theme() if self.theme_svc else {}
+
+        # Configure the root window and create the main content
+        # container before applying the initial theme.  The geometry
+        # must be set before calling ``set_theme`` so that we can
+        # update the frame backgrounds appropriately.
         self._configure_root()
 
-        # Ensure initial theme is applied to ttk styles and surfaces
+        # Ensure initial theme is applied to ttk styles and surfaces.
         initial_theme = (self.config.get('theme') or 'Dark')
         self.set_theme(initial_theme)
 
-    def _configure_root(self):
+    def _configure_root(self) -> None:
+        """Configure basic properties of the root window."""
         self.root.title(self.config.get('title', 'Microservice OS'))
         self.root.geometry(self.config.get('geometry', '1200x800'))
         bg = self.colors.get('background', '#1e1e1e')
         self.root.configure(bg=bg)
 
         # Main container
-        self.main_container = tk.Frame(self.root, bg=bg)
+        self.main_container: tk.Frame = tk.Frame(self.root, bg=bg)
         self.main_container.pack(fill='both', expand=True, padx=5, pady=5)
 
-    def _apply_ttk_theme(self):
+    def _apply_ttk_theme(self) -> None:
         """Applies ttk styling based on the current palette."""
+        # Provide sensible defaults to avoid KeyError if a palette is
+        # missing keys.  Fallback values mirror VS Code’s colours.
         bg = self.colors.get('background', '#1e1e1e')
         fg = self.colors.get('foreground', '#d4d4d4')
         panel = self.colors.get('panel_bg', '#252526')
@@ -1795,6 +3085,7 @@ class TkinterAppShellMS:
 
         style = ttk.Style()
         try:
+            # Use 'clam' for better cross‑platform consistency
             style.theme_use('clam')
         except Exception:
             pass
@@ -1816,18 +3107,42 @@ class TkinterAppShellMS:
         style.configure('Treeview.Heading', background=heading_bg, foreground=heading_fg)
         style.map('Treeview', background=[('selected', select_bg)], foreground=[('selected', select_fg)])
 
-    @service_endpoint(inputs={'theme_name': 'str'}, outputs={'applied': 'bool'}, description='Applies a named theme (Dark/Light) via the ThemeManager and refreshes ttk styling.', tags=['ui', 'theme'], mode='sync', side_effects=['ui:refresh'])
+    @service_endpoint(
+        inputs={'theme_name': 'str'},
+        outputs={'applied': 'bool'},
+        description='Applies a named theme (Dark/Light) via the ThemeManager and refreshes ttk styling.',
+        tags=['ui', 'theme'],
+        mode='sync',
+        side_effects=['ui:refresh'],
+    )
     def set_theme(self, theme_name: str) -> bool:
+        """
+        Switch the active theme.
+
+        The theme manager updates its internal palette in place.  To
+        preserve the identity of ``self.colors`` for code that holds
+        references to it (e.g. nested UIs), we only refresh the
+        mapping if the theme manager returns a *different* dictionary.
+        If the returned palette is the same object as ``self.colors``,
+        the colours have already been updated in place and clearing
+        would wipe them out.  Therefore, we only clear and update
+        when necessary.
+        """
         name = (theme_name or 'Dark').strip().title()
         if self.theme_svc and hasattr(self.theme_svc, 'set_theme'):
             self.theme_svc.set_theme(name)
+            # Acquire the (possibly updated) palette from the theme service
             new_colors = self.theme_svc.get_theme() or {}
-            # Preserve dict identity so docked UIs holding references stay synced
-            try:
-                self.colors.clear()
-                self.colors.update(new_colors)
-            except Exception:
-                self.colors = new_colors
+            # If the palette is a different object, we want to update
+            # our colours dict in place.  Otherwise, the theme manager
+            # mutated the existing dict and we must not clear it.
+            if new_colors is not self.colors:
+                try:
+                    self.colors.clear()
+                    self.colors.update(new_colors)
+                except Exception:
+                    # Fall back to assignment if clear/update fails
+                    self.colors = dict(new_colors)
 
         # Apply surfaces to the main window and container
         bg = self.colors.get('background', '#1e1e1e')
@@ -1846,28 +3161,104 @@ class TkinterAppShellMS:
 
         return True
 
-    @service_endpoint(inputs={}, outputs={}, description='Starts the GUI Main Loop.', tags=['lifecycle', 'start'], mode='sync', side_effects=['ui:block'])
-    def launch(self):
+    @service_endpoint(
+        inputs={},
+        outputs={},
+        description='Starts the GUI main loop.',
+        tags=['lifecycle', 'start'],
+        mode='sync',
+        side_effects=['ui:block'],
+    )
+    def launch(self) -> None:
         """Ignition sequence start."""
         self.root.deiconify()
         logger.info('AppShell Launched.')
         self.root.mainloop()
 
-    @service_endpoint(inputs={}, outputs={'container': 'tk.Frame'}, description='Returns the main content area for other services to dock into.', tags=['ui', 'layout'])
-    def get_main_container(self):
-        """Other services call this to know where to .pack() themselves."""
+    @service_endpoint(
+        inputs={},
+        outputs={'container': 'tk.Frame'},
+        description='Returns the main content area for other services to dock into.',
+        tags=['ui', 'layout'],
+    )
+    def get_main_container(self) -> tk.Frame:
+        """Other services call this to know where to ``pack()`` themselves."""
         return self.main_container
 
-    @service_endpoint(inputs={}, outputs={}, description='Gracefully shuts down the application.', tags=['lifecycle', 'stop'], side_effects=['ui:close'])
-    def shutdown(self):
+    @service_endpoint(
+        inputs={},
+        outputs={},
+        description='Gracefully shuts down the application.',
+        tags=['lifecycle', 'stop'],
+        side_effects=['ui:close'],
+    )
+    def shutdown(self) -> None:
         self.root.quit()
-if __name__ == '__main__':
+
+
+if __name__ == '__main__':  # pragma: no cover
+    # Simple manual test.  Note that running Tkinter in a headless
+    # environment will raise, so this is primarily for local testing.
     shell = TkinterAppShellMS({'title': 'Test Shell'})
     shell.launch()
+--------------------------------------------------------------------------------
+FILE: microservices\_TkinterSmartExplorerMS.py
+--------------------------------------------------------------------------------
+"""
+SERVICE_NAME: _TkinterSmartExplorerMS
+ENTRY_POINT: _TkinterSmartExplorerMS.py
+INTERNAL_DEPENDENCIES: microservice_std_lib
+EXTERNAL_DEPENDENCIES: None
+"""
+import tkinter as tk
+from tkinter import ttk
+from typing import Dict, Any, Optional, List
+from microservice_std_lib import service_metadata, service_endpoint
 
+@service_metadata(name='TkinterSmartExplorer', version='1.0.0', description='A hierarchical tree viewer capable of displaying file systems or JSON data structures.', tags=['ui', 'widget', 'explorer'], capabilities=['ui:gui'], internal_dependencies=['microservice_std_lib'], external_dependencies=[])
+class TkinterSmartExplorerMS(tk.Frame):
+    """
+    The Navigator.
+    A TreeView widget that expects standard 'Node' dictionaries (name, type, children).
+    """
 
+    def __init__(self, config: Optional[Dict[str, Any]]=None):
+        self.config = config or {}
+        parent = self.config.get('parent')
+        theme = self.config.get('theme', {})
+        super().__init__(parent, bg=theme.get('panel_bg', '#252526'))
+        self.tree = ttk.Treeview(self, show='tree headings', selectmode='browse')
+        self.tree.heading('#0', text='Explorer', anchor='w')
+        vsb = ttk.Scrollbar(self, orient='vertical', command=self.tree.yview)
+        hsb = ttk.Scrollbar(self, orient='horizontal', command=self.tree.xview)
+        self.tree.configure(yscrollcommand=vsb.set, xscrollcommand=hsb.set)
+        self.tree.pack(side='left', fill='both', expand=True)
+        vsb.pack(side='right', fill='y')
+        self.icons = {'folder': '📁', 'file': '📄', 'web': '🌐', 'unknown': '❓'}
 
+    @service_endpoint(inputs={'data': 'Dict'}, outputs={}, description="Populates the tree view with a nested dictionary structure (Standard 'Node' format).", tags=['ui', 'update'], side_effects=['ui:update'])
+    def load_data(self, data: Dict[str, Any]):
+        """
+        Ingests a dictionary tree (like from _ScoutMS or _TreeMapperMS).
+        """
+        for item in self.tree.get_children():
+            self.tree.delete(item)
+        self._build_node('', data)
 
+    def _build_node(self, parent_id, node_data):
+        ntype = node_data.get('type', 'unknown')
+        icon = self.icons.get(ntype, self.icons['unknown'])
+        text = f"{icon} {node_data.get('name', '???')}"
+        item_id = self.tree.insert(parent_id, 'end', text=text, open=True)
+        for child in node_data.get('children', []):
+            self._build_node(item_id, child)
+if __name__ == '__main__':
+    root = tk.Tk()
+    explorer = TkinterSmartExplorerMS({'parent': root})
+    explorer.pack(fill='both', expand=True)
+    dummy_data = {'name': 'Project Root', 'type': 'folder', 'children': [{'name': 'src', 'type': 'folder', 'children': []}, {'name': 'README.md', 'type': 'file'}]}
+    explorer.load_data(dummy_data)
+    root.mainloop()
 
 --------------------------------------------------------------------------------
 FILE: microservices\_TkinterThemeManagerMS.py
@@ -1877,117 +3268,308 @@ SERVICE_NAME: _TkinterThemeManagerMS
 ENTRY_POINT: _TkinterThemeManagerMS.py
 INTERNAL_DEPENDENCIES: microservice_std_lib
 EXTERNAL_DEPENDENCIES: None
+
+This module defines and manages the colour palette used throughout the
+application.  A `TkinterThemeManagerMS` class encapsulates two
+predefined themes—`Dark` and `Light`—inspired by the Visual Studio
+Code default themes.  Themes can be swapped at runtime and are
+returned as mutable dictionaries so that UI components can reference
+their values directly and respond to changes.
+
+To add a new theme, extend the `THEMES` dictionary with the
+appropriate keys.  See the definitions of `DARK_THEME` and
+`LIGHT_THEME` for guidance on required keys.
 """
+
 from typing import Dict, Any, Optional
 from .microservice_std_lib import service_metadata, service_endpoint
 
-# Refined palettes for structural parity
-DARK_THEME = {
+
+"""
+Defines colour palettes for supported themes.
+
+These palettes draw inspiration from the Visual Studio Code default
+dark and light themes to provide a comfortable and familiar
+development environment.  Colours are carefully chosen to avoid
+high‑contrast combinations that can lead to eye strain while still
+maintaining adequate contrast for accessibility.  Should additional
+themes be added in the future, follow the same structure and include
+keys for all UI elements consumed throughout the UI.
+"""
+
+# Visual Studio Code inspired dark theme.  The underlying palette
+# uses neutral greys and blue accents similar to VS Code’s default
+# dark theme.  Colours have been adjusted to be less harsh while
+# maintaining sufficient contrast.
+DARK_THEME: Dict[str, Any] = {
     'name': 'Dark',
-    'background': '#1e1e2f',
-    'foreground': '#e0e0e0',
-    'panel_bg': '#252526', 
-    'border': '#3c3c3c',
-    'accent': '#007acc',
-    'error': '#f44747',
-    'success': '#89d185',
+    # Primary backgrounds and foregrounds
+    'background': '#1e1e1e',        # main window background
+    'foreground': '#d4d4d4',        # primary text colour
+    'panel_bg': '#252526',          # toolbar, config panels
+    'border': '#3c3c3c',            # borders and separators
+    'accent': '#007acc',            # accent colour for buttons and highlights
+    'error': '#f44747',             # error messages / destructive actions
+    'success': '#89d185',           # success messages
+
+    # Fonts (kept here for completeness but rarely overridden)
     'font_main': ('Segoe UI', 10),
     'font_mono': ('Consolas', 11),
-    'button_bg': '#333344',
-    'button_fg': '#ffffff',
-    'entry_bg': '#2a2a3f',
-    'entry_fg': '#e0e0e0',
-    'select_bg': '#264f78',
-    'select_fg': '#ffffff',
-    'heading_bg': '#333333',
-    'heading_fg': '#ffffff',
-    'heading_font': ('Segoe UI', 12, 'bold')
+
+    # Button styling
+    'button_bg': '#0e639c',         # primary button background
+    'button_fg': '#ffffff',         # primary button text colour
+
+    # Input/entry styling
+    'entry_bg': '#1e1e1e',          # entry and text box background
+    'entry_fg': '#d4d4d4',          # entry text colour
+
+    # Selection colours
+    'select_bg': '#264f78',         # selection background (lists/text)
+    'select_fg': '#ffffff',         # selection text colour
+
+    # Table/heading styling
+    'heading_bg': '#3c3c3c',        # table headings background
+    'heading_fg': '#ffffff',        # table headings text colour
+    'heading_font': ('Segoe UI', 12, 'bold'),
 }
 
-LIGHT_THEME = {
+# Visual Studio Code inspired light theme.  The palette uses soft
+# greys with a blue accent, mirroring VS Code’s light theme while
+# avoiding stark white backgrounds.  Text colours are dark greys
+# to maintain readability without excessive contrast.
+LIGHT_THEME: Dict[str, Any] = {
     'name': 'Light',
-    'background': '#f0f0f0',
-    'foreground': '#222222',
-    'panel_bg': '#e0e0e0',
-    'border': '#cccccc',
-    'accent': '#005fb8',
-    'error': '#d13438',
-    'success': '#107c10',
+    # Primary backgrounds and foregrounds
+    'background': '#ffffff',        # main window background (pure white)
+    'foreground': '#333333',        # primary text colour (dark grey)
+    'panel_bg': '#f3f3f3',          # toolbar, config panels
+    'border': '#dcdcdc',            # borders and separators
+    'accent': '#0066b8',            # accent colour for buttons and highlights
+    'error': '#d13438',             # error messages / destructive actions
+    'success': '#107c10',           # success messages
+
+    # Fonts
     'font_main': ('Segoe UI', 10),
     'font_mono': ('Consolas', 11),
-    'button_bg': '#dddddd',
-    'button_fg': '#222222',
-    'entry_bg': '#ffffff',
-    'entry_fg': '#222222',
-    'select_bg': '#add6ff',
-    'select_fg': '#000000',
-    'heading_bg': '#d0d0d0',
-    'heading_fg': '#222222',
-    'heading_font': ('Segoe UI', 12, 'bold')
+
+    # Button styling
+    'button_bg': '#e7e7e7',         # primary button background
+    'button_fg': '#333333',         # primary button text colour
+
+    # Input/entry styling
+    'entry_bg': '#ffffff',          # entry and text box background
+    'entry_fg': '#333333',          # entry text colour
+
+    # Selection colours
+    'select_bg': '#add6ff',         # selection background (lists/text)
+    'select_fg': '#000000',         # selection text colour
+
+    # Table/heading styling
+    'heading_bg': '#e2e2e2',        # table headings background
+    'heading_fg': '#333333',        # table headings text colour
+    'heading_font': ('Segoe UI', 12, 'bold'),
 }
 
-THEMES = {
+# Registry of all supported themes.  Keys should be title‑cased to
+# simplify lookups when user preferences are normalised by
+# `TkinterThemeManagerMS.set_theme()`.
+THEMES: Dict[str, Dict[str, Any]] = {
     'Dark': DARK_THEME,
     'Light': LIGHT_THEME,
 }
 
-@service_metadata(name='TkinterThemeManager', version='1.1.0', description='Centralized configuration for UI colors and fonts.', tags=['ui', 'config', 'theme'], capabilities=['ui:style'], internal_dependencies=['microservice_std_lib'], external_dependencies=[])
+
+@service_metadata(
+    name='TkinterThemeManager',
+    version='1.2.0',
+    description='Centralised configuration for UI colours and fonts.',
+    tags=['ui', 'config', 'theme'],
+    capabilities=['ui:style'],
+    internal_dependencies=['microservice_std_lib'],
+    external_dependencies=[],
+)
 class TkinterThemeManagerMS:
     """
-    The Stylist: Holds the color palette and font settings.
+    The Stylist: Holds the colour palette and font settings.
+
     All UI components query this service to decide how to draw themselves.
+    The palette is returned as a mutable dictionary so that callers can
+    hold a reference and receive updates in place when switching themes.
+
+    Configuration options:
+      - ``theme``: one of the keys defined in ``THEMES`` (default ``'Dark'``)
+      - ``overrides``: a dictionary of key/value pairs used to override
+        default theme values.  Overrides persist across theme changes.
     """
 
-    def __init__(self, config: Optional[Dict[str, Any]]=None):
+    def __init__(self, config: Optional[Dict[str, Any]] = None) -> None:
         self.config = config or {}
 
-        # Choose base theme
+        # Determine the requested base theme, falling back to Dark if unknown.
         requested = self.config.get('theme', 'Dark')
         requested = (requested or 'Dark').strip().title()
         if requested not in THEMES:
             requested = 'Dark'
 
-        self.theme_name = requested
-        self.theme = THEMES[self.theme_name].copy()
+        # Active theme name and palette.  ``self.theme`` is mutable and
+        # updated in place on theme changes to preserve object identity.
+        self.theme_name: str = requested
+        # copy() to ensure modifications on ``self.theme`` do not affect
+        # the global template stored in ``THEMES``.
+        self.theme: Dict[str, Any] = THEMES[self.theme_name].copy()
 
-        # Allow user overrides
-        if 'overrides' in self.config:
-            self.theme.update(self.config['overrides'])
+        # Persist any user overrides.  If overrides are supplied they
+        # should override defaults on initialisation and on subsequent
+        # theme changes.  A shallow copy is sufficient because values
+        # should be primitives or tuples.
+        self._overrides = dict(self.config.get('overrides', {}))
+        if self._overrides:
+            self.theme.update(self._overrides)
 
-    @service_endpoint(inputs={}, outputs={'theme': 'Dict'}, description='Returns the current active theme dictionary.', tags=['ui', 'read'])
+    @service_endpoint(
+        inputs={},
+        outputs={'theme': 'Dict'},
+        description='Returns the current active theme dictionary.',
+        tags=['ui', 'read'],
+    )
     def get_theme(self) -> Dict[str, Any]:
+        """Return the current theme palette."""
         return self.theme
 
-    @service_endpoint(inputs={}, outputs={'theme_name': 'str'}, description='Returns the current active theme name.', tags=['ui', 'read'])
+    @service_endpoint(
+        inputs={},
+        outputs={'theme_name': 'str'},
+        description='Returns the current active theme name.',
+        tags=['ui', 'read'],
+    )
     def get_theme_name(self) -> str:
+        """Return the name of the current theme (e.g. ``'Dark'``)."""
         return self.theme_name
 
-    @service_endpoint(inputs={'theme_name': 'str'}, outputs={'applied': 'bool'}, description='Switches the active theme (Dark/Light).', tags=['ui', 'write'], side_effects=['ui:refresh'])
+    @service_endpoint(
+        inputs={'theme_name': 'str'},
+        outputs={'applied': 'bool'},
+        description='Switches the active theme (Dark/Light).',
+        tags=['ui', 'write'],
+        side_effects=['ui:refresh'],
+    )
     def set_theme(self, theme_name: str) -> bool:
+        """
+        Switch the current theme to ``theme_name``.
+
+        Unknown theme names fall back to ``'Dark'``.  Overrides stored
+        during initialisation are re‑applied after the base palette is
+        swapped so that user customisations persist across theme changes.
+        The method always returns ``True``.
+        """
         name = (theme_name or 'Dark').strip().title()
         if name not in THEMES:
             name = 'Dark'
         self.theme_name = name
 
-        # Reset to base (IN-PLACE so existing references remain valid)
-        new_theme = THEMES[self.theme_name].copy()
-        if 'overrides' in self.config:
-            new_theme.update(self.config['overrides'])
+        # Build a fresh palette from the base and reapply overrides.  The
+        # resulting palette is merged into the existing ``self.theme``
+        # dictionary to preserve its identity for any UI components holding
+        # references.  This ensures calls like ``refresh_theme()`` only need
+        # to reconfigure widget properties rather than replace entire dicts.
+        new_theme: Dict[str, Any] = THEMES[self.theme_name].copy()
+        if self._overrides:
+            new_theme.update(self._overrides)
 
-        # Preserve dict identity
+        # Update the existing dict in place rather than reassigning.
         self.theme.clear()
         self.theme.update(new_theme)
         return True
 
-    @service_endpoint(inputs={'key': 'str', 'value': 'Any'}, outputs={}, description='Updates a specific theme attribute (e.g., changing accent color).', tags=['ui', 'write'], side_effects=['ui:refresh'])
-    def update_key(self, key: str, value: Any):
+    @service_endpoint(
+        inputs={'key': 'str', 'value': 'Any'},
+        outputs={},
+        description='Updates a specific theme attribute (e.g., changing accent colour).',
+        tags=['ui', 'write'],
+        side_effects=['ui:refresh'],
+    )
+    def update_key(self, key: str, value: Any) -> None:
+        """
+        Update an individual key in the current theme.
+
+        Overrides are persisted so that subsequent calls to
+        ``set_theme()`` do not wipe out the change.  A missing key will
+        simply be added to the palette.
+        """
+        # Update the current palette
         self.theme[key] = value
-
-    if __name__ == '__main__':
-        svc = TkinterThemeManagerMS({'theme': 'Dark'})
-        print('Theme Ready:', svc.get_theme_name(), svc.get_theme()['accent'])
+        # Persist override for future theme switches
+        self._overrides[key] = value
 
 
+if __name__ == '__main__':  # pragma: no cover
+    # Simple manual test: print palette names and accents
+    svc = TkinterThemeManagerMS({'theme': 'Dark'})
+    print('Initial:', svc.get_theme_name(), svc.get_theme()['accent'])
+    svc.set_theme('Light')
+    print('After switch:', svc.get_theme_name(), svc.get_theme()['accent'])
+--------------------------------------------------------------------------------
+FILE: microservices\_TreeMapperMS.py
+--------------------------------------------------------------------------------
+import os
+import datetime
+import logging
+from pathlib import Path
+from typing import Any, Dict, List, Set, Optional
+from microservice_std_lib import service_metadata, service_endpoint
+DEFAULT_EXCLUDES = {'.git', '__pycache__', '.idea', '.vscode', 'node_modules', '.venv', 'env', 'venv', 'dist', 'build', '.DS_Store'}
+logger = logging.getLogger('TreeMapper')
+
+@service_metadata(name='TreeMapper', version='1.0.0', description='Generates ASCII-art style directory maps of the file system.', tags=['filesystem', 'map', 'visualization'], capabilities=['filesystem:read'], internal_dependencies=['microservice_std_lib'], external_dependencies=[])
+class TreeMapperMS:
+    """
+    The Cartographer: Generates ASCII-art style directory maps.
+    Useful for creating context snapshots for LLMs.
+    """
+
+    def __init__(self, config: Optional[Dict[str, Any]]=None):
+        self.config = config or {}
+
+    @service_endpoint(inputs={'root_path': 'str', 'additional_exclusions': 'Set[str]', 'use_default_exclusions': 'bool'}, outputs={'tree_map': 'str'}, description='Generates an ASCII tree map of the directory.', tags=['filesystem', 'visualization'], side_effects=['filesystem:read'])
+    def generate_tree(self, root_path: str, additional_exclusions: Optional[Set[str]]=None, use_default_exclusions: bool=True) -> str:
+        start_path = Path(root_path).resolve()
+        if not start_path.exists():
+            return f"Error: Path '{root_path}' does not exist."
+        exclusions = set()
+        if use_default_exclusions:
+            exclusions.update(DEFAULT_EXCLUDES)
+        if additional_exclusions:
+            exclusions.update(additional_exclusions)
+        timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        lines = [f'Project Map: {start_path.name}', f'Generated: {timestamp}', '-' * 40, f'📁 {start_path.name}/']
+        logger.info(f'Mapping directory: {start_path}')
+        self._walk(start_path, '', lines, exclusions)
+        return '\n'.join(lines)
+
+    def _walk(self, directory: Path, prefix: str, lines: List[str], exclusions: Set[str]):
+        try:
+            children = sorted([p for p in directory.iterdir() if p.name not in exclusions], key=lambda x: (not x.is_dir(), x.name.lower()))
+        except PermissionError:
+            lines.append(f'{prefix}└── 🚫 [Permission Denied]')
+            return
+        count = len(children)
+        for index, path in enumerate(children):
+            is_last = index == count - 1
+            connector = '└── ' if is_last else '├── '
+            if path.is_dir():
+                lines.append(f'{prefix}{connector}📁 {path.name}/')
+                extension = '    ' if is_last else '│   '
+                self._walk(path, prefix + extension, lines, exclusions)
+            else:
+                lines.append(f'{prefix}{connector}📄 {path.name}')
+if __name__ == '__main__':
+    logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(message)s')
+    svc = TreeMapperMS()
+    print('Service ready:', svc)
+    print('\n--- Map of Current Dir ---')
+    tree = svc.generate_tree('.', additional_exclusions={'__pycache__'})
+    print(tree)
 
 --------------------------------------------------------------------------------
 FILE: microservices\_VectorFactoryMS.py

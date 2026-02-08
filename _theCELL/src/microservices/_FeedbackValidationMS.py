@@ -106,3 +106,31 @@ class FeedbackValidationMS(BaseService):
         conn.close()
         
         return [{"prompt": r[0], "response": r[1]} for r in results]
+
+    @service_endpoint(
+        inputs={'artifact': 'Dict', 'is_accepted': 'bool'},
+        outputs={'success': 'bool'},
+        description='Unwraps a standard Cell Artifact and submits it for validation.',
+        tags=['write', 'hitl', 'helper']
+    )
+    def validate_artifact(self, artifact: Dict[str, Any], is_accepted: bool) -> bool:
+        """
+        Convenience wrapper for Standard Artifacts.
+        """
+        try:
+            meta = artifact.get('metadata', {})
+            instructions = artifact.get('instructions', {})
+            
+            # Reconstruct the full prompt context
+            sys_role = instructions.get('system_role', '')
+            sys_prompt = instructions.get('system_prompt', '')
+            user_payload = artifact.get('payload', '')
+            
+            full_prompt = f"Role: {sys_role}\nContext: {sys_prompt}\nTask: {user_payload}"
+            response = artifact.get('response', '') # Assuming response is injected into artifact before validation
+            
+            return self.submit_feedback(full_prompt, response, is_accepted, meta)
+        except Exception as e:
+            self.log_error(f"Artifact validation failed: {e}")
+            return False
+

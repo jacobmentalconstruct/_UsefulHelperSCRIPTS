@@ -217,6 +217,21 @@ class TkinterAppShellMS:
         return self.main_container
 
     @service_endpoint(
+        inputs={'title': 'str', 'geometry': 'str'},
+        outputs={'window': 'tk.Toplevel'},
+        description='Spawns a new top-level window for a child cell.',
+        tags=['ui', 'lifecycle']
+    )
+    def spawn_window(self, title: str = "Child Cell", geometry: str = "1000x800") -> tk.Toplevel:
+        """Creates a new Toplevel window that inherits the shell's theme."""
+        new_window = tk.Toplevel(self.root)
+        new_window.title(title)
+        new_window.geometry(geometry)
+        bg = self.colors.get('background', '#1e1e1e')
+        new_window.configure(bg=bg)
+        return new_window
+
+    @service_endpoint(
         inputs={},
         outputs={},
         description='Gracefully shuts down the application.',

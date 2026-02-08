@@ -24,6 +24,7 @@ from typing import Any, Dict, Generator, List, Optional
 import requests
 from .microservice_std_lib import service_metadata, service_endpoint
 from .base_service import BaseService
+from ._TextChunkerMS import TextChunkerMS
 OLLAMA_API_URL = 'http://localhost:11434/api'
 
 @dataclass
@@ -75,6 +76,7 @@ class IngestEngineMS(BaseService):
         self.db_path = self.config.get('db_path', 'knowledge.db')
         self.stop_signal = False
         self.weaver = SynapseWeaver()
+        self.chunker = TextChunkerMS()
         self._init_db()
 
     def _init_db(self):
@@ -105,6 +107,46 @@ class IngestEngineMS(BaseService):
         except:
             pass
         return []
+
+    @service_endpoint(
+        inputs={'prompt': 'str', 'model': 'str', 'system': 'str'}, 
+        outputs={'chunk': 'str'}, 
+        description='Streams inference tokens from Ollama.', 
+        tags=['inference', 'stream'], 
+        mode='generator', 
+        side_effects=['network:outbound']
+    )
+    def generate_stream(self, prompt: str, model: str, system: str = '') -> Generator[str, None, None]:
+        """Yields tokens from the LLM for real-time UI updates."""
+        url = f"{OLLAMA_API_URL}/generate"
+        payload = {
+            "model": model,
+            "prompt": prompt,
+            "system": system,
+            "stream": True
+        }
+        
+        try:
+            with requests.post(url, json=payload, stream=True, timeout=120) as r:
+                if r.status_code != 200:
+                    yield f"[Error: Ollama returned status {r.status_code}]"
+                    return
+                
+                for line in r.iter_lines():
+                    if self.stop_signal:
+                        break
+                    if line:
+                        try:
+                            body = json.loads(line)
+                            token = body.get('response', '')
+                            if token:
+                                yield token
+                            if body.get('done', False):
+                                break
+                        except json.JSONDecodeError:
+                            continue
+        except Exception as e:
+            yield f"[Connection Error: {str(e)}]"
 
     @service_endpoint(inputs={'file_paths': 'List[str]', 'model_name': 'str'}, outputs={'status': 'IngestStatus'}, description='Processes a list of files, ingesting them into the knowledge graph.', tags=['ingest', 'processing'], mode='generator', side_effects=['db:write', 'network:outbound'])
     def process_files(self, file_paths: List[str], model_name: str='none') -> Generator[IngestStatus, None, None]:
@@ -169,15 +211,8 @@ class IngestEngineMS(BaseService):
         yield IngestStatus(current_file='Complete', progress_percent=100, processed_files=total, total_files=total, log_message=f'Ingestion Complete. Created {edge_count} dependency edges.')
 
     def _chunk_text(self, text: str, chunk_size: int=1000, overlap: int=100) -> List[str]:
-        if len(text) < chunk_size:
-            return [text]
-        chunks = []
-        start = 0
-        while start < len(text):
-            end = start + chunk_size
-            chunks.append(text[start:end])
-            start += chunk_size - overlap
-        return chunks
+        # Delegate to the specialized service
+        return self.chunker.chunk_by_chars(text, chunk_size, overlap)
 
     def _get_embedding(self, model: str, text: str) -> Optional[List[float]]:
         try:
@@ -207,3 +242,4 @@ if __name__ == '__main__':
         os.remove(TEST_DB)
     if os.path.exists(target_file) and 'Hello World' in open(target_file).read():
         os.remove(target_file)
+

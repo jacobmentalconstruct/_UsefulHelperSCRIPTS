@@ -2,16 +2,19 @@ import sqlite3
 import os
 import json
 import logging
+import threading
 from datetime import datetime
 from typing import List, Dict, Optional, Any, Tuple
 from src.microservices._IngestEngineMS import IngestEngineMS
 from src.microservices._FeedbackValidationMS import FeedbackValidationMS
+from src.microservices._SignalBusMS import SignalBusMS
+from src.microservices._CognitiveMemoryMS import CognitiveMemoryMS
 
 class Backend:
     """
     Orchestration layer managing state persistence and microservice integration.
     """
-    def __init__(self, db_path: str = None):
+    def __init__(self, db_path: str = None, memory_path: str = None):
         # Default DB location: project_root/_db/app_internal.db
         project_root = os.path.abspath(os.getcwd())
         db_dir = os.path.join(project_root, "_db")
@@ -26,6 +29,11 @@ class Backend:
 
         self.engine = IngestEngineMS()
         self.validator = FeedbackValidationMS()
+        self.bus = SignalBusMS()
+        
+        # Configure memory with unique path if provided (Fixes Recursion Collision)
+        mem_config = {'persistence_path': memory_path} if memory_path else {}
+        self.memory = CognitiveMemoryMS(config=mem_config)
         
         # Initialize state from persistent storage
         self.system_role: str = self.get_setting('last_system_role') or "You are a helpful AI assistant."
@@ -162,7 +170,7 @@ class Backend:
 
     def process_submission(self, content: str, model: str, role: str, prompt: str) -> Dict[str, Any]:
         """
-        Synthesizes UI inputs into a standardized JSON artifact for downstream services.
+        Synthesizes UI inputs, starts the background inference thread, and returns the initial artifact.
         """
         artifact = {
             "metadata": {
@@ -178,8 +186,79 @@ class Backend:
             "payload": content.strip()
         }
 
+        # Add User Input to Working Memory
+        self.memory.add_entry(role="user", content=content, metadata=artifact['metadata'])
+
         self.logger.info(f"Artifact generated for model: {model}")
+        self.bus.emit(SignalBusMS.SIGNAL_PROCESS_START, artifact)
+
+        # The Pulse: Start Threaded Inference
+        thread = threading.Thread(target=self._run_inference_thread, args=(artifact,))
+        thread.daemon = True
+        thread.start()
+
         return artifact
+
+    def _run_inference_thread(self, artifact: Dict[str, Any]):
+        """
+        Background worker that streams tokens from the Engine to the SignalBus.
+        """
+        try:
+            model = artifact['metadata']['model']
+            sys_role = artifact['instructions']['system_role']
+            sys_prompt = artifact['instructions']['system_prompt']
+            user_payload = artifact['payload']
+
+            # Combine role/prompt context
+            full_system = f"{sys_role}\n{sys_prompt}".strip()
+
+            response_buffer = []
+            
+            # Connect to IngestEngine stream
+            stream = self.engine.generate_stream(prompt=user_payload, model=model, system=full_system)
+            
+            for token in stream:
+                # Emit token to UI
+                self.bus.emit(SignalBusMS.SIGNAL_LOG_APPEND, token)
+                response_buffer.append(token)
+
+            final_response = "".join(response_buffer)
+            
+            # Hydrate artifact with result
+            artifact['response'] = final_response
+            
+            # Add AI Response to Working Memory
+            self.memory.add_entry(role="assistant", content=final_response, metadata=artifact['metadata'])
+
+            # Signal Completion (UI triggers HITL buttons)
+            self.bus.emit(SignalBusMS.SIGNAL_PROCESS_COMPLETE, artifact)
+
+        except Exception as e:
+            error_msg = f"Inference failed: {str(e)}"
+            self.logger.error(error_msg)
+            self.bus.emit(SignalBusMS.SIGNAL_LOG_APPEND, f"\n[SYSTEM ERROR]: {error_msg}")
+
+    def spawn_child(self, parent_artifact: Dict[str, Any]) -> None:
+        """
+        Prepares a new Cell by combining the parent's product with the current memory context,
+        then emits a signal requesting the UI to launch the new window.
+        """
+        # 1. Summarize Parent Context (The Hippocampus)
+        context_summary = self.memory.get_context(limit=10)
+        
+        # 2. Create Child DNA
+        child_payload = {
+            "source_artifact": parent_artifact,
+            "inherited_context": context_summary,
+            "spawn_timestamp": datetime.now().isoformat()
+        }
+
+        self.logger.info("Spawning child cell requested...")
+        
+        # 3. Signal the System (AppShell) to launch the GUI
+        self.bus.emit(SignalBusMS.SIGNAL_SPAWN_REQUESTED, child_payload)
+
+
 
 
 

@@ -26,7 +26,23 @@
     "knowledge.db": "checked",
     "LICENSE.md": "checked",
     "requirements.txt": "checked",
-    "setup_env.bat": "checked"
+    "setup_env.bat": "checked",
+    "src\\microservices\\_CodeFormatterMS.py": "checked",
+    "src\\microservices\\_ConfigStoreMS.py": "checked",
+    "src\\microservices\\_DiffEngineMS.py": "checked",
+    "src\\microservices\\_OllamaModelSelectorMS.py": "checked",
+    "src\\microservices\\_RegexWeaverMS.py": "checked",
+    "src\\microservices\\_RulesEngineMS.py": "checked",
+    "src\\microservices\\_SessionRecorderMS.py": "checked",
+    "src\\microservices\\_SignalBusMS.py": "checked",
+    "src\\microservices\\_TelemetryServiceMS.py": "checked",
+    "src\\microservices\\_TkinterSmartExplorerMS.py": "checked",
+    "src\\microservices\\_TreeMapperMS.py": "checked",
+    "src\\microservices\\ErrorNotifierMS.py": "checked",
+    "src\\microservices\\_HydrationFactoryMS.py": "checked",
+    "_tools": "checked",
+    "_tools\\fix_microservice_imports.py": "checked",
+    "src\\microservices\\base_service.py.bak": "checked"
   },
   "dynamic_exclusions": []
 }

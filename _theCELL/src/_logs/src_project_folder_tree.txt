@@ -1,20 +1,32 @@
 Project Tree: C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_theCELL\src
-Generated: 2026-02-07 06:11:00.311846
+Generated: 2026-02-07 20:17:49.610963
 
 ├── 📁 microservices/
 │   ├── 📄 __init__.py
+│   ├── 📄 _CodeFormatterMS.py
 │   ├── 📄 _CognitiveMemoryMS.py
+│   ├── 📄 _ConfigStoreMS.py
+│   ├── 📄 _DiffEngineMS.py
 │   ├── 📄 _FeedbackValidationMS.py
 │   ├── 📄 _IngestEngineMS.py
 │   ├── 📄 _LogViewMS.py
 │   ├── 📄 _MicroSpinnerMS.py
+│   ├── 📄 _OllamaModelSelectorMS.py
+│   ├── 📄 _RegexWeaverMS.py
+│   ├── 📄 _RulesEngineMS.py
 │   ├── 📄 _SemanticChunkerMS.py
+│   ├── 📄 _SessionRecorderMS.py
+│   ├── 📄 _SignalBusMS.py
+│   ├── 📄 _TelemetryServiceMS.py
 │   ├── 📄 _TextChunkerMS.py
 │   ├── 📄 _TkinterAppShellMS.py
+│   ├── 📄 _TkinterSmartExplorerMS.py
 │   ├── 📄 _TkinterThemeManagerMS.py
+│   ├── 📄 _TreeMapperMS.py
 │   ├── 📄 _VectorFactoryMS.py
 │   ├── 📄 base_service.py
 │   ├── 📄 document_utils.py
+│   ├── 📄 ErrorNotifierMS.py
 │   └── 📄 microservice_std_lib.py
 ├── 📄 __init__.py
 ├── 📄 app.py
