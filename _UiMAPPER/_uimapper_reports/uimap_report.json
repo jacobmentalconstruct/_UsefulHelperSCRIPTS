@@ -1,0 +1,502 @@
+{
+  "parse_errors": [],
+  "project_root": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_UiMAPPER",
+  "unknowns": [],
+  "widgets": {
+    "w1": {
+      "bind_events": [],
+      "command_targets": [],
+      "config_calls": [],
+      "created_at": {
+        "col": 8,
+        "lineno": 158,
+        "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_UiMAPPER\\src\\ui.py"
+      },
+      "kwargs": {
+        "style": "'TFrame'"
+      },
+      "layout_calls": [],
+      "parent_id": null,
+      "widget_id": "w1",
+      "widget_type": "Frame"
+    },
+    "w10": {
+      "bind_events": [],
+      "command_targets": [
+        "self._browse_folder"
+      ],
+      "config_calls": [],
+      "created_at": {
+        "col": 8,
+        "lineno": 222,
+        "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_UiMAPPER\\src\\ui.py"
+      },
+      "kwargs": {
+        "command": "self._browse_folder",
+        "text": "'Browse…'"
+      },
+      "layout_calls": [
+        "grid(row=1, column=1, sticky='e', padx=Tuple, pady=Tuple)"
+      ],
+      "parent_id": "w8",
+      "widget_id": "w10",
+      "widget_type": "Button"
+    },
+    "w11": {
+      "bind_events": [],
+      "command_targets": [],
+      "config_calls": [],
+      "created_at": {
+        "col": 8,
+        "lineno": 226,
+        "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_UiMAPPER\\src\\ui.py"
+      },
+      "kwargs": {
+        "text": "'Include .pyw'",
+        "variable": "self.var_include_pyw"
+      },
+      "layout_calls": [
+        "grid(row=2, column=0, sticky='w', pady=Tuple)"
+      ],
+      "parent_id": "w8",
+      "widget_id": "w11",
+      "widget_type": "Checkbutton"
+    },
+    "w12": {
+      "bind_events": [],
+      "command_targets": [],
+      "config_calls": [],
+      "created_at": {
+        "col": 8,
+        "lineno": 229,
+        "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_UiMAPPER\\src\\ui.py"
+      },
+      "kwargs": {
+        "text": "'Enable inference (Ollama)'",
+        "variable": "self.var_enable_inference"
+      },
+      "layout_calls": [
+        "grid(row=3, column=0, sticky='w', pady=Tuple)"
+      ],
+      "parent_id": "w8",
+      "widget_id": "w12",
+      "widget_type": "Checkbutton"
+    },
+    "w13": {
+      "bind_events": [],
+      "command_targets": [],
+      "config_calls": [],
+      "created_at": {
+        "col": 8,
+        "lineno": 233,
+        "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_UiMAPPER\\src\\ui.py"
+      },
+      "kwargs": {
+        "textvariable": "self.var_model"
+      },
+      "layout_calls": [
+        "grid(row=5, column=0, columnspan=2, sticky='ew', pady=Tuple)"
+      ],
+      "parent_id": "w8",
+      "widget_id": "w13",
+      "widget_type": "Entry"
+    },
+    "w14": {
+      "bind_events": [],
+      "command_targets": [
+        "self._run_clicked"
+      ],
+      "config_calls": [],
+      "created_at": {
+        "col": 8,
+        "lineno": 237,
+        "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_UiMAPPER\\src\\ui.py"
+      },
+      "kwargs": {
+        "command": "self._run_clicked",
+        "style": "'Accent.TButton'",
+        "text": "'Run'"
+      },
+      "layout_calls": [
+        "grid(row=6, column=0, sticky='ew', pady=Tuple)"
+      ],
+      "parent_id": "w8",
+      "widget_id": "w14",
+      "widget_type": "Button"
+    },
+    "w15": {
+      "bind_events": [],
+      "command_targets": [
+        "self._cancel_clicked"
+      ],
+      "config_calls": [],
+      "created_at": {
+        "col": 8,
+        "lineno": 240,
+        "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_UiMAPPER\\src\\ui.py"
+      },
+      "kwargs": {
+        "command": "self._cancel_clicked",
+        "text": "'Cancel'"
+      },
+      "layout_calls": [
+        "grid(row=7, column=0, sticky='ew', pady=Tuple)"
+      ],
+      "parent_id": "w8",
+      "widget_id": "w15",
+      "widget_type": "Button"
+    },
+    "w16": {
+      "bind_events": [],
+      "command_targets": [
+        "self._open_report_folder"
+      ],
+      "config_calls": [],
+      "created_at": {
+        "col": 8,
+        "lineno": 243,
+        "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_UiMAPPER\\src\\ui.py"
+      },
+      "kwargs": {
+        "command": "self._open_report_folder",
+        "text": "'Open Report Folder'"
+      },
+      "layout_calls": [
+        "grid(row=8, column=0, sticky='ew', pady=Tuple)"
+      ],
+      "parent_id": "w8",
+      "widget_id": "w16",
+      "widget_type": "Button"
+    },
+    "w17": {
+      "bind_events": [],
+      "command_targets": [],
+      "config_calls": [],
+      "created_at": {
+        "col": 8,
+        "lineno": 248,
+        "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_UiMAPPER\\src\\ui.py"
+      },
+      "kwargs": {
+        "background": "THEME.panel",
+        "style": "'Muted.TLabel'",
+        "text": "''"
+      },
+      "layout_calls": [],
+      "parent_id": "w8",
+      "widget_id": "w17",
+      "widget_type": "Label"
+    },
+    "w18": {
+      "bind_events": [],
+      "command_targets": [],
+      "config_calls": [
+        "configure(state='disabled')"
+      ],
+      "created_at": {
+        "col": 8,
+        "lineno": 254,
+        "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_UiMAPPER\\src\\ui.py"
+      },
+      "kwargs": {
+        "bg": "THEME.entry_bg",
+        "fg": "THEME.fg",
+        "height": "18",
+        "insertbackground": "THEME.fg",
+        "relief": "'flat'",
+        "wrap": "'word'"
+      },
+      "layout_calls": [
+        "pack(fill='both', expand=False)"
+      ],
+      "parent_id": null,
+      "widget_id": "w18",
+      "widget_type": "Text"
+    },
+    "w19": {
+      "bind_events": [],
+      "command_targets": [],
+      "config_calls": [],
+      "created_at": {
+        "col": 8,
+        "lineno": 271,
+        "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_UiMAPPER\\src\\ui.py"
+      },
+      "kwargs": {
+        "columns": "cols",
+        "height": "18",
+        "show": "'headings'"
+      },
+      "layout_calls": [
+        "pack(fill='both', expand=True)"
+      ],
+      "parent_id": null,
+      "widget_id": "w19",
+      "widget_type": "Treeview"
+    },
+    "w2": {
+      "bind_events": [],
+      "command_targets": [],
+      "config_calls": [],
+      "created_at": {
+        "col": 8,
+        "lineno": 182,
+        "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_UiMAPPER\\src\\ui.py"
+      },
+      "kwargs": {
+        "style": "'Panel.TFrame'"
+      },
+      "layout_calls": [
+        "pack(fill='x', padx=10, pady=Tuple)"
+      ],
+      "parent_id": null,
+      "widget_id": "w2",
+      "widget_type": "Frame"
+    },
+    "w20": {
+      "bind_events": [],
+      "command_targets": [],
+      "config_calls": [],
+      "created_at": {
+        "col": 8,
+        "lineno": 280,
+        "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_UiMAPPER\\src\\ui.py"
+      },
+      "kwargs": {
+        "style": "'Panel.TFrame'"
+      },
+      "layout_calls": [
+        "pack(fill='x', pady=Tuple)"
+      ],
+      "parent_id": null,
+      "widget_id": "w20",
+      "widget_type": "Frame"
+    },
+    "w21": {
+      "bind_events": [],
+      "command_targets": [],
+      "config_calls": [],
+      "created_at": {
+        "col": 8,
+        "lineno": 287,
+        "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_UiMAPPER\\src\\ui.py"
+      },
+      "kwargs": {
+        "style": "'TFrame'"
+      },
+      "layout_calls": [
+        "pack(fill='x', padx=10, pady=Tuple)"
+      ],
+      "parent_id": null,
+      "widget_id": "w21",
+      "widget_type": "Frame"
+    },
+    "w22": {
+      "bind_events": [],
+      "command_targets": [],
+      "config_calls": [
+        "configure(bg=THEME.bg)"
+      ],
+      "created_at": {
+        "col": 8,
+        "lineno": 423,
+        "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_UiMAPPER\\src\\ui.py"
+      },
+      "kwargs": {},
+      "layout_calls": [],
+      "parent_id": null,
+      "widget_id": "w22",
+      "widget_type": "Toplevel"
+    },
+    "w23": {
+      "bind_events": [],
+      "command_targets": [],
+      "config_calls": [
+        "configure(state='disabled')"
+      ],
+      "created_at": {
+        "col": 8,
+        "lineno": 427,
+        "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_UiMAPPER\\src\\ui.py"
+      },
+      "kwargs": {
+        "bg": "THEME.entry_bg",
+        "fg": "THEME.fg",
+        "insertbackground": "THEME.fg",
+        "relief": "'flat'",
+        "wrap": "'none'"
+      },
+      "layout_calls": [
+        "pack(fill='both', expand=True, padx=10, pady=10)"
+      ],
+      "parent_id": "w22",
+      "widget_id": "w23",
+      "widget_type": "Text"
+    },
+    "w3": {
+      "bind_events": [],
+      "command_targets": [],
+      "config_calls": [],
+      "created_at": {
+        "col": 8,
+        "lineno": 185,
+        "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_UiMAPPER\\src\\ui.py"
+      },
+      "kwargs": {
+        "background": "THEME.panel",
+        "font": "Tuple",
+        "foreground": "THEME.fg",
+        "text": "'UiMAPPER'"
+      },
+      "layout_calls": [
+        "grid(row=0, column=0, sticky='w', padx=10, pady=8)"
+      ],
+      "parent_id": "w2",
+      "widget_id": "w3",
+      "widget_type": "Label"
+    },
+    "w4": {
+      "bind_events": [],
+      "command_targets": [],
+      "config_calls": [],
+      "created_at": {
+        "col": 8,
+        "lineno": 188,
+        "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_UiMAPPER\\src\\ui.py"
+      },
+      "kwargs": {
+        "background": "THEME.panel",
+        "style": "'Muted.TLabel'",
+        "text": "'idle'"
+      },
+      "layout_calls": [],
+      "parent_id": "w2",
+      "widget_id": "w4",
+      "widget_type": "Label"
+    },
+    "w5": {
+      "bind_events": [],
+      "command_targets": [],
+      "config_calls": [],
+      "created_at": {
+        "col": 8,
+        "lineno": 195,
+        "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_UiMAPPER\\src\\ui.py"
+      },
+      "kwargs": {
+        "style": "'TFrame'"
+      },
+      "layout_calls": [
+        "pack(fill='both', expand=True, padx=10, pady=6)"
+      ],
+      "parent_id": null,
+      "widget_id": "w5",
+      "widget_type": "Frame"
+    },
+    "w6": {
+      "bind_events": [],
+      "command_targets": [],
+      "config_calls": [
+        "configure(padding=10)"
+      ],
+      "created_at": {
+        "col": 8,
+        "lineno": 199,
+        "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_UiMAPPER\\src\\ui.py"
+      },
+      "kwargs": {
+        "style": "'Panel.TFrame'"
+      },
+      "layout_calls": [
+        "pack(side='left', fill='y', padx=Tuple, pady=0)"
+      ],
+      "parent_id": "w5",
+      "widget_id": "w6",
+      "widget_type": "Frame"
+    },
+    "w7": {
+      "bind_events": [],
+      "command_targets": [],
+      "config_calls": [
+        "configure(padding=10)"
+      ],
+      "created_at": {
+        "col": 8,
+        "lineno": 206,
+        "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_UiMAPPER\\src\\ui.py"
+      },
+      "kwargs": {
+        "style": "'Panel.TFrame'"
+      },
+      "layout_calls": [
+        "pack(side='left', fill='both', expand=True, padx=Tuple, pady=0)"
+      ],
+      "parent_id": "w5",
+      "widget_id": "w7",
+      "widget_type": "Frame"
+    },
+    "w8": {
+      "bind_events": [],
+      "command_targets": [],
+      "config_calls": [],
+      "created_at": {
+        "col": 8,
+        "lineno": 215,
+        "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_UiMAPPER\\src\\ui.py"
+      },
+      "kwargs": {
+        "style": "'Panel.TFrame'"
+      },
+      "layout_calls": [
+        "pack(fill='x')"
+      ],
+      "parent_id": null,
+      "widget_id": "w8",
+      "widget_type": "Frame"
+    },
+    "w9": {
+      "bind_events": [],
+      "command_targets": [],
+      "config_calls": [],
+      "created_at": {
+        "col": 8,
+        "lineno": 220,
+        "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_UiMAPPER\\src\\ui.py"
+      },
+      "kwargs": {
+        "textvariable": "self.var_project_root",
+        "width": "42"
+      },
+      "layout_calls": [
+        "grid(row=1, column=0, sticky='ew', pady=Tuple)"
+      ],
+      "parent_id": "w8",
+      "widget_id": "w9",
+      "widget_type": "Entry"
+    }
+  },
+  "windows": {
+    "win1": {
+      "config_calls": [],
+      "created_at": {
+        "col": 8,
+        "lineno": 51,
+        "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_UiMAPPER\\src\\microservices\\_TkinterAppShellMS.py"
+      },
+      "geometry_calls": [],
+      "title_calls": [],
+      "window_id": "win1"
+    },
+    "win4": {
+      "config_calls": [],
+      "created_at": {
+        "col": 4,
+        "lineno": 57,
+        "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_UiMAPPER\\src\\microservices\\_TkinterSmartExplorerMS.py"
+      },
+      "geometry_calls": [],
+      "title_calls": [],
+      "window_id": "win4"
+    }
+  }
+}

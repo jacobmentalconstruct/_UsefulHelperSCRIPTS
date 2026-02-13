@@ -8,8 +8,8 @@ import os
 import datetime
 import json
 from typing import Dict, Any, Optional
-from base_service import BaseService
-from microservice_std_lib import service_metadata, service_endpoint
+from .base_service import BaseService
+from .microservice_std_lib import service_metadata, service_endpoint
 
 @service_metadata(
     name='SessionRecorder', 
@@ -90,3 +90,4 @@ if __name__ == '__main__':
     recorder.on_scan_started({"paths": ["C:/test/project"]})
     recorder.on_hunk_detected({"file": "test.py", "hunk_name": "def test()", "before": "...", "after": ".."})
     print(f"Test entries written to: {recorder.log_file}")
+

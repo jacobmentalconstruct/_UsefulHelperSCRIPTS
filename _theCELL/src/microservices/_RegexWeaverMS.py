@@ -1,13 +1,14 @@
 import re
 import logging
 from typing import Any, Dict, List, Optional, Set
-from microservice_std_lib import service_metadata, service_endpoint
+from .microservice_std_lib import service_metadata, service_endpoint
+from .base_service import BaseService
 PY_IMPORT = re.compile('^\\s*(?:from|import)\\s+([\\w\\.]+)')
 JS_IMPORT = re.compile('(?:import\\s+.*?from\\s+[\\\'"]|require\\([\\\'"])([\\.\\/\\w\\-_]+)[\\\'"]')
 logger = logging.getLogger('RegexWeaver')
 
 @service_metadata(name='RegexWeaver', version='1.0.0', description='Fault-tolerant dependency extractor using Regex.', tags=['parsing', 'dependencies', 'regex'], capabilities=['compute'], internal_dependencies=['microservice_std_lib'], external_dependencies=[])
-class RegexWeaverMS:
+class RegexWeaverMS(BaseService):
     """
     The Weaver: A fault-tolerant dependency extractor.
     Uses Regex to find imports, making it faster and more permissive
@@ -15,9 +16,13 @@ class RegexWeaverMS:
     """
 
     def __init__(self, config: Optional[Dict[str, Any]]=None):
+        super().__init__('RegexWeaver')
         self.config = config or {}
 
     @service_endpoint(inputs={'content': 'str', 'language': 'str'}, outputs={'dependencies': 'List[str]'}, description='Scans code content for import statements.', tags=['parsing', 'dependencies'], side_effects=[])
+    # ROLE: Scans code content for import statements.
+    # INPUTS: {"content": "str", "language": "str"}
+    # OUTPUTS: {"dependencies": "List[str]"}
     def extract_dependencies(self, content: str, language: str) -> List[str]:
         """
         Scans code content for import statements.
@@ -46,3 +51,4 @@ if __name__ == '__main__':
     print(f"Python Deps: {weaver.extract_dependencies(py_code, 'python')}")
     js_code = "\n    import React from 'react';\n    const utils = require('./lib/utils');\n    // import hidden from 'hidden';\n    "
     print(f"JS Deps:     {weaver.extract_dependencies(js_code, 'javascript')}")
+

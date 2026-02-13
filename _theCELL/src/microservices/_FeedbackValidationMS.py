@@ -55,6 +55,9 @@ class FeedbackValidationMS(BaseService):
         tags=['write', 'hitl'],
         side_effects=['db:write']
     )
+    # ROLE: Records a validated or rejected transaction as training context.
+    # INPUTS: {"is_accepted": "bool", "meta": "Dict", "prompt": "str", "response": "str"}
+    # OUTPUTS: {"success": "bool"}
     def submit_feedback(self, prompt: str, response: str, is_accepted: bool, meta: Dict = None) -> bool:
         """
         Main entry point for the HITL UI to deposit the result of an inference turn.
@@ -92,6 +95,9 @@ class FeedbackValidationMS(BaseService):
         tags=['read', 'prompt-builder'],
         side_effects=['db:read']
     )
+    # ROLE: Retrieves past validated transactions to build few-shot prompts.
+    # INPUTS: {"limit": "int", "only_accepted": "bool"}
+    # OUTPUTS: {"history": "List[Dict]"}
     def get_validated_context(self, limit: int = 5, only_accepted: bool = True) -> List[Dict]:
         """
         Called by the system building the prompt to find 'Gold Standard' examples.
@@ -113,6 +119,9 @@ class FeedbackValidationMS(BaseService):
         description='Unwraps a standard Cell Artifact and submits it for validation.',
         tags=['write', 'hitl', 'helper']
     )
+    # ROLE: Unwraps a standard Cell Artifact and submits it for validation.
+    # INPUTS: {"artifact": "Dict", "is_accepted": "bool"}
+    # OUTPUTS: {"success": "bool"}
     def validate_artifact(self, artifact: Dict[str, Any], is_accepted: bool) -> bool:
         """
         Convenience wrapper for Standard Artifacts.

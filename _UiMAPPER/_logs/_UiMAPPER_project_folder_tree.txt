@@ -1,0 +1,45 @@
+Project Tree: C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_UiMAPPER
+Generated: 2026-02-12 17:35:47.131845
+
+├── 📁 src/
+│   ├── 📁 microservices/
+│   │   ├── 📄 __init__.py
+│   │   ├── 📄 _TkinterAppShellMS.py
+│   │   ├── 📄 _TkinterSmartExplorerMS.py
+│   │   ├── 📄 _TkinterThemeManagerMS.py
+│   │   ├── 📄 AstParseCacheMS.py
+│   │   ├── 📄 AstUiMapMS.py
+│   │   ├── 📄 base_service.py
+│   │   ├── 📄 CallbackGraphBuilderMS.py
+│   │   ├── 📄 CancellationTokenMS.py
+│   │   ├── 📄 document_utils.py
+│   │   ├── 📄 EntrypointFinderMS.py
+│   │   ├── 📄 ErrorNormalizerMS.py
+│   │   ├── 📄 GitignoreFilterMS.py
+│   │   ├── 📄 HitlDecisionRouterMS.py
+│   │   ├── 📄 InferencePromptBuilderMS.py
+│   │   ├── 📄 InferenceResultValidatorMS.py
+│   │   ├── 📄 microservice_std_lib.py
+│   │   ├── 📄 OllamaClientMS.py
+│   │   ├── 📄 ProgressEventBusMS.py
+│   │   ├── 📄 ProjectCrawlMS.py
+│   │   ├── 📄 PythonFileEnumeratorMS.py
+│   │   ├── 📄 ReportSerializerMS.py
+│   │   ├── 📄 ReportWriterMS.py
+│   │   ├── 📄 RunSessionStateMS.py
+│   │   ├── 📄 TkWidgetDetectorMS.py
+│   │   ├── 📄 UiMapModelMS.py
+│   │   └── 📄 UnknownCaseCollectorMS.py
+│   ├── 📄 __init__.py
+│   ├── 📄 app.py
+│   ├── 📄 backend.py
+│   └── 📄 ui.py
+├── 📁 tools/
+│   ├── 📄 __init__.py
+│   ├── 📄 check_ms_inits.py
+│   └── 📄 fix.py
+├── 📄 .gitignore
+├── 📄 LICENSE.md
+├── 📄 README.md
+├── 📄 requirements.txt
+└── 📄 setup_env.bat

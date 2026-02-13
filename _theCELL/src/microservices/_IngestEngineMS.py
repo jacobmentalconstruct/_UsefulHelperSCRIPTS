@@ -116,6 +116,9 @@ class IngestEngineMS(BaseService):
         mode='generator', 
         side_effects=['network:outbound']
     )
+    # ROLE: Streams inference tokens from Ollama.
+    # INPUTS: {"model": "str", "prompt": "str", "system": "str"}
+    # OUTPUTS: {"chunk": "str"}
     def generate_stream(self, prompt: str, model: str, system: str = '') -> Generator[str, None, None]:
         """Yields tokens from the LLM for real-time UI updates."""
         url = f"{OLLAMA_API_URL}/generate"
@@ -149,6 +152,9 @@ class IngestEngineMS(BaseService):
             yield f"[Connection Error: {str(e)}]"
 
     @service_endpoint(inputs={'file_paths': 'List[str]', 'model_name': 'str'}, outputs={'status': 'IngestStatus'}, description='Processes a list of files, ingesting them into the knowledge graph.', tags=['ingest', 'processing'], mode='generator', side_effects=['db:write', 'network:outbound'])
+    # ROLE: Processes a list of files, ingesting them into the knowledge graph.
+    # INPUTS: {"file_paths": "List[str]", "model_name": "str"}
+    # OUTPUTS: {"status": "IngestStatus"}
     def process_files(self, file_paths: List[str], model_name: str='none') -> Generator[IngestStatus, None, None]:
         total = len(file_paths)
         conn = sqlite3.connect(self.db_path)

@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import ttk, messagebox, filedialog
 import sqlite3
 
 class CellViewerModal(tk.Toplevel):
@@ -30,7 +30,7 @@ class CellViewerModal(tk.Toplevel):
         style.map(
             "Treeview",
             background=[('selected', colors.get('select_bg', colors.get('accent')))],
-            foreground=[('selected', colors.get('select_fg', '#ffffff'))]
+            foreground=[('selected', colors.get('select_fg', colors.get('entry_fg', colors.get('foreground'))))]
         )
         self.tree = ttk.Treeview(self, columns=("ID", "Name", "Preview", "Default"), show='headings')
         
@@ -41,12 +41,28 @@ class CellViewerModal(tk.Toplevel):
         self.tree.pack(fill='both', expand=True, padx=10, pady=10)
         self._refresh_data()
 
-        btn_frame = tk.Frame(self, bg=colors.get('background'))
-        btn_frame.pack(fill='x', padx=10, pady=5)
+        # Subscribe to theme updates
+        if hasattr(self.backend, 'bus'):
+            self.backend.bus.subscribe("theme_updated", self.refresh_theme)
+
+        self.btn_frame = tk.Frame(self, bg=colors.get('background'))
+        self.btn_frame.pack(fill='x', padx=10, pady=5)
         
-        tk.Button(btn_frame, text="Load Selection", command=self._on_load).pack(side='left', padx=5)
-        tk.Button(btn_frame, text="Set as Default", command=self._on_default).pack(side='left', padx=5)
-        tk.Button(btn_frame, text="Delete", bg=colors.get('error', '#f44747'), fg="white", command=self._on_delete).pack(side='right', padx=5)
+        btn_opts = {
+            "bg": colors.get('panel_bg', colors.get('background')),
+            "fg": colors.get('button_fg', colors.get('foreground')),
+            "relief": "flat"
+        }
+        tk.Button(self.btn_frame, text="Load Selection", command=self._on_load, **btn_opts).pack(side='left', padx=5)
+        tk.Button(self.btn_frame, text="Set as Default", command=self._on_default, **btn_opts).pack(side='left', padx=5)
+        tk.Button(
+            self.btn_frame,
+            text="Delete",
+            bg=colors.get('error', colors.get('accent')),
+            fg=colors.get('button_fg', colors.get('foreground')),
+            relief="flat",
+            command=self._on_delete
+        ).pack(side='right', padx=5)
 
     def _refresh_data(self):
         self.tree.delete(*self.tree.get_children())
@@ -82,6 +98,22 @@ class CellViewerModal(tk.Toplevel):
             item_id = self.tree.item(selected[0], 'values')[0]
             self.backend.delete_repository_item(self.table_name, item_id)
             self._refresh_data()
+
+    def refresh_theme(self, new_colors):
+        self.configure(bg=new_colors.get('background'))
+        self.btn_frame.configure(bg=new_colors.get('background'))
+        style = ttk.Style()
+        style.configure(
+            "Treeview",
+            background=new_colors.get('entry_bg', new_colors.get('panel_bg')),
+            foreground=new_colors.get('entry_fg', new_colors.get('foreground')),
+            fieldbackground=new_colors.get('entry_bg', new_colors.get('panel_bg'))
+        )
+        style.configure(
+            "Treeview.Heading",
+            background=new_colors.get('heading_bg', new_colors.get('panel_bg')),
+            foreground=new_colors.get('heading_fg', new_colors.get('foreground'))
+        )
 
 class CELL_UI:
     def __init__(self, shell, backend):
@@ -140,6 +172,8 @@ class CELL_UI:
         if hasattr(self.backend, 'bus'):
             self.backend.bus.subscribe("log_append", self._on_log_append)
             self.backend.bus.subscribe("process_complete", self._on_process_complete)
+            # Pass the new palette through so ttk/tk widgets can rebind safely.
+            self.backend.bus.subscribe("theme_updated", self.refresh_theme)
 
     def _on_log_append(self, content):
         """Marshals background thread signal to main UI thread."""
@@ -209,9 +243,9 @@ class CELL_UI:
         
         self.role_entry = tk.Entry(
             self.role_inner,
-            bg=self.colors.get('entry_bg', '#3c3c3c'),
-            fg=self.colors.get('entry_fg', 'white'),
-            insertbackground=self.colors.get('entry_fg', 'white')
+            bg=self.colors.get('entry_bg', self.colors.get('panel_bg')),
+            fg=self.colors.get('entry_fg', self.colors.get('foreground')),
+            insertbackground=self.colors.get('entry_fg', self.colors.get('foreground'))
         )
         self.role_entry.insert(0, self.backend.system_role)
         self.role_entry.pack(side='left', fill='x', expand=True, padx=(5, 2), pady=2)
@@ -232,9 +266,9 @@ class CELL_UI:
         self.prompt_text = tk.Text(
             self.prompt_inner,
             height=3,
-            bg=self.colors.get('entry_bg', '#3c3c3c'),
-            fg=self.colors.get('entry_fg', 'white'),
-            insertbackground=self.colors.get('entry_fg', 'white'),
+            bg=self.colors.get('entry_bg', self.colors.get('panel_bg')),
+            fg=self.colors.get('entry_fg', self.colors.get('foreground')),
+            insertbackground=self.colors.get('entry_fg', self.colors.get('foreground')),
             font=("Segoe UI", 9)
         )
         self.prompt_text.pack(side='left', fill='x', expand=True, padx=(5, 2), pady=2)
@@ -255,10 +289,10 @@ class CELL_UI:
             self.panel_prompt,
             undo=True,
             wrap="word",
-            bg=self.colors.get('entry_bg', '#252526'),
-            fg=self.colors.get('entry_fg', '#d4d4d4'),
-            insertbackground=self.colors.get('entry_fg', 'white'),
-            selectbackground=self.colors.get('select_bg', '#264f78'),
+            bg=self.colors.get('entry_bg', self.colors.get('panel_bg')),
+            fg=self.colors.get('entry_fg', self.colors.get('foreground')),
+            insertbackground=self.colors.get('entry_fg', self.colors.get('foreground')),
+            selectbackground=self.colors.get('select_bg', self.colors.get('accent')),
             font=("Consolas", 11)
         )
         self.input_box.pack(fill='both', expand=True, padx=10, pady=5)
@@ -291,8 +325,8 @@ class CELL_UI:
         self.btn_submit = tk.Button(
             self.action_frame,
             text="RUN CELL",
-            bg=self.colors.get('accent', '#007acc'),
-            fg="white",
+            bg=self.colors.get('accent'),
+            fg=self.colors.get('button_fg', self.colors.get('foreground')),
             font=("Segoe UI", 10, "bold"),
             command=self._submit
         )
@@ -314,9 +348,9 @@ class CELL_UI:
             self.panel_inference,
             height=6,
             wrap="word",
-            bg=self.colors.get('entry_bg', '#252526'),
-            fg=self.colors.get('entry_fg', '#d4d4d4'),
-            insertbackground=self.colors.get('entry_fg', 'white'),
+            bg=self.colors.get('entry_bg', self.colors.get('panel_bg')),
+            fg=self.colors.get('entry_fg', self.colors.get('foreground')),
+            insertbackground=self.colors.get('entry_fg', self.colors.get('foreground')),
             font=("Consolas", 10)
         )
         self.infer_log.insert('1.0', "[Stub] Inference logs will stream here during the run.\n")
@@ -339,9 +373,9 @@ class CELL_UI:
             self.panel_result,
             height=8,
             wrap="word",
-            bg=self.colors.get('entry_bg', '#252526'),
-            fg=self.colors.get('entry_fg', '#d4d4d4'),
-            insertbackground=self.colors.get('entry_fg', 'white'),
+            bg=self.colors.get('entry_bg', self.colors.get('panel_bg')),
+            fg=self.colors.get('entry_fg', self.colors.get('foreground')),
+            insertbackground=self.colors.get('entry_fg', self.colors.get('foreground')),
             font=("Consolas", 11)
         )
         self.result_text.insert('1.0', "[Stub] Model response will appear here.\n")
@@ -354,30 +388,30 @@ class CELL_UI:
         self.btn_accept = tk.Button(
             hitl_bar,
             text="ACCEPT",
-            bg=self.colors.get('accent', '#007acc'),
-            fg="white",
+            bg=self.colors.get('accent'),
+            fg=self.colors.get('button_fg', 'white'),
             relief="flat",
             state='disabled',
-            command=lambda: None
+            command=self._on_accept
         )
         self.btn_accept.pack(side='left', padx=(0, 6))
 
         self.btn_reject = tk.Button(
             hitl_bar,
             text="REJECT & EDIT",
-            bg=self.colors.get('panel_bg'),
-            fg=self.colors.get('button_fg', self.colors.get('foreground', 'white')),
+            bg=self.colors.get('button_bg', self.colors.get('panel_bg')),
+            fg=self.colors.get('button_fg', self.colors.get('foreground')),
             relief="flat",
             state='disabled',
-            command=lambda: None
+            command=self._on_reject
         )
         self.btn_reject.pack(side='left', padx=(0, 6))
 
         self.btn_exit = tk.Button(
             hitl_bar,
             text="EXIT CELL",
-            bg=self.colors.get('panel_bg'),
-            fg=self.colors.get('button_fg', self.colors.get('foreground', 'white')),
+            bg=self.colors.get('button_bg', self.colors.get('panel_bg')),
+            fg=self.colors.get('button_fg', self.colors.get('foreground')),
             relief="flat",
             command=self.shell.root.destroy
         )
@@ -411,8 +445,9 @@ class CELL_UI:
         self.export_dest_cb.pack(side='left', padx=8, fill='x', expand=True)
 
         self.export_execute_btn = tk.Button(
-            top_row, text="EXECUTE", bg=self.colors.get('panel_bg'),
-            fg=self.colors.get('button_fg', self.colors.get('foreground', 'white')),
+            top_row, text="EXECUTE", 
+            bg=self.colors.get('accent'),
+            fg=self.colors.get('button_fg', 'white'),
             relief="flat", state='disabled', command=self._handle_export
         )
         self.export_execute_btn.pack(side='right')
@@ -431,28 +466,61 @@ class CELL_UI:
         self.export_dest_cb.bind('<<ComboboxSelected>>', lambda _e: _build_export_options(self.export_dest_var.get()))
         _build_export_options("Spawn")
 
+    def _get_current_artifact(self):
+        """Helper to package UI state into a standard artifact."""
+        return {
+            "payload": self.result_text.get("1.0", "end-1c"),
+            "instructions": {
+                "system_role": self.role_entry.get(),
+                "system_prompt": self.prompt_text.get("1.0", "end-1c")
+            },
+            "metadata": {"model": self.model_var.get(), "source": "ui_action"}
+        }
+
     def _handle_export(self):
         """Routes the execution command based on the selected destination."""
         dest = self.export_dest_var.get()
-        # For now, we only implement the Spawn logic fully
+        artifact = self._get_current_artifact()
+
         if dest == "Spawn":
-            # Retrieve the last artifact stored in memory (mocking for now since we don't have a direct artifact ref in UI)
-            # In a real flow, self.backend would store the last_artifact.
-            # For this patch, we assume the backend has a way to get the latest context.
-            # This trigger will tell backend to package the current state and spawn.
-            
-            # We reconstruct a temporary artifact from the UI state if one isn't cached
-            current_artifact = {
-                "payload": self.result_text.get("1.0", "end-1c"),
-                "instructions": {
-                    "system_role": self.role_entry.get(),
-                    "system_prompt": self.prompt_text.get("1.0", "end-1c")
-                },
-                "metadata": {"model": self.model_var.get(), "source": "ui_spawn"}
-            }
-            self.backend.spawn_child(current_artifact)
+            self.backend.spawn_child(artifact)
+        elif dest == "File":
+            path = filedialog.asksaveasfilename(defaultextension=".txt", parent=self.shell.root)
+            if path:
+                self.backend.export_artifact(artifact, "File", path)
+        elif dest == "Vector":
+            # Save to default long-term memory bank
+            self.backend.export_artifact(artifact, "Vector")
+            messagebox.showinfo("Memory", "Artifact embedded into Vector Store.", parent=self.shell.root)
         else:
             messagebox.showinfo("Not Implemented", f"Export to {dest} is coming soon!", parent=self.shell.root)
+
+    def _on_accept(self):
+        """HITL: User approves the result."""
+        artifact = self._get_current_artifact()
+        self.backend.record_feedback(artifact, is_accepted=True)
+        self.btn_accept.configure(state='disabled', text="ACCEPTED")
+        self.btn_reject.configure(state='disabled')
+
+    def _on_reject(self):
+        """HITL: User rejects. Unlock input for editing."""
+        artifact = self._get_current_artifact()
+        self.backend.record_feedback(artifact, is_accepted=False)
+        
+        # Move result back to input box for refinement
+        rejected_content = self.result_text.get("1.0", "end-1c")
+        self.input_box.delete("1.0", "end")
+        self.input_box.insert("1.0", rejected_content)
+        
+        # Reset UI state
+        self.result_text.configure(state='normal')
+        self.result_text.delete("1.0", "end")
+        self.result_text.insert("1.0", "[Drafting refinement...]")
+        self.result_text.configure(state='disabled')
+        
+        self.btn_accept.configure(state='disabled')
+        self.btn_reject.configure(state='disabled')
+        self.input_box.focus_set()
 
     def _apply_markdown_style(self, prefix, suffix=""):
         """Wraps selected text in Markdown markers for AI readability."""
@@ -544,28 +612,33 @@ class CELL_UI:
             selectcolor=self.colors.get('panel_bg', '#444')
         ).pack()
 
-    def confirm():
-        name = name_entry.get().strip()
-        if not name:
-            messagebox.showwarning("Missing name", "Please enter a name.", parent=dialog)
-            return
+        def confirm():
+            name = name_entry.get().strip()
+            if not name:
+                messagebox.showwarning("Missing name", "Please enter a name.", parent=dialog)
+                return
 
-        try:
-            if table == 'personas':
-                success = self.backend.save_persona(name, content[0], content[1], content[2], default_var.get())
+            try:
+                if table == 'personas':
+                    success = self.backend.save_persona(name, content[0], content[1], content[2], default_var.get())
+                else:
+                    success = self.backend.save_repository_item(table, name, content, default_var.get())
+            except Exception as e:
+                messagebox.showerror("Save failed", f"Unexpected error: {e}", parent=dialog)
+                return
+
+            if success:
+                messagebox.showinfo("Success", "Saved successfully!", parent=dialog)
+                dialog.destroy()
             else:
-                success = self.backend.save_repository_item(table, name, content, default_var.get())
-        except Exception as e:
-            messagebox.showerror("Save failed", f"Unexpected error: {e}", parent=dialog)
-            return
+                messagebox.showerror("Save failed", "Could not save. Check the app log for the SQLite error.", parent=dialog)
 
-        if success:
-            messagebox.showinfo("Success", "Saved successfully!", parent=dialog)
-            dialog.destroy()
-        else:
-            messagebox.showerror("Save failed", "Could not save. Check the app log for the SQLite error.", parent=dialog)
+        btn_frame = tk.Frame(dialog, bg=self.colors.get('background'))
+        btn_frame.pack(pady=10)
 
-        tk.Button(dialog, text="Save", command=confirm).pack(pady=10)
+        tk.Button(btn_frame, text="Save", width=10, command=confirm).pack(side='left', padx=5)
+        tk.Button(btn_frame, text="Cancel", width=10, command=dialog.destroy).pack(side='left', padx=5)
+
         dialog.bind("<Return>", lambda _e: confirm())
         dialog.bind("<Escape>", lambda _e: dialog.destroy())
 
@@ -624,7 +697,13 @@ class CELL_UI:
         lbl_size = tk.Label(settings, text="Window Size (WxH):", bg=self.colors.get('background'), fg=self.colors.get('foreground', 'white'))
         lbl_size.pack(pady=(15, 2))
         
-        size_entry = tk.Entry(settings)
+        size_entry = tk.Entry(
+            settings,
+            bg=self.colors.get('entry_bg', self.colors.get('panel_bg')),
+            fg=self.colors.get('entry_fg', self.colors.get('foreground')),
+            insertbackground=self.colors.get('entry_fg', self.colors.get('foreground')),
+            relief="flat"
+        )
         current_geo = self.shell.root.geometry().split('+')[0]
         size_entry.insert(0, current_geo)
         size_entry.pack(pady=2)
@@ -653,11 +732,62 @@ class CELL_UI:
                 self.colors = self.shell.colors
                 self.refresh_theme()
                 
-                # Refresh settings window colors immediately
+                # Refresh settings window colors immediately (including entry/button surfaces)
                 settings.configure(bg=self.colors.get('background'))
-                lbl_theme.configure(bg=self.colors.get('background'), fg=self.colors.get('foreground', 'white'))
-                lbl_size.configure(bg=self.colors.get('background'), fg=self.colors.get('foreground', 'white'))
+                lbl_theme.configure(bg=self.colors.get('background'), fg=self.colors.get('foreground'))
+                lbl_size.configure(bg=self.colors.get('background'), fg=self.colors.get('foreground'))
                 btn_frame.configure(bg=self.colors.get('background'))
+
+                try:
+                    size_entry.configure(
+                        bg=self.colors.get('entry_bg', self.colors.get('panel_bg')),
+                        fg=self.colors.get('entry_fg', self.colors.get('foreground')),
+                        insertbackground=self.colors.get('entry_fg', self.colors.get('foreground'))
+                    )
+                except Exception:
+                    pass
+
+                # Theme all buttons we created in this window
+                try:
+                    for w in container.winfo_children():
+                        if isinstance(w, tk.Button):
+                            w.configure(
+                                bg=self.colors.get('panel_bg'),
+                                fg=self.colors.get('button_fg', self.colors.get('foreground')),
+                                activebackground=self.colors.get('panel_bg'),
+                                activeforeground=self.colors.get('button_fg', self.colors.get('foreground'))
+                            )
+                except Exception:
+                    pass
+
+                # Recursive cleanup pass: remove any lingering OS-default surfaces
+                try:
+                    def _walk(w):
+                        for child in w.winfo_children():
+                            try:
+                                if isinstance(child, (tk.Frame, tk.LabelFrame, tk.Toplevel)):
+                                    child.configure(bg=self.colors.get('background'))
+                                elif isinstance(child, tk.Label):
+                                    child.configure(bg=self.colors.get('background'), fg=self.colors.get('foreground'))
+                                elif isinstance(child, tk.Entry):
+                                    child.configure(
+                                        bg=self.colors.get('entry_bg', self.colors.get('panel_bg')),
+                                        fg=self.colors.get('entry_fg', self.colors.get('foreground')),
+                                        insertbackground=self.colors.get('entry_fg', self.colors.get('foreground'))
+                                    )
+                                elif isinstance(child, tk.Button):
+                                    child.configure(
+                                        bg=self.colors.get('panel_bg'),
+                                        fg=self.colors.get('button_fg', self.colors.get('foreground')),
+                                        activebackground=self.colors.get('panel_bg'),
+                                        activeforeground=self.colors.get('button_fg', self.colors.get('foreground'))
+                                    )
+                            except Exception:
+                                pass
+                            _walk(child)
+                    _walk(settings)
+                except Exception:
+                    pass
 
         def on_ok():
             apply_changes()
@@ -734,9 +864,10 @@ class CELL_UI:
         # Trigger backend processing
         self.backend.process_submission(content, model, role, prompt)
 
-    def refresh_theme(self):
-        """Re-applies the current shell colors to all primary UI widgets."""
-        self.colors = self.shell.colors
+    def refresh_theme(self, new_colors=None):
+        """Re-applies the current theme to all primary UI widgets."""
+        # Pull the newest palette. (If the shell swaps dict objects, this keeps us aligned.)
+        self.colors = new_colors or self.shell.colors
 
         # Update Containers
         self.container.configure(bg=self.colors.get('background'))
@@ -763,14 +894,33 @@ class CELL_UI:
             self.action_frame.configure(bg=self.colors.get('background'))
 
         # Right-column panels
-        if self.panel_inference is not None:
-            self.panel_inference.configure(bg=self.colors.get('background'), fg=self.colors.get('foreground'))
-        if self.panel_result is not None:
-            self.panel_result.configure(bg=self.colors.get('background'), fg=self.colors.get('foreground'))
-        if self.panel_export is not None:
-            self.panel_export.configure(bg=self.colors.get('background'), fg=self.colors.get('foreground'))
+        panel_list = [self.panel_inference, self.panel_result, self.panel_export]
+        for panel in panel_list:
+            if panel is not None:
+                try:
+                    panel.configure(
+                        bg=self.colors.get('background'),
+                        fg=self.colors.get('foreground'),
+                        highlightbackground=self.colors.get('border')
+                    )
+                except Exception:
+                    # Some Tk/ttk widgets may not accept fg/highlightbackground
+                    try:
+                        panel.configure(bg=self.colors.get('background'))
+                    except Exception:
+                        pass
+
         if self.export_router_frame is not None:
             self.export_router_frame.configure(bg=self.colors.get('background'))
+            for child in self.export_router_frame.winfo_children():
+                try:
+                    child.configure(bg=self.colors.get('background'), fg=self.colors.get('foreground'))
+                except Exception:
+                    try:
+                        child.configure(bg=self.colors.get('background'))
+                    except Exception:
+                        pass
+
         if self.export_options_frame is not None:
             self.export_options_frame.configure(bg=self.colors.get('background'))
 
@@ -785,6 +935,25 @@ class CELL_UI:
         self.role_entry.configure(bg=self.colors.get('entry_bg'), fg=self.colors.get('entry_fg'), insertbackground=self.colors.get('entry_fg'))
         self.prompt_text.configure(bg=self.colors.get('entry_bg'), fg=self.colors.get('entry_fg'), insertbackground=self.colors.get('entry_fg'))
         self.input_box.configure(bg=self.colors.get('entry_bg'), fg=self.colors.get('entry_fg'), insertbackground=self.colors.get('entry_fg'), selectbackground=self.colors.get('select_bg'))
+
+        # TTK STYLES: ttk widgets (Combobox/Treeview/etc.) won't pick up tk bg/fg changes.
+        # If we don't restyle them, they can keep OS-default (often white) surfaces after a swap.
+        try:
+            style = ttk.Style()
+            style.configure(
+                "TCombobox",
+                fieldbackground=self.colors.get('entry_bg', self.colors.get('panel_bg')),
+                background=self.colors.get('panel_bg', self.colors.get('background')),
+                foreground=self.colors.get('entry_fg', self.colors.get('foreground')),
+                arrowcolor=self.colors.get('foreground')
+            )
+            style.map(
+                "TCombobox",
+                fieldbackground=[('readonly', self.colors.get('entry_bg', self.colors.get('panel_bg')))],
+                foreground=[('readonly', self.colors.get('entry_fg', self.colors.get('foreground')))]
+            )
+        except Exception:
+            pass
 
         # Panel 2/3 stubs
         if self.infer_log is not None:
@@ -810,23 +979,29 @@ class CELL_UI:
             )
         if self.btn_submit is not None:
             self.btn_submit.configure(
-                bg=self.colors.get('accent', '#007acc'),
-                fg='white'
+                bg=self.colors.get('accent'),
+                fg=self.colors.get('button_fg', self.colors.get('foreground'))
             )
 
-        # HITL stub buttons
+        # HITL buttons
         if self.btn_accept is not None:
-            self.btn_accept.configure(bg=self.colors.get('accent', '#007acc'), fg='white')
+            self.btn_accept.configure(bg=self.colors.get('accent'), fg=self.colors.get('button_fg', 'white'))
         if self.btn_reject is not None:
-            self.btn_reject.configure(bg=self.colors.get('panel_bg'), fg=self.colors.get('button_fg', self.colors.get('foreground')))
+            self.btn_reject.configure(bg=self.colors.get('button_bg', self.colors.get('panel_bg')), fg=self.colors.get('button_fg', self.colors.get('foreground')))
         if self.btn_exit is not None:
-            self.btn_exit.configure(bg=self.colors.get('panel_bg'), fg=self.colors.get('button_fg', self.colors.get('foreground')))
+            self.btn_exit.configure(bg=self.colors.get('button_bg', self.colors.get('panel_bg')), fg=self.colors.get('button_fg', self.colors.get('foreground')))
 
-        # Export stub buttons
-        if self.btn_spawn_child is not None:
-            self.btn_spawn_child.configure(bg=self.colors.get('panel_bg'), fg=self.colors.get('button_fg', self.colors.get('foreground')))
-        if self.btn_export_json is not None:
-            self.btn_export_json.configure(bg=self.colors.get('panel_bg'), fg=self.colors.get('button_fg', self.colors.get('foreground')))
+        # Export buttons
+        if self.export_execute_btn is not None:
+            self.export_execute_btn.configure(bg=self.colors.get('accent'), fg=self.colors.get('button_fg', 'white'))
+
+
+
+
+
+
+
+
 
 
 

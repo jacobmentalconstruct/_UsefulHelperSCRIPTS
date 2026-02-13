@@ -54,6 +54,9 @@ class CognitiveMemoryMS(BaseService):
         self._load_working_memory()
 
     @service_endpoint(inputs={'role': 'str', 'content': 'str', 'metadata': 'Dict'}, outputs={'entry': 'MemoryEntry'}, description='Adds an item to working memory and persists it.', tags=['memory', 'write'], side_effects=['filesystem:write'])
+    # ROLE: Adds an item to working memory and persists it.
+    # INPUTS: {"content": "str", "metadata": "Dict", "role": "str"}
+    # OUTPUTS: {"entry": "MemoryEntry"}
     def add_entry(self, role: str, content: str, metadata: Dict=None) -> MemoryEntry:
         """Adds an item to working memory and persists it."""
         entry = MemoryEntry(role=role, content=content, metadata=metadata or {})
@@ -63,6 +66,9 @@ class CognitiveMemoryMS(BaseService):
         return entry
 
     @service_endpoint(inputs={'limit': 'int'}, outputs={'context': 'str'}, description='Returns the most recent conversation history formatted for an LLM.', tags=['memory', 'read', 'llm'], side_effects=['filesystem:read'])
+    # ROLE: Returns the most recent conversation history formatted for an LLM.
+    # INPUTS: {"limit": "int"}
+    # OUTPUTS: {"context": "str"}
     def get_context(self, limit: int=10) -> str:
         """
         Returns the most recent conversation history formatted for an LLM.
@@ -75,6 +81,9 @@ class CognitiveMemoryMS(BaseService):
         return [e.dict() for e in self.working_memory]
 
     @service_endpoint(inputs={}, outputs={}, description='Signals that a turn is complete; checks if memory flush is needed.', tags=['memory', 'maintenance'], side_effects=['filesystem:write'])
+    # ROLE: Signals that a turn is complete; checks if memory flush is needed.
+    # INPUTS: {}
+    # OUTPUTS: {}
     def commit_turn(self):
         """
         Signal that a "Turn" (User + AI response) is complete.

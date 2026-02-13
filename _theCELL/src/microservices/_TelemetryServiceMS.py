@@ -7,8 +7,15 @@ import queue
 import time
 import datetime
 from typing import Dict, Any, Optional, List
-from microservice_std_lib import service_metadata, service_endpoint
-from event_contract import summarize_event, normalize_error
+from .microservice_std_lib import service_metadata, service_endpoint
+from .base_service import BaseService
+
+try:
+    from .event_contract import summarize_event, normalize_error
+except ImportError:
+    # Fallback if contract file is missing
+    def summarize_event(e, p): return f"Event: {e}"
+    def normalize_error(e): return str(e)
 
 logger = logging.getLogger('TelemetryService')
 
@@ -19,8 +26,9 @@ logger = logging.getLogger('TelemetryService')
     tags=['utility', 'logging', 'telemetry'], 
     capabilities=['event-journaling', 'state-snapshotting']
 )
-class TelemetryServiceMS:
+class TelemetryServiceMS(BaseService):
     def __init__(self, state, config: Optional[Dict[str, Any]]=None):
+        super().__init__('TelemetryService')
         self.state_authority = state # The AppRuntimeState object
         self.config = config or {}
         
@@ -42,44 +50,47 @@ class TelemetryServiceMS:
         """Records a structured event into the ring buffer."""
         try:
             timestamp = datetime.datetime.now().strftime("%H:%M:%S")
-            
+
             # Normalize payload if it's an error
             safe_payload = payload
             if "error" in event_name:
-                safe_payload = normalize_error(payload)
-                self.snapshot["last_error"] = safe_payload.get("message")
-            
+                normalized = normalize_error(payload)
+                safe_payload = normalized
+                if isinstance(normalized, dict):
+                    self.snapshot["last_error"] = normalized.get("message")
+                else:
+                    self.snapshot["last_error"] = str(normalized)
+
             if event_name == "model_swapped":
                 self.snapshot["current_model"] = str(payload)
-            
+
             entry = {
                 "ts": timestamp,
                 "event": event_name,
                 "source": source,
                 "payload": self._sanitize_payload(safe_payload),
-                "summary": self._generate_summary(event_name, safe_payload)
-                            }
+                "summary": self._generate_summary(event_name, safe_payload),
+            }
 
-                            self.event_buffer.append(entry)
-                            if len(self.event_buffer) > self.buffer_limit:
-                self.event_buffer.pop(0)
-                        except Exception as e:
-                            print(f"Telemetry Error: {e}")
-                        except Exception as e:
-                            # Fallback if logging fails to prevent recursion loops
-                            print(f"Telemetry Error: {e}")
+            self.event_buffer.append(entry)
+            if len(self.event_buffer) > self.buffer_limit:
+                # Keep only the most recent N entries
+                self.event_buffer = self.event_buffer[-self.buffer_limit:]
+
+        except Exception as e:
+            # Fallback if logging fails to prevent recursion loops
+            print(f"Telemetry Error: {e}")
 
         # Update local counters based on event type
         self._update_counters(event_name)
-        
+
         # Emit signal that telemetry has updated (for future UI refresh)
         # Note: We use a try/except in case the bus isn't available during tests
         try:
             if hasattr(self, 'bus'):
                 self.bus.emit("telemetry_updated", self.get_snapshot())
-        except:
+        except Exception:
             pass
-
     def _sanitize_payload(self, payload: Any) -> Any:
         """Ensures payload is safe for storage and serialization."""
         if isinstance(payload, (str, int, float, bool, type(None))):
@@ -113,5 +124,6 @@ class TelemetryServiceMS:
 
     def get_recent_events(self, limit: int = 50) -> List[Dict[str, Any]]:
         return self.event_buffer[-limit:]
+
 
 

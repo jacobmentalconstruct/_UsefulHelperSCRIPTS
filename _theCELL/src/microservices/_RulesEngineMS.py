@@ -4,6 +4,8 @@ ROLE: Operator Governance (Task 4.3)
 """
 import logging
 from typing import Dict, Any, Optional
+from .microservice_std_lib import service_metadata, service_endpoint
+from .base_service import BaseService
 def get_default_rules() -> Dict[str, Any]:
     """
     Returns the default safety contracts.
@@ -24,10 +26,28 @@ def get_default_rules() -> Dict[str, Any]:
         ]
     }
 
-class RulesEngineMS:
+@service_metadata(
+    name='RulesEngine', 
+    version='1.0.0', 
+    description='Governance engine for safety and file protection.',
+    tags=['governance', 'safety'],
+    internal_dependencies=['base_service', 'microservice_std_lib']
+)
+class RulesEngineMS(BaseService):
     def __init__(self, config: Optional[Dict[str, Any]] = None):
+        super().__init__('RulesEngine')
         self.rules = get_default_rules()
-        self.logger = logging.getLogger("RulesEngine")
+
+    @service_endpoint(
+        inputs={}, 
+        outputs={'rules': 'Dict'},
+        description='Returns current active ruleset.'
+    )
+    # ROLE: Returns current active ruleset.
+    # INPUTS: {}
+    # OUTPUTS: {"rules": "Dict"}
+    def get_rules(self) -> Dict[str, Any]:
+        return self.rules.copy()
 
     def get_rules(self) -> Dict[str, Any]:
         return self.rules.copy()
@@ -54,6 +74,7 @@ class RulesEngineMS:
                 return False, f"Hunk contains forbidden pattern: {pattern}"
                 
         return True, ""
+
 
 
 

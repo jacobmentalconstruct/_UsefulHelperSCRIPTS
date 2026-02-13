@@ -44,6 +44,9 @@ class SignalBusMS(BaseService):
         description='Registers a callback function to trigger when a specific signal is emitted.', 
         tags=['events', 'subscribe']
     )
+    # ROLE: Registers a callback function to trigger when a specific signal is emitted.
+    # INPUTS: {"callback": "Callable", "signal_name": "str"}
+    # OUTPUTS: {}
     def subscribe(self, signal_name: str, callback: Callable):
         """Adds a listener for a specific signal."""
         with self._lock:
@@ -59,6 +62,9 @@ class SignalBusMS(BaseService):
         description='Broadcasts data to all subscribers of a specific signal.', 
         tags=['events', 'emit']
     )
+    # ROLE: Broadcasts data to all subscribers of a specific signal.
+    # INPUTS: {"data": "Any", "signal_name": "str"}
+    # OUTPUTS: {"delivered_to": "int"}
     def emit(self, signal_name: str, data: Any = None) -> int:
         """Broadcasts a signal to all registered listeners."""
         count = 0
@@ -83,6 +89,9 @@ class SignalBusMS(BaseService):
         description='Removes a previously registered callback.', 
         tags=['events', 'unsubscribe']
     )
+    # ROLE: Removes a previously registered callback.
+    # INPUTS: {"callback": "Callable", "signal_name": "str"}
+    # OUTPUTS: {}
     def unsubscribe(self, signal_name: str, callback: Callable):
         """Removes a listener from a signal."""
         with self._lock:

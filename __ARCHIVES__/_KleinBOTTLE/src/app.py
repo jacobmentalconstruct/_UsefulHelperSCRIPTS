@@ -30,8 +30,9 @@ import shutil
 import os
 from PIL import Image, ImageTk
 import tkinter as tk
-from tkinter import ttk
-from dataclasses import dataclass, asdict
+from tkinter import ttk, filedialog, messagebox
+from copy import deepcopy
+from dataclasses import dataclass, asdict, field
 from typing import Dict, List, Optional
 
 
@@ -104,13 +105,35 @@ class Room:
     contents: List[str]
     hidden_notes: str
     exits: List[Exit]
+    # Raw/original JSON payload for this room (used for lossless save in "molt" format)
+    raw: dict = field(default_factory=dict, repr=False)
 
 
 class World:
-    def __init__(self):
-        # Ported from HUB_AND_SPOKE_WORLD in the file dump.
-        self.name = "The Gilded Manor"
-        self.rooms: Dict[str, Room] = {
+    """A small world container that can be loaded/saved.
+
+    Supports two formats:
+      - "isolateirl" (internal): rooms are Room dataclasses with explicit x/y/z and exits list.
+      - "molt" (your default_map.json): rooms are keyed by room_id with a 'connections' dict.
+
+    In viewer/manual mode we NEVER auto-mutate topology; we only load, render, move, and allow
+    explicit user edits. SD image generation is user-triggered and writes only image_url.
+    """
+
+    def __init__(self, name: str, rooms: Dict[str, Room], current_room_id: str, fmt: str = "isolateirl"):
+        self.name = name
+        self.rooms = rooms
+        self.current_room_id = current_room_id
+        self.format = fmt
+        self.source_path: Optional[str] = None
+        # When we load a "molt" map, we stash the original JSON dict here so we can save
+        # back without destroying keys we don't explicitly model (furniture/fixtures/objects/etc).
+        self._raw_world: Optional[dict] = None
+
+    @staticmethod
+    def _default_manor() -> "World":
+        # Original stub world retained as a fallback.
+        rooms: Dict[str, Room] = {
             "living-room": Room(
                 id="living-room",
                 title="The Gilded Living Room",
@@ -248,8 +271,196 @@ class World:
                 exits=[Exit("Up", "living-room")],
             ),
         }
+        return World(name="The Gilded Manor", rooms=rooms, current_room_id="living-room", fmt="isolateirl")
 
-        self.current_room_id = "living-room"
+    @staticmethod
+    def _derive_short(desc: str) -> str:
+        if not desc:
+            return ""
+        s = desc.strip().split("\n", 1)[0].strip()
+        # First sentence-ish
+        if "." in s:
+            s = s.split(".", 1)[0].strip() + "."
+        return s
+
+    @staticmethod
+    def _layout_from_connections(start_id: str, connections_by_room: Dict[str, Dict[str, str]]) -> Dict[str, tuple[int, int, int]]:
+        """Simple BFS layout to assign x/y based on cardinal directions.
+
+        This is deterministic and does NOT write back unless you save.
+        """
+        deltas = {
+            "north": (0, 1, 0),
+            "south": (0, -1, 0),
+            "east": (1, 0, 0),
+            "west": (-1, 0, 0),
+            "up": (0, 0, 1),
+            "down": (0, 0, -1),
+        }
+        coords: Dict[str, tuple[int, int, int]] = {start_id: (0, 0, 0)}
+        q = [start_id]
+        while q:
+            rid = q.pop(0)
+            rx, ry, rz = coords[rid]
+            for d, tid in (connections_by_room.get(rid) or {}).items():
+                dl = deltas.get(d.lower())
+                if not dl:
+                    continue
+                nx, ny, nz = rx + dl[0], ry + dl[1], rz + dl[2]
+                if tid not in coords:
+                    coords[tid] = (nx, ny, nz)
+                    q.append(tid)
+        return coords
+
+    @classmethod
+    def from_file(cls, path: str) -> "World":
+        with open(path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+
+        # Molt format: rooms with 'connections' dict
+        if isinstance(data, dict) and "rooms" in data and any(
+            isinstance(v, dict) and "connections" in v for v in (data.get("rooms") or {}).values()
+        ):
+            rooms_raw: Dict[str, dict] = data.get("rooms") or {}
+            start_id = data.get("start_room_id") or next(iter(rooms_raw.keys()), "")
+
+            connections_by_room: Dict[str, Dict[str, str]] = {}
+            for rid, rr in rooms_raw.items():
+                connections_by_room[rid] = dict(rr.get("connections") or {})
+
+            coords = cls._layout_from_connections(start_id, connections_by_room) if start_id else {}
+
+            rooms: Dict[str, Room] = {}
+            for rid, rr in rooms_raw.items():
+                name = rr.get("name") or rid
+                desc = rr.get("description") or ""
+
+                # Display contents: furniture + fixtures + object names
+                furniture = rr.get("furniture") or []
+                fixtures = rr.get("fixtures") or []
+                objs = rr.get("objects") or []
+                obj_names = []
+                for o in objs:
+                    if isinstance(o, dict) and o.get("name"):
+                        obj_names.append(o.get("name"))
+                contents = [*furniture, *fixtures, *obj_names]
+
+                cx, cy, cz = coords.get(rid, (0, 0, 0))
+                exits = [Exit(direction=k.capitalize(), target_id=v) for k, v in (rr.get("connections") or {}).items()]
+
+                rooms[rid] = Room(
+                    id=rid,
+                    title=name,
+                    short_description=rr.get("short_description") or cls._derive_short(desc),
+                    description=desc,
+                    focal_point=rr.get("focal_point") or "",
+                    atmosphere=rr.get("atmosphere") or "",
+                    image_url=rr.get("image_url") or "",
+                    x=int(cx),
+                    y=int(cy),
+                    z=int(cz),
+                    contents=contents,
+                    hidden_notes=rr.get("hidden_notes") or "",
+                    exits=exits,
+                    raw=deepcopy(rr),
+                )
+
+            w = World(name=data.get("world_id") or data.get("notes") or "Molt Habitat", rooms=rooms, current_room_id=start_id or next(iter(rooms.keys()), ""), fmt="molt")
+            w._raw_world = deepcopy(data)
+            w.source_path = path
+            return w
+
+        # Internal format (optional): treat as isolateirl if it resembles our schema payload
+        if isinstance(data, dict) and "rooms" in data and isinstance(data.get("rooms"), dict):
+            rooms: Dict[str, Room] = {}
+            for rid, rr in (data.get("rooms") or {}).items():
+                exits = [Exit(e.get("direction", ""), e.get("targetId", "")) for e in (rr.get("exits") or []) if isinstance(e, dict)]
+                rooms[rid] = Room(
+                    id=rid,
+                    title=rr.get("title") or rid,
+                    short_description=rr.get("shortDescription") or "",
+                    description=rr.get("description") or "",
+                    focal_point=rr.get("focalPoint") or "",
+                    atmosphere=rr.get("atmosphere") or "",
+                    image_url=rr.get("imageUrl") or "",
+                    x=int((rr.get("coordinates") or {}).get("x", 0)),
+                    y=int((rr.get("coordinates") or {}).get("y", 0)),
+                    z=int((rr.get("coordinates") or {}).get("z", 0)),
+                    contents=list(rr.get("contents") or []),
+                    hidden_notes=rr.get("hiddenNotes") or "",
+                    exits=exits,
+                )
+            cur = data.get("current_room_id") or data.get("start_room_id") or next(iter(rooms.keys()), "")
+            w = World(name=data.get("name") or "World", rooms=rooms, current_room_id=cur, fmt="isolateirl")
+            w.source_path = path
+            return w
+
+        # Fallback
+        w = cls._default_manor()
+        w.source_path = path
+        return w
+
+    def to_dict(self) -> dict:
+        if self.format == "molt":
+            # Write back preserving the molt structure; update only known/safe keys.
+            out = deepcopy(self._raw_world) if isinstance(getattr(self, "_raw_world", None), dict) else {
+                "world_id": self.name,
+                "schema_version": "0.1",
+                "start_room_id": self.current_room_id,
+                "rooms": {},
+            }
+
+            out["world_id"] = self.name
+            out["schema_version"] = out.get("schema_version") or "0.1"
+            out["start_room_id"] = self.current_room_id
+            if not isinstance(out.get("rooms"), dict):
+                out["rooms"] = {}
+
+            rooms_out: Dict[str, dict] = out["rooms"]
+            for rid, r in self.rooms.items():
+                base = deepcopy(r.raw) if isinstance(getattr(r, "raw", None), dict) else deepcopy(rooms_out.get(rid, {}) or {})
+                connections = {e.direction.lower(): e.target_id for e in r.exits}
+
+                base["name"] = r.title
+                if "type" not in base:
+                    base["type"] = "interior" if rid.startswith("house.") else "exterior"
+                if "zone" not in base:
+                    base["zone"] = "house" if rid.startswith("house.") else "yard"
+                base["description"] = r.description
+                base["short_description"] = r.short_description
+                base["focal_point"] = r.focal_point
+                base["atmosphere"] = r.atmosphere
+                base["image_url"] = r.image_url
+                base["hidden_notes"] = r.hidden_notes
+                base["connections"] = connections
+                # Keep the UI-friendly flattened contents as a separate key so we don't destroy furniture/fixtures/objects.
+                base["contents_flat"] = list(r.contents)
+
+                rooms_out[rid] = base
+
+            return out
+
+        # isolateirl format
+        rooms_out: Dict[str, dict] = {}
+        for rid, r in self.rooms.items():
+            rooms_out[rid] = {
+                "title": r.title,
+                "shortDescription": r.short_description,
+                "description": r.description,
+                "focalPoint": r.focal_point,
+                "atmosphere": r.atmosphere,
+                "imageUrl": r.image_url,
+                "coordinates": {"x": r.x, "y": r.y, "z": r.z},
+                "contents": list(r.contents),
+                "hiddenNotes": r.hidden_notes,
+                "exits": [{"direction": e.direction, "targetId": e.target_id} for e in r.exits],
+            }
+        return {
+            "name": self.name,
+            "schema_version": "isolateirl_world_0.1",
+            "current_room_id": self.current_room_id,
+            "rooms": rooms_out,
+        }
 
     @property
     def current_room(self) -> Room:
@@ -320,7 +531,22 @@ class ScrollableFrame(ttk.Frame):
 class IsolateIRLApp:
     def __init__(self):
         self.theme = Theme()
-        self.world = World()
+
+        # Prefer loading the project map if present
+        self.current_world_path: Optional[str] = None
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        default_map_path = os.path.join(base_dir, "map", "default_map.json")
+        try:
+            if os.path.exists(default_map_path):
+                self.world = World.from_file(default_map_path)
+                self.current_world_path = default_map_path
+            else:
+                self.world = World._default_manor()
+        except Exception as e:
+            # Always fail safe into the stub world.
+            self.world = World._default_manor()
+            self.current_world_path = None
+
 
         self.root = tk.Tk()
         self.root.title("IsolateIRL - UI Stub")
@@ -794,63 +1020,6 @@ class IsolateIRLApp:
             highlightbackground=self.theme["border"],
         )
         self.txt_schema.pack(side="top", fill="both", expand=True, padx=10, pady=(0, 10))
-        self.right_split = ttk.Panedwindow(self.right_col, orient="vertical")
-        self.right_split.pack(side="top", fill="both", expand=True)
-
-        self.chat_panel = ttk.Frame(self.right_split)
-        self.schema_panel = ttk.Frame(self.right_split)
-
-        self.right_split.add(self.chat_panel, weight=1)
-        self.right_split.add(self.schema_panel, weight=1)
-
-        # Chat panel
-        chat_header = ttk.Frame(self.chat_panel, style="Panel.TFrame")
-        chat_header.pack(side="top", fill="x")
-        ttk.Label(chat_header, text="Architect's Voice", style="Small.Mono.TLabel").pack(side="left", padx=10, pady=8)
-
-        self.txt_chat = tk.Text(
-            self.chat_panel,
-            height=10,
-            wrap="word",
-            bg="#111",
-            fg=self.theme["foreground"],
-            insertbackground=self.theme["foreground"],
-            font=self.theme["font_mono_small"],
-            relief="flat",
-            highlightthickness=1,
-            highlightbackground=self.theme["border"],
-        )
-        self.txt_chat.pack(side="top", fill="both", expand=True, padx=10, pady=(0, 6))
-
-        chat_input = ttk.Frame(self.chat_panel, style="Panel.TFrame")
-        chat_input.pack(side="bottom", fill="x")
-
-        self.var_directive = tk.StringVar()
-        self.ent_directive = ttk.Entry(chat_input, textvariable=self.var_directive)
-        self.ent_directive.pack(side="left", fill="x", expand=True, padx=10, pady=10)
-        ttk.Button(chat_input, text="Send", style="Accent.TButton", command=self._stub_send_directive).pack(
-            side="left", padx=(0, 10), pady=10
-        )
-
-        # Schema panel
-        schema_header = ttk.Frame(self.schema_panel, style="Panel.TFrame")
-        schema_header.pack(side="top", fill="x")
-        ttk.Label(schema_header, text="JSON Node Schema", style="Small.Mono.TLabel").pack(side="left", padx=10, pady=8)
-        ttk.Button(schema_header, text="Copy Raw", command=self._copy_schema).pack(side="right", padx=10)
-
-        self.txt_schema = tk.Text(
-            self.schema_panel,
-            height=10,
-            wrap="none",
-            bg="#1a1a1a",
-            fg="#CEB9A5",
-            insertbackground="#CEB9A5",
-            font=self.theme["font_mono_small"],
-            relief="flat",
-            highlightthickness=1,
-            highlightbackground=self.theme["border"],
-        )
-        self.txt_schema.pack(side="top", fill="both", expand=True, padx=10, pady=(0, 10))
 
     def _refresh_ollama_models(self):
         try:
@@ -1207,15 +1376,62 @@ class IsolateIRLApp:
         self._chat_log("System: [stub] New world requested.")
 
     def _stub_open(self):
-        self.status_var.set("[stub] Open world")
-        self._chat_log("System: [stub] Open requested.")
+        path = filedialog.askopenfilename(
+            title="Open World JSON",
+            filetypes=[("JSON files", "*.json"), ("All files", "*.*")],
+            initialdir=os.path.dirname(self.current_world_path) if self.current_world_path else os.getcwd(),
+        )
+        if not path:
+            return
+        try:
+            w = World.from_file(path)
+            if not w.current_room_id or w.current_room_id not in w.rooms:
+                raise ValueError("World has no valid start/current room.")
+            self.world = w
+            self.current_world_path = path
+            self.is_dirty = False
+            self._history_log(f"Opened World: {os.path.basename(path)}")
+            self._chat_log(f"System: Loaded world from {path}")
+            self.status_var.set(f"Loaded: {os.path.basename(path)}")
+            self._render_room()
+        except Exception as e:
+            messagebox.showerror("Open failed", f"Could not open world:\n\n{e}")
+            self._chat_log(f"System: Open failed: {e}")
 
     def _stub_save_world(self):
-        self.is_dirty = False
-        self.btn_save_world.configure(text="Save World")
-        self._chat_log("System: [stub] World saved (no-op).")
-        self._history_log("Saved World")
-        self.status_var.set("World saved (stub).")
+        # Save to current file if known; otherwise prompt.
+        path = self.current_world_path
+        if not path:
+            path = filedialog.asksaveasfilename(
+                title="Save World JSON As",
+                defaultextension=".json",
+                filetypes=[("JSON files", "*.json"), ("All files", "*.*")],
+                initialdir=os.getcwd(),
+                initialfile="world.json",
+            )
+            if not path:
+                return
+            self.current_world_path = path
+
+        try:
+            data = self.world.to_dict()
+            with open(path, "w", encoding="utf-8") as f:
+                json.dump(data, f, indent=2)
+
+            # Keep internal pointers in sync with what was just written.
+            self.world.source_path = path
+            if self.world.format == "molt":
+                # Refresh the raw cache so future saves preserve any newly added keys/rooms.
+                self.world._raw_world = deepcopy(data)
+
+            self.is_dirty = False
+            self.btn_save_world.configure(text="Save World")
+            self._history_log(f"Saved World: {os.path.basename(path)}")
+            self._chat_log(f"System: World saved to {path}")
+            self.status_var.set(f"World saved: {os.path.basename(path)}")
+        except Exception as e:
+            messagebox.showerror("Save failed", f"Could not save world:\n\n{e}")
+            self._chat_log(f"System: Save failed: {e}")
 
     def _stub_export(self):
         self._chat_log("System: [stub] Export requested.")
@@ -1282,15 +1498,16 @@ class IsolateIRLApp:
         threading.Thread(target=paint_thread, daemon=True).start()
 
     def _finalize_painting(self, b64_data):
-        # Save a physical copy to the local assets folder 
+        # Save a physical copy to a stable per-room cache
         room_id = self.world.current_room.id
-        asset_path = f"assets/{room_id}.png"
-        
-        if not os.path.exists("assets"): os.makedirs("assets")
-        
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        rooms_dir = os.path.join(base_dir, "assets", "rooms")
+        os.makedirs(rooms_dir, exist_ok=True)
+        asset_path = os.path.join(rooms_dir, f"{room_id}.png")
+
         with open(asset_path, "wb") as f:
             f.write(base64.b64decode(b64_data))
-            
+
         self.world.current_room.image_url = asset_path
         self.is_painting = False
         self._mark_dirty()
@@ -1363,6 +1580,8 @@ class IsolateIRLApp:
 
 if __name__ == "__main__":
     IsolateIRLApp().run()
+
+
 
 
 

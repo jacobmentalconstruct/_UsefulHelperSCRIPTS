@@ -1,9 +1,13 @@
-Project Tree: C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_KleinBOTTLE
-Generated: 2026-02-03 09:13:51.432194
+Project Tree: C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\__ARCHIVES__\_KleinBOTTLE
+Generated: 2026-02-11 05:29:59.917844
 
 ├── 📁 assets/
-│   └── 📁 icons/
+│   ├── 📁 icons/
+│   ├── 📄 kitchen.png
+│   └── 📄 living-room.png
 ├── 📁 src/
+│   ├── 📁 map/
+│   │   └── 📄 default_map.json
 │   ├── 📄 __init__.py
 │   └── 📄 app.py
 ├── 📄 .gitignore

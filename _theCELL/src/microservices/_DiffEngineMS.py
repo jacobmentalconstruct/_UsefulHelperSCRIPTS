@@ -40,6 +40,9 @@ class DiffEngineMS:
             conn.execute("\n                CREATE TABLE IF NOT EXISTS diff_log (\n                    id TEXT PRIMARY KEY,\n                    file_id TEXT NOT NULL,\n                    timestamp TIMESTAMP,\n                    change_type TEXT,  -- 'CREATE', 'EDIT', 'DELETE'\n                    diff_blob TEXT,    -- The text output of difflib\n                    author TEXT,\n                    FOREIGN KEY(file_id) REFERENCES files(id)\n                )\n            ")
 
     @service_endpoint(inputs={'path': 'str', 'new_content': 'str', 'author': 'str'}, outputs={'status': 'str', 'file_id': 'str'}, description='Updates a file, creating a diff history entry and updating the head state.', tags=['version-control', 'write'], side_effects=['db:write'])
+    # ROLE: Updates a file, creating a diff history entry and updating the head state.
+    # INPUTS: {"author": "str", "new_content": "str", "path": "str"}
+    # OUTPUTS: {"file_id": "str", "status": "str"}
     def update_file(self, path: str, new_content: str, author: str='agent') -> Dict[str, Any]:
         """
         The Atomic Update Operation:
@@ -76,6 +79,9 @@ class DiffEngineMS:
         conn.execute('INSERT INTO diff_log (id, file_id, timestamp, change_type, diff_blob, author) VALUES (?, ?, ?, ?, ?, ?)', (diff_id, file_id, timestamp, change_type, diff_text, author))
 
     @service_endpoint(inputs={'path': 'str'}, outputs={'content': 'Optional[str]'}, description='Fast retrieval of current content.', tags=['version-control', 'read'], side_effects=['db:read'])
+    # ROLE: Fast retrieval of current content.
+    # INPUTS: {"path": "str"}
+    # OUTPUTS: {"content": "Optional[str]"}
     def get_head(self, path: str) -> Optional[str]:
         """Fast retrieval of current content."""
         with self._get_conn() as conn:
@@ -83,6 +89,9 @@ class DiffEngineMS:
             return row['content'] if row else None
 
     @service_endpoint(inputs={'path': 'str'}, outputs={'history': 'List[Dict]'}, description='Retrieves the full evolution history of a file.', tags=['version-control', 'read'], side_effects=['db:read'])
+    # ROLE: Retrieves the full evolution history of a file.
+    # INPUTS: {"path": "str"}
+    # OUTPUTS: {"history": "List[Dict]"}
     def get_history(self, path: str) -> List[Dict]:
         """Retrieves the full evolution history of a file."""
         with self._get_conn() as conn:

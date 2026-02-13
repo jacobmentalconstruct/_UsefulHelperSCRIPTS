@@ -5,6 +5,7 @@ import logging
 import datetime
 from typing import Any, Dict, Optional
 from .microservice_std_lib import service_metadata, service_endpoint
+from .base_service import BaseService
 
 class QueueHandler(logging.Handler):
     """
@@ -20,7 +21,7 @@ class QueueHandler(logging.Handler):
         self.log_queue.put(record)
 
 @service_metadata(name='LogView', version='1.0.0', description='A thread-safe log viewer widget for Tkinter.', tags=['ui', 'logs', 'widget'], capabilities=['ui:gui', 'filesystem:write'], internal_dependencies=['microservice_std_lib'], external_dependencies=[])
-class LogViewMS(tk.Frame):
+class LogViewMS(tk.Frame, BaseService):
     """
     The Console: A professional log viewer widget.
     Features:
@@ -29,34 +30,58 @@ class LogViewMS(tk.Frame):
     - Level Filtering (Toggle INFO/DEBUG/ERROR).
     """
 
-    def __init__(self, config: Optional[Dict[str, Any]]=None):
+    def __init__(self, config: Optional[Dict[str, Any]]=None, theme: Optional[Dict[str, Any]]=None, bus: Optional[Any]=None):
         self.config = config or {}
         parent = self.config.get('parent')
-        super().__init__(parent)
+        self.colors = theme or {}
+        self.bus = bus
+        
+        tk.Frame.__init__(self, parent, bg=self.colors.get('background', '#1e1e1e'))
+        BaseService.__init__(self, 'LogView')
+        
         self.log_queue: queue.Queue = self.config.get('log_queue')
         if self.log_queue is None:
             self.log_queue = queue.Queue()
+        
         self.last_msg = None
         self.last_count = 0
         self.last_line_index = None
+        
         self._build_ui()
         self._poll_queue()
 
+        if self.bus:
+            self.bus.subscribe("theme_updated", self.refresh_theme)
+
     def _build_ui(self):
-        toolbar = tk.Frame(self, bg='#2d2d2d', height=30)
-        toolbar.pack(fill='x', side='top')
+        self.toolbar = tk.Frame(self, bg=self.colors.get('panel_bg', '#2d2d2d'), height=30)
+        self.toolbar.pack(fill='x', side='top')
+        
         self.filters = {'INFO': tk.BooleanVar(value=True), 'DEBUG': tk.BooleanVar(value=True), 'WARNING': tk.BooleanVar(value=True), 'ERROR': tk.BooleanVar(value=True)}
+        self.filter_btns = []
+        
         for level, var in self.filters.items():
-            cb = tk.Checkbutton(toolbar, text=level, variable=var, bg='#2d2d2d', fg='white', selectcolor='#444', activebackground='#2d2d2d', activeforeground='white')
+            cb = tk.Checkbutton(self.toolbar, text=level, variable=var, 
+                                bg=self.colors.get('panel_bg', '#2d2d2d'), 
+                                fg=self.colors.get('foreground', 'white'), 
+                                selectcolor=self.colors.get('border', '#444'), 
+                                activebackground=self.colors.get('panel_bg'))
             cb.pack(side='left', padx=5)
-        tk.Button(toolbar, text='Clear', command=self.clear, bg='#444', fg='white', relief='flat').pack(side='right', padx=5)
-        tk.Button(toolbar, text='Save', command=self.save, bg='#444', fg='white', relief='flat').pack(side='right')
-        self.text = scrolledtext.ScrolledText(self, state='disabled', bg='#1e1e1e', fg='#d4d4d4', font=('Consolas', 10), insertbackground='white')
+            self.filter_btns.append(cb)
+            
+        self.btn_clear = tk.Button(self.toolbar, text='Clear', command=self.clear, bg=self.colors.get('border', '#444'), fg=self.colors.get('foreground', 'white'), relief='flat')
+        self.btn_clear.pack(side='right', padx=5)
+        
+        self.btn_save = tk.Button(self.toolbar, text='Save', command=self.save, bg=self.colors.get('border', '#444'), fg=self.colors.get('foreground', 'white'), relief='flat')
+        self.btn_save.pack(side='right')
+        
+        self.text = scrolledtext.ScrolledText(self, state='disabled', bg=self.colors.get('entry_bg', '#1e1e1e'), fg=self.colors.get('entry_fg', '#d4d4d4'), font=('Consolas', 10), insertbackground=self.colors.get('entry_fg', 'white'))
         self.text.pack(fill='both', expand=True)
-        self.text.tag_config('INFO', foreground='#d4d4d4')
-        self.text.tag_config('DEBUG', foreground='#569cd6')
+        
+        self.text.tag_config('INFO', foreground=self.colors.get('entry_fg', '#d4d4d4'))
+        self.text.tag_config('DEBUG', foreground=self.colors.get('accent', '#569cd6'))
         self.text.tag_config('WARNING', foreground='#ce9178')
-        self.text.tag_config('ERROR', foreground='#f44747')
+        self.text.tag_config('ERROR', foreground=self.colors.get('error', '#f44747'))
         self.text.tag_config('timestamp', foreground='#608b4e')
 
     def _poll_queue(self):
@@ -86,6 +111,23 @@ class LogViewMS(tk.Frame):
         self.text.insert('end', f'{msg}\n', level)
         self.text.see('end')
         self.text.config(state='disabled')
+
+    def refresh_theme(self, new_colors):
+        """Re-applies new theme colors to the widget."""
+        self.colors = new_colors
+        self.configure(bg=self.colors.get('background'))
+        self.toolbar.configure(bg=self.colors.get('panel_bg'))
+        
+        for btn in self.filter_btns:
+            btn.configure(bg=self.colors.get('panel_bg'), fg=self.colors.get('foreground'), selectcolor=self.colors.get('border'))
+            
+        self.btn_clear.configure(bg=self.colors.get('border'), fg=self.colors.get('foreground'))
+        self.btn_save.configure(bg=self.colors.get('border'), fg=self.colors.get('foreground'))
+        
+        self.text.configure(bg=self.colors.get('entry_bg'), fg=self.colors.get('entry_fg'), insertbackground=self.colors.get('entry_fg'))
+        self.text.tag_config('INFO', foreground=self.colors.get('entry_fg'))
+        self.text.tag_config('DEBUG', foreground=self.colors.get('accent'))
+        self.text.tag_config('ERROR', foreground=self.colors.get('error'))
 
     @service_endpoint(inputs={}, outputs={}, description='Clears the log console.', tags=['ui', 'logs'], side_effects=['ui:update'])
     def clear(self):
@@ -122,3 +164,5 @@ if __name__ == '__main__':
         root.after(2000, generate_noise)
     generate_noise()
     root.mainloop()
+
+

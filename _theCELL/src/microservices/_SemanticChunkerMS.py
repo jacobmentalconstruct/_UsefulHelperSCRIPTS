@@ -2,6 +2,7 @@ import ast
 from dataclasses import dataclass, asdict
 from typing import List, Dict, Any, Optional
 from .microservice_std_lib import service_metadata, service_endpoint
+from .base_service import BaseService
 
 @dataclass
 class CodeChunk:
@@ -13,7 +14,7 @@ class CodeChunk:
     docstring: str = ''
 
 @service_metadata(name='SemanticChunker', version='1.0.0', description='The Surgeon: Intelligent Code Splitter that parses source code into logical semantic units (Classes, Functions) using AST.', tags=['utility', 'nlp', 'parser'], capabilities=['python-ast', 'semantic-chunking'], internal_dependencies=['microservice_std_lib'], external_dependencies=[])
-class SemanticChunkerMS:
+class SemanticChunkerMS(BaseService):
     """
     Intelligent Code Splitter.
     Parses source code into logical units (Classes, Functions) 
@@ -21,9 +22,13 @@ class SemanticChunkerMS:
     """
 
     def __init__(self, config: Optional[Dict[str, Any]]=None):
+        super().__init__('SemanticChunker')
         self.config = config or {}
 
     @service_endpoint(inputs={'content': 'str', 'filename': 'str'}, outputs={'chunks': 'List[Dict]'}, description='Main entry point to split a file into semantic chunks based on its extension and content.', tags=['processing', 'chunking'], side_effects=[])
+    # ROLE: Main entry point to split a file into semantic chunks based on its extension and content.
+    # INPUTS: {"content": "str", "filename": "str"}
+    # OUTPUTS: {"chunks": "List[Dict]"}
     def chunk_file(self, content: str, filename: str) -> List[Dict[str, Any]]:
         """
         Splits file content into chunks.
@@ -93,3 +98,4 @@ if __name__ == '__main__':
     for c in results:
         print(f" - [{c['type']}] {c['name']} ({c['start_line']}-{c['end_line']})")
         print(f" - [{c['type']}] {c['name']} ({c['start_line']}-{c['end_line']})")
+

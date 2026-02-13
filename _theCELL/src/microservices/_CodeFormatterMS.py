@@ -9,7 +9,8 @@ import json
 import logging
 from pathlib import Path
 from typing import Dict, List, Any, Optional
-from microservice_std_lib import service_metadata, service_endpoint
+from .microservice_std_lib import service_metadata, service_endpoint
+from .base_service import BaseService
 logger = logging.getLogger('CodeFormatter')
 
 class WhitespaceEngine:
@@ -99,7 +100,7 @@ class WhitespaceEngine:
         hunks_list.append(schema_hunk)
 
 @service_metadata(name='CodeFormatter', version='1.0.0', description='The Architect: Intelligent whitespace normalization and structural repair engine.', tags=['formatting', 'code', 'utility'], capabilities=['compute', 'filesystem:write'], internal_dependencies=['microservice_std_lib'], external_dependencies=[])
-class CodeFormatterMS:
+class CodeFormatterMS(BaseService):
     """
     The Architect.
     Uses the WhitespaceEngine to enforce strict indentation rules, 
@@ -107,9 +108,13 @@ class CodeFormatterMS:
     """
 
     def __init__(self, config: Optional[Dict[str, Any]]=None):
+        super().__init__('CodeFormatter')
         self.config = config or {}
 
     @service_endpoint(inputs={'content': 'str', 'use_tabs': 'bool', 'spaces': 'int'}, outputs={'normalized': 'str', 'patch': 'Dict'}, description='Takes raw code and returns the normalized version plus a JSON patch of changes.', tags=['formatting', 'compute'], side_effects=[])
+    # ROLE: Takes raw code and returns the normalized version plus a JSON patch of changes.
+    # INPUTS: {"content": "str", "spaces": "int", "use_tabs": "bool"}
+    # OUTPUTS: {"normalized": "str", "patch": "Dict"}
     def normalize_code(self, content: str, use_tabs: bool=False, spaces: int=4) -> Dict[str, Any]:
         """
         Pure logic endpoint: Takes string, returns string + patch.
@@ -122,6 +127,9 @@ class CodeFormatterMS:
         return {'normalized': normalized, 'patch': patch}
 
     @service_endpoint(inputs={'file_path': 'str', 'use_tabs': 'bool', 'spaces': 'int'}, outputs={'status': 'str', 'changes': 'int'}, description='Reads a file, normalizes it, and overwrites it if changes are needed.', tags=['formatting', 'filesystem'], side_effects=['filesystem:read', 'filesystem:write'])
+    # ROLE: Reads a file, normalizes it, and overwrites it if changes are needed.
+    # INPUTS: {"file_path": "str", "spaces": "int", "use_tabs": "bool"}
+    # OUTPUTS: {"changes": "int", "status": "str"}
     def format_file(self, file_path: str, use_tabs: bool=False, spaces: int=4) -> Dict[str, Any]:
         """
         Filesystem endpoint: In-place repair of a file.
@@ -155,3 +163,4 @@ if __name__ == '__main__':
     print(f"Hunks Detected: {len(result['patch']['hunks'])}")
     print('\n--- Normalized Output ---')
     print(result['normalized'])
+

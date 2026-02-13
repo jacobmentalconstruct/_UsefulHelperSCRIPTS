@@ -9,13 +9,22 @@ from src.microservices._IngestEngineMS import IngestEngineMS
 from src.microservices._FeedbackValidationMS import FeedbackValidationMS
 from src.microservices._SignalBusMS import SignalBusMS
 from src.microservices._CognitiveMemoryMS import CognitiveMemoryMS
+from src.microservices._HydrationFactoryMS import HydrationFactoryMS
+from src.microservices._ErrorNotifierMS import ErrorNotifierMS
+from src.microservices._ConfigStoreMS import ConfigStoreMS
+from src.microservices._CodeFormatterMS import CodeFormatterMS
+from src.microservices._TreeMapperMS import TreeMapperMS
+from src.microservices._VectorFactoryMS import VectorFactoryMS
+from src.microservices.microservice_std_lib import service_metadata
 
 class Backend:
     """
-    Orchestration layer managing state persistence and microservice integration.
+    ROLE: Orchestration / Logic Hub
+    SERVICES: Ingest, Validation, SignalBus, Memory, Factory, Notifier, ConfigStore
+    STATE: Persistent (SQLite / JSON)
     """
     def __init__(self, db_path: str = None, memory_path: str = None):
-        # Default DB location: project_root/_db/app_internal.db
+        # BOOTSTRAP: Define persistence paths
         project_root = os.path.abspath(os.getcwd())
         db_dir = os.path.join(project_root, "_db")
         os.makedirs(db_dir, exist_ok=True)
@@ -30,9 +39,32 @@ class Backend:
         self.engine = IngestEngineMS()
         self.validator = FeedbackValidationMS()
         self.bus = SignalBusMS()
+        self.notifier = ErrorNotifierMS(self.bus)
+        self.config_store = ConfigStoreMS()
+
+        # BOOTSTRAP: Initialize Specialists (orchestration-owned)
+        self.formatter = CodeFormatterMS()
+        self.mapper = TreeMapperMS()
+        self.vector_factory = VectorFactoryMS()
+
+        # DI: Package and inject services into the Fabricator
+        specialists = {
+            'formatter': self.formatter,
+            'mapper': self.mapper,
+            'vector_factory': self.vector_factory,
+            'ingest_engine': self.engine
+        }
+        self.factory = HydrationFactoryMS(services=specialists)
         
-        # Configure memory with unique path if provided (Fixes Recursion Collision)
-        mem_config = {'persistence_path': memory_path} if memory_path else {}
+        # Configure memory with Long-Term flush capability (Phase 7)
+        mem_config = {
+             'persistence_path': memory_path,
+            'summarizer_func': self._summarize_memory_stub, 
+            'long_term_ingest_func': self._flush_to_vector_db
+        } if memory_path else {
+            'summarizer_func': self._summarize_memory_stub,
+            'long_term_ingest_func': self._flush_to_vector_db
+        }
         self.memory = CognitiveMemoryMS(config=mem_config)
         
         # Initialize state from persistent storage
@@ -48,15 +80,11 @@ class Backend:
         self.save_setting('last_system_role', role_text)
 
     def _init_db(self) -> None:
-        """Initialize schema for application state and user personas."""
+        # TASK: Schema Initialization
+        # SCOPE: Personas, Roles, Prompts
         try:
             with sqlite3.connect(self.db_path) as conn:
                 conn.executescript("""
-                    -- SECTION: APP CONFIGURATION --
-                    CREATE TABLE IF NOT EXISTS app_settings (
-                        setting_key TEXT PRIMARY KEY, 
-                        setting_value TEXT
-                    );
                     -- SECTION: IDENTITY REPOSITORIES --
                     CREATE TABLE IF NOT EXISTS personas (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -89,13 +117,10 @@ class Backend:
             self.logger.error(f"Database initialization failed: {e}")
 
     def save_setting(self, key: str, value: Any) -> None:
-        with sqlite3.connect(self.db_path) as conn:
-            conn.execute("INSERT OR REPLACE INTO app_settings (setting_key, setting_value) VALUES (?, ?)", (key, str(value)))
+        self.config_store.set(key, value)
 
-    def get_setting(self, key: str) -> Optional[str]:
-        with sqlite3.connect(self.db_path) as conn:
-            res = conn.execute("SELECT setting_value FROM app_settings WHERE setting_key = ?", (key,)).fetchone()
-            return res[0] if res else None
+    def get_setting(self, key: str) -> Optional[Any]:
+        return self.config_store.get(key)
 
     def save_persona(self, name: str, role: str, sys_prompt: str, task_prompt: str = "", is_default: bool = False) -> bool:
         """Persist or update a bonded AI Persona template."""
@@ -169,9 +194,8 @@ class Backend:
         except sqlite3.Error: return False
 
     def process_submission(self, content: str, model: str, role: str, prompt: str) -> Dict[str, Any]:
-        """
-        Synthesizes UI inputs, starts the background inference thread, and returns the initial artifact.
-        """
+        # ACTION: Generate Artifact -> Start Threaded Inference
+        # INPUTS: content (raw), model (ID), role (text), prompt (text)
         artifact = {
             "metadata": {
                 "model": model,
@@ -257,6 +281,45 @@ class Backend:
         
         # 3. Signal the System (AppShell) to launch the GUI
         self.bus.emit(SignalBusMS.SIGNAL_SPAWN_REQUESTED, child_payload)
+
+    # --- INTEGRATION: Hydration & Export ---
+    def export_artifact(self, artifact: Dict[str, Any], destination: str, path: str = None) -> Dict[str, Any]:
+        # ROLE: Factory Router
+        # MODES: scaffold, memory, blueprint
+        try:
+            mode_map = {"File": "scaffold", "Vector": "memory", "Project Capture": "blueprint"}
+            mode = mode_map.get(destination, "scaffold")
+            
+            # If Vector, we assume a default collection if not specified
+            target = path if path else ("cell_memory_bank" if destination == "Vector" else "export.txt")
+            
+            return self.factory.hydrate_artifact(artifact, mode=mode, destination=target)
+        except Exception as e:
+            self.bus.emit(SignalBusMS.SIGNAL_ERROR, {"message": f"Export failed: {str(e)}", "level": "ERROR"})
+            return {"status": "error", "message": str(e)}
+
+    # --- Phase 5: Feedback Loop ---
+    def record_feedback(self, artifact: Dict[str, Any], is_accepted: bool) -> None:
+        """Submits the turn to the FeedbackValidator for training."""
+        self.validator.validate_artifact(artifact, is_accepted)
+
+    # --- Phase 7: Long-Term Memory Helpers ---
+    def _summarize_memory_stub(self, text: str) -> str:
+        """Simple truncation summarizer. Ideally uses an LLM call."""
+        return f"Session Summary [{datetime.now().isoformat()}]: {text[:200]}..."
+
+    def _flush_to_vector_db(self, text: str, metadata: Dict[str, Any]) -> None:
+        """Callback for CognitiveMemory to save flushed context to Vector Store."""
+        artifact = {
+            "payload": text,
+            "metadata": metadata
+        }
+        # We use the factory to 'hydrate' this into the memory bank
+        self.factory.hydrate_artifact(artifact, mode="memory", destination="long_term_history")
+
+
+
+
 
 
 

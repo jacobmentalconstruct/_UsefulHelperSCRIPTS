@@ -1,17 +1,19 @@
 Project Tree: C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_theCELL
-Generated: 2026-02-08 07:47:55.715937
+Generated: 2026-02-09 10:14:43.135910
 
 ├── 📁 _db/
 │   └── 📄 app_internal.db
-├── 📁 _tools/
-│   └── 📄 fix_microservice_imports.py
 ├── 📁 src/
 │   ├── 📁 microservices/
+│   │   ├── 📁 _MicroServiceTOOLS/
+│   │   │   ├── 📄 _MicroserviceDecoratorMSTOOL.py
+│   │   │   └── 📄 _TkinterUiMAPPER.py
 │   │   ├── 📄 __init__.py
 │   │   ├── 📄 _CodeFormatterMS.py
 │   │   ├── 📄 _CognitiveMemoryMS.py
 │   │   ├── 📄 _ConfigStoreMS.py
 │   │   ├── 📄 _DiffEngineMS.py
+│   │   ├── 📄 _ErrorNotifierMS.py
 │   │   ├── 📄 _FeedbackValidationMS.py
 │   │   ├── 📄 _HydrationFactoryMS.py
 │   │   ├── 📄 _IngestEngineMS.py
@@ -31,15 +33,18 @@ Generated: 2026-02-08 07:47:55.715937
 │   │   ├── 📄 _TreeMapperMS.py
 │   │   ├── 📄 _VectorFactoryMS.py
 │   │   ├── 📄 base_service.py
-│   │   ├── 📄 base_service.py.bak
 │   │   ├── 📄 document_utils.py
-│   │   ├── 📄 ErrorNotifierMS.py
-│   │   └── 📄 microservice_std_lib.py
+│   │   ├── 📄 fix.py
+│   │   ├── 📄 microservice_std_lib.py
+│   │   └── 📄 microservices.7z
 │   ├── 📄 __init__.py
 │   ├── 📄 app.py
 │   ├── 📄 backend.py
 │   └── 📄 ui.py
+├── 📄 app_config.json
 ├── 📄 knowledge.db
 ├── 📄 LICENSE.md
 ├── 📄 requirements.txt
-└── 📄 setup_env.bat
+├── 📄 session_be5dd5de.jsonl
+├── 📄 setup_env.bat
+└── 📄 working_memory.jsonl

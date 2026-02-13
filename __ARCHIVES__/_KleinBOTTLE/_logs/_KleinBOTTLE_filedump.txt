@@ -1,4 +1,4 @@
-Dump: C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_KleinBOTTLE
+Dump: C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\__ARCHIVES__\_KleinBOTTLE
 
 
 --------------------------------------------------------------------------------
@@ -1063,7 +1063,8 @@ class IsolateIRLApp:
         # Left preview
         self.lbl_room_title_small.configure(text=r.title)
         self.preview_canvas.delete("all")
-        if r.image_url.startswith("data:image"):
+        # Check for data URL or existing local file in assets
+        if r.image_url.startswith("data:image") or os.path.exists(r.image_url):
             self._display_vga_image(self.preview_canvas, r.image_url, "preview")
         else:
             self._draw_image_placeholder(self.preview_canvas, label="ROOM VIEW", subtitle=r.atmosphere)
@@ -1087,7 +1088,7 @@ class IsolateIRLApp:
 
         # VGA Render
         self.vga_canvas.delete("all")
-        if r.image_url.startswith("data:image"):
+        if r.image_url.startswith("data:image") or os.path.exists(r.image_url):
             self._display_vga_image(self.vga_canvas, r.image_url, "main")
         else:
             self._draw_image_placeholder(self.vga_canvas, label="ATMOSPHERIC RENDER", subtitle=f"{r.title} / {r.focal_point}")
@@ -1232,12 +1233,16 @@ class IsolateIRLApp:
         canvas.create_rectangle(8, 8, w - 8, h - 8, fill="#000", outline=self.theme["accent"], width=2, stipple="gray50")
         canvas.create_text(w // 2, h // 2, text=text, fill="white", font=self.theme["font_mono"])
 
-    def _display_vga_image(self, canvas: tk.Canvas, data_url: str, ref_key: str):
-        """Decodes base64 image data and renders it to the specified canvas."""
+    def _display_vga_image(self, canvas: tk.Canvas, image_source: str, ref_key: str):
+        """Decodes base64 data or loads a local file and renders it to the specified canvas."""
         try:
-            b64_str = data_url.split(",")[1]
-            img_data = base64.b64decode(b64_str)
-            img = Image.open(io.BytesIO(img_data))
+            if image_source.startswith("data:image"):
+                b64_str = image_source.split(",")[1]
+                img_data = base64.b64decode(b64_str)
+                img = Image.open(io.BytesIO(img_data))
+            else:
+                # Load directly from the local assets folder
+                img = Image.open(image_source)
             
             cw = canvas.winfo_width()
             ch = canvas.winfo_height()
@@ -1515,3 +1520,390 @@ if __name__ == "__main__":
 --------------------------------------------------------------------------------
 FILE: src\__init__.py
 --------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+FILE: src\map\default_map.json
+--------------------------------------------------------------------------------
+{
+  "world_id": "molt_fishtank_seed_001",
+  "schema_version": "0.1",
+  "notes": "A minimal house + yard habitat map. No narrative. Pure environment scaffolding.",
+  "start_room_id": "house.living_room",
+  "rooms": {
+    "house.living_room": {
+      "name": "Living Room",
+      "type": "interior",
+      "zone": "house",
+      "description": "A modest living room with basic furniture and a few electronics.",
+      "connections": {
+        "north": "house.kitchen",
+        "east": "house.entryway",
+        "south": "house.hallway"
+      },
+      "furniture": [
+        "sofa",
+        "coffee_table",
+        "tv_stand"
+      ],
+      "fixtures": [
+        "ceiling_light",
+        "wall_outlets"
+      ],
+      "objects": [
+        {
+          "id": "obj.livingroom.tv",
+          "name": "Television",
+          "type": "electronics",
+          "state": { "power": "off", "input": "hdmi1", "volume": 10 }
+        },
+        {
+          "id": "obj.livingroom.radio",
+          "name": "Radio",
+          "type": "electronics",
+          "state": { "power": "off", "station": "88.5", "volume": 6 }
+        },
+        {
+          "id": "obj.livingroom.remote",
+          "name": "TV Remote",
+          "type": "tool",
+          "state": { "battery": "ok" }
+        }
+      ]
+    },
+
+    "house.kitchen": {
+      "name": "Kitchen",
+      "type": "interior",
+      "zone": "house",
+      "description": "A practical kitchen with standard appliances and a small counter area.",
+      "connections": {
+        "south": "house.living_room"
+      },
+      "furniture": [
+        "counter",
+        "small_table",
+        "two_chairs"
+      ],
+      "fixtures": [
+        "sink",
+        "stove",
+        "oven",
+        "refrigerator",
+        "cabinets",
+        "ceiling_light"
+      ],
+      "objects": [
+        {
+          "id": "obj.kitchen.fridge",
+          "name": "Refrigerator",
+          "type": "appliance",
+          "state": { "power": "on", "temperature_f": 38 }
+        },
+        {
+          "id": "obj.kitchen.stove",
+          "name": "Stove",
+          "type": "appliance",
+          "state": { "power": "off", "burners_on": 0 }
+        }
+      ]
+    },
+
+    "house.entryway": {
+      "name": "Entryway",
+      "type": "interior",
+      "zone": "house",
+      "description": "A small entry space with a coat rack and a door leading outside.",
+      "connections": {
+        "west": "house.living_room",
+        "east": "yard.main"
+      },
+      "furniture": [
+        "shoe_rack",
+        "small_bench"
+      ],
+      "fixtures": [
+        "front_door",
+        "coat_hooks",
+        "overhead_light"
+      ],
+      "objects": [
+        {
+          "id": "obj.entryway.keys",
+          "name": "Key Hook",
+          "type": "storage",
+          "state": { "keys_present": true }
+        },
+        {
+          "id": "obj.entryway.coatrack",
+          "name": "Coat Rack",
+          "type": "storage",
+          "state": { "coats": 1 }
+        }
+      ]
+    },
+
+    "house.hallway": {
+      "name": "Hallway",
+      "type": "interior",
+      "zone": "house",
+      "description": "A short hallway connecting the living room to the private rooms.",
+      "connections": {
+        "north": "house.living_room",
+        "west": "house.bedroom",
+        "east": "house.bathroom",
+        "south": "house.office"
+      },
+      "furniture": [],
+      "fixtures": [
+        "hall_light",
+        "thermostat"
+      ],
+      "objects": [
+        {
+          "id": "obj.hallway.thermostat",
+          "name": "Thermostat",
+          "type": "control",
+          "state": { "mode": "heat", "setpoint_f": 70 }
+        }
+      ]
+    },
+
+    "house.bedroom": {
+      "name": "Bedroom",
+      "type": "interior",
+      "zone": "house",
+      "description": "A simple bedroom with a bed and basic storage.",
+      "connections": {
+        "east": "house.hallway"
+      },
+      "furniture": [
+        "bed",
+        "nightstand",
+        "dresser"
+      ],
+      "fixtures": [
+        "lamp",
+        "window",
+        "closet"
+      ],
+      "objects": [
+        {
+          "id": "obj.bedroom.lamp",
+          "name": "Bedside Lamp",
+          "type": "electronics",
+          "state": { "power": "off", "brightness": 50 }
+        }
+      ]
+    },
+
+    "house.bathroom": {
+      "name": "Bathroom",
+      "type": "interior",
+      "zone": "house",
+      "description": "A compact bathroom with standard fixtures.",
+      "connections": {
+        "west": "house.hallway"
+      },
+      "furniture": [
+        "small_cabinet"
+      ],
+      "fixtures": [
+        "toilet",
+        "sink",
+        "mirror",
+        "shower",
+        "bath_fan"
+      ],
+      "objects": [
+        {
+          "id": "obj.bathroom.bath_fan",
+          "name": "Bath Fan",
+          "type": "electronics",
+          "state": { "power": "off" }
+        }
+      ]
+    },
+
+    "house.office": {
+      "name": "Home Office",
+      "type": "interior",
+      "zone": "house",
+      "description": "A work-focused room with a desk, computer, and printer.",
+      "connections": {
+        "north": "house.hallway"
+      },
+      "furniture": [
+        "desk",
+        "office_chair",
+        "bookshelf"
+      ],
+      "fixtures": [
+        "power_strip",
+        "desk_lamp"
+      ],
+      "objects": [
+        {
+          "id": "obj.office.computer",
+          "name": "Home Computer",
+          "type": "computer",
+          "state": { "power": "sleep", "user_session": "locked" },
+          "capabilities": [
+            "view_files",
+            "run_scripts",
+            "edit_code",
+            "open_terminal"
+          ]
+        },
+        {
+          "id": "obj.office.printer",
+          "name": "Printer",
+          "type": "appliance",
+          "state": { "power": "on", "paper": "ok", "ink": "ok" }
+        }
+      ]
+    },
+
+    "yard.main": {
+      "name": "Main Yard",
+      "type": "exterior",
+      "zone": "yard",
+      "description": "A modest yard surrounding the house. Paths lead to a garden and a toolshed.",
+      "connections": {
+        "west": "house.entryway",
+        "north": "yard.garden",
+        "east": "yard.toolshed",
+        "south": "yard.side"
+      },
+      "furniture": [
+        "outdoor_chair",
+        "small_table"
+      ],
+      "fixtures": [
+        "grass",
+        "path"
+      ],
+      "objects": [
+        {
+          "id": "obj.yard.hose",
+          "name": "Garden Hose",
+          "type": "tool",
+          "state": { "connected": true, "nozzle": "spray" }
+        }
+      ]
+    },
+
+    "yard.garden": {
+      "name": "Garden",
+      "type": "exterior",
+      "zone": "yard",
+      "description": "A small garden area with a few raised beds.",
+      "connections": {
+        "south": "yard.main",
+        "east": "yard.back"
+      },
+      "furniture": [
+        "raised_bed_1",
+        "raised_bed_2"
+      ],
+      "fixtures": [
+        "soil",
+        "mulch"
+      ],
+      "objects": [
+        {
+          "id": "obj.garden.trowel",
+          "name": "Hand Trowel",
+          "type": "tool",
+          "state": { "condition": "good" }
+        },
+        {
+          "id": "obj.garden.gloves",
+          "name": "Gardening Gloves",
+          "type": "tool",
+          "state": { "size": "medium", "condition": "ok" }
+        }
+      ]
+    },
+
+    "yard.toolshed": {
+      "name": "Toolshed",
+      "type": "exterior",
+      "zone": "yard",
+      "description": "A small shed for basic tools and supplies.",
+      "connections": {
+        "west": "yard.main"
+      },
+      "furniture": [
+        "shelf",
+        "pegboard"
+      ],
+      "fixtures": [
+        "shed_door",
+        "padlock"
+      ],
+      "objects": [
+        {
+          "id": "obj.shed.toolbox",
+          "name": "Toolbox",
+          "type": "storage",
+          "state": { "latched": true }
+        },
+        {
+          "id": "obj.shed.rake",
+          "name": "Rake",
+          "type": "tool",
+          "state": { "condition": "good" }
+        },
+        {
+          "id": "obj.shed.shovel",
+          "name": "Shovel",
+          "type": "tool",
+          "state": { "condition": "good" }
+        }
+      ]
+    },
+
+    "yard.side": {
+      "name": "Side Yard",
+      "type": "exterior",
+      "zone": "yard",
+      "description": "A narrow side yard running along the house.",
+      "connections": {
+        "north": "yard.main",
+        "east": "yard.back"
+      },
+      "furniture": [],
+      "fixtures": [
+        "grass",
+        "fence"
+      ],
+      "objects": []
+    },
+
+    "yard.back": {
+      "name": "Back Yard",
+      "type": "exterior",
+      "zone": "yard",
+      "description": "The back yard behind the house—quiet, open, and a bit more private.",
+      "connections": {
+        "west": "yard.garden",
+        "south": "yard.side"
+      },
+      "furniture": [
+        "fire_pit"
+      ],
+      "fixtures": [
+        "grass",
+        "tree"
+      ],
+      "objects": [
+        {
+          "id": "obj.backyard.fire_pit",
+          "name": "Fire Pit",
+          "type": "structure",
+          "state": { "lit": false }
+        }
+      ]
+    }
+  }
+}

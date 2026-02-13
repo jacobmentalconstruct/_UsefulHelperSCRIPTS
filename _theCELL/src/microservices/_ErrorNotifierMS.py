@@ -4,7 +4,7 @@ ROLE: Reactive Error Dispatcher (Task 3)
 """
 import logging
 from typing import Dict, Any, Optional
-from microservice_std_lib import service_metadata, service_endpoint
+from .microservice_std_lib import service_metadata, service_endpoint
 
 @service_metadata(
     name='ErrorNotifier', 
@@ -45,3 +45,4 @@ class ErrorNotifierMS:
         
         report = f"💾 COMMIT FAILED: Could not update {file_path}. Error: {error}"
         self.bus.emit("notify_error", {"message": report, "level": "CRITICAL"})
+

@@ -11,17 +11,6 @@ from typing import Dict, Any, Optional, List, Union
 from .microservice_std_lib import service_metadata, service_endpoint
 from .base_service import BaseService
 
-# Import the Specialist Microservices
-# In a distributed system, these might be RPC calls. 
-# In this modular monolith, we instantiate them directly for performance.
-try:
-    from ._CodeFormatterMS import CodeFormatterMS
-    from ._TreeMapperMS import TreeMapperMS
-    from ._VectorFactoryMS import VectorFactoryMS
-except ImportError:
-    # Fallback for when running as a standalone script without package context
-    pass
-
 @service_metadata(
     name='HydrationFactory',
     version='1.0.0',
@@ -43,15 +32,17 @@ class HydrationFactoryMS(BaseService):
     3. MEMORY (Vector): Embeds the artifact into a Vector Store (Long-term memory).
     """
 
-    def __init__(self, config: Optional[Dict[str, Any]] = None):
+    def __init__(self, config: Optional[Dict[str, Any]] = None, services: Optional[Dict[str, Any]] = None):
         super().__init__('HydrationFactory')
         self.config = config or {}
-        
-        # Initialize Specialists
-        # We perform lazy instantiation or immediate depending on config to save resources
-        self.formatter = CodeFormatterMS()
-        self.mapper = TreeMapperMS()
-        self.vector_factory = VectorFactoryMS()
+        self.services = services or {}
+
+        # Specialists are injected by the orchestration layer.
+        # Expected keys: formatter, mapper, vector_factory, ingest_engine
+        self.formatter = self.services.get('formatter')
+        self.mapper = self.services.get('mapper')
+        self.vector_factory = self.services.get('vector_factory')
+        self.ingest_engine = self.services.get('ingest_engine')
 
     @service_endpoint(
         inputs={'artifact': 'Dict', 'mode': 'str', 'destination': 'str'},
@@ -59,6 +50,9 @@ class HydrationFactoryMS(BaseService):
         description='Main entry point to hydrate an artifact into a concrete product.',
         tags=['factory', 'execute']
     )
+    # ROLE: Main entry point to hydrate an artifact into a concrete product.
+    # INPUTS: {"artifact": "Dict", "destination": "str", "mode": "str"}
+    # OUTPUTS: {"details": "Dict", "status": "str"}
     def hydrate_artifact(self, artifact: Dict[str, Any], mode: str, destination: str) -> Dict[str, Any]:
         """
         :param artifact: The standardized JSON output from a Cell.
@@ -141,12 +135,21 @@ class HydrationFactoryMS(BaseService):
         # Ideally, we call self.ingest_engine.get_embedding(payload)
         
         # For now, we just store the text without vector search if no embedding provided (Chroma handles raw text too usually)
-        # But our VectorStore protocol expects embeddings. 
-        # Let's mock a 384-dim vector for success path or skip.
-        mock_embedding = [0.1] * 384 
+        # But our VectorStore protocol expects embeddings.
+        # ENGINE: injected by orchestration layer
+        if not getattr(self, 'ingest_engine', None):
+            return {"status": "error", "message": "IngestEngine not injected"}
+
+        engine = self.ingest_engine
+        # We use a standard small model for embeddings (e.g., all-minilm)
+        vector = engine._get_embedding(model="nomic-embed-text", text=payload)
+        
+        if not vector:
+            self.log_warning("Could not generate embedding, falling back to mock.")
+            vector = [0.0] * 384
 
         store.add(
-            embeddings=[mock_embedding],
+            embeddings=[vector],
             metadatas=[artifact.get('metadata', {})]
         )
 
@@ -179,3 +182,5 @@ if __name__ == '__main__':
     if os.path.exists('./_test_output.py'):
         os.remove('./_test_output.py')
         print("Cleaned up test file.")
+
+

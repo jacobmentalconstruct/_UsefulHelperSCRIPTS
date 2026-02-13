@@ -3,21 +3,26 @@ import datetime
 import logging
 from pathlib import Path
 from typing import Any, Dict, List, Set, Optional
-from microservice_std_lib import service_metadata, service_endpoint
+from .microservice_std_lib import service_metadata, service_endpoint
+from .base_service import BaseService
 DEFAULT_EXCLUDES = {'.git', '__pycache__', '.idea', '.vscode', 'node_modules', '.venv', 'env', 'venv', 'dist', 'build', '.DS_Store'}
 logger = logging.getLogger('TreeMapper')
 
 @service_metadata(name='TreeMapper', version='1.0.0', description='Generates ASCII-art style directory maps of the file system.', tags=['filesystem', 'map', 'visualization'], capabilities=['filesystem:read'], internal_dependencies=['microservice_std_lib'], external_dependencies=[])
-class TreeMapperMS:
+class TreeMapperMS(BaseService):
     """
     The Cartographer: Generates ASCII-art style directory maps.
     Useful for creating context snapshots for LLMs.
     """
 
     def __init__(self, config: Optional[Dict[str, Any]]=None):
+        super().__init__('TreeMapper')
         self.config = config or {}
 
     @service_endpoint(inputs={'root_path': 'str', 'additional_exclusions': 'Set[str]', 'use_default_exclusions': 'bool'}, outputs={'tree_map': 'str'}, description='Generates an ASCII tree map of the directory.', tags=['filesystem', 'visualization'], side_effects=['filesystem:read'])
+    # ROLE: Generates an ASCII tree map of the directory.
+    # INPUTS: {"additional_exclusions": "Set[str]", "root_path": "str", "use_default_exclusions": "bool"}
+    # OUTPUTS: {"tree_map": "str"}
     def generate_tree(self, root_path: str, additional_exclusions: Optional[Set[str]]=None, use_default_exclusions: bool=True) -> str:
         start_path = Path(root_path).resolve()
         if not start_path.exists():
@@ -56,3 +61,4 @@ if __name__ == '__main__':
     print('\n--- Map of Current Dir ---')
     tree = svc.generate_tree('.', additional_exclusions={'__pycache__'})
     print(tree)
+

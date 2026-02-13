@@ -58,6 +58,49 @@ echo [SUCCESS] Environment ready!
 echo You can now open this folder in VS Code or launch via scripts_menu.py
 pause
 --------------------------------------------------------------------------------
+FILE: _TokenizingPATCHER.spec
+--------------------------------------------------------------------------------
+# -*- mode: python ; coding: utf-8 -*-
+
+
+a = Analysis(
+    ['C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_TokenizingPATCHER\\src\\app.py'],
+    pathex=['C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_TokenizingPATCHER'],
+    binaries=[],
+    datas=[('C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_TokenizingPATCHER\\assets', 'assets'), ('C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_TokenizingPATCHER\\assets', 'assets'), ('C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_TokenizingPATCHER\\src', 'src')],
+    hiddenimports=[],
+    hookspath=[],
+    hooksconfig={},
+    runtime_hooks=[],
+    excludes=[],
+    noarchive=False,
+    optimize=0,
+)
+pyz = PYZ(a.pure)
+
+exe = EXE(
+    pyz,
+    a.scripts,
+    a.binaries,
+    a.datas,
+    [],
+    name='_TokenizingPATCHER',
+    debug=False,
+    bootloader_ignore_signals=False,
+    strip=False,
+    upx=True,
+    upx_exclude=[],
+    runtime_tmpdir=None,
+    console=False,
+    disable_windowed_traceback=False,
+    argv_emulation=False,
+    target_arch=None,
+    codesign_identity=None,
+    entitlements_file=None,
+    icon=['C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_TokenizingPATCHER\\assets\\icons\\tokenizing-patcher.ico'],
+)
+
+--------------------------------------------------------------------------------
 FILE: src\app.py
 --------------------------------------------------------------------------------
 import sys
@@ -70,6 +113,12 @@ import re
 import datetime
 import difflib
 from dataclasses import dataclass, field
+
+def get_asset_path(filename: str) -> str:
+    """Resolves path to the assets directory relative to this script."""
+    # src/app.py -> project_root/assets/filename
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    return os.path.join(base_dir, 'assets', filename)
 
 # ==============================================================================
 # INTERNAL UI HELPERS (Dependency Replacement)
@@ -351,6 +400,15 @@ class App:
         self.root.title("_TokenizingPATCHER v4.3 [System Ecosystem]")
         self.root.geometry("1100x850")
         self.root.configure(bg="#0f172a")
+        
+        # Load Icon
+        try:
+            icon_path = get_asset_path(os.path.join('icons', 'tokenizing-patcher.png'))
+            if os.path.exists(icon_path):
+                img = tk.PhotoImage(file=icon_path)
+                self.root.iconphoto(False, img)
+        except Exception as e:
+            print(f"Warning: Could not load icon: {e}")
 
         self.loaded_filepath = None
 
@@ -899,6 +957,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 --------------------------------------------------------------------------------
 FILE: src\__init__.py

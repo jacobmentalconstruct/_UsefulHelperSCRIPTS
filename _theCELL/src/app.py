@@ -1,3 +1,4 @@
+import uuid
 from .backend import Backend
 from .ui import CELL_UI
 from src.microservices._TkinterAppShellMS import TkinterAppShellMS
@@ -29,9 +30,10 @@ def main():
         # 1. Create new window via Shell
         child_win = shell.spawn_window(title="_theCELL [Child]", geometry="900x700")
         
-        # 2. Initialize a fresh Backend (with shared DB, but unique memory state if needed)
-        # Note: In a full implementation, we might pass the parent's memory context here.
-        child_backend = Backend()
+        # 2. Initialize a fresh Backend with a UNIQUE memory path
+        # This ensures the child's short-term memory doesn't overwrite the parent's.
+        unique_session_id = f"session_{uuid.uuid4().hex[:8]}.jsonl"
+        child_backend = Backend(memory_path=unique_session_id)
         
         # 3. Create a new UI instance docked into the new window
         # We modify CELL_UI to accept a Toplevel as a 'shell' proxy or just a container.
@@ -68,5 +70,6 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 

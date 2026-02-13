@@ -1,0 +1,6 @@
+# UiMAPPER requirements
+# This project is intentionally stdlib-only for runtime.
+# (Tkinter ships with the standard Python installer on Windows/macOS and many Linux distros.)
+# If you're on Linux and Tkinter is missing, install your distro package (e.g. python3-tk).
+
+# No pip dependencies required.
