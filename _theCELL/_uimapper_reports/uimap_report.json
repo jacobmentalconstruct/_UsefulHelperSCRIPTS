@@ -1,0 +1,1189 @@
+{
+  "parse_errors": [],
+  "project_root": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL",
+  "unknowns": [],
+  "widgets": {
+    "w1": {
+      "bind_events": [],
+      "command_targets": [],
+      "config_calls": [],
+      "created_at": {
+        "col": 8,
+        "lineno": 35,
+        "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
+      },
+      "kwargs": {
+        "columns": "Tuple",
+        "show": "'headings'"
+      },
+      "layout_calls": [],
+      "parent_id": null,
+      "widget_id": "w1",
+      "widget_type": "Treeview"
+    },
+    "w10": {
+      "bind_events": [],
+      "command_targets": [
+        "self._italic_text"
+      ],
+      "config_calls": [],
+      "created_at": {
+        "col": 8,
+        "lineno": 216,
+        "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
+      },
+      "kwargs": {
+        "command": "self._italic_text",
+        "font": "Tuple",
+        "text": "'I'"
+      },
+      "layout_calls": [],
+      "parent_id": null,
+      "widget_id": "w10",
+      "widget_type": "Button"
+    },
+    "w11": {
+      "bind_events": [],
+      "command_targets": [
+        "self._bullet_list"
+      ],
+      "config_calls": [],
+      "created_at": {
+        "col": 8,
+        "lineno": 218,
+        "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
+      },
+      "kwargs": {
+        "command": "self._bullet_list",
+        "text": "'• List'"
+      },
+      "layout_calls": [],
+      "parent_id": null,
+      "widget_id": "w11",
+      "widget_type": "Button"
+    },
+    "w12": {
+      "bind_events": [],
+      "command_targets": [
+        "self._open_settings"
+      ],
+      "config_calls": [],
+      "created_at": {
+        "col": 8,
+        "lineno": 221,
+        "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
+      },
+      "kwargs": {
+        "command": "self._open_settings",
+        "text": "'⚙'"
+      },
+      "layout_calls": [],
+      "parent_id": null,
+      "widget_id": "w12",
+      "widget_type": "Button"
+    },
+    "w13": {
+      "bind_events": [],
+      "command_targets": [],
+      "config_calls": [],
+      "created_at": {
+        "col": 8,
+        "lineno": 225,
+        "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
+      },
+      "kwargs": {
+        "bd": "1",
+        "bg": "self.colors.get(...)",
+        "fg": "self.colors.get(...)",
+        "font": "Tuple",
+        "relief": "'solid'",
+        "text": "' Inference Parameters '"
+      },
+      "layout_calls": [],
+      "parent_id": null,
+      "widget_id": "w13",
+      "widget_type": "LabelFrame"
+    },
+    "w14": {
+      "bind_events": [],
+      "command_targets": [],
+      "config_calls": [],
+      "created_at": {
+        "col": 8,
+        "lineno": 231,
+        "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
+      },
+      "kwargs": {
+        "bg": "self.colors.get(...)",
+        "fg": "self.colors.get(...)",
+        "text": "'Model:'"
+      },
+      "layout_calls": [],
+      "parent_id": null,
+      "widget_id": "w14",
+      "widget_type": "Label"
+    },
+    "w15": {
+      "bind_events": [],
+      "command_targets": [],
+      "config_calls": [],
+      "created_at": {
+        "col": 8,
+        "lineno": 234,
+        "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
+      },
+      "kwargs": {
+        "textvariable": "self.model_var"
+      },
+      "layout_calls": [],
+      "parent_id": null,
+      "widget_id": "w15",
+      "widget_type": "Combobox"
+    },
+    "w16": {
+      "bind_events": [],
+      "command_targets": [],
+      "config_calls": [],
+      "created_at": {
+        "col": 8,
+        "lineno": 239,
+        "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
+      },
+      "kwargs": {
+        "bg": "self.colors.get(...)",
+        "fg": "self.colors.get(...)",
+        "text": "'System Role:'"
+      },
+      "layout_calls": [],
+      "parent_id": null,
+      "widget_id": "w16",
+      "widget_type": "Label"
+    },
+    "w17": {
+      "bind_events": [],
+      "command_targets": [],
+      "config_calls": [],
+      "created_at": {
+        "col": 8,
+        "lineno": 241,
+        "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
+      },
+      "kwargs": {
+        "bg": "self.colors.get(...)"
+      },
+      "layout_calls": [],
+      "parent_id": null,
+      "widget_id": "w17",
+      "widget_type": "Frame"
+    },
+    "w18": {
+      "bind_events": [],
+      "command_targets": [],
+      "config_calls": [],
+      "created_at": {
+        "col": 8,
+        "lineno": 244,
+        "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
+      },
+      "kwargs": {
+        "bg": "self.colors.get(...)",
+        "fg": "self.colors.get(...)",
+        "insertbackground": "self.colors.get(...)"
+      },
+      "layout_calls": [],
+      "parent_id": null,
+      "widget_id": "w18",
+      "widget_type": "Entry"
+    },
+    "w19": {
+      "bind_events": [],
+      "command_targets": [
+        "Lambda"
+      ],
+      "config_calls": [],
+      "created_at": {
+        "col": 8,
+        "lineno": 253,
+        "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
+      },
+      "kwargs": {
+        "bg": "self.colors.get(...)",
+        "command": "Lambda",
+        "fg": "self.colors.get(...)",
+        "relief": "'flat'",
+        "text": "'💾'"
+      },
+      "layout_calls": [],
+      "parent_id": null,
+      "widget_id": "w19",
+      "widget_type": "Button"
+    },
+    "w2": {
+      "bind_events": [],
+      "command_targets": [],
+      "config_calls": [],
+      "created_at": {
+        "col": 8,
+        "lineno": 48,
+        "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
+      },
+      "kwargs": {
+        "bg": "colors.get(...)"
+      },
+      "layout_calls": [],
+      "parent_id": null,
+      "widget_id": "w2",
+      "widget_type": "Frame"
+    },
+    "w20": {
+      "bind_events": [],
+      "command_targets": [
+        "Lambda"
+      ],
+      "config_calls": [],
+      "created_at": {
+        "col": 8,
+        "lineno": 256,
+        "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
+      },
+      "kwargs": {
+        "bg": "self.colors.get(...)",
+        "command": "Lambda",
+        "fg": "self.colors.get(...)",
+        "relief": "'flat'",
+        "text": "'📂'"
+      },
+      "layout_calls": [],
+      "parent_id": null,
+      "widget_id": "w20",
+      "widget_type": "Button"
+    },
+    "w21": {
+      "bind_events": [],
+      "command_targets": [],
+      "config_calls": [],
+      "created_at": {
+        "col": 8,
+        "lineno": 261,
+        "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
+      },
+      "kwargs": {
+        "bg": "self.colors.get(...)",
+        "fg": "self.colors.get(...)",
+        "text": "'System Prompt:'"
+      },
+      "layout_calls": [],
+      "parent_id": null,
+      "widget_id": "w21",
+      "widget_type": "Label"
+    },
+    "w22": {
+      "bind_events": [],
+      "command_targets": [],
+      "config_calls": [],
+      "created_at": {
+        "col": 8,
+        "lineno": 263,
+        "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
+      },
+      "kwargs": {
+        "bg": "self.colors.get(...)"
+      },
+      "layout_calls": [],
+      "parent_id": null,
+      "widget_id": "w22",
+      "widget_type": "Frame"
+    },
+    "w23": {
+      "bind_events": [],
+      "command_targets": [],
+      "config_calls": [],
+      "created_at": {
+        "col": 8,
+        "lineno": 266,
+        "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
+      },
+      "kwargs": {
+        "bg": "self.colors.get(...)",
+        "fg": "self.colors.get(...)",
+        "font": "Tuple",
+        "height": "3",
+        "insertbackground": "self.colors.get(...)"
+      },
+      "layout_calls": [],
+      "parent_id": null,
+      "widget_id": "w23",
+      "widget_type": "Text"
+    },
+    "w24": {
+      "bind_events": [],
+      "command_targets": [],
+      "config_calls": [],
+      "created_at": {
+        "col": 8,
+        "lineno": 276,
+        "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
+      },
+      "kwargs": {
+        "bg": "self.colors.get(...)"
+      },
+      "layout_calls": [],
+      "parent_id": null,
+      "widget_id": "w24",
+      "widget_type": "Frame"
+    },
+    "w25": {
+      "bind_events": [],
+      "command_targets": [
+        "Lambda"
+      ],
+      "config_calls": [],
+      "created_at": {
+        "col": 8,
+        "lineno": 278,
+        "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
+      },
+      "kwargs": {
+        "bg": "self.colors.get(...)",
+        "command": "Lambda",
+        "fg": "self.colors.get(...)",
+        "relief": "'flat'",
+        "text": "'💾'"
+      },
+      "layout_calls": [],
+      "parent_id": null,
+      "widget_id": "w25",
+      "widget_type": "Button"
+    },
+    "w26": {
+      "bind_events": [],
+      "command_targets": [
+        "Lambda"
+      ],
+      "config_calls": [],
+      "created_at": {
+        "col": 8,
+        "lineno": 281,
+        "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
+      },
+      "kwargs": {
+        "bg": "self.colors.get(...)",
+        "command": "Lambda",
+        "fg": "self.colors.get(...)",
+        "relief": "'flat'",
+        "text": "'📂'"
+      },
+      "layout_calls": [],
+      "parent_id": null,
+      "widget_id": "w26",
+      "widget_type": "Button"
+    },
+    "w27": {
+      "bind_events": [],
+      "command_targets": [],
+      "config_calls": [],
+      "created_at": {
+        "col": 8,
+        "lineno": 288,
+        "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
+      },
+      "kwargs": {
+        "bg": "self.colors.get(...)",
+        "fg": "self.colors.get(...)",
+        "font": "Tuple",
+        "insertbackground": "self.colors.get(...)",
+        "selectbackground": "self.colors.get(...)",
+        "undo": "True",
+        "wrap": "'word'"
+      },
+      "layout_calls": [],
+      "parent_id": null,
+      "widget_id": "w27",
+      "widget_type": "Text"
+    },
+    "w28": {
+      "bind_events": [],
+      "command_targets": [],
+      "config_calls": [],
+      "created_at": {
+        "col": 8,
+        "lineno": 302,
+        "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
+      },
+      "kwargs": {
+        "bg": "self.colors.get(...)"
+      },
+      "layout_calls": [],
+      "parent_id": null,
+      "widget_id": "w28",
+      "widget_type": "Frame"
+    },
+    "w29": {
+      "bind_events": [],
+      "command_targets": [
+        "self._save_full_template"
+      ],
+      "config_calls": [],
+      "created_at": {
+        "col": 8,
+        "lineno": 305,
+        "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
+      },
+      "kwargs": {
+        "bg": "self.colors.get(...)",
+        "command": "self._save_full_template",
+        "fg": "self.colors.get(...)",
+        "font": "Tuple",
+        "text": "'SAVE AS TEMPLATE'"
+      },
+      "layout_calls": [],
+      "parent_id": null,
+      "widget_id": "w29",
+      "widget_type": "Button"
+    },
+    "w3": {
+      "bind_events": [],
+      "command_targets": [],
+      "config_calls": [],
+      "created_at": {
+        "col": 8,
+        "lineno": 190,
+        "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
+      },
+      "kwargs": {
+        "bg": "self.colors.get(...)"
+      },
+      "layout_calls": [],
+      "parent_id": null,
+      "widget_id": "w3",
+      "widget_type": "Frame"
+    },
+    "w30": {
+      "bind_events": [],
+      "command_targets": [
+        "Lambda"
+      ],
+      "config_calls": [],
+      "created_at": {
+        "col": 8,
+        "lineno": 315,
+        "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
+      },
+      "kwargs": {
+        "bg": "self.colors.get(...)",
+        "command": "Lambda",
+        "fg": "self.colors.get(...)",
+        "font": "Tuple",
+        "text": "'LOAD TEMPLATE'"
+      },
+      "layout_calls": [],
+      "parent_id": null,
+      "widget_id": "w30",
+      "widget_type": "Button"
+    },
+    "w31": {
+      "bind_events": [],
+      "command_targets": [
+        "self._submit"
+      ],
+      "config_calls": [],
+      "created_at": {
+        "col": 8,
+        "lineno": 325,
+        "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
+      },
+      "kwargs": {
+        "bg": "self.colors.get(...)",
+        "command": "self._submit",
+        "fg": "self.colors.get(...)",
+        "font": "Tuple",
+        "text": "'RUN CELL'"
+      },
+      "layout_calls": [],
+      "parent_id": null,
+      "widget_id": "w31",
+      "widget_type": "Button"
+    },
+    "w32": {
+      "bind_events": [],
+      "command_targets": [],
+      "config_calls": [],
+      "created_at": {
+        "col": 8,
+        "lineno": 338,
+        "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
+      },
+      "kwargs": {
+        "bd": "1",
+        "bg": "self.colors.get(...)",
+        "fg": "self.colors.get(...)",
+        "font": "Tuple",
+        "relief": "'solid'",
+        "text": "' Inference Console '"
+      },
+      "layout_calls": [],
+      "parent_id": null,
+      "widget_id": "w32",
+      "widget_type": "LabelFrame"
+    },
+    "w33": {
+      "bind_events": [],
+      "command_targets": [],
+      "config_calls": [],
+      "created_at": {
+        "col": 8,
+        "lineno": 347,
+        "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
+      },
+      "kwargs": {
+        "bg": "self.colors.get(...)",
+        "fg": "self.colors.get(...)",
+        "font": "Tuple",
+        "height": "6",
+        "insertbackground": "self.colors.get(...)",
+        "wrap": "'word'"
+      },
+      "layout_calls": [],
+      "parent_id": null,
+      "widget_id": "w33",
+      "widget_type": "Text"
+    },
+    "w34": {
+      "bind_events": [],
+      "command_targets": [],
+      "config_calls": [],
+      "created_at": {
+        "col": 8,
+        "lineno": 363,
+        "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
+      },
+      "kwargs": {
+        "bd": "1",
+        "bg": "self.colors.get(...)",
+        "fg": "self.colors.get(...)",
+        "font": "Tuple",
+        "relief": "'solid'",
+        "text": "' Result + HITL '"
+      },
+      "layout_calls": [],
+      "parent_id": null,
+      "widget_id": "w34",
+      "widget_type": "LabelFrame"
+    },
+    "w35": {
+      "bind_events": [],
+      "command_targets": [],
+      "config_calls": [],
+      "created_at": {
+        "col": 8,
+        "lineno": 372,
+        "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
+      },
+      "kwargs": {
+        "bg": "self.colors.get(...)",
+        "fg": "self.colors.get(...)",
+        "font": "Tuple",
+        "height": "8",
+        "insertbackground": "self.colors.get(...)",
+        "wrap": "'word'"
+      },
+      "layout_calls": [],
+      "parent_id": null,
+      "widget_id": "w35",
+      "widget_type": "Text"
+    },
+    "w36": {
+      "bind_events": [],
+      "command_targets": [],
+      "config_calls": [],
+      "created_at": {
+        "col": 8,
+        "lineno": 385,
+        "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
+      },
+      "kwargs": {
+        "bg": "self.colors.get(...)"
+      },
+      "layout_calls": [
+        "pack(fill='x', padx=10, pady=Tuple)"
+      ],
+      "parent_id": null,
+      "widget_id": "w36",
+      "widget_type": "Frame"
+    },
+    "w37": {
+      "bind_events": [],
+      "command_targets": [
+        "self._on_accept"
+      ],
+      "config_calls": [],
+      "created_at": {
+        "col": 8,
+        "lineno": 388,
+        "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
+      },
+      "kwargs": {
+        "bg": "self.colors.get(...)",
+        "command": "self._on_accept",
+        "fg": "self.colors.get(...)",
+        "relief": "'flat'",
+        "state": "'disabled'",
+        "text": "'ACCEPT'"
+      },
+      "layout_calls": [],
+      "parent_id": "w36",
+      "widget_id": "w37",
+      "widget_type": "Button"
+    },
+    "w38": {
+      "bind_events": [],
+      "command_targets": [
+        "self._on_reject"
+      ],
+      "config_calls": [],
+      "created_at": {
+        "col": 8,
+        "lineno": 399,
+        "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
+      },
+      "kwargs": {
+        "bg": "self.colors.get(...)",
+        "command": "self._on_reject",
+        "fg": "self.colors.get(...)",
+        "relief": "'flat'",
+        "state": "'disabled'",
+        "text": "'REJECT & EDIT'"
+      },
+      "layout_calls": [],
+      "parent_id": "w36",
+      "widget_id": "w38",
+      "widget_type": "Button"
+    },
+    "w39": {
+      "bind_events": [],
+      "command_targets": [
+        "self.shell.root.destroy"
+      ],
+      "config_calls": [],
+      "created_at": {
+        "col": 8,
+        "lineno": 410,
+        "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
+      },
+      "kwargs": {
+        "bg": "self.colors.get(...)",
+        "command": "self.shell.root.destroy",
+        "fg": "self.colors.get(...)",
+        "relief": "'flat'",
+        "text": "'EXIT CELL'"
+      },
+      "layout_calls": [],
+      "parent_id": "w36",
+      "widget_id": "w39",
+      "widget_type": "Button"
+    },
+    "w4": {
+      "bind_events": [],
+      "command_targets": [],
+      "config_calls": [],
+      "created_at": {
+        "col": 8,
+        "lineno": 193,
+        "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
+      },
+      "kwargs": {
+        "bg": "self.colors.get(...)"
+      },
+      "layout_calls": [],
+      "parent_id": null,
+      "widget_id": "w4",
+      "widget_type": "Frame"
+    },
+    "w40": {
+      "bind_events": [],
+      "command_targets": [],
+      "config_calls": [],
+      "created_at": {
+        "col": 8,
+        "lineno": 421,
+        "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
+      },
+      "kwargs": {
+        "bd": "1",
+        "bg": "self.colors.get(...)",
+        "fg": "self.colors.get(...)",
+        "font": "Tuple",
+        "relief": "'solid'",
+        "text": "' Export / Spawn '"
+      },
+      "layout_calls": [],
+      "parent_id": null,
+      "widget_id": "w40",
+      "widget_type": "LabelFrame"
+    },
+    "w41": {
+      "bind_events": [],
+      "command_targets": [],
+      "config_calls": [],
+      "created_at": {
+        "col": 8,
+        "lineno": 430,
+        "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
+      },
+      "kwargs": {
+        "bg": "self.colors.get(...)"
+      },
+      "layout_calls": [],
+      "parent_id": null,
+      "widget_id": "w41",
+      "widget_type": "Frame"
+    },
+    "w42": {
+      "bind_events": [],
+      "command_targets": [],
+      "config_calls": [],
+      "created_at": {
+        "col": 8,
+        "lineno": 433,
+        "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
+      },
+      "kwargs": {
+        "bg": "self.colors.get(...)"
+      },
+      "layout_calls": [
+        "pack(fill='x')"
+      ],
+      "parent_id": null,
+      "widget_id": "w42",
+      "widget_type": "Frame"
+    },
+    "w43": {
+      "bind_events": [],
+      "command_targets": [],
+      "config_calls": [],
+      "created_at": {
+        "col": 8,
+        "lineno": 439,
+        "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
+      },
+      "kwargs": {
+        "state": "'readonly'",
+        "textvariable": "self.export_dest_var",
+        "values": "List"
+      },
+      "layout_calls": [],
+      "parent_id": "w42",
+      "widget_id": "w43",
+      "widget_type": "Combobox"
+    },
+    "w44": {
+      "bind_events": [],
+      "command_targets": [
+        "self._handle_export"
+      ],
+      "config_calls": [],
+      "created_at": {
+        "col": 8,
+        "lineno": 447,
+        "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
+      },
+      "kwargs": {
+        "bg": "self.colors.get(...)",
+        "command": "self._handle_export",
+        "fg": "self.colors.get(...)",
+        "relief": "'flat'",
+        "state": "'disabled'",
+        "text": "'EXECUTE'"
+      },
+      "layout_calls": [],
+      "parent_id": "w42",
+      "widget_id": "w44",
+      "widget_type": "Button"
+    },
+    "w45": {
+      "bind_events": [],
+      "command_targets": [],
+      "config_calls": [],
+      "created_at": {
+        "col": 8,
+        "lineno": 455,
+        "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
+      },
+      "kwargs": {
+        "bg": "self.colors.get(...)"
+      },
+      "layout_calls": [],
+      "parent_id": null,
+      "widget_id": "w45",
+      "widget_type": "Frame"
+    },
+    "w46": {
+      "bind_events": [
+        "'<Return>' -> Lambda",
+        "'<Escape>' -> Lambda"
+      ],
+      "command_targets": [],
+      "config_calls": [
+        "configure(bg=self.colors.get(...))"
+      ],
+      "created_at": {
+        "col": 8,
+        "lineno": 592,
+        "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
+      },
+      "kwargs": {},
+      "layout_calls": [],
+      "parent_id": null,
+      "widget_id": "w46",
+      "widget_type": "Toplevel"
+    },
+    "w47": {
+      "bind_events": [],
+      "command_targets": [],
+      "config_calls": [],
+      "created_at": {
+        "col": 8,
+        "lineno": 601,
+        "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
+      },
+      "kwargs": {},
+      "layout_calls": [
+        "pack(padx=10, fill='x')"
+      ],
+      "parent_id": "w46",
+      "widget_id": "w47",
+      "widget_type": "Entry"
+    },
+    "w48": {
+      "bind_events": [],
+      "command_targets": [],
+      "config_calls": [],
+      "created_at": {
+        "col": 8,
+        "lineno": 636,
+        "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
+      },
+      "kwargs": {
+        "bg": "self.colors.get(...)"
+      },
+      "layout_calls": [
+        "pack(pady=10)"
+      ],
+      "parent_id": "w46",
+      "widget_id": "w48",
+      "widget_type": "Frame"
+    },
+    "w49": {
+      "bind_events": [],
+      "command_targets": [],
+      "config_calls": [
+        "configure(bg=self.colors.get(...))",
+        "configure(bg=self.colors.get(...))"
+      ],
+      "created_at": {
+        "col": 8,
+        "lineno": 668,
+        "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
+      },
+      "kwargs": {},
+      "layout_calls": [],
+      "parent_id": null,
+      "widget_id": "w49",
+      "widget_type": "Toplevel"
+    },
+    "w5": {
+      "bind_events": [],
+      "command_targets": [],
+      "config_calls": [],
+      "created_at": {
+        "col": 8,
+        "lineno": 196,
+        "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
+      },
+      "kwargs": {
+        "bg": "self.colors.get(...)"
+      },
+      "layout_calls": [],
+      "parent_id": null,
+      "widget_id": "w5",
+      "widget_type": "Frame"
+    },
+    "w50": {
+      "bind_events": [],
+      "command_targets": [],
+      "config_calls": [
+        "configure(bg=self.colors.get(...), fg=self.colors.get(...))"
+      ],
+      "created_at": {
+        "col": 8,
+        "lineno": 689,
+        "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
+      },
+      "kwargs": {
+        "bg": "self.colors.get(...)",
+        "fg": "self.colors.get(...)",
+        "text": "'Theme:'"
+      },
+      "layout_calls": [
+        "pack(pady=Tuple)"
+      ],
+      "parent_id": "w49",
+      "widget_id": "w50",
+      "widget_type": "Label"
+    },
+    "w51": {
+      "bind_events": [],
+      "command_targets": [],
+      "config_calls": [],
+      "created_at": {
+        "col": 8,
+        "lineno": 693,
+        "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
+      },
+      "kwargs": {
+        "state": "'readonly'",
+        "textvariable": "theme_var",
+        "values": "List"
+      },
+      "layout_calls": [
+        "pack(pady=2)"
+      ],
+      "parent_id": "w49",
+      "widget_id": "w51",
+      "widget_type": "Combobox"
+    },
+    "w52": {
+      "bind_events": [],
+      "command_targets": [],
+      "config_calls": [
+        "configure(bg=self.colors.get(...), fg=self.colors.get(...))"
+      ],
+      "created_at": {
+        "col": 8,
+        "lineno": 697,
+        "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
+      },
+      "kwargs": {
+        "bg": "self.colors.get(...)",
+        "fg": "self.colors.get(...)",
+        "text": "'Window Size (WxH):'"
+      },
+      "layout_calls": [
+        "pack(pady=Tuple)"
+      ],
+      "parent_id": "w49",
+      "widget_id": "w52",
+      "widget_type": "Label"
+    },
+    "w53": {
+      "bind_events": [],
+      "command_targets": [],
+      "config_calls": [
+        "configure(bg=self.colors.get(...), fg=self.colors.get(...), insertbackground=self.colors.get(...))"
+      ],
+      "created_at": {
+        "col": 8,
+        "lineno": 700,
+        "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
+      },
+      "kwargs": {
+        "bg": "self.colors.get(...)",
+        "fg": "self.colors.get(...)",
+        "insertbackground": "self.colors.get(...)",
+        "relief": "'flat'"
+      },
+      "layout_calls": [
+        "pack(pady=2)"
+      ],
+      "parent_id": "w49",
+      "widget_id": "w53",
+      "widget_type": "Entry"
+    },
+    "w54": {
+      "bind_events": [],
+      "command_targets": [],
+      "config_calls": [
+        "configure(bg=self.colors.get(...))"
+      ],
+      "created_at": {
+        "col": 8,
+        "lineno": 711,
+        "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
+      },
+      "kwargs": {
+        "bg": "self.colors.get(...)"
+      },
+      "layout_calls": [
+        "pack(side='bottom', fill='x', pady=20)"
+      ],
+      "parent_id": "w49",
+      "widget_id": "w54",
+      "widget_type": "Frame"
+    },
+    "w55": {
+      "bind_events": [],
+      "command_targets": [],
+      "config_calls": [],
+      "created_at": {
+        "col": 8,
+        "lineno": 798,
+        "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
+      },
+      "kwargs": {
+        "bg": "self.colors.get(...)"
+      },
+      "layout_calls": [
+        "pack(anchor='center')"
+      ],
+      "parent_id": "w54",
+      "widget_id": "w55",
+      "widget_type": "Frame"
+    },
+    "w56": {
+      "bind_events": [],
+      "command_targets": [],
+      "config_calls": [],
+      "created_at": {
+        "col": 8,
+        "lineno": 813,
+        "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
+      },
+      "kwargs": {
+        "tearoff": "0"
+      },
+      "layout_calls": [],
+      "parent_id": null,
+      "widget_id": "w56",
+      "widget_type": "Menu"
+    },
+    "w6": {
+      "bind_events": [],
+      "command_targets": [],
+      "config_calls": [],
+      "created_at": {
+        "col": 8,
+        "lineno": 200,
+        "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
+      },
+      "kwargs": {
+        "bg": "self.colors.get(...)"
+      },
+      "layout_calls": [],
+      "parent_id": null,
+      "widget_id": "w6",
+      "widget_type": "Frame"
+    },
+    "w7": {
+      "bind_events": [],
+      "command_targets": [],
+      "config_calls": [],
+      "created_at": {
+        "col": 8,
+        "lineno": 204,
+        "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
+      },
+      "kwargs": {
+        "bg": "self.colors.get(...)",
+        "fg": "self.colors.get(...)",
+        "font": "Tuple",
+        "text": "'Type in your idea HERE.'"
+      },
+      "layout_calls": [],
+      "parent_id": null,
+      "widget_id": "w7",
+      "widget_type": "Label"
+    },
+    "w8": {
+      "bind_events": [],
+      "command_targets": [],
+      "config_calls": [],
+      "created_at": {
+        "col": 8,
+        "lineno": 210,
+        "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
+      },
+      "kwargs": {
+        "bg": "self.colors.get(...)"
+      },
+      "layout_calls": [],
+      "parent_id": null,
+      "widget_id": "w8",
+      "widget_type": "Frame"
+    },
+    "w9": {
+      "bind_events": [],
+      "command_targets": [
+        "self._bold_text"
+      ],
+      "config_calls": [],
+      "created_at": {
+        "col": 8,
+        "lineno": 214,
+        "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
+      },
+      "kwargs": {
+        "command": "self._bold_text",
+        "font": "Tuple",
+        "text": "'B'"
+      },
+      "layout_calls": [],
+      "parent_id": null,
+      "widget_id": "w9",
+      "widget_type": "Button"
+    }
+  },
+  "windows": {
+    "win1": {
+      "config_calls": [],
+      "created_at": {
+        "col": 8,
+        "lineno": 51,
+        "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\microservices\\_TkinterAppShellMS.py"
+      },
+      "geometry_calls": [],
+      "title_calls": [],
+      "window_id": "win1"
+    },
+    "win3": {
+      "config_calls": [],
+      "created_at": {
+        "col": 4,
+        "lineno": 131,
+        "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\microservices\\_OllamaModelSelectorMS.py"
+      },
+      "geometry_calls": [
+        "root.geometry('400x100')"
+      ],
+      "title_calls": [
+        "root.title('Ollama Selector Test')"
+      ],
+      "window_id": "win3"
+    },
+    "win4": {
+      "config_calls": [],
+      "created_at": {
+        "col": 4,
+        "lineno": 57,
+        "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\microservices\\_TkinterSmartExplorerMS.py"
+      },
+      "geometry_calls": [],
+      "title_calls": [],
+      "window_id": "win4"
+    },
+    "win5": {
+      "config_calls": [],
+      "created_at": {
+        "col": 4,
+        "lineno": 148,
+        "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\microservices\\_LogViewMS.py"
+      },
+      "geometry_calls": [
+        "root.geometry('600x400')"
+      ],
+      "title_calls": [
+        "root.title('Log View Test')"
+      ],
+      "window_id": "win5"
+    }
+  }
+}

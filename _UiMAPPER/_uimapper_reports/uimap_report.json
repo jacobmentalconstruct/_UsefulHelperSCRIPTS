@@ -9,7 +9,7 @@
       "config_calls": [],
       "created_at": {
         "col": 8,
-        "lineno": 158,
+        "lineno": 161,
         "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_UiMAPPER\\src\\ui.py"
       },
       "kwargs": {
@@ -28,7 +28,7 @@
       "config_calls": [],
       "created_at": {
         "col": 8,
-        "lineno": 222,
+        "lineno": 225,
         "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_UiMAPPER\\src\\ui.py"
       },
       "kwargs": {
@@ -48,7 +48,7 @@
       "config_calls": [],
       "created_at": {
         "col": 8,
-        "lineno": 226,
+        "lineno": 229,
         "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_UiMAPPER\\src\\ui.py"
       },
       "kwargs": {
@@ -68,7 +68,7 @@
       "config_calls": [],
       "created_at": {
         "col": 8,
-        "lineno": 229,
+        "lineno": 232,
         "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_UiMAPPER\\src\\ui.py"
       },
       "kwargs": {
@@ -84,32 +84,13 @@
     },
     "w13": {
       "bind_events": [],
-      "command_targets": [],
-      "config_calls": [],
-      "created_at": {
-        "col": 8,
-        "lineno": 233,
-        "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_UiMAPPER\\src\\ui.py"
-      },
-      "kwargs": {
-        "textvariable": "self.var_model"
-      },
-      "layout_calls": [
-        "grid(row=5, column=0, columnspan=2, sticky='ew', pady=Tuple)"
-      ],
-      "parent_id": "w8",
-      "widget_id": "w13",
-      "widget_type": "Entry"
-    },
-    "w14": {
-      "bind_events": [],
       "command_targets": [
         "self._run_clicked"
       ],
       "config_calls": [],
       "created_at": {
         "col": 8,
-        "lineno": 237,
+        "lineno": 250,
         "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_UiMAPPER\\src\\ui.py"
       },
       "kwargs": {
@@ -121,10 +102,10 @@
         "grid(row=6, column=0, sticky='ew', pady=Tuple)"
       ],
       "parent_id": "w8",
-      "widget_id": "w14",
+      "widget_id": "w13",
       "widget_type": "Button"
     },
-    "w15": {
+    "w14": {
       "bind_events": [],
       "command_targets": [
         "self._cancel_clicked"
@@ -132,7 +113,7 @@
       "config_calls": [],
       "created_at": {
         "col": 8,
-        "lineno": 240,
+        "lineno": 253,
         "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_UiMAPPER\\src\\ui.py"
       },
       "kwargs": {
@@ -143,10 +124,10 @@
         "grid(row=7, column=0, sticky='ew', pady=Tuple)"
       ],
       "parent_id": "w8",
-      "widget_id": "w15",
+      "widget_id": "w14",
       "widget_type": "Button"
     },
-    "w16": {
+    "w15": {
       "bind_events": [],
       "command_targets": [
         "self._open_report_folder"
@@ -154,7 +135,7 @@
       "config_calls": [],
       "created_at": {
         "col": 8,
-        "lineno": 243,
+        "lineno": 256,
         "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_UiMAPPER\\src\\ui.py"
       },
       "kwargs": {
@@ -165,16 +146,16 @@
         "grid(row=8, column=0, sticky='ew', pady=Tuple)"
       ],
       "parent_id": "w8",
-      "widget_id": "w16",
+      "widget_id": "w15",
       "widget_type": "Button"
     },
-    "w17": {
+    "w16": {
       "bind_events": [],
       "command_targets": [],
       "config_calls": [],
       "created_at": {
         "col": 8,
-        "lineno": 248,
+        "lineno": 261,
         "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_UiMAPPER\\src\\ui.py"
       },
       "kwargs": {
@@ -184,10 +165,10 @@
       },
       "layout_calls": [],
       "parent_id": "w8",
-      "widget_id": "w17",
+      "widget_id": "w16",
       "widget_type": "Label"
     },
-    "w18": {
+    "w17": {
       "bind_events": [],
       "command_targets": [],
       "config_calls": [
@@ -195,7 +176,7 @@
       ],
       "created_at": {
         "col": 8,
-        "lineno": 254,
+        "lineno": 267,
         "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_UiMAPPER\\src\\ui.py"
       },
       "kwargs": {
@@ -210,8 +191,25 @@
         "pack(fill='both', expand=False)"
       ],
       "parent_id": null,
-      "widget_id": "w18",
+      "widget_id": "w17",
       "widget_type": "Text"
+    },
+    "w18": {
+      "bind_events": [],
+      "command_targets": [],
+      "config_calls": [],
+      "created_at": {
+        "col": 8,
+        "lineno": 283,
+        "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_UiMAPPER\\src\\ui.py"
+      },
+      "kwargs": {},
+      "layout_calls": [
+        "pack(fill='both', expand=True)"
+      ],
+      "parent_id": null,
+      "widget_id": "w18",
+      "widget_type": "Notebook"
     },
     "w19": {
       "bind_events": [],
@@ -219,20 +217,16 @@
       "config_calls": [],
       "created_at": {
         "col": 8,
-        "lineno": 271,
+        "lineno": 287,
         "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_UiMAPPER\\src\\ui.py"
       },
       "kwargs": {
-        "columns": "cols",
-        "height": "18",
-        "show": "'headings'"
+        "style": "'Panel.TFrame'"
       },
-      "layout_calls": [
-        "pack(fill='both', expand=True)"
-      ],
-      "parent_id": null,
+      "layout_calls": [],
+      "parent_id": "w18",
       "widget_id": "w19",
-      "widget_type": "Treeview"
+      "widget_type": "Frame"
     },
     "w2": {
       "bind_events": [],
@@ -240,7 +234,7 @@
       "config_calls": [],
       "created_at": {
         "col": 8,
-        "lineno": 182,
+        "lineno": 185,
         "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_UiMAPPER\\src\\ui.py"
       },
       "kwargs": {
@@ -259,7 +253,66 @@
       "config_calls": [],
       "created_at": {
         "col": 8,
-        "lineno": 280,
+        "lineno": 291,
+        "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_UiMAPPER\\src\\ui.py"
+      },
+      "kwargs": {
+        "columns": "cols",
+        "height": "18",
+        "show": "'headings'"
+      },
+      "layout_calls": [
+        "pack(fill='both', expand=True)"
+      ],
+      "parent_id": "w19",
+      "widget_id": "w20",
+      "widget_type": "Treeview"
+    },
+    "w21": {
+      "bind_events": [],
+      "command_targets": [],
+      "config_calls": [],
+      "created_at": {
+        "col": 8,
+        "lineno": 301,
+        "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_UiMAPPER\\src\\ui.py"
+      },
+      "kwargs": {
+        "style": "'Panel.TFrame'"
+      },
+      "layout_calls": [],
+      "parent_id": "w18",
+      "widget_id": "w21",
+      "widget_type": "Frame"
+    },
+    "w22": {
+      "bind_events": [],
+      "command_targets": [],
+      "config_calls": [],
+      "created_at": {
+        "col": 8,
+        "lineno": 305,
+        "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_UiMAPPER\\src\\ui.py"
+      },
+      "kwargs": {
+        "columns": "st_cols",
+        "height": "18",
+        "show": "'tree headings'"
+      },
+      "layout_calls": [
+        "pack(fill='both', expand=True)"
+      ],
+      "parent_id": "w21",
+      "widget_id": "w22",
+      "widget_type": "Treeview"
+    },
+    "w23": {
+      "bind_events": [],
+      "command_targets": [],
+      "config_calls": [],
+      "created_at": {
+        "col": 8,
+        "lineno": 314,
         "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_UiMAPPER\\src\\ui.py"
       },
       "kwargs": {
@@ -269,16 +322,16 @@
         "pack(fill='x', pady=Tuple)"
       ],
       "parent_id": null,
-      "widget_id": "w20",
+      "widget_id": "w23",
       "widget_type": "Frame"
     },
-    "w21": {
+    "w24": {
       "bind_events": [],
       "command_targets": [],
       "config_calls": [],
       "created_at": {
         "col": 8,
-        "lineno": 287,
+        "lineno": 321,
         "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_UiMAPPER\\src\\ui.py"
       },
       "kwargs": {
@@ -288,10 +341,10 @@
         "pack(fill='x', padx=10, pady=Tuple)"
       ],
       "parent_id": null,
-      "widget_id": "w21",
+      "widget_id": "w24",
       "widget_type": "Frame"
     },
-    "w22": {
+    "w25": {
       "bind_events": [],
       "command_targets": [],
       "config_calls": [
@@ -299,16 +352,16 @@
       ],
       "created_at": {
         "col": 8,
-        "lineno": 423,
+        "lineno": 553,
         "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_UiMAPPER\\src\\ui.py"
       },
       "kwargs": {},
       "layout_calls": [],
       "parent_id": null,
-      "widget_id": "w22",
+      "widget_id": "w25",
       "widget_type": "Toplevel"
     },
-    "w23": {
+    "w26": {
       "bind_events": [],
       "command_targets": [],
       "config_calls": [
@@ -316,7 +369,7 @@
       ],
       "created_at": {
         "col": 8,
-        "lineno": 427,
+        "lineno": 557,
         "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_UiMAPPER\\src\\ui.py"
       },
       "kwargs": {
@@ -329,8 +382,8 @@
       "layout_calls": [
         "pack(fill='both', expand=True, padx=10, pady=10)"
       ],
-      "parent_id": "w22",
-      "widget_id": "w23",
+      "parent_id": "w25",
+      "widget_id": "w26",
       "widget_type": "Text"
     },
     "w3": {
@@ -339,7 +392,7 @@
       "config_calls": [],
       "created_at": {
         "col": 8,
-        "lineno": 185,
+        "lineno": 188,
         "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_UiMAPPER\\src\\ui.py"
       },
       "kwargs": {
@@ -361,7 +414,7 @@
       "config_calls": [],
       "created_at": {
         "col": 8,
-        "lineno": 188,
+        "lineno": 191,
         "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_UiMAPPER\\src\\ui.py"
       },
       "kwargs": {
@@ -380,7 +433,7 @@
       "config_calls": [],
       "created_at": {
         "col": 8,
-        "lineno": 195,
+        "lineno": 198,
         "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_UiMAPPER\\src\\ui.py"
       },
       "kwargs": {
@@ -401,7 +454,7 @@
       ],
       "created_at": {
         "col": 8,
-        "lineno": 199,
+        "lineno": 202,
         "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_UiMAPPER\\src\\ui.py"
       },
       "kwargs": {
@@ -422,7 +475,7 @@
       ],
       "created_at": {
         "col": 8,
-        "lineno": 206,
+        "lineno": 209,
         "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_UiMAPPER\\src\\ui.py"
       },
       "kwargs": {
@@ -441,7 +494,7 @@
       "config_calls": [],
       "created_at": {
         "col": 8,
-        "lineno": 215,
+        "lineno": 218,
         "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_UiMAPPER\\src\\ui.py"
       },
       "kwargs": {
@@ -460,7 +513,7 @@
       "config_calls": [],
       "created_at": {
         "col": 8,
-        "lineno": 220,
+        "lineno": 223,
         "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_UiMAPPER\\src\\ui.py"
       },
       "kwargs": {
@@ -491,11 +544,15 @@
       "config_calls": [],
       "created_at": {
         "col": 4,
-        "lineno": 57,
-        "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_UiMAPPER\\src\\microservices\\_TkinterSmartExplorerMS.py"
+        "lineno": 213,
+        "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_UiMAPPER\\src\\microservices\\OllamaModelSelectorMS.py"
       },
-      "geometry_calls": [],
-      "title_calls": [],
+      "geometry_calls": [
+        "root.geometry('520x120')"
+      ],
+      "title_calls": [
+        "root.title('Ollama Selector Test')"
+      ],
       "window_id": "win4"
     }
   }

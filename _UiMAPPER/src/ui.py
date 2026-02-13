@@ -39,6 +39,7 @@ from tkinter import ttk, filedialog, messagebox
 
 # Adjust import to match your project.
 from .backend import BackendOrchestrator, BackendSettings
+from .microservices.OllamaModelSelectorMS import OllamaModelSelectorMS
 
 # -------------------------
 # Theme (match your helper scripts)
@@ -137,6 +138,8 @@ class UiOrchestrator:
         self._counts_lbl: Optional[ttk.Label] = None
         self._log_text: Optional[tk.Text] = None
         self._tree: Optional[ttk.Treeview] = None
+        self._structure_tree: Optional[ttk.Treeview] = None
+        self._model_selector: Optional[tk.Frame] = None
 
         # Progress event queue (marshalled with after). Guard with a lock because callbacks may fire off-thread.
         self._event_queue: List[Dict[str, Any]] = []
@@ -230,8 +233,18 @@ class UiOrchestrator:
         chk_inf.grid(row=3, column=0, sticky="w", pady=(2, 6))
 
         ttk.Label(box, text="Ollama Model", style="Muted.TLabel", background=THEME.panel).grid(row=4, column=0, sticky="w")
-        ent_model = ttk.Entry(box, textvariable=self.var_model)
-        ent_model.grid(row=5, column=0, columnspan=2, sticky="ew", pady=(4, 10))
+
+        selector = OllamaModelSelectorMS(
+            {
+                "parent": box,
+                "on_change": lambda m: self.var_model.set(m),
+                "auto_refresh": True,
+            },
+            theme={"panel_bg": THEME.panel, "foreground": THEME.fg},
+            bus=self.bus,
+        )
+        selector.grid(row=5, column=0, columnspan=2, sticky="ew", pady=(4, 10))
+        self._model_selector = selector
 
         # Actions
         btn_run = ttk.Button(box, text="Run", style="Accent.TButton", command=self._run_clicked)
@@ -267,8 +280,15 @@ class UiOrchestrator:
     def _build_results(self, parent: ttk.Frame) -> None:
         ttk.Label(parent, text="Results", background=THEME.panel, foreground=THEME.fg).pack(anchor="w", pady=(0, 6))
 
+        nb = ttk.Notebook(parent)
+        nb.pack(fill="both", expand=True)
+
+        # --- Summary tab (existing results list)
+        tab_summary = ttk.Frame(nb, style="Panel.TFrame")
+        nb.add(tab_summary, text="Summary")
+
         cols = ("kind", "value")
-        tree = ttk.Treeview(parent, columns=cols, show="headings", height=18)
+        tree = ttk.Treeview(tab_summary, columns=cols, show="headings", height=18)
         tree.heading("kind", text="Kind")
         tree.heading("value", text="Value")
         tree.column("kind", width=160, anchor="w")
@@ -276,6 +296,20 @@ class UiOrchestrator:
         tree.pack(fill="both", expand=True)
 
         self._tree = tree
+
+        # --- Structure tab (hierarchy view)
+        tab_struct = ttk.Frame(nb, style="Panel.TFrame")
+        nb.add(tab_struct, text="Structure")
+
+        st_cols = ("details",)
+        stree = ttk.Treeview(tab_struct, columns=st_cols, show="tree headings", height=18)
+        stree.heading("#0", text="Widget")
+        stree.heading("details", text="Details")
+        stree.column("#0", width=360, anchor="w")
+        stree.column("details", width=360, anchor="w")
+        stree.pack(fill="both", expand=True)
+
+        self._structure_tree = stree
 
         btns = ttk.Frame(parent, style="Panel.TFrame")
         btns.pack(fill="x", pady=(10, 0))
@@ -366,6 +400,102 @@ class UiOrchestrator:
             eps = st.get("entrypoint_candidates") or []
             for i, ep in enumerate(eps[:5], start=1):
                 self._tree.insert("", "end", values=(f"entrypoint_{i}", ep.get("path", "")))
+
+        # structure tree (ui_map widget hierarchy)
+        if self._structure_tree is not None:
+            self._refresh_structure_tree(st)
+
+    # -------------------------
+    # Structure tree
+    # -------------------------
+
+    def _refresh_structure_tree(self, st: Dict[str, Any]) -> None:
+        """Render ui_map widget hierarchy into the Structure tab."""
+        if self._structure_tree is None:
+            return
+
+        uimap = st.get("ui_map") or {}
+        widgets: Dict[str, Any] = (uimap.get("widgets") or {})
+
+        self._structure_tree.delete(*self._structure_tree.get_children())
+
+        if not widgets:
+            self._structure_tree.insert("", "end", text="(no ui_map/widgets yet)", values=("Run the mapper to populate.",))
+            return
+
+        # Build parent->children index
+        children_by_parent: Dict[Optional[str], List[str]] = {}
+        for wid, w in widgets.items():
+            pid = w.get("parent_id", None)
+            children_by_parent.setdefault(pid, []).append(wid)
+
+        def _created_sort_key(wid: str):
+            w = widgets.get(wid) or {}
+            ca = w.get("created_at") or {}
+            try:
+                ln = int(ca.get("lineno", 10**9))
+            except Exception:
+                ln = 10**9
+            path = str(ca.get("path", ""))
+            return (path, ln, wid)
+
+        for pid in list(children_by_parent.keys()):
+            children_by_parent[pid].sort(key=_created_sort_key)
+
+        def _label_for(wid: str) -> (str, str):
+            w = widgets.get(wid) or {}
+            wtype = w.get("widget_type", "Widget")
+            ca = w.get("created_at") or {}
+            path = str(ca.get("path", ""))
+            lineno = ca.get("lineno", "")
+
+            layout = w.get("layout_calls") or []
+            has_layout = bool(layout)
+            cmds = w.get("command_targets") or []
+            has_cmd = bool(cmds)
+
+            tag_bits: List[str] = []
+            if has_layout:
+                tag_bits.append("layout")
+            if has_cmd:
+                tag_bits.append("cmd")
+            tags = ("[" + ", ".join(tag_bits) + "]") if tag_bits else ""
+
+            text = f"{wid}  {wtype} {tags}".rstrip()
+            details = f"@ {path}:{lineno}".rstrip(":")
+            return text, details
+
+        roots = children_by_parent.get(None, [])
+        if not roots:
+            # Some generators use "" instead of None.
+            roots = children_by_parent.get("", [])
+
+        root_node = self._structure_tree.insert("", "end", text="ROOTS", values=("parent_id is null/empty",))
+
+        visited: set[str] = set()
+
+        def _insert_subtree(parent_item: str, wid: str, depth: int) -> None:
+            if depth > 200:
+                self._structure_tree.insert(parent_item, "end", text=f"{wid} ...", values=("depth limit",))
+                return
+            if wid in visited:
+                self._structure_tree.insert(parent_item, "end", text=f"{wid} ...", values=("cycle detected",))
+                return
+            visited.add(wid)
+
+            text, details = _label_for(wid)
+            item = self._structure_tree.insert(parent_item, "end", text=text, values=(details,))
+            for child_id in children_by_parent.get(wid, []):
+                _insert_subtree(item, child_id, depth + 1)
+
+        for wid in roots:
+            _insert_subtree(root_node, wid, 0)
+
+        # Expand roots by default
+        try:
+            self._structure_tree.item(root_node, open=True)
+        except Exception:
+            pass
 
     # -------------------------
     # UI actions
@@ -473,5 +603,7 @@ def build_ui(root: tk.Tk, backend: BackendOrchestrator) -> UiOrchestrator:
     ui = UiOrchestrator(backend=backend)
     ui.build(root)
     return ui
+
+
 
 
