@@ -24,9 +24,6 @@ def main():
         "theme": theme
     })
     
-    # Dock the UI into the shell
-    app_ui = CELL_UI(shell, backend)
-
     # --- Global Orchestration State ---
     cell_registry = {}  # { session_id: backend_instance }
 
@@ -76,14 +73,23 @@ def main():
                 def get_main_container(self): return self.root
             
             child_proxy = ShellProxy(child_win, shell.colors)
-            child_ui = CELL_UI(child_proxy, child_backend)
             
-            # Apply Recursive Logic to the new child
+            # Wire orchestration BEFORE CELL_UI fires register_cell signal
             register_cell_orchestration(child_backend)
             
-            # Hydrate DNA: Payload -> Context View, System Prompt -> System Box
+            child_ui = CELL_UI(child_proxy, child_backend)
+            
+            # Hydrate DNA into child cell based on send destination
             source = data.get('source_artifact', {})
-            child_ui.context_view.insert("1.0", source.get('payload', ''))
+            send_dest = source.get('send_destination', 'steps')
+            send_content = source.get('send_content', source.get('payload', ''))
+            source_name = source.get('source_name', getattr(target_backend, 'cell_name', 'Unknown'))
+
+            if send_dest == 'steps':
+                child_ui.add_onto_step(source_name, send_content)
+            else:
+                child_ui.append_to_task(send_content)
+
             child_ui.prompt_text.delete("1.0", "end")
             child_ui.prompt_text.insert("1.0", source.get('instructions', {}).get('system_prompt', ''))
 
@@ -107,14 +113,19 @@ def main():
 
         target_backend.bus.subscribe("push_to_nexus", on_push_request)
 
-    # Register the root window
+    # Wire orchestration BEFORE CELL_UI fires register_cell signal
     register_cell_orchestration(backend)
+
+    # Dock the UI into the shell
+    app_ui = CELL_UI(shell, backend)
     
     # Ignition
     shell.launch()
 
 if __name__ == "__main__":
     main()
+
+
 
 
 

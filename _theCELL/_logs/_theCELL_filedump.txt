@@ -171,13 +171,18 @@ pause
 FILE: src\app.py
 --------------------------------------------------------------------------------
 import uuid
+from datetime import datetime
 from .backend import Backend
 from .ui import CELL_UI
 from src.microservices._TkinterAppShellMS import TkinterAppShellMS
+from src.cell_identity import CellRegistry
 
 def main():
+    # Create global cell registry (singleton for the application)
+    global_registry = CellRegistry()
+    
     # Initialize the logic hub
-    backend = Backend()
+    backend = Backend(registry=global_registry)
 
     # Load persisted theme preference (default Dark)
     theme = (backend.get_setting('theme_preference') or 'Dark').strip().title()
@@ -186,22 +191,23 @@ def main():
     
     # Initialize the Mother Ship (Shell)
     shell = TkinterAppShellMS({
-        "title": "_theCELL - Idea Ingestor",
+        "title": f"_theCELL [{backend.cell_name}]",
         "geometry": "1000x800",
         "theme": theme
     })
     
-    # Dock the UI into the shell
-    app_ui = CELL_UI(shell, backend)
-
     # --- Global Orchestration State ---
     cell_registry = {}  # { session_id: backend_instance }
 
     def broadcast_registry_update():
         """Informs all cells of the current list of available targets."""
-        active_ids = list(cell_registry.keys())
+        active_cells = global_registry.get_all_cells()
+        cell_data = {
+            cid: {"id": cid, "name": identity.cell_name}
+            for cid, identity in active_cells.items()
+        }
         for b_instance in cell_registry.values():
-            b_instance.bus.emit("update_registry", active_ids)
+            b_instance.bus.emit("update_registry", cell_data)
 
     def register_cell_orchestration(target_backend):
         """Wires a backend into the global recursive and nexus pipelines."""
@@ -210,24 +216,26 @@ def main():
         def on_spawn_request(data):
             print(f"[System] Spawning child from: {data.get('spawn_timestamp')}")
             
-            # Determine identity
+            # Determine parent identity
             p_id = getattr(target_backend, 'cell_id', 'unknown')
-            c_id = f"cell_{uuid.uuid4().hex[:6]}"
-            c_name = f"Child of {target_backend.cell_name}"
-
-            child_win = shell.spawn_window(title=f"_theCELL [{c_id}]", geometry="900x700")
             
-            unique_session_id = f"session_{c_id}.jsonl"
+            # Create unique session file (timestamp-based, independent of cell_id)
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
+            unique_session_id = f"session_{timestamp}.jsonl"
+            
+            # Create child backend (identity auto-generated via CellRegistry)
             child_backend = Backend(
+                registry=global_registry,
                 memory_path=unique_session_id,
-                cell_id=c_id,
+                cell_id=None,      # Auto-generate unique ID
                 parent_id=p_id,
-                cell_name=c_name
+                cell_name=None     # Auto-generate default name
             )
             
-            # Update parent's record of progeny
-            if hasattr(target_backend, 'children_ids'):
-                target_backend.children_ids.append(c_id)
+            # Create window with auto-generated cell name
+            child_win = shell.spawn_window(title=f"_theCELL [{child_backend.cell_name}]", geometry="900x700")
+            
+            # Parent-child relationship auto-managed by registry (no manual children_ids)
             
             # Shell Proxy for Child Window
             class ShellProxy:
@@ -237,14 +245,23 @@ def main():
                 def get_main_container(self): return self.root
             
             child_proxy = ShellProxy(child_win, shell.colors)
-            child_ui = CELL_UI(child_proxy, child_backend)
             
-            # Apply Recursive Logic to the new child
+            # Wire orchestration BEFORE CELL_UI fires register_cell signal
             register_cell_orchestration(child_backend)
             
-            # Hydrate DNA: Payload -> Context View, System Prompt -> System Box
+            child_ui = CELL_UI(child_proxy, child_backend)
+            
+            # Hydrate DNA into child cell based on send destination
             source = data.get('source_artifact', {})
-            child_ui.context_view.insert("1.0", source.get('payload', ''))
+            send_dest = source.get('send_destination', 'steps')
+            send_content = source.get('send_content', source.get('payload', ''))
+            source_name = source.get('source_name', getattr(target_backend, 'cell_name', 'Unknown'))
+
+            if send_dest == 'steps':
+                child_ui.add_onto_step(source_name, send_content)
+            else:
+                child_ui.append_to_task(send_content)
+
             child_ui.prompt_text.delete("1.0", "end")
             child_ui.prompt_text.insert("1.0", source.get('instructions', {}).get('system_prompt', ''))
 
@@ -268,14 +285,20 @@ def main():
 
         target_backend.bus.subscribe("push_to_nexus", on_push_request)
 
-    # Register the root window
+    # Wire orchestration BEFORE CELL_UI fires register_cell signal
     register_cell_orchestration(backend)
+
+    # Dock the UI into the shell
+    app_ui = CELL_UI(shell, backend)
     
     # Ignition
     shell.launch()
 
 if __name__ == "__main__":
     main()
+
+
+
 
 
 
@@ -303,6 +326,7 @@ from src.microservices._CodeFormatterMS import CodeFormatterMS
 from src.microservices._TreeMapperMS import TreeMapperMS
 from src.microservices._VectorFactoryMS import VectorFactoryMS
 from src.microservices.microservice_std_lib import service_metadata
+from src.cell_identity import CellIdentity, CellRegistry
 
 class Backend:
     """
@@ -310,18 +334,25 @@ class Backend:
     SERVICES: Ingest, Validation, SignalBus, Memory, Factory, Notifier, ConfigStore
     STATE: Persistent (SQLite / JSON)
     """
-    def __init__(self, db_path: str = None, memory_path: str = None, 
-                 cell_id: str = "root", parent_id: str = None, cell_name: str = "Primary Cell"):
+    def __init__(self, registry: CellRegistry, db_path: str = None, memory_path: str = None, 
+                 cell_id: str = None, parent_id: str = None, cell_name: str = None):
         # BOOTSTRAP: Define persistence paths
         project_root = os.path.abspath(os.getcwd())
         db_dir = os.path.join(project_root, "_db")
         os.makedirs(db_dir, exist_ok=True)
 
-        # IDENTITY: Traceable lineage and naming
-        self.cell_id = cell_id
-        self.parent_id = parent_id
-        self.cell_name = cell_name
-        self.children_ids = []
+        # IDENTITY: Traceable lineage and naming (integrated with CellRegistry)
+        self.identity = CellIdentity(cell_id, cell_name, parent_id)
+        
+        # Convenience accessors (backward compatible)
+        self.cell_id = self.identity.cell_id
+        self.cell_name = self.identity.cell_name
+        self.parent_id = self.identity.parent_id
+        self.children_ids = list(self.identity.children.keys())
+        
+        # Store registry reference and register this cell
+        self.registry = registry
+        self.registry.register_cell(self.identity)
 
         if db_path is None:
             db_path = os.path.join(db_dir, "app_internal.db")
@@ -625,6 +656,43 @@ class Backend:
         # We use the factory to 'hydrate' this into the memory bank
         self.factory.hydrate_artifact(artifact, mode="memory", destination="long_term_history")
 
+    def rename_cell(self, new_name: str) -> None:
+        """
+        User-facing method to rename this cell.
+        Propagates change through registry to all references.
+        """
+        old_name = self.cell_name
+        self.registry.rename_cell(self.cell_id, new_name)
+        
+        # Update local reference
+        self.cell_name = self.identity.cell_name
+        
+        # Emit signals for UI update
+        self.bus.emit("cell_renamed", {
+            "cell_id": self.cell_id,
+            "old_name": old_name,
+            "new_name": new_name
+        })
+        
+        self.bus.emit("update_window_title", f"_theCELL [{self.cell_name}]")
+
+    def get_family_tree(self) -> dict:
+        """
+        Returns detailed family relationship data for this cell.
+        """
+        return {
+            "identity": self.identity.to_dict(),
+            "lineage": self.registry.get_lineage(self.cell_id),
+            "children": self.registry.get_children(self.cell_id),
+            "descendants": self.registry.get_descendants(self.cell_id)
+        }
+
+    def close_cell(self) -> None:
+        """
+        Clean up when cell window is closed.
+        Unregisters from global registry.
+        """
+        self.registry.unregister_cell(self.cell_id)
 
 
 
@@ -645,12 +713,535 @@ class Backend:
 
 
 
+
+
+
+--------------------------------------------------------------------------------
+FILE: src\cell_identity.py
+--------------------------------------------------------------------------------
+"""
+Cell Identity Management System for _theCELL
+============================================
+
+This module provides identity and relationship tracking for the cognitive cell
+architecture. Each cell has a unique ID, user-renameable name, and maintains
+bidirectional parent-child relationships with automatic name propagation.
+
+Classes:
+    CellIdentity: Manages a single cell's identity and relationships
+    CellRegistry: Global registry coordinating all cells with name propagation
+
+Author: Jacob Lambert
+License: MIT
+"""
+
+import uuid
+import threading
+from typing import Dict, List, Optional, Set, Tuple
+from datetime import datetime
+
+
+class CellIdentity:
+    """
+    Represents the identity and relationship data for a single cognitive cell.
+    
+    Each cell has:
+    - A unique, collision-resistant ID (auto-generated if not provided)
+    - A human-readable name (auto-generated default, user-renameable)
+    - Parent cell reference (if spawned from another cell)
+    - Children cell references (if this cell has spawned others)
+    - Creation and rename timestamps
+    
+    Attributes:
+        cell_id (str): Unique identifier for this cell
+        cell_name (str): Human-readable name
+        parent_id (Optional[str]): ID of parent cell, None if root
+        children (Dict[str, str]): Map of child_id -> child_name
+        created_at (str): ISO timestamp of creation
+        renamed_at (Optional[str]): ISO timestamp of last rename, None if never renamed
+    """
+    
+    def __init__(self, 
+                 cell_id: str = None, 
+                 cell_name: str = None, 
+                 parent_id: str = None):
+        """
+        Initialize a cell identity.
+        
+        Args:
+            cell_id: Unique ID (auto-generated if None)
+            cell_name: Display name (auto-generated default if None)
+            parent_id: Parent cell ID (None for root cells)
+        """
+        # Generate unique ID if not provided
+        self.cell_id: str = cell_id if cell_id else self._generate_unique_id()
+        
+        # Generate default name if not provided
+        self.cell_name: str = cell_name if cell_name else self._generate_default_name()
+        
+        # Relationship tracking
+        self.parent_id: Optional[str] = parent_id
+        self.children: Dict[str, str] = {}  # {child_id: child_name}
+        
+        # Metadata
+        self.created_at: str = datetime.now().isoformat()
+        self.renamed_at: Optional[str] = None
+    
+    def _generate_unique_id(self) -> str:
+        """
+        Generates a unique, collision-resistant cell ID.
+        
+        Format: cell_YYYYMMDDHHmmSS_<8-char-uuid>
+        Example: cell_20260217033045_a1b2c3d4
+        
+        Returns:
+            Unique cell identifier string
+        """
+        timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+        uuid_segment = uuid.uuid4().hex[:8]
+        return f"cell_{timestamp}_{uuid_segment}"
+    
+    def _generate_default_name(self) -> str:
+        """
+        Generates a human-readable default name from the cell ID.
+        
+        Extracts the last 8 characters of the ID for readability.
+        Example: "Cell-A1B2C3D4"
+        
+        Returns:
+            Default display name string
+        """
+        short_id = self.cell_id.split('_')[-1]
+        return f"Cell-{short_id.upper()}"
+    
+    def rename(self, new_name: str) -> Tuple[str, str]:
+        """
+        Renames the cell and records the timestamp.
+        
+        Args:
+            new_name: New display name for the cell
+            
+        Returns:
+            Tuple of (old_name, new_name) for propagation tracking
+        """
+        old_name = self.cell_name
+        self.cell_name = new_name.strip()
+        self.renamed_at = datetime.now().isoformat()
+        return old_name, new_name
+    
+    def add_child(self, child_id: str, child_name: str) -> None:
+        """
+        Records a child cell in this parent's registry.
+        
+        Args:
+            child_id: Unique ID of child cell
+            child_name: Display name of child cell
+        """
+        self.children[child_id] = child_name
+    
+    def remove_child(self, child_id: str) -> None:
+        """
+        Removes a child cell from this parent's registry.
+        
+        Args:
+            child_id: ID of child cell to remove
+        """
+        if child_id in self.children:
+            del self.children[child_id]
+    
+    def update_child_name(self, child_id: str, new_name: str) -> None:
+        """
+        Updates a child's name in this parent's record.
+        
+        Called automatically when a child cell is renamed.
+        
+        Args:
+            child_id: ID of child cell
+            new_name: Updated name of child cell
+        """
+        if child_id in self.children:
+            self.children[child_id] = new_name
+    
+    def to_dict(self) -> dict:
+        """
+        Serializes identity to dictionary format.
+        
+        Useful for persistence, debugging, and export.
+        
+        Returns:
+            Dictionary representation of this cell's identity
+        """
+        return {
+            "cell_id": self.cell_id,
+            "cell_name": self.cell_name,
+            "parent_id": self.parent_id,
+            "children": self.children.copy(),
+            "created_at": self.created_at,
+            "renamed_at": self.renamed_at
+        }
+    
+    def __repr__(self) -> str:
+        """String representation for debugging."""
+        parent_str = f"parent={self.parent_id}" if self.parent_id else "root"
+        children_count = len(self.children)
+        return f"CellIdentity({self.cell_name!r}, id={self.cell_id}, {parent_str}, children={children_count})"
+
+
+class CellRegistry:
+    """
+    Global registry that tracks all active cells and manages name propagation.
+    
+    This is the coordination layer that:
+    - Maintains the master list of all active cells
+    - Enforces parent-child relationship consistency
+    - Propagates name changes bidirectionally
+    - Provides lineage and descendant queries
+    - Thread-safe for concurrent cell operations
+    
+    The registry should be created once as a singleton in app.py and passed
+    to all Backend instances.
+    
+    Attributes:
+        _cells (Dict[str, CellIdentity]): Master registry of all cells
+        _lock (threading.Lock): Ensures thread-safe operations
+        _change_listeners (List[callable]): Callbacks for registry events
+    """
+    
+    def __init__(self):
+        """Initialize an empty cell registry."""
+        self._cells: Dict[str, CellIdentity] = {}
+        self._lock = threading.Lock()
+        self._change_listeners: List[callable] = []
+    
+    def register_cell(self, identity: CellIdentity) -> None:
+        """
+        Registers a new cell in the global registry.
+        
+        Automatically updates parent's children list if parent exists.
+        Notifies listeners of the registration.
+        
+        Args:
+            identity: CellIdentity instance to register
+        """
+        with self._lock:
+            self._cells[identity.cell_id] = identity
+            
+            # If this cell has a parent, update parent's children list
+            if identity.parent_id and identity.parent_id in self._cells:
+                parent = self._cells[identity.parent_id]
+                parent.add_child(identity.cell_id, identity.cell_name)
+            
+            self._notify_listeners("cell_registered", identity)
+    
+    def unregister_cell(self, cell_id: str) -> None:
+        """
+        Removes a cell from the registry (called when cell window closes).
+        
+        Automatically removes cell from parent's children list.
+        Notifies listeners of the removal.
+        
+        Args:
+            cell_id: ID of cell to unregister
+        """
+        with self._lock:
+            if cell_id not in self._cells:
+                return
+            
+            identity = self._cells[cell_id]
+            
+            # Notify parent of child removal
+            if identity.parent_id and identity.parent_id in self._cells:
+                parent = self._cells[identity.parent_id]
+                parent.remove_child(cell_id)
+            
+            # Remove from registry
+            del self._cells[cell_id]
+            self._notify_listeners("cell_unregistered", identity)
+    
+    def rename_cell(self, cell_id: str, new_name: str) -> None:
+        """
+        Renames a cell and propagates the change to all references.
+        
+        This is the core propagation mechanism:
+        1. Renames the cell itself
+        2. Updates parent's record of this child's name
+        3. Notifies all listeners so UIs can update
+        
+        Args:
+            cell_id: ID of cell to rename
+            new_name: New display name
+        """
+        with self._lock:
+            if cell_id not in self._cells:
+                return
+            
+            identity = self._cells[cell_id]
+            old_name, new_name = identity.rename(new_name)
+            
+            # Propagate to parent's children list
+            if identity.parent_id and identity.parent_id in self._cells:
+                parent = self._cells[identity.parent_id]
+                parent.update_child_name(cell_id, new_name)
+            
+            # Notify all listeners of the name change
+            self._notify_listeners("cell_renamed", {
+                "cell_id": cell_id,
+                "old_name": old_name,
+                "new_name": new_name,
+                "identity": identity
+            })
+    
+    def get_cell(self, cell_id: str) -> Optional[CellIdentity]:
+        """
+        Retrieves a cell's identity by ID.
+        
+        Args:
+            cell_id: ID of cell to retrieve
+            
+        Returns:
+            CellIdentity instance or None if not found
+        """
+        with self._lock:
+            return self._cells.get(cell_id)
+    
+    def get_all_cells(self) -> Dict[str, CellIdentity]:
+        """
+        Returns a copy of all registered cells.
+        
+        Safe to iterate over without holding the lock.
+        
+        Returns:
+            Dictionary mapping cell_id -> CellIdentity
+        """
+        with self._lock:
+            return self._cells.copy()
+    
+    def get_children(self, cell_id: str) -> Dict[str, str]:
+        """
+        Returns all direct children of a given cell.
+        
+        Args:
+            cell_id: ID of parent cell
+            
+        Returns:
+            Dictionary mapping child_id -> child_name (empty dict if no children)
+        """
+        with self._lock:
+            if cell_id in self._cells:
+                return self._cells[cell_id].children.copy()
+            return {}
+    
+    def get_lineage(self, cell_id: str) -> List[str]:
+        """
+        Returns the full lineage from root to this cell.
+        
+        Walks up the parent chain to build the ancestry.
+        
+        Args:
+            cell_id: ID of cell to get lineage for
+            
+        Returns:
+            List of cell IDs from root to current cell
+            Example: [root_id, parent_id, grandparent_id, cell_id]
+        """
+        lineage = []
+        current_id = cell_id
+        
+        with self._lock:
+            # Walk up the parent chain
+            while current_id and current_id in self._cells:
+                lineage.insert(0, current_id)
+                current_id = self._cells[current_id].parent_id
+        
+        return lineage
+    
+    def get_descendants(self, cell_id: str) -> Set[str]:
+        """
+        Returns all descendant cell IDs recursively.
+        
+        Includes children, grandchildren, great-grandchildren, etc.
+        
+        Args:
+            cell_id: ID of ancestor cell
+            
+        Returns:
+            Set of all descendant cell IDs (empty set if no descendants)
+        """
+        descendants = set()
+        
+        def _recurse(cid: str):
+            """Recursive helper to walk down the tree."""
+            if cid in self._cells:
+                for child_id in self._cells[cid].children.keys():
+                    descendants.add(child_id)
+                    _recurse(child_id)
+        
+        with self._lock:
+            _recurse(cell_id)
+        
+        return descendants
+    
+    def get_all_roots(self) -> List[str]:
+        """
+        Returns IDs of all root cells (cells with no parent).
+        
+        Useful for displaying cell hierarchies or finding orphaned trees.
+        
+        Returns:
+            List of root cell IDs
+        """
+        with self._lock:
+            return [
+                cid for cid, identity in self._cells.items()
+                if identity.parent_id is None
+            ]
+    
+    def cell_exists(self, cell_id: str) -> bool:
+        """
+        Checks if a cell ID exists in the registry.
+        
+        Args:
+            cell_id: ID to check
+            
+        Returns:
+            True if cell exists, False otherwise
+        """
+        with self._lock:
+            return cell_id in self._cells
+    
+    def add_change_listener(self, listener: callable) -> None:
+        """
+        Registers a callback for registry change events.
+        
+        Listener signature: listener(event_type: str, data: any)
+        
+        Events emitted:
+        - "cell_registered": data is CellIdentity
+        - "cell_unregistered": data is CellIdentity
+        - "cell_renamed": data is dict with cell_id, old_name, new_name
+        
+        Args:
+            listener: Callback function to register
+        """
+        self._change_listeners.append(listener)
+    
+    def remove_change_listener(self, listener: callable) -> None:
+        """
+        Unregisters a change listener callback.
+        
+        Args:
+            listener: Callback function to remove
+        """
+        if listener in self._change_listeners:
+            self._change_listeners.remove(listener)
+    
+    def _notify_listeners(self, event_type: str, data) -> None:
+        """
+        Notifies all registered listeners of a registry change.
+        
+        Called internally when registry state changes.
+        Listeners are called outside the lock to avoid deadlocks.
+        
+        Args:
+            event_type: Type of event ("cell_registered", etc.)
+            data: Event-specific data
+        """
+        # Make a copy of listeners to iterate safely
+        listeners = self._change_listeners.copy()
+        
+        for listener in listeners:
+            try:
+                listener(event_type, data)
+            except Exception as e:
+                # Don't let listener errors crash the registry
+                print(f"[CellRegistry] Listener error in {listener}: {e}")
+    
+    def export_registry(self) -> dict:
+        """
+        Exports the entire registry state as a dictionary.
+        
+        Useful for debugging, persistence, or analysis.
+        
+        Returns:
+            Dictionary with registry state:
+            {
+                "cells": {cell_id: identity_dict, ...},
+                "timestamp": ISO timestamp,
+                "total_cells": count,
+                "root_cells": [root_ids]
+            }
+        """
+        with self._lock:
+            return {
+                "cells": {
+                    cid: identity.to_dict() 
+                    for cid, identity in self._cells.items()
+                },
+                "timestamp": datetime.now().isoformat(),
+                "total_cells": len(self._cells),
+                "root_cells": self.get_all_roots()
+            }
+    
+    def get_statistics(self) -> dict:
+        """
+        Returns registry statistics for monitoring.
+        
+        Returns:
+            Dictionary with statistics:
+            {
+                "total_cells": count,
+                "root_cells": count,
+                "max_depth": int,
+                "average_children": float
+            }
+        """
+        with self._lock:
+            total = len(self._cells)
+            roots = len(self.get_all_roots())
+            
+            # Calculate max depth
+            max_depth = 0
+            for cell_id in self._cells.keys():
+                depth = len(self.get_lineage(cell_id)) - 1
+                max_depth = max(max_depth, depth)
+            
+            # Calculate average children per cell
+            total_children = sum(
+                len(identity.children) 
+                for identity in self._cells.values()
+            )
+            avg_children = total_children / total if total > 0 else 0
+            
+            return {
+                "total_cells": total,
+                "root_cells": roots,
+                "max_depth": max_depth,
+                "average_children": round(avg_children, 2)
+            }
+    
+    def __len__(self) -> int:
+        """Returns the number of registered cells."""
+        with self._lock:
+            return len(self._cells)
+    
+    def __contains__(self, cell_id: str) -> bool:
+        """Checks if a cell ID exists (supports 'in' operator)."""
+        return self.cell_exists(cell_id)
+    
+    def __repr__(self) -> str:
+        """String representation for debugging."""
+        stats = self.get_statistics()
+        return (
+            f"CellRegistry(cells={stats['total_cells']}, "
+            f"roots={stats['root_cells']}, "
+            f"max_depth={stats['max_depth']})"
+        )
 
 --------------------------------------------------------------------------------
 FILE: src\ui.py
 --------------------------------------------------------------------------------
 import tkinter as tk
-from tkinter import ttk, messagebox, filedialog
+from tkinter import ttk, messagebox, filedialog, simpledialog
 import sqlite3
 
 class CellViewerModal(tk.Toplevel):
@@ -786,6 +1377,7 @@ class CELL_UI:
 
         # Track singleton modals / key widgets
         self._settings_window = None
+        self._rename_window = None
         self.model_lbl = None
         self.btn_save_template = None
         self.btn_load_template = None
@@ -812,13 +1404,12 @@ class CELL_UI:
         self.btn_reject = None
         self.btn_exit = None
 
-        # Export Router (inline) widgets
-        self.export_router_frame = None
-        self.export_dest_var = None
-        self.export_dest_cb = None
-        self.export_options_frame = None
-        self.export_execute_btn = None
-        self._export_selected = None
+        # Send To panel widgets
+        self.panel_sendto = None
+        self.sendto_cb = None
+        self.sendto_btn = None
+        self._nexus_id_map = {}
+        self._response_ready = False
         
         # Restore window state from DB
         saved_geo = self.backend.get_setting('window_geometry')
@@ -838,27 +1429,212 @@ class CELL_UI:
             self.backend.bus.subscribe("push_to_nexus", self._handle_incoming_push)
             # Pass the new palette through so ttk/tk widgets can rebind safely.
             self.backend.bus.subscribe("theme_updated", self.refresh_theme)
+            # Cell identity signals
+            self.backend.bus.subscribe("cell_renamed", self._on_cell_renamed)
+            self.backend.bus.subscribe("update_window_title", self._update_window_title)
 
-    def _update_nexus_list(self, cell_list):
-        """Updates the Nexus dropdown with currently active cells."""
-        # Filter out self so we don't push to ourselves
-        targets = [name for name in cell_list if name != self.session_id]
-        self.nexus_cb['values'] = targets
+    def _update_nexus_list(self, cell_data):
+        """Updates the Send To dropdown with currently active cells."""
+        # cell_data is: {cell_id: {"id": ..., "name": ...}}
+        targets = [
+            f"{data['name']} ({cid})"
+            for cid, data in cell_data.items()
+            if cid != self.session_id
+        ]
 
-    def _on_push_to_nexus(self):
-        """Push result content to the selected target cell."""
-        target = self.nexus_var.get()
-        content = self.result_text.get("1.0", "end-1c")
-        if target in ["Select...", ""]:
+        if self.sendto_cb:
+            self.sendto_cb['values'] = ["New Cell"] + targets
+
+        # Store ID mapping for lookup
+        self._nexus_id_map = {
+            f"{data['name']} ({cid})": cid
+            for cid, data in cell_data.items()
+        }
+
+    def _update_sendto_state(self):
+        """Enables or disables SEND button based on response readiness and target selection."""
+        if not self.sendto_btn:
             return
-        self.backend.push_to_target(target, content)
+        target = self.sendto_var.get() if self.sendto_var else "Select..."
+        can_send = self._response_ready and target not in ("Select...", "")
+        self.sendto_btn.configure(state='normal' if can_send else 'disabled')
+
+    def _on_send_execute(self):
+        """Executes the Send To action based on current selections."""
+        target = self.sendto_var.get()
+        content_src = self.sendto_content_var.get()
+        destination = self.sendto_dest_var.get()
+
+        # Get content to send
+        if content_src == "response":
+            content = self.result_text.get("1.0", "end-1c")
+        else:
+            content = self.input_box.get("1.0", "end-1c")
+
+        source_name = self.backend.cell_name
+
+        if target == "New Cell":
+            artifact = self._get_current_artifact()
+            artifact['send_destination'] = destination
+            artifact['send_content'] = content
+            artifact['source_name'] = source_name
+            self.backend.spawn_child(artifact)
+        else:
+            target_id = self._nexus_id_map.get(target)
+            if not target_id:
+                return
+            payload = {
+                "target_id": target_id,
+                "content": content,
+                "source_id": self.session_id,
+                "source_name": source_name,
+                "destination": destination
+            }
+            self.backend.bus.emit("push_to_nexus", payload)
+
+    def add_onto_step(self, source_name: str, content: str):
+        """Public: Adds an ontological step (called by spawn handler or incoming push)."""
+        self._onto_steps.append({"source": source_name, "content": content})
+        self._rebuild_steps_ui()
+
+    def append_to_task(self, content: str):
+        """Public: Appends content to the Task box (called by spawn handler or incoming push)."""
+        current = self.input_box.get("1.0", "end-1c")
+        if current.strip():
+            self.input_box.insert('end', f"\n\n{content}")
+        else:
+            self.input_box.insert('end', content)
+
+    def _rebuild_steps_ui(self):
+        """Clears and redraws all step cards in the Ontological Steps frame."""
+        for widget in self.onto_steps_frame.winfo_children():
+            widget.destroy()
+
+        if not self._onto_steps:
+            tk.Label(
+                self.onto_steps_frame,
+                text="No ontological steps yet.",
+                bg=self.colors.get('background'),
+                fg=self.colors.get('foreground'),
+                font=("Segoe UI", 9, "italic"),
+                padx=8, pady=6
+            ).pack()
+            return
+
+        for idx, step in enumerate(self._onto_steps):
+            is_selected = (self._selected_step == idx)
+            header_bg = self.colors.get('accent') if is_selected else self.colors.get('panel_bg')
+            header_fg = self.colors.get('button_fg', 'white') if is_selected else self.colors.get('foreground')
+
+            card = tk.Frame(
+                self.onto_steps_frame,
+                bg=self.colors.get('panel_bg'),
+                bd=1, relief='solid'
+            )
+            card.pack(fill='x', padx=4, pady=2)
+
+            # Header row
+            header = tk.Frame(card, bg=header_bg, cursor='hand2')
+            header.pack(fill='x')
+
+            tk.Label(
+                header,
+                text=f"Step {idx + 1} — Source: {step['source']}",
+                bg=header_bg, fg=header_fg,
+                font=("Segoe UI", 8, "bold"),
+                padx=6, pady=3
+            ).pack(side='left')
+
+            _hbtn = {"bg": header_bg, "fg": header_fg, "relief": "flat",
+                     "font": ("Segoe UI", 9), "cursor": "hand2", "padx": 3}
+            tk.Button(header, text="✕", **_hbtn,
+                command=lambda i=idx: self._remove_onto_step(i)).pack(side='right', padx=(0, 4))
+            tk.Button(header, text="▼", **_hbtn,
+                command=lambda i=idx: self._move_step_down(i)).pack(side='right')
+            tk.Button(header, text="▲", **_hbtn,
+                command=lambda i=idx: self._move_step_up(i)).pack(side='right')
+
+            header.bind('<Button-1>', lambda e, i=idx: self._select_step(i))
+            for child in header.winfo_children():
+                if isinstance(child, tk.Label):
+                    child.bind('<Button-1>', lambda e, i=idx: self._select_step(i))
+
+            # Content (read-only)
+            txt = tk.Text(
+                card, height=3, wrap='word',
+                bg=self.colors.get('entry_bg', self.colors.get('panel_bg')),
+                fg=self.colors.get('entry_fg', self.colors.get('foreground')),
+                font=("Consolas", 9)
+            )
+            txt.insert('1.0', step['content'])
+            txt.configure(state='disabled')
+            txt.pack(fill='x', padx=4, pady=(0, 4))
+
+    def _select_step(self, idx: int):
+        """Selects or deselects a step (toggle)."""
+        self._selected_step = idx if self._selected_step != idx else None
+        self._rebuild_steps_ui()
+
+    def _remove_onto_step(self, idx: int):
+        """Removes a step by index."""
+        if 0 <= idx < len(self._onto_steps):
+            self._onto_steps.pop(idx)
+            if self._selected_step == idx:
+                self._selected_step = None
+            elif self._selected_step is not None and self._selected_step > idx:
+                self._selected_step -= 1
+            self._rebuild_steps_ui()
+
+    def _move_step_up(self, idx: int):
+        """Moves a step up one position."""
+        if idx > 0:
+            self._onto_steps[idx], self._onto_steps[idx - 1] = \
+                self._onto_steps[idx - 1], self._onto_steps[idx]
+            if self._selected_step == idx:
+                self._selected_step = idx - 1
+            elif self._selected_step == idx - 1:
+                self._selected_step = idx
+            self._rebuild_steps_ui()
+
+    def _move_step_down(self, idx: int):
+        """Moves a step down one position."""
+        if idx < len(self._onto_steps) - 1:
+            self._onto_steps[idx], self._onto_steps[idx + 1] = \
+                self._onto_steps[idx + 1], self._onto_steps[idx]
+            if self._selected_step == idx:
+                self._selected_step = idx + 1
+            elif self._selected_step == idx + 1:
+                self._selected_step = idx
+            self._rebuild_steps_ui()
+
+    def _serialize_onto_steps(self) -> str:
+        """Serializes the Ontological Steps stack for prompt injection.
+        
+        Each step is clearly labeled for both human and LLM readability.
+        Injected between system prompt and task at run time.
+        """
+        if not self._onto_steps:
+            return ""
+        parts = []
+        for i, step in enumerate(self._onto_steps):
+            parts.append(
+                f"### ONTOLOGICAL STEP {i + 1} | Source: {step['source']} ###\n"
+                f"{step['content']}"
+            )
+        return "\n\n".join(parts)
 
     def _handle_incoming_push(self, payload):
-        """Appends incoming data from another cell to the input box."""
-        if payload.get('target_id') == self.session_id:
-            header = f"\n\n--- INCOMING FROM {payload.get('source_id')} ---\n"
-            self.input_box.insert('end', header + payload.get('content'))
-            self.input_box.see('end')
+        """Routes incoming content from another cell to steps stack or task box."""
+        if payload.get('target_id') != self.session_id:
+            return
+        content = payload.get('content', '')
+        source_name = payload.get('source_name', payload.get('source_id', 'Unknown Cell'))
+        destination = payload.get('destination', 'task')
+
+        if destination == 'steps':
+            self.add_onto_step(source_name, content)
+        else:
+            self.append_to_task(content)
 
     def _on_log_append(self, content):
         """Marshals background thread signal to main UI thread."""
@@ -885,26 +1661,144 @@ class CELL_UI:
         self.panel_prompt = tk.Frame(self.container, bg=self.colors.get('background'))
         self.panel_prompt.pack(in_=self.left_col, fill='both', expand=True)
 
-        # --- Top Label ---
-        self.top_label = tk.Label(self.panel_prompt, text="Type in your idea HERE.", 
-                 fg=self.colors.get('foreground'), bg=self.colors.get('background'),
-                 font=("Segoe UI", 12, "bold"))
-        self.top_label.pack(pady=(10, 5))
+        # --- Cell Identity Bar ---
+        self.identity_bar = tk.Frame(self.panel_prompt, bg=self.colors.get('background'))
+        self.identity_bar.pack(pady=(10, 5), padx=10, fill='x')
+        
+        # Cell ID (read-only, left side)
+        self.cell_id_label = tk.Label(
+            self.identity_bar,
+            text=f"ID: {self.backend.cell_id}",
+            fg=self.colors.get('foreground'),
+            bg=self.colors.get('background'),
+            font=("Segoe UI", 9)
+        )
+        self.cell_id_label.pack(side='left', padx=(0, 10))
+        
+        # Cell Name (editable, center-left)
+        self.cell_name_label = tk.Label(
+            self.identity_bar,
+            text=self.backend.cell_name,
+            fg=self.colors.get('accent'),
+            bg=self.colors.get('background'),
+            font=("Segoe UI", 12, "bold"),
+            cursor="hand2"
+        )
+        self.cell_name_label.pack(side='left', padx=(0, 5))
+        self.cell_name_label.bind("<Double-Button-1>", lambda e: self._toggle_name_edit())
+        
+        # Cell Name Entry (hidden by default)
+        self.cell_name_entry = tk.Entry(
+            self.identity_bar,
+            fg=self.colors.get('foreground'),
+            bg=self.colors.get('entry_bg'),
+            insertbackground=self.colors.get('foreground'),
+            font=("Segoe UI", 12, "bold"),
+            relief="flat"
+        )
+        self.cell_name_entry.bind("<Return>", lambda e: self._save_name_edit())
+        self.cell_name_entry.bind("<Tab>", lambda e: self._save_name_edit())
+        self.cell_name_entry.bind("<Escape>", lambda e: self._cancel_name_edit())
+        
+        # Pencil button (edit toggle)
+        self.pencil_btn = tk.Button(
+            self.identity_bar,
+            text="✏",
+            bg=self.colors.get('background'),
+            fg=self.colors.get('foreground'),
+            relief="flat",
+            font=("Segoe UI", 12),
+            cursor="hand2",
+            command=self._toggle_name_edit
+        )
+        self.pencil_btn.pack(side='left', padx=(5, 0))
+        
+        # Track edit mode state
+        self._name_edit_mode = False
 
-        # --- Formatting Toolbar ---
-        self.toolbar = tk.Frame(self.panel_prompt, bg=self.colors.get('panel_bg'))
-        self.toolbar.pack(fill='x', padx=10)
+        # --- Tabbed Formatting Toolbar ---
+        self.toolbar_frame = tk.Frame(self.panel_prompt, bg=self.colors.get('panel_bg'))
+        self.toolbar_frame.pack(fill='x', padx=10)
         
-        btn_opts = {"bg": self.colors.get('panel_bg'), "fg": self.colors.get('foreground', 'white'), "relief": "flat", "padx": 5}
-        self.btn_bold = tk.Button(self.toolbar, text="B", font=("TkDefaultFont", 9, "bold"), **btn_opts, command=self._bold_text)
-        self.btn_bold.pack(side='left')
-        self.btn_italic = tk.Button(self.toolbar, text="I", font=("TkDefaultFont", 9, "italic"), **btn_opts, command=self._italic_text)
-        self.btn_italic.pack(side='left')
-        self.btn_list = tk.Button(self.toolbar, text="• List", **btn_opts, command=self._bullet_list)
-        self.btn_list.pack(side='left')
+        # Tab bar (top row)
+        self.tab_bar = tk.Frame(self.toolbar_frame, bg=self.colors.get('panel_bg'))
+        self.tab_bar.pack(fill='x')
         
-        self.btn_settings = tk.Button(self.toolbar, text="⚙", **btn_opts, command=self._open_settings)
+        _tab_btn_opts = {"relief": "flat", "padx": 8, "pady": 2, "font": ("Segoe UI", 8, "bold"), "cursor": "hand2"}
+        self._active_tab = "MD"
+        
+        self.tab_btn_md = tk.Button(self.tab_bar, text="MD",
+            bg=self.colors.get('accent'), fg=self.colors.get('button_fg', 'white'),
+            command=lambda: self._switch_toolbar_tab("MD"), **_tab_btn_opts)
+        self.tab_btn_md.pack(side='left')
+        
+        self.tab_btn_json = tk.Button(self.tab_bar, text="JSON",
+            bg=self.colors.get('panel_bg'), fg=self.colors.get('foreground'),
+            command=lambda: self._switch_toolbar_tab("JSON"), **_tab_btn_opts)
+        self.tab_btn_json.pack(side='left', padx=(2, 0))
+        
+        self.tab_btn_py = tk.Button(self.tab_bar, text="PY",
+            bg=self.colors.get('panel_bg'), fg=self.colors.get('foreground'),
+            command=lambda: self._switch_toolbar_tab("PY"), **_tab_btn_opts)
+        self.tab_btn_py.pack(side='left', padx=(2, 0))
+        
+        # Settings always pinned right
+        self.btn_settings = tk.Button(self.tab_bar, text="⚙",
+            bg=self.colors.get('panel_bg'), fg=self.colors.get('foreground'),
+            relief="flat", padx=5, command=self._open_settings)
         self.btn_settings.pack(side='right')
+        
+        # Button row container (swaps on tab change)
+        self.toolbar_content = tk.Frame(self.toolbar_frame, bg=self.colors.get('panel_bg'))
+        self.toolbar_content.pack(fill='x')
+        
+        # -- MD Button Row --
+        self.toolbar_md = tk.Frame(self.toolbar_content, bg=self.colors.get('panel_bg'))
+        self.toolbar_md.pack(fill='x')
+        
+        _btn = {"bg": self.colors.get('panel_bg'), "fg": self.colors.get('foreground'), "relief": "flat", "padx": 4, "pady": 1, "font": ("Segoe UI", 9), "cursor": "hand2"}
+        
+        # Headings group
+        tk.Button(self.toolbar_md, text="H1", font=("Segoe UI", 9, "bold"), **{k: v for k, v in _btn.items() if k != 'font'}, command=lambda: self._md_heading(1)).pack(side='left')
+        tk.Button(self.toolbar_md, text="H2", font=("Segoe UI", 9, "bold"), **{k: v for k, v in _btn.items() if k != 'font'}, command=lambda: self._md_heading(2)).pack(side='left')
+        tk.Button(self.toolbar_md, text="H3", font=("Segoe UI", 9, "bold"), **{k: v for k, v in _btn.items() if k != 'font'}, command=lambda: self._md_heading(3)).pack(side='left')
+        
+        tk.Label(self.toolbar_md, text="│", bg=self.colors.get('panel_bg'), fg=self.colors.get('foreground'), padx=2).pack(side='left')
+        
+        # Inline formatting group
+        tk.Button(self.toolbar_md, text="B", font=("Segoe UI", 9, "bold"), **{k: v for k, v in _btn.items() if k != 'font'}, command=self._md_bold).pack(side='left')
+        tk.Button(self.toolbar_md, text="I", font=("Segoe UI", 9, "italic"), **{k: v for k, v in _btn.items() if k != 'font'}, command=self._md_italic).pack(side='left')
+        tk.Button(self.toolbar_md, text="`code`", **_btn, command=self._md_inline_code).pack(side='left')
+        tk.Button(self.toolbar_md, text="```block", **_btn, command=self._md_code_block).pack(side='left')
+        
+        tk.Label(self.toolbar_md, text="│", bg=self.colors.get('panel_bg'), fg=self.colors.get('foreground'), padx=2).pack(side='left')
+        
+        # Structure group
+        tk.Button(self.toolbar_md, text="- List", **_btn, command=self._md_bullet_list).pack(side='left')
+        tk.Button(self.toolbar_md, text="1. List", **_btn, command=self._md_numbered_list).pack(side='left')
+        tk.Button(self.toolbar_md, text="❝ Quote", **_btn, command=self._md_blockquote).pack(side='left')
+        
+        tk.Label(self.toolbar_md, text="│", bg=self.colors.get('panel_bg'), fg=self.colors.get('foreground'), padx=2).pack(side='left')
+        
+        tk.Button(self.toolbar_md, text="---", **_btn, command=self._md_hr).pack(side='left')
+        
+        # Clear always pinned right
+        tk.Button(self.toolbar_md, text="✕ Clear",
+            bg=self.colors.get('panel_bg'), fg=self.colors.get('error', '#e06c75'),
+            relief="flat", padx=4, pady=1, font=("Segoe UI", 9), cursor="hand2",
+            command=self._md_clear_format).pack(side='right')
+        
+        # -- JSON stub row (hidden by default) --
+        self.toolbar_json = tk.Frame(self.toolbar_content, bg=self.colors.get('panel_bg'))
+        tk.Label(self.toolbar_json, text="JSON formatting — coming soon",
+            bg=self.colors.get('panel_bg'), fg=self.colors.get('foreground'),
+            font=("Segoe UI", 9, "italic"), padx=6).pack(side='left')
+        
+        # -- PY stub row (hidden by default) --
+        self.toolbar_py = tk.Frame(self.toolbar_content, bg=self.colors.get('panel_bg'))
+        tk.Label(self.toolbar_py, text="Python formatting — coming soon",
+            bg=self.colors.get('panel_bg'), fg=self.colors.get('foreground'),
+            font=("Segoe UI", 9, "italic"), padx=6).pack(side='left')
 
         # --- Inference Config Section ---
         self.config_frame = tk.LabelFrame(self.panel_prompt, text=" Inference Parameters ", 
@@ -969,14 +1863,46 @@ class CELL_UI:
 
         self.config_frame.columnconfigure(1, weight=1)
 
-        # --- Inherited Context (The DNA) ---
-        tk.Label(self.panel_prompt, text="Inherited Context (Reference Only):", bg=self.colors.get('background'), fg=self.colors.get('foreground'), font=("Segoe UI", 8, "bold")).pack(anchor='w', padx=10)
-        self.context_view = tk.Text(
-            self.panel_prompt, height=6, wrap="word", 
-            bg=self.colors.get('panel_bg'), fg=self.colors.get('entry_fg'),
-            font=("Consolas", 10), state='normal'
+        # --- Ontological Steps Stack ---
+        self.onto_steps_lf = tk.LabelFrame(
+            self.panel_prompt,
+            text=" Ontological Steps ",
+            fg=self.colors.get('foreground'),
+            bg=self.colors.get('background'),
+            relief='solid', bd=1,
+            font=("Segoe UI", 8, "bold")
         )
-        self.context_view.pack(fill='x', padx=10, pady=(0, 10))
+        self.onto_steps_lf.pack(fill='x', padx=10, pady=(0, 6))
+
+        self._onto_canvas = tk.Canvas(
+            self.onto_steps_lf,
+            bg=self.colors.get('background'),
+            highlightthickness=0,
+            height=120
+        )
+        self._onto_scrollbar = ttk.Scrollbar(
+            self.onto_steps_lf,
+            orient='vertical',
+            command=self._onto_canvas.yview
+        )
+        self.onto_steps_frame = tk.Frame(self._onto_canvas, bg=self.colors.get('background'))
+        self._onto_canvas_window = self._onto_canvas.create_window((0, 0), window=self.onto_steps_frame, anchor='nw')
+        self._onto_canvas.configure(yscrollcommand=self._onto_scrollbar.set)
+        self.onto_steps_frame.bind('<Configure>', lambda e: self._onto_canvas.configure(
+            scrollregion=self._onto_canvas.bbox('all')
+        ))
+        self._onto_canvas.bind('<Configure>', lambda e: self._onto_canvas.itemconfig(
+            self._onto_canvas_window, width=e.width
+        ))
+        self._onto_canvas.pack(side='left', fill='both', expand=True)
+        self._onto_scrollbar.pack(side='right', fill='y')
+
+        # Step data model
+        self._onto_steps = []    # list of {"source": str, "content": str}
+        self._selected_step = None
+
+        # Initial empty state
+        self._rebuild_steps_ui()
 
         # --- User Request (The Ask) ---
         tk.Label(self.panel_prompt, text="Your Request / Task:", bg=self.colors.get('background'), fg=self.colors.get('foreground'), font=("Segoe UI", 9, "bold")).pack(anchor='w', padx=10)
@@ -1111,66 +2037,73 @@ class CELL_UI:
         )
         self.btn_exit.pack(side='right')
 
-        # Phase 1: Nexus Pipeline Controls
-        tk.Label(hitl_bar, text="Target Nexus:", bg=self.colors.get('background'), fg=self.colors.get('foreground')).pack(side='left', padx=(10, 2))
-        self.nexus_var = tk.StringVar(value="Select...")
-        self.nexus_cb = ttk.Combobox(hitl_bar, textvariable=self.nexus_var, state='readonly', width=15)
-        self.nexus_cb.pack(side='left', padx=2)
 
-        self.btn_push = tk.Button(
-            hitl_bar, text="PUSH", bg=self.colors.get('accent'), fg="white",
-            relief="flat", command=self._on_push_to_nexus
-        )
-        self.btn_push.pack(side='left', padx=2)
-
-        # PANEL 4 — Export / Spawn (inline router)
-        self.panel_export = tk.LabelFrame(
+        # PANEL 4 — Send To
+        self.panel_sendto = tk.LabelFrame(
             self.container,
-            text=" Export / Spawn ",
+            text=" Send To ",
             fg=self.colors.get('foreground'),
             bg=self.colors.get('background'),
             relief='solid', bd=1, font=("Segoe UI", 9, "bold")
         )
-        self.panel_export.pack(in_=self.right_col, fill='x', padx=10, pady=(0, 12))
+        self.panel_sendto.pack(in_=self.right_col, fill='x', padx=10, pady=(0, 12))
 
-        self.export_router_frame = tk.Frame(self.panel_export, bg=self.colors.get('background'))
-        self.export_router_frame.pack(fill='x', padx=10, pady=10)
+        _st = tk.Frame(self.panel_sendto, bg=self.colors.get('background'))
+        _st.pack(fill='x', padx=10, pady=8)
 
-        top_row = tk.Frame(self.export_router_frame, bg=self.colors.get('background'))
-        top_row.pack(fill='x')
+        # Row 1: Target selector
+        _row1 = tk.Frame(_st, bg=self.colors.get('background'))
+        _row1.pack(fill='x', pady=(0, 4))
+        tk.Label(_row1, text="Send To:", bg=self.colors.get('background'),
+            fg=self.colors.get('foreground'), font=("Segoe UI", 9, "bold"),
+            width=10, anchor='w').pack(side='left')
+        self.sendto_var = tk.StringVar(value="Select...")
+        self.sendto_cb = ttk.Combobox(_row1, textvariable=self.sendto_var,
+            state='readonly', values=["New Cell"])
+        self.sendto_cb.pack(side='left', fill='x', expand=True, padx=(4, 0))
+        self.sendto_cb.bind('<<ComboboxSelected>>', lambda e: self._update_sendto_state())
 
-        tk.Label(top_row, text="Destination:", bg=self.colors.get('background'), fg=self.colors.get('foreground', 'white')).pack(side='left')
+        # Row 2: What to send
+        _row2 = tk.Frame(_st, bg=self.colors.get('background'))
+        _row2.pack(fill='x', pady=(0, 4))
+        tk.Label(_row2, text="Send:", bg=self.colors.get('background'),
+            fg=self.colors.get('foreground'), font=("Segoe UI", 9, "bold"),
+            width=10, anchor='w').pack(side='left')
+        self.sendto_content_var = tk.StringVar(value="response")
+        tk.Radiobutton(_row2, text="Current Response", variable=self.sendto_content_var,
+            value="response", bg=self.colors.get('background'),
+            fg=self.colors.get('foreground'), selectcolor=self.colors.get('panel_bg'),
+            font=("Segoe UI", 9)).pack(side='left')
+        tk.Radiobutton(_row2, text="Task Input", variable=self.sendto_content_var,
+            value="task", bg=self.colors.get('background'),
+            fg=self.colors.get('foreground'), selectcolor=self.colors.get('panel_bg'),
+            font=("Segoe UI", 9)).pack(side='left', padx=(8, 0))
 
-        self.export_dest_var = tk.StringVar(value="Spawn")
-        self.export_dest_cb = ttk.Combobox(
-            top_row, 
-            textvariable=self.export_dest_var, 
-            state='readonly', 
-            values=["Spawn", "File", "Database", "Vector", "Code", "Patch", "Logs"]
+        # Row 3: Destination within target cell
+        _row3 = tk.Frame(_st, bg=self.colors.get('background'))
+        _row3.pack(fill='x', pady=(0, 6))
+        tk.Label(_row3, text="Into:", bg=self.colors.get('background'),
+            fg=self.colors.get('foreground'), font=("Segoe UI", 9, "bold"),
+            width=10, anchor='w').pack(side='left')
+        self.sendto_dest_var = tk.StringVar(value="steps")
+        tk.Radiobutton(_row3, text="Ontological Steps", variable=self.sendto_dest_var,
+            value="steps", bg=self.colors.get('background'),
+            fg=self.colors.get('foreground'), selectcolor=self.colors.get('panel_bg'),
+            font=("Segoe UI", 9)).pack(side='left')
+        tk.Radiobutton(_row3, text="Task Box", variable=self.sendto_dest_var,
+            value="task", bg=self.colors.get('background'),
+            fg=self.colors.get('foreground'), selectcolor=self.colors.get('panel_bg'),
+            font=("Segoe UI", 9)).pack(side='left', padx=(8, 0))
+
+        # Send button (greyed out until response exists and target selected)
+        self.sendto_btn = tk.Button(
+            _st, text="SEND",
+            bg=self.colors.get('accent'), fg=self.colors.get('button_fg', 'white'),
+            relief='flat', state='disabled',
+            command=self._on_send_execute
         )
-        self.export_dest_cb.pack(side='left', padx=8, fill='x', expand=True)
+        self.sendto_btn.pack(fill='x')
 
-        self.export_execute_btn = tk.Button(
-            top_row, text="EXECUTE", 
-            bg=self.colors.get('accent'),
-            fg=self.colors.get('button_fg', 'white'),
-            relief="flat", state='disabled', command=self._handle_export
-        )
-        self.export_execute_btn.pack(side='right')
-
-        self.export_options_frame = tk.Frame(self.export_router_frame, bg=self.colors.get('background'))
-        self.export_options_frame.pack(fill='x', pady=(8, 0))
-
-    def _build_export_options(dest: str):
-        for w in self.export_options_frame.winfo_children(): w.destroy()
-        if dest == "Spawn":
-            tk.Button(self.export_options_frame, text="Spawn Child Cell", bg=self.colors.get('panel_bg'), fg=self.colors.get('button_fg', self.colors.get('foreground')), relief='flat', state='disabled').pack(fill='x', pady=2)
-        elif dest == "File":
-            for fmt in ("JSON", "Markdown", "Text"):
-                tk.Button(self.export_options_frame, text=f"Save {fmt}", bg=self.colors.get('panel_bg'), fg=self.colors.get('button_fg', self.colors.get('foreground')), relief='flat', state='disabled').pack(fill='x', pady=2)
-
-        self.export_dest_cb.bind('<<ComboboxSelected>>', lambda _e: _build_export_options(self.export_dest_var.get()))
-        _build_export_options("Spawn")
 
     def _get_current_artifact(self):
         """Helper to package UI state into a standard artifact."""
@@ -1183,23 +2116,6 @@ class CELL_UI:
             "metadata": {"model": self.model_var.get(), "source": "ui_action"}
         }
 
-    def _handle_export(self):
-        """Routes the execution command based on the selected destination."""
-        dest = self.export_dest_var.get()
-        artifact = self._get_current_artifact()
-
-        if dest == "Spawn":
-            self.backend.spawn_child(artifact)
-        elif dest == "File":
-            path = filedialog.asksaveasfilename(defaultextension=".txt", parent=self.shell.root)
-            if path:
-                self.backend.export_artifact(artifact, "File", path)
-        elif dest == "Vector":
-            # Save to default long-term memory bank
-            self.backend.export_artifact(artifact, "Vector")
-            messagebox.showinfo("Memory", "Artifact embedded into Vector Store.", parent=self.shell.root)
-        else:
-            messagebox.showinfo("Not Implemented", f"Export to {dest} is coming soon!", parent=self.shell.root)
 
     def _on_accept(self):
         """HITL: User approves the result."""
@@ -1228,34 +2144,164 @@ class CELL_UI:
         self.btn_reject.configure(state='disabled')
         self.input_box.focus_set()
 
-    def _apply_markdown_style(self, prefix, suffix=""):
-        """Wraps selected text in Markdown markers for AI readability."""
+    # -------------------------------------------------------------------------
+    # Toolbar Tab Switching
+    # -------------------------------------------------------------------------
+
+    def _switch_toolbar_tab(self, tab_name):
+        """Swaps the visible toolbar button row and updates tab highlight."""
+        self._active_tab = tab_name
+        
+        # Hide all content rows
+        self.toolbar_md.pack_forget()
+        self.toolbar_json.pack_forget()
+        self.toolbar_py.pack_forget()
+        
+        # Show selected row
+        tab_map = {"MD": self.toolbar_md, "JSON": self.toolbar_json, "PY": self.toolbar_py}
+        tab_map[tab_name].pack(fill='x')
+        
+        # Update tab button highlight
+        btn_map = {"MD": self.tab_btn_md, "JSON": self.tab_btn_json, "PY": self.tab_btn_py}
+        for name, btn in btn_map.items():
+            if name == tab_name:
+                btn.configure(bg=self.colors.get('accent'), fg=self.colors.get('button_fg', 'white'))
+            else:
+                btn.configure(bg=self.colors.get('panel_bg'), fg=self.colors.get('foreground'))
+
+    # -------------------------------------------------------------------------
+    # MD Formatting Helpers
+    # -------------------------------------------------------------------------
+
+    def _md_wrap_selection(self, prefix, suffix=None):
+        """Wraps selected text with prefix/suffix. If no selection, inserts placeholder."""
+        suffix = suffix if suffix is not None else prefix
         try:
             start = self.input_box.index("sel.first")
-            end = self.input_box.index("sel.second")
-            selected_text = self.input_box.get(start, end)
+            end = self.input_box.index("sel.last")
+            selected = self.input_box.get(start, end)
             self.input_box.delete(start, end)
-            self.input_box.insert(start, f"{prefix}{selected_text}{suffix or prefix}")
+            self.input_box.insert(start, f"{prefix}{selected}{suffix}")
         except tk.TclError:
-            pass
+            self.input_box.insert("insert", f"{prefix}{suffix}")
+            # Move cursor between the markers
+            cursor = self.input_box.index("insert")
+            line, col = cursor.split('.')
+            self.input_box.mark_set("insert", f"{line}.{int(col) - len(suffix)}")
 
-    def _bold_text(self):
-        self._apply_markdown_style("**")
-
-    def _italic_text(self):
-        self._apply_markdown_style("_")
-
-    def _bullet_list(self):
-        """Converts selected lines into a Markdown bulleted list."""
+    def _md_prefix_lines(self, prefix):
+        """Prefixes each selected line. Falls back to inserting on current line."""
         try:
             start = self.input_box.index("sel.first linestart")
-            end = self.input_box.index("sel.second lineend")
+            end = self.input_box.index("sel.last lineend")
             lines = self.input_box.get(start, end).splitlines()
-            bulleted_lines = [f"* {line.lstrip('* ')}" for line in lines]
+            prefixed = [f"{prefix}{line}" for line in lines]
             self.input_box.delete(start, end)
-            self.input_box.insert(start, "\n".join(bulleted_lines))
+            self.input_box.insert(start, "\n".join(prefixed))
         except tk.TclError:
-            self.input_box.insert("insert", "* ")
+            line_start = self.input_box.index("insert linestart")
+            self.input_box.insert(line_start, prefix)
+
+    def _md_heading(self, level):
+        """Inserts or replaces heading prefix on selected lines."""
+        prefix = "#" * level + " "
+        try:
+            start = self.input_box.index("sel.first linestart")
+            end = self.input_box.index("sel.last lineend")
+            lines = self.input_box.get(start, end).splitlines()
+            # Strip existing heading markers before applying new ones
+            stripped = [l.lstrip("# ") for l in lines]
+            prefixed = [f"{prefix}{l}" for l in stripped]
+            self.input_box.delete(start, end)
+            self.input_box.insert(start, "\n".join(prefixed))
+        except tk.TclError:
+            line_start = self.input_box.index("insert linestart")
+            line_text = self.input_box.get(line_start, f"{line_start} lineend")
+            self.input_box.delete(line_start, f"{line_start} lineend")
+            self.input_box.insert(line_start, f"{prefix}{line_text.lstrip('# ')}")
+
+    def _md_bold(self):
+        self._md_wrap_selection("**")
+
+    def _md_italic(self):
+        self._md_wrap_selection("_")
+
+    def _md_inline_code(self):
+        self._md_wrap_selection("`")
+
+    def _md_code_block(self):
+        """Wraps selection in a fenced code block."""
+        try:
+            start = self.input_box.index("sel.first linestart")
+            end = self.input_box.index("sel.last lineend")
+            selected = self.input_box.get(start, end)
+            self.input_box.delete(start, end)
+            self.input_box.insert(start, f"```\n{selected}\n```")
+        except tk.TclError:
+            self.input_box.insert("insert", "```\n\n```")
+            # Move cursor inside the block
+            cursor = self.input_box.index("insert")
+            line, _ = cursor.split('.')
+            self.input_box.mark_set("insert", f"{int(line) - 1}.0")
+
+    def _md_bullet_list(self):
+        """Prefixes selected lines with - for a bulleted list."""
+        self._md_prefix_lines("- ")
+
+    def _md_numbered_list(self):
+        """Prefixes selected lines with incrementing numbers."""
+        try:
+            start = self.input_box.index("sel.first linestart")
+            end = self.input_box.index("sel.last lineend")
+            lines = self.input_box.get(start, end).splitlines()
+            numbered = [f"{i + 1}. {line}" for i, line in enumerate(lines)]
+            self.input_box.delete(start, end)
+            self.input_box.insert(start, "\n".join(numbered))
+        except tk.TclError:
+            self.input_box.insert("insert", "1. ")
+
+    def _md_blockquote(self):
+        """Prefixes selected lines with > for a blockquote."""
+        self._md_prefix_lines("> ")
+
+    def _md_hr(self):
+        """Inserts a horizontal rule on a new line."""
+        cursor = self.input_box.index("insert")
+        self.input_box.insert(cursor, "\n---\n")
+
+    def _md_clear_format(self):
+        """Strips all Markdown formatting from selected text (or entire box)."""
+        import re
+        try:
+            start = self.input_box.index("sel.first")
+            end = self.input_box.index("sel.last")
+            text = self.input_box.get(start, end)
+        except tk.TclError:
+            start = "1.0"
+            end = "end-1c"
+            text = self.input_box.get(start, end)
+        
+        # Strip fenced code blocks markers
+        text = re.sub(r'^```[\w]*\n?', '', text, flags=re.MULTILINE)
+        # Strip headings
+        text = re.sub(r'^#{1,6}\s+', '', text, flags=re.MULTILINE)
+        # Strip bold/italic (order matters: bold first)
+        text = re.sub(r'\*\*(.+?)\*\*', r'\1', text)
+        text = re.sub(r'__(.+?)__', r'\1', text)
+        text = re.sub(r'\*(.+?)\*', r'\1', text)
+        text = re.sub(r'_(.+?)_', r'\1', text)
+        # Strip inline code
+        text = re.sub(r'`(.+?)`', r'\1', text)
+        # Strip bullet/number list prefixes
+        text = re.sub(r'^[-*+]\s+', '', text, flags=re.MULTILINE)
+        text = re.sub(r'^\d+\.\s+', '', text, flags=re.MULTILINE)
+        # Strip blockquotes
+        text = re.sub(r'^>\s+', '', text, flags=re.MULTILINE)
+        # Strip horizontal rules
+        text = re.sub(r'^---+\s*$', '', text, flags=re.MULTILINE)
+        
+        self.input_box.delete(start, end)
+        self.input_box.insert(start, text)
 
     def _update_widget(self, widget, content):
         if isinstance(widget, tk.Entry):
@@ -1280,18 +2326,19 @@ class CELL_UI:
         self.infer_log.configure(state='disabled')
 
     def display_result(self, text: str):
-        """Displays the final artifact and enables HITL buttons."""
+        """Displays the final artifact and enables HITL + Send To controls."""
         self.result_text.configure(state='normal')
         self.result_text.delete('1.0', 'end')
         self.result_text.insert('1.0', text)
         self.result_text.configure(state='disabled')
-        
+
         if self.btn_accept:
             self.btn_accept.configure(state='normal')
         if self.btn_reject:
             self.btn_reject.configure(state='normal')
-        if self.export_execute_btn:
-            self.export_execute_btn.configure(state='normal')
+
+        self._response_ready = True
+        self._update_sendto_state()
 
     def _save_repo_dialog(self, table, content):
         """Modular save dialog for individual repositories."""
@@ -1520,6 +2567,8 @@ class CELL_UI:
         self.menu.add_command(label="Cut", command=lambda: self.input_box.event_generate("<<Cut>>"))
         self.menu.add_command(label="Copy", command=lambda: self.input_box.event_generate("<<Copy>>"))
         self.menu.add_command(label="Paste", command=lambda: self.input_box.event_generate("<<Paste>>"))
+        self.menu.add_separator()
+        self.menu.add_command(label="Rename Cell...", command=self._open_rename_dialog)
         self.input_box.bind("<Button-3>", lambda e: self.menu.post(e.x_root, e.y_root))
 
     def _save_full_template(self):
@@ -1546,7 +2595,11 @@ class CELL_UI:
     def _submit(self):
         """Process submission, persist parameters, and update UI consoles."""
         content = self.input_box.get("1.0", "end-1c")
-        inherited = self.context_view.get("1.0", "end-1c")
+        inherited = self._serialize_onto_steps()
+
+        # Reset response state for new run
+        self._response_ready = False
+        self._update_sendto_state()
         model = self.model_var.get()
         role = self.role_entry.get()
         prompt = self.prompt_text.get("1.0", "end-1c")
@@ -1701,6 +2754,90 @@ class CELL_UI:
         # Export buttons
         if self.export_execute_btn is not None:
             self.export_execute_btn.configure(bg=self.colors.get('accent'), fg=self.colors.get('button_fg', 'white'))
+
+    def _on_cell_renamed(self, data):
+        """Handles cell rename events."""
+        # Update identity display when rename happens
+        self._update_identity_display()
+        # Exit edit mode if currently editing
+        if self._name_edit_mode:
+            self._exit_edit_mode()
+
+    def _update_window_title(self, new_title):
+        """Updates the window title."""
+        self.shell.root.title(new_title)
+
+    def _open_rename_dialog(self):
+        """Opens a dialog to rename the current cell."""
+        # Singleton pattern - only one rename dialog at a time
+        if self._rename_window is not None and self._rename_window.winfo_exists():
+            self._rename_window.focus()
+            return
+        
+        new_name = simpledialog.askstring(
+            "Rename Cell",
+            f"Enter new name for '{self.backend.cell_name}':",
+            initialvalue=self.backend.cell_name,
+            parent=self.shell.root
+        )
+        
+        if new_name and new_name.strip():
+            self.backend.rename_cell(new_name.strip())
+            self._update_identity_display()
+
+    def _toggle_name_edit(self):
+        """Toggles between label and entry mode for cell name."""
+        if self._name_edit_mode:
+            # Currently editing - save and exit edit mode
+            self._save_name_edit()
+        else:
+            # Enter edit mode
+            self._name_edit_mode = True
+            
+            # Hide label, show entry
+            self.cell_name_label.pack_forget()
+            self.cell_name_entry.delete(0, 'end')
+            self.cell_name_entry.insert(0, self.backend.cell_name)
+            self.cell_name_entry.pack(side='left', padx=(0, 5), fill='x', expand=True)
+            self.cell_name_entry.focus()
+            self.cell_name_entry.select_range(0, 'end')
+
+    def _save_name_edit(self):
+        """Saves the edited cell name and exits edit mode."""
+        if not self._name_edit_mode:
+            return
+        
+        new_name = self.cell_name_entry.get().strip()
+        
+        if new_name and new_name != self.backend.cell_name:
+            # Name changed - propagate through backend
+            self.backend.rename_cell(new_name)
+        
+        # Exit edit mode
+        self._exit_edit_mode()
+
+    def _cancel_name_edit(self):
+        """Cancels editing without saving."""
+        if self._name_edit_mode:
+            self._exit_edit_mode()
+
+    def _exit_edit_mode(self):
+        """Exits edit mode and restores label display."""
+        self._name_edit_mode = False
+        
+        # Hide entry, show label
+        self.cell_name_entry.pack_forget()
+        self.cell_name_label.configure(text=self.backend.cell_name)
+        self.cell_name_label.pack(side='left', padx=(0, 5))
+
+    def _update_identity_display(self):
+        """Updates the cell identity display (called after rename)."""
+        self.cell_name_label.configure(text=self.backend.cell_name)
+        self.cell_id_label.configure(text=f"ID: {self.backend.cell_id}")
+
+
+
+
 
 
 
@@ -6521,3 +7658,1234 @@ if __name__ == "__main__":
     app = TkUiMapperApp()
     app.mainloop()
 
+
+--------------------------------------------------------------------------------
+FILE: _radomDOCS\architecture_overview.py
+--------------------------------------------------------------------------------
+"""
+Enhanced Cell Identity System - Architecture Overview
+=====================================================
+
+ASCII ARCHITECTURE DIAGRAM
+==========================
+
+                         ┌─────────────────────────────┐
+                         │   CellRegistry (Singleton)   │
+                         │                             │
+                         │  • Tracks all active cells  │
+                         │  • Manages relationships    │
+                         │  • Propagates name changes  │
+                         └──────────────┬──────────────┘
+                                        │
+                    ┌───────────────────┼───────────────────┐
+                    │                   │                   │
+            ┌───────▼────────┐  ┌──────▼───────┐  ┌───────▼────────┐
+            │  CellIdentity  │  │ CellIdentity │  │  CellIdentity  │
+            │   (Root Cell)  │  │  (Child 1)   │  │  (Child 2)     │
+            │                │  │              │  │                │
+            │ ID: cell_abc   │  │ ID: cell_def │  │ ID: cell_ghi   │
+            │ Name: "Root"   │  │ Name: "Mem"  │  │ Name: "Reason" │
+            │ Parent: None   │  │ Parent: abc  │  │ Parent: abc    │
+            │ Children:      │  │ Children:    │  │ Children:      │
+            │  - cell_def    │  │  - cell_jkl  │  │   []           │
+            │  - cell_ghi    │  │              │  │                │
+            └────────────────┘  └──────┬───────┘  └────────────────┘
+                                       │
+                               ┌───────▼────────┐
+                               │  CellIdentity  │
+                               │  (Grandchild)  │
+                               │                │
+                               │ ID: cell_jkl   │
+                               │ Name: "Store"  │
+                               │ Parent: def    │
+                               │ Children: []   │
+                               └────────────────┘
+
+
+NAME PROPAGATION FLOW
+=====================
+
+Step 1: User renames Child 1 from "Mem" to "Memory Specialist"
+    │
+    ├─> CellIdentity.rename("Memory Specialist")
+    │       └─> Returns: ("Mem", "Memory Specialist")
+    │
+    ├─> CellRegistry.rename_cell(cell_def, "Memory Specialist")
+    │       ├─> Updates Cell's own identity
+    │       ├─> Finds Parent (cell_abc)
+    │       │       └─> Updates parent.children["cell_def"] = "Memory Specialist"
+    │       └─> Emits "cell_renamed" signal to all listeners
+    │
+    └─> SignalBus broadcasts to all Backends
+            ├─> Root Cell UI updates its children list display
+            ├─> Grandchild UI updates "Parent: Memory Specialist"
+            └─> Nexus dropdowns update to show new name
+
+
+RELATIONSHIP TRACKING
+=====================
+
+Parent → Child Relationship:
+    parent.identity.children = {
+        "cell_id_1": "Child Name 1",
+        "cell_id_2": "Child Name 2"
+    }
+
+Child → Parent Relationship:
+    child.identity.parent_id = "parent_cell_id"
+
+Registry maintains BOTH directions simultaneously.
+
+
+QUICK START INTEGRATION
+========================
+
+1. Copy enhanced_cell_identity.py to your src/ directory
+
+2. In src/app.py, create global registry:
+   
+   from enhanced_cell_identity import CellRegistry
+   
+   global_registry = CellRegistry()
+
+3. Pass registry to all Backend instances:
+   
+   backend = Backend(registry=global_registry, ...)
+
+4. Add rename capability to UI:
+   
+   # In your settings or context menu:
+   def rename_cell():
+       new_name = simpledialog.askstring("Rename", "New name:")
+       if new_name:
+           backend.rename_cell(new_name)
+
+5. Subscribe to rename events:
+   
+   backend.bus.subscribe("cell_renamed", handle_rename)
+
+
+DATA STRUCTURES
+===============
+
+CellIdentity {
+    cell_id: str                    # "cell_20260216210345_a3b4c5d6"
+    cell_name: str                  # "Memory Specialist"
+    parent_id: Optional[str]        # "cell_20260216205500_x1y2z3a4"
+    children: Dict[str, str]        # {"child_id": "Child Name", ...}
+    created_at: str                 # ISO timestamp
+    renamed_at: Optional[str]       # ISO timestamp of last rename
+}
+
+CellRegistry {
+    _cells: Dict[str, CellIdentity]  # All registered cells
+    _lock: threading.Lock            # Thread-safe operations
+    _change_listeners: List[callable] # For UI updates
+}
+
+
+EXAMPLE USAGE
+=============
+
+# Create registry
+registry = CellRegistry()
+
+# Create root cell
+root = Backend(
+    registry=registry,
+    cell_name="Root Cognition"
+)
+
+# Spawn child
+child = Backend(
+    registry=registry,
+    parent_id=root.cell_id,
+    cell_name=f"Child of {root.cell_name}"
+)
+
+# Registry automatically updated!
+print(root.identity.children)
+# Output: {"cell_..._xyz": "Child of Root Cognition"}
+
+# Rename child
+child.rename_cell("Memory Module")
+
+# Parent's record automatically updated!
+print(root.identity.children)
+# Output: {"cell_..._xyz": "Memory Module"}
+
+# Get full lineage
+lineage = registry.get_lineage(child.cell_id)
+# Output: [root.cell_id, child.cell_id]
+
+
+SIGNAL BUS EVENTS
+=================
+
+The system emits these events through your existing SignalBusMS:
+
+1. "cell_registered"
+   Data: CellIdentity object
+   When: New cell created
+
+2. "cell_unregistered"
+   Data: CellIdentity object
+   When: Cell window closed
+
+3. "cell_renamed"
+   Data: {
+       "cell_id": "...",
+       "old_name": "...",
+       "new_name": "..."
+   }
+   When: Cell renamed
+
+4. "update_window_title"
+   Data: "New Title String"
+   When: Cell renamed (convenience event)
+
+
+THREADING CONSIDERATIONS
+=========================
+
+The CellRegistry uses a threading.Lock to ensure thread-safety.
+
+All registry operations are atomic:
+- register_cell()
+- unregister_cell()
+- rename_cell()
+- get_cell()
+- get_all_cells()
+
+You can safely call these from:
+- Main UI thread
+- Background inference threads
+- Signal bus callbacks
+
+
+PERSISTENCE STRATEGY (Optional)
+================================
+
+To persist the registry across app restarts:
+
+1. On registry change, save to disk:
+   
+   def save_registry():
+       data = registry.export_registry()
+       with open('registry.json', 'w') as f:
+           f.write(data)
+
+2. On app startup, restore:
+   
+   def load_registry():
+       if os.path.exists('registry.json'):
+           with open('registry.json') as f:
+               data = json.load(f)
+               # Recreate cells from saved data
+               for cell_data in data['cells'].values():
+                   # Restore backend instances...
+
+3. Consider using SQLite instead of JSON for better concurrent access
+
+
+DEBUGGING TIPS
+==============
+
+1. Export registry to see full state:
+   print(registry.export_registry())
+
+2. Check cell lineage:
+   lineage = registry.get_lineage(cell_id)
+   for cid in lineage:
+       cell = registry.get_cell(cid)
+       print(f"  {cell.cell_name} ({cid})")
+
+3. Verify bidirectional relationships:
+   parent = registry.get_cell(parent_id)
+   child = registry.get_cell(child_id)
+   
+   assert child_id in parent.children
+   assert child.parent_id == parent_id
+
+4. Monitor events:
+   def debug_listener(event_type, data):
+       print(f"[REGISTRY EVENT] {event_type}: {data}")
+   
+   registry.add_change_listener(debug_listener)
+
+
+MIGRATION CHECKLIST
+===================
+
+□ Copy enhanced_cell_identity.py to src/
+□ Import CellRegistry in app.py
+□ Create global_registry = CellRegistry()
+□ Modify Backend.__init__ to accept registry
+□ Pass registry to all Backend instances
+□ Add backend.rename_cell() method
+□ Add rename UI (dialog + menu item)
+□ Subscribe to cell_renamed signal
+□ Update window title on rename
+□ Update nexus dropdown to show names
+□ Test: create → rename → spawn → rename parent → verify propagation
+□ Optional: Add cell info bar showing name/ID
+□ Optional: Add family tree viewer
+□ Optional: Persist registry to disk
+
+
+NEXT STEPS
+==========
+
+Once integrated, you can build on this foundation:
+
+1. Cell Specialization
+   - Add cell_type field to CellIdentity
+   - Track what each cell is good at
+   - Auto-route tasks to specialized cells
+
+2. Emergent Behavior Tracking
+   - Record successful inference patterns per cell
+   - Identify which cells produce best results
+   - Spawn more of successful cell types
+
+3. Cell Communication Patterns
+   - Track which cells talk to which
+   - Identify communication bottlenecks
+   - Optimize information flow
+
+4. Evolutionary Selection
+   - Track cell performance metrics
+   - "Kill" underperforming cells
+   - Spawn from high-performers
+"""
+
+
+# =============================================================================
+# VISUAL EXAMPLE: Cell Hierarchy Display
+# =============================================================================
+
+def print_cell_tree(registry: CellRegistry, root_id: str, indent: int = 0):
+    """
+    Pretty-prints the cell hierarchy as a tree.
+    
+    Example output:
+    
+    Root Cognition [cell_abc]
+    ├── Memory Specialist [cell_def]
+    │   └── Knowledge Store [cell_jkl]
+    └── Reasoning Module [cell_ghi]
+    """
+    cell = registry.get_cell(root_id)
+    if not cell:
+        return
+    
+    prefix = "│   " * indent
+    connector = "├── " if indent > 0 else ""
+    
+    print(f"{prefix}{connector}{cell.cell_name} [{cell.cell_id}]")
+    
+    children_ids = list(cell.children.keys())
+    for i, child_id in enumerate(children_ids):
+        is_last = (i == len(children_ids) - 1)
+        child_connector = "└── " if is_last else "├── "
+        child_prefix = "    " if is_last else "│   "
+        
+        child_cell = registry.get_cell(child_id)
+        if child_cell:
+            print(f"{prefix}{'│   ' * indent}{child_connector}{child_cell.cell_name} [{child_id}]")
+            
+            # Recurse for grandchildren
+            if child_cell.children:
+                print_cell_tree(registry, child_id, indent + 1)
+
+
+if __name__ == "__main__":
+    # Demonstration
+    from enhanced_cell_identity import CellRegistry, CellIdentity
+    
+    registry = CellRegistry()
+    
+    # Create root
+    root = CellIdentity(cell_id="cell_abc", cell_name="Root Cognition")
+    registry.register_cell(root)
+    
+    # Create children
+    mem = CellIdentity(
+        cell_id="cell_def",
+        cell_name="Memory Specialist",
+        parent_id="cell_abc"
+    )
+    registry.register_cell(mem)
+    
+    reason = CellIdentity(
+        cell_id="cell_ghi",
+        cell_name="Reasoning Module",
+        parent_id="cell_abc"
+    )
+    registry.register_cell(reason)
+    
+    # Create grandchild
+    store = CellIdentity(
+        cell_id="cell_jkl",
+        cell_name="Knowledge Store",
+        parent_id="cell_def"
+    )
+    registry.register_cell(store)
+    
+    print("=" * 60)
+    print("CELL HIERARCHY")
+    print("=" * 60)
+    print_cell_tree(registry, "cell_abc")
+    print()
+    
+    print("=" * 60)
+    print("RENAME PROPAGATION TEST")
+    print("=" * 60)
+    print("Before rename:")
+    print(f"  Parent's children: {root.children}")
+    print()
+    
+    registry.rename_cell("cell_def", "Long-Term Memory System")
+    
+    print("After rename:")
+    print(f"  Parent's children: {root.children}")
+    print(f"  Cell's own name: {mem.cell_name}")
+
+--------------------------------------------------------------------------------
+FILE: _radomDOCS\enhanced_cell_identity.py
+--------------------------------------------------------------------------------
+"""
+Enhanced Cell Identity System for _theCELL
+==========================================
+
+This module provides the architecture for:
+1. Unique ID generation at cell instantiation
+2. User-renameable cell names with defaults
+3. Bidirectional parent-child relationship tracking
+4. Name change propagation across the cell registry
+"""
+
+import uuid
+from typing import Dict, List, Optional, Set
+from datetime import datetime
+import json
+import threading
+
+
+class CellIdentity:
+    """Manages unique identity and relationships for a single cell."""
+    
+    def __init__(self, cell_id: str = None, cell_name: str = None, parent_id: str = None):
+        # Unique identifier - generated if not provided
+        self.cell_id: str = cell_id or self._generate_unique_id()
+        
+        # Human-readable name - defaults to ID-based name if not provided
+        self.cell_name: str = cell_name or self._generate_default_name()
+        
+        # Relationship tracking
+        self.parent_id: Optional[str] = parent_id
+        self.children: Dict[str, str] = {}  # {child_id: child_name}
+        
+        # Metadata
+        self.created_at: str = datetime.now().isoformat()
+        self.renamed_at: Optional[str] = None
+        
+    def _generate_unique_id(self) -> str:
+        """Generates a unique, collision-resistant cell ID."""
+        # Format: cell_<timestamp>_<uuid_segment>
+        timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+        uuid_segment = uuid.uuid4().hex[:8]
+        return f"cell_{timestamp}_{uuid_segment}"
+    
+    def _generate_default_name(self) -> str:
+        """Generates a default name based on the cell ID."""
+        # Extract the last 8 chars for readability
+        short_id = self.cell_id.split('_')[-1]
+        return f"Cell-{short_id.upper()}"
+    
+    def rename(self, new_name: str) -> tuple[str, str]:
+        """
+        Renames the cell and returns (old_name, new_name) for propagation.
+        """
+        old_name = self.cell_name
+        self.cell_name = new_name
+        self.renamed_at = datetime.now().isoformat()
+        return old_name, new_name
+    
+    def add_child(self, child_id: str, child_name: str):
+        """Records a child cell."""
+        self.children[child_id] = child_name
+    
+    def update_child_name(self, child_id: str, new_name: str):
+        """Updates a child's name in this parent's record."""
+        if child_id in self.children:
+            self.children[child_id] = new_name
+    
+    def to_dict(self) -> dict:
+        """Serializes identity to dictionary."""
+        return {
+            "cell_id": self.cell_id,
+            "cell_name": self.cell_name,
+            "parent_id": self.parent_id,
+            "children": self.children,
+            "created_at": self.created_at,
+            "renamed_at": self.renamed_at
+        }
+
+
+class CellRegistry:
+    """
+    Global registry that tracks all active cells and manages name propagation.
+    This is the "Nexus" for cell-to-cell identity awareness.
+    """
+    
+    def __init__(self):
+        self._cells: Dict[str, CellIdentity] = {}  # {cell_id: CellIdentity}
+        self._lock = threading.Lock()
+        self._change_listeners: List[callable] = []  # For UI updates
+        
+    def register_cell(self, identity: CellIdentity) -> None:
+        """Registers a new cell in the global registry."""
+        with self._lock:
+            self._cells[identity.cell_id] = identity
+            
+            # If this cell has a parent, update parent's children list
+            if identity.parent_id and identity.parent_id in self._cells:
+                parent = self._cells[identity.parent_id]
+                parent.add_child(identity.cell_id, identity.cell_name)
+            
+            self._notify_listeners("cell_registered", identity)
+    
+    def unregister_cell(self, cell_id: str) -> None:
+        """Removes a cell from the registry (on cell close)."""
+        with self._lock:
+            if cell_id in self._cells:
+                identity = self._cells[cell_id]
+                
+                # Notify parent of child removal
+                if identity.parent_id and identity.parent_id in self._cells:
+                    parent = self._cells[identity.parent_id]
+                    if cell_id in parent.children:
+                        del parent.children[cell_id]
+                
+                del self._cells[cell_id]
+                self._notify_listeners("cell_unregistered", identity)
+    
+    def rename_cell(self, cell_id: str, new_name: str) -> None:
+        """
+        Renames a cell and propagates the change to all references.
+        This is the core propagation mechanism.
+        """
+        with self._lock:
+            if cell_id not in self._cells:
+                return
+            
+            identity = self._cells[cell_id]
+            old_name, new_name = identity.rename(new_name)
+            
+            # Propagate to parent
+            if identity.parent_id and identity.parent_id in self._cells:
+                parent = self._cells[identity.parent_id]
+                parent.update_child_name(cell_id, new_name)
+            
+            # Propagate to all children
+            for child_id in identity.children.keys():
+                if child_id in self._cells:
+                    # Children might display parent name in their UI
+                    # Emit a signal they can listen to
+                    pass
+            
+            # Notify all listeners of the name change
+            self._notify_listeners("cell_renamed", {
+                "cell_id": cell_id,
+                "old_name": old_name,
+                "new_name": new_name
+            })
+    
+    def get_cell(self, cell_id: str) -> Optional[CellIdentity]:
+        """Retrieves a cell's identity by ID."""
+        with self._lock:
+            return self._cells.get(cell_id)
+    
+    def get_all_cells(self) -> Dict[str, CellIdentity]:
+        """Returns a copy of all registered cells."""
+        with self._lock:
+            return self._cells.copy()
+    
+    def get_children(self, cell_id: str) -> Dict[str, str]:
+        """Returns all children of a given cell."""
+        with self._lock:
+            if cell_id in self._cells:
+                return self._cells[cell_id].children.copy()
+            return {}
+    
+    def get_lineage(self, cell_id: str) -> List[str]:
+        """
+        Returns the full lineage from root to this cell.
+        Format: [root_id, ..., parent_id, cell_id]
+        """
+        lineage = []
+        current_id = cell_id
+        
+        with self._lock:
+            while current_id and current_id in self._cells:
+                lineage.insert(0, current_id)
+                current_id = self._cells[current_id].parent_id
+        
+        return lineage
+    
+    def get_descendants(self, cell_id: str) -> Set[str]:
+        """
+        Returns all descendant cell IDs recursively.
+        """
+        descendants = set()
+        
+        def _recurse(cid: str):
+            if cid in self._cells:
+                for child_id in self._cells[cid].children.keys():
+                    descendants.add(child_id)
+                    _recurse(child_id)
+        
+        with self._lock:
+            _recurse(cell_id)
+        
+        return descendants
+    
+    def add_change_listener(self, listener: callable):
+        """Register a callback for registry changes."""
+        self._change_listeners.append(listener)
+    
+    def _notify_listeners(self, event_type: str, data):
+        """Notifies all listeners of a registry change."""
+        for listener in self._change_listeners:
+            try:
+                listener(event_type, data)
+            except Exception as e:
+                print(f"Listener error: {e}")
+    
+    def export_registry(self) -> str:
+        """Exports the entire registry as JSON."""
+        with self._lock:
+            data = {
+                "cells": {cid: identity.to_dict() for cid, identity in self._cells.items()},
+                "timestamp": datetime.now().isoformat()
+            }
+            return json.dumps(data, indent=2)
+
+
+# =============================================================================
+# Integration Example for Backend Class
+# =============================================================================
+
+class EnhancedBackend:
+    """
+    Example of how to integrate the identity system into your existing Backend class.
+    """
+    
+    def __init__(self, 
+                 registry: CellRegistry,
+                 cell_id: str = None,
+                 cell_name: str = None,
+                 parent_id: str = None,
+                 **kwargs):
+        
+        # Create identity
+        self.identity = CellIdentity(cell_id, cell_name, parent_id)
+        
+        # Convenience accessors (backward compatible)
+        self.cell_id = self.identity.cell_id
+        self.cell_name = self.identity.cell_name
+        self.parent_id = self.identity.parent_id
+        
+        # Register in global registry
+        self.registry = registry
+        self.registry.register_cell(self.identity)
+        
+        # ... rest of your existing Backend init ...
+    
+    def rename_cell(self, new_name: str):
+        """User-facing method to rename this cell."""
+        self.registry.rename_cell(self.cell_id, new_name)
+        # Update local reference
+        self.cell_name = self.identity.cell_name
+    
+    def spawn_child(self, inherited_context: str = "") -> 'EnhancedBackend':
+        """
+        Enhanced spawning that properly tracks relationships.
+        """
+        # Generate child identity
+        child_id = None  # Will auto-generate
+        child_name = f"Child of {self.cell_name}"
+        
+        # Create child backend
+        child_backend = EnhancedBackend(
+            registry=self.registry,
+            cell_id=child_id,
+            cell_name=child_name,
+            parent_id=self.cell_id
+        )
+        
+        # Parent's children list is auto-updated via registry
+        
+        return child_backend
+    
+    def get_family_tree(self) -> dict:
+        """Returns a visualization of this cell's family relationships."""
+        lineage = self.registry.get_lineage(self.cell_id)
+        children = self.registry.get_children(self.cell_id)
+        descendants = self.registry.get_descendants(self.cell_id)
+        
+        return {
+            "cell_id": self.cell_id,
+            "cell_name": self.cell_name,
+            "lineage": lineage,
+            "direct_children": children,
+            "all_descendants": list(descendants)
+        }
+    
+    def close(self):
+        """Clean up when cell is destroyed."""
+        self.registry.unregister_cell(self.cell_id)
+
+
+# =============================================================================
+# UI Integration Example
+# =============================================================================
+
+def create_rename_dialog(parent_window, backend: EnhancedBackend):
+    """
+    Example tkinter dialog for renaming a cell.
+    This would integrate with your existing CELL_UI class.
+    """
+    import tkinter as tk
+    from tkinter import simpledialog
+    
+    def rename_cell_callback():
+        new_name = simpledialog.askstring(
+            "Rename Cell",
+            f"Enter new name for {backend.cell_name}:",
+            initialvalue=backend.cell_name,
+            parent=parent_window
+        )
+        
+        if new_name and new_name.strip():
+            backend.rename_cell(new_name.strip())
+            # UI will be updated via signal bus
+    
+    return rename_cell_callback
+
+
+# =============================================================================
+# Signal Bus Integration
+# =============================================================================
+
+def integrate_with_signal_bus(registry: CellRegistry, signal_bus):
+    """
+    Connects the registry to your existing SignalBusMS for event propagation.
+    """
+    
+    def on_registry_change(event_type: str, data):
+        """Broadcasts registry changes through the signal bus."""
+        signal_bus.emit(f"registry_{event_type}", data)
+    
+    registry.add_change_listener(on_registry_change)
+
+
+# =============================================================================
+# Usage Example
+# =============================================================================
+
+if __name__ == "__main__":
+    # Create global registry (singleton in your app.py)
+    global_registry = CellRegistry()
+    
+    # Create root cell
+    root_cell = EnhancedBackend(
+        registry=global_registry,
+        cell_name="Root Cognition"
+    )
+    
+    print(f"Root Cell: {root_cell.cell_id} | Name: {root_cell.cell_name}")
+    
+    # Spawn children
+    child1 = root_cell.spawn_child()
+    child2 = root_cell.spawn_child()
+    
+    print(f"Child 1: {child1.cell_id} | Name: {child1.cell_name}")
+    print(f"Child 2: {child2.cell_id} | Name: {child2.cell_name}")
+    
+    # Spawn grandchild
+    grandchild = child1.spawn_child()
+    print(f"Grandchild: {grandchild.cell_id} | Name: {grandchild.cell_name}")
+    
+    # Show family tree
+    print("\nRoot's Family Tree:")
+    print(json.dumps(root_cell.get_family_tree(), indent=2))
+    
+    # Rename child
+    print("\n--- Renaming Child 1 ---")
+    child1.rename_cell("Memory Specialist")
+    
+    # Check propagation
+    print(f"Child 1 new name: {child1.cell_name}")
+    print(f"Root's children: {global_registry.get_children(root_cell.cell_id)}")
+    print(f"Grandchild's parent: {grandchild.parent_id}")
+    
+    # Export registry
+    print("\n--- Full Registry ---")
+    print(global_registry.export_registry())
+
+--------------------------------------------------------------------------------
+FILE: _radomDOCS\integration_guide.py
+--------------------------------------------------------------------------------
+"""
+Integration Guide: Enhanced Cell Identity System
+================================================
+
+This guide shows how to integrate the enhanced cell identity system
+into your existing _theCELL project with minimal disruption.
+
+STEP-BY-STEP INTEGRATION
+"""
+
+# =============================================================================
+# STEP 1: Modify src/backend.py
+# =============================================================================
+
+"""
+1. Import the new identity system at the top of backend.py:
+"""
+
+# Add to imports in src/backend.py
+from enhanced_cell_identity import CellIdentity, CellRegistry
+
+"""
+2. Modify the Backend.__init__ method:
+"""
+
+class Backend:
+    def __init__(self, 
+                 registry: CellRegistry,  # NEW: Pass in global registry
+                 memory_path: str = None, 
+                 db_path: str = None, 
+                 db_dir: str = "_db",
+                 cell_id: str = None,      # MODIFIED: Now optional
+                 parent_id: str = None,
+                 cell_name: str = None):   # MODIFIED: Now optional
+        
+        # NEW: Create identity with auto-generation if not provided
+        self.identity = CellIdentity(cell_id, cell_name, parent_id)
+        
+        # MODIFIED: Use identity properties
+        self.cell_id = self.identity.cell_id
+        self.cell_name = self.identity.cell_name
+        self.parent_id = self.identity.parent_id
+        
+        # NEW: Store registry reference
+        self.registry = registry
+        
+        # BACKWARD COMPATIBLE: Keep children_ids for now
+        # But it will be managed through identity/registry
+        self.children_ids = list(self.identity.children.keys())
+        
+        # Register this cell globally
+        self.registry.register_cell(self.identity)
+        
+        # ... rest of existing __init__ code unchanged ...
+        
+        if db_path is None:
+            db_path = os.path.join(db_dir, "app_internal.db")
+        
+        self.db_path = db_path
+        # ... etc ...
+
+
+# =============================================================================
+# STEP 2: Add Cell Rename Method to Backend
+# =============================================================================
+
+"""
+Add these methods to the Backend class:
+"""
+
+class Backend:
+    # ... existing methods ...
+    
+    def rename_cell(self, new_name: str):
+        """
+        User-facing method to rename this cell.
+        Propagates change through registry to all references.
+        """
+        old_name = self.cell_name
+        self.registry.rename_cell(self.cell_id, new_name)
+        
+        # Update local reference
+        self.cell_name = self.identity.cell_name
+        
+        # Emit signal for UI update
+        self.bus.emit("cell_renamed", {
+            "cell_id": self.cell_id,
+            "old_name": old_name,
+            "new_name": new_name
+        })
+        
+        # Update window title if needed
+        self.bus.emit("update_window_title", f"_theCELL [{self.cell_name}]")
+    
+    def get_family_tree(self) -> dict:
+        """Returns detailed family relationship data."""
+        return {
+            "identity": self.identity.to_dict(),
+            "lineage": self.registry.get_lineage(self.cell_id),
+            "children": self.registry.get_children(self.cell_id),
+            "descendants": list(self.registry.get_descendants(self.cell_id))
+        }
+    
+    def close_cell(self):
+        """Clean up when cell window is closed."""
+        self.registry.unregister_cell(self.cell_id)
+        # Any other cleanup...
+
+
+# =============================================================================
+# STEP 3: Modify src/app.py
+# =============================================================================
+
+"""
+Update the main() function to create and pass the global registry:
+"""
+
+def main():
+    from enhanced_cell_identity import CellRegistry
+    
+    # NEW: Create global cell registry (singleton for the application)
+    global_registry = CellRegistry()
+    
+    # Initialize the logic hub with registry
+    backend = Backend(registry=global_registry)  # NEW: Pass registry
+    
+    # Load persisted theme preference (default Dark)
+    theme = (backend.get_setting('theme_preference') or 'Dark').strip().title()
+    if theme not in ('Dark', 'Light'):
+        theme = 'Dark'
+    
+    # Initialize the Mother Ship (Shell)
+    shell = TkinterAppShellMS({
+        "title": f"_theCELL [{backend.cell_name}]",  # MODIFIED: Show name in title
+        "geometry": "1000x800",
+        "theme": theme
+    })
+    
+    # Dock the UI into the shell
+    app_ui = CELL_UI(shell, backend)
+
+    # --- Global Orchestration State ---
+    # MODIFIED: Use registry instead of manual dict
+    
+    def broadcast_registry_update():
+        """Informs all cells of the current list of available targets."""
+        active_cells = global_registry.get_all_cells()
+        active_data = {
+            cid: {"id": cid, "name": identity.cell_name}
+            for cid, identity in active_cells.items()
+        }
+        
+        for cid, identity in active_cells.items():
+            cell_backend = _get_backend_for_cell(cid)  # Helper method
+            if cell_backend:
+                cell_backend.bus.emit("update_registry", active_data)
+
+    def register_cell_orchestration(target_backend):
+        """Wires a backend into the global recursive and nexus pipelines."""
+        
+        # 1. Handle Recursive Spawning
+        def on_spawn_request(data):
+            print(f"[System] Spawning child from: {data.get('spawn_timestamp')}")
+            
+            # MODIFIED: Use identity system
+            parent_identity = target_backend.identity
+            
+            # Create child window
+            child_win = shell.spawn_window(
+                title=f"_theCELL [Child of {parent_identity.cell_name}]",
+                geometry="900x700"
+            )
+            
+            # MODIFIED: Let identity system generate unique ID and name
+            unique_session_id = None  # Will be auto-generated
+            child_backend = Backend(
+                registry=global_registry,  # NEW: Pass same registry
+                memory_path=f"session_{datetime.now().strftime('%Y%m%d_%H%M%S')}.jsonl",
+                cell_id=None,  # Auto-generate
+                parent_id=parent_identity.cell_id,
+                cell_name=None  # Will default to "Child of ParentName"
+            )
+            
+            # Parent-child relationship is auto-managed by registry
+            
+            # Shell Proxy for Child Window
+            # ... rest of existing code ...
+
+
+# =============================================================================
+# STEP 4: Add Rename UI to src/ui.py
+# =============================================================================
+
+"""
+Add a rename dialog to the CELL_UI class:
+"""
+
+class CELL_UI:
+    # ... existing code ...
+    
+    def _open_rename_dialog(self):
+        """Opens a dialog to rename the current cell."""
+        from tkinter import simpledialog
+        
+        new_name = simpledialog.askstring(
+            "Rename Cell",
+            f"Enter new name for '{self.backend.cell_name}':",
+            initialvalue=self.backend.cell_name,
+            parent=self.shell.root
+        )
+        
+        if new_name and new_name.strip():
+            self.backend.rename_cell(new_name.strip())
+    
+    def _register_signals(self):
+        """Connects UI to the nervous system."""
+        if hasattr(self.backend, 'bus'):
+            self.backend.bus.subscribe("log_append", self._on_log_append)
+            self.backend.bus.subscribe("process_complete", self._on_process_complete)
+            self.backend.bus.subscribe("update_registry", self._update_nexus_list)
+            self.backend.bus.subscribe("push_to_nexus", self._handle_incoming_push)
+            self.backend.bus.subscribe("theme_updated", self.refresh_theme)
+            
+            # NEW: Handle cell rename events
+            self.backend.bus.subscribe("cell_renamed", self._on_cell_renamed)
+            self.backend.bus.subscribe("update_window_title", self._update_window_title)
+    
+    def _on_cell_renamed(self, data):
+        """Handles cell rename events."""
+        # Update any UI elements that display the cell name
+        if hasattr(self, 'cell_name_label'):
+            self.cell_name_label.config(text=data['new_name'])
+    
+    def _update_window_title(self, new_title):
+        """Updates the window title."""
+        self.shell.root.title(new_title)
+    
+    def _build_context_menu(self):
+        """Build right-click context menu."""
+        self.context_menu = tk.Menu(self.shell.root, tearoff=0)
+        
+        # ... existing menu items ...
+        
+        # NEW: Add rename option
+        self.context_menu.add_separator()
+        self.context_menu.add_command(label="Rename Cell", command=self._open_rename_dialog)
+        self.context_menu.add_command(label="View Family Tree", command=self._show_family_tree)
+    
+    def _show_family_tree(self):
+        """Shows a dialog with the cell's family relationships."""
+        import json
+        from tkinter import messagebox
+        
+        tree_data = self.backend.get_family_tree()
+        formatted = json.dumps(tree_data, indent=2)
+        
+        messagebox.showinfo(
+            "Cell Family Tree",
+            formatted,
+            parent=self.shell.root
+        )
+
+
+# =============================================================================
+# STEP 5: Add Menu Bar Rename Option
+# =============================================================================
+
+"""
+In your existing menu creation code, add a rename option:
+"""
+
+def _build_menu_bar(self):
+    """Creates the application menu bar."""
+    menubar = tk.Menu(self.shell.root)
+    self.shell.root.config(menu=menubar)
+    
+    # Cell menu
+    cell_menu = tk.Menu(menubar, tearoff=0)
+    menubar.add_cascade(label="Cell", menu=cell_menu)
+    
+    cell_menu.add_command(label="Rename Cell...", command=self._open_rename_dialog)
+    cell_menu.add_command(label="View Family Tree...", command=self._show_family_tree)
+    cell_menu.add_separator()
+    cell_menu.add_command(label="Close Cell", command=self.shell.root.destroy)
+    
+    # ... rest of menu ...
+
+
+# =============================================================================
+# STEP 6: Update Nexus Dropdown to Show Names
+# =============================================================================
+
+"""
+Modify the nexus update handler to display cell names instead of IDs:
+"""
+
+def _update_nexus_list(self, active_cells_data):
+    """
+    Updates the Nexus dropdown with currently active cells.
+    
+    active_cells_data format:
+    {
+        "cell_id": {"id": "cell_id", "name": "Cell Name"},
+        ...
+    }
+    """
+    # Filter out self
+    targets = [
+        f"{data['name']} ({cid})"
+        for cid, data in active_cells_data.items()
+        if cid != self.session_id
+    ]
+    
+    self.nexus_cb['values'] = ["Select..."] + targets
+    
+    # Store mapping for lookup
+    self._nexus_id_map = {
+        f"{data['name']} ({cid})": cid
+        for cid, data in active_cells_data.items()
+    }
+
+def _on_push_to_nexus(self):
+    """Push result content to the selected target cell."""
+    display_name = self.nexus_var.get()
+    if display_name in ["Select...", ""]:
+        return
+    
+    # Lookup actual cell ID from display name
+    target_id = self._nexus_id_map.get(display_name)
+    if not target_id:
+        return
+    
+    content = self.result_text.get("1.0", "end-1c")
+    self.backend.push_to_target(target_id, content)
+
+
+# =============================================================================
+# STEP 7: Add Cell Name Display in UI
+# =============================================================================
+
+"""
+Add a visual indicator of the cell's name and lineage:
+"""
+
+def _add_cell_info_bar(self):
+    """Adds an info bar showing cell identity."""
+    info_bar = tk.Frame(self.container, bg=self.colors.get('panel_bg'))
+    info_bar.pack(fill='x', padx=10, pady=(5, 0))
+    
+    # Cell name (clickable to rename)
+    self.cell_name_label = tk.Label(
+        info_bar,
+        text=self.backend.cell_name,
+        bg=self.colors.get('panel_bg'),
+        fg=self.colors.get('accent'),
+        font=("Segoe UI", 10, "bold"),
+        cursor="hand2"
+    )
+    self.cell_name_label.pack(side='left', padx=5)
+    self.cell_name_label.bind("<Button-1>", lambda e: self._open_rename_dialog())
+    
+    # Cell ID (smaller, grayed out)
+    id_label = tk.Label(
+        info_bar,
+        text=f"({self.backend.cell_id})",
+        bg=self.colors.get('panel_bg'),
+        fg=self.colors.get('foreground'),
+        font=("Segoe UI", 8)
+    )
+    id_label.pack(side='left')
+    
+    # Parent info (if applicable)
+    if self.backend.parent_id:
+        parent_identity = self.backend.registry.get_cell(self.backend.parent_id)
+        if parent_identity:
+            parent_label = tk.Label(
+                info_bar,
+                text=f"← Child of: {parent_identity.cell_name}",
+                bg=self.colors.get('panel_bg'),
+                fg=self.colors.get('foreground'),
+                font=("Segoe UI", 8, "italic")
+            )
+            parent_label.pack(side='left', padx=(10, 0))
+
+
+# =============================================================================
+# STEP 8: Testing Checklist
+# =============================================================================
+
+"""
+After integration, test these scenarios:
+
+1. ✓ Create root cell - verify unique ID generated
+2. ✓ Rename root cell - verify name updates in:
+   - Window title
+   - Cell info bar
+   - Registry
+3. ✓ Spawn child cell - verify:
+   - Child has unique ID
+   - Child's default name reflects parent
+   - Parent's children list includes child
+   - Child's parent_id points to parent
+4. ✓ Rename parent cell - verify:
+   - Child's record of parent name updates
+   - No errors in console
+5. ✓ Spawn grandchild - verify:
+   - 3-generation lineage tracks correctly
+   - get_lineage() returns proper chain
+6. ✓ Close child cell - verify:
+   - Registry removes child
+   - Parent's children list updates
+7. ✓ Nexus dropdown - verify:
+   - Shows cell names (not just IDs)
+   - Only shows other cells (not self)
+   - Updates when cells renamed
+8. ✓ Export registry - verify JSON structure correct
+"""
+
+
+# =============================================================================
+# STEP 9: Optional Enhancements
+# =============================================================================
+
+"""
+Consider these future enhancements:
+
+1. PERSISTENCE
+   - Save registry to disk on changes
+   - Restore on app restart
+   - Store in SQLite alongside other app data
+
+2. VISUALIZATION
+   - Create a tree view widget showing cell hierarchy
+   - Show active cells in a graph
+   - Highlight parent-child relationships
+
+3. SEARCH
+   - Search cells by name
+   - Find cells by relationship
+   - Filter by lineage depth
+
+4. CELL METADATA
+   - Add tags/labels to cells
+   - Track cell purpose/specialization
+   - Store creation time, activity stats
+
+5. SMART NAMING
+   - Auto-suggest names based on cell's first inference
+   - Learn naming patterns from user
+   - Detect duplicate names
+"""

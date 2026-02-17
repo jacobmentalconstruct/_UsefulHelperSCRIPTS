@@ -162,13 +162,12 @@ class CELL_UI:
         self.btn_reject = None
         self.btn_exit = None
 
-        # Export Router (inline) widgets
-        self.export_router_frame = None
-        self.export_dest_var = None
-        self.export_dest_cb = None
-        self.export_options_frame = None
-        self.export_execute_btn = None
-        self._export_selected = None
+        # Send To panel widgets
+        self.panel_sendto = None
+        self.sendto_cb = None
+        self.sendto_btn = None
+        self._nexus_id_map = {}
+        self._response_ready = False
         
         # Restore window state from DB
         saved_geo = self.backend.get_setting('window_geometry')
@@ -193,43 +192,207 @@ class CELL_UI:
             self.backend.bus.subscribe("update_window_title", self._update_window_title)
 
     def _update_nexus_list(self, cell_data):
-        """Updates the Nexus dropdown with currently active cells."""
-        # cell_data is now: {cell_id: {"id": ..., "name": ...}}
-        # Create display strings: "Name (id)"
+        """Updates the Send To dropdown with currently active cells."""
+        # cell_data is: {cell_id: {"id": ..., "name": ...}}
         targets = [
             f"{data['name']} ({cid})"
             for cid, data in cell_data.items()
             if cid != self.session_id
         ]
-        
-        self.nexus_cb['values'] = ["Select..."] + targets
-        
+
+        if self.sendto_cb:
+            self.sendto_cb['values'] = ["New Cell"] + targets
+
         # Store ID mapping for lookup
         self._nexus_id_map = {
             f"{data['name']} ({cid})": cid
             for cid, data in cell_data.items()
         }
 
-    def _on_push_to_nexus(self):
-        """Push result content to the selected target cell."""
-        display_name = self.nexus_var.get()
-        if display_name in ["Select...", ""]:
+    def _update_sendto_state(self):
+        """Enables or disables SEND button based on response readiness and target selection."""
+        if not self.sendto_btn:
             return
-        
-        # Lookup actual cell ID from display name
-        target_id = self._nexus_id_map.get(display_name)
-        if not target_id:
+        target = self.sendto_var.get() if self.sendto_var else "Select..."
+        can_send = self._response_ready and target not in ("Select...", "")
+        self.sendto_btn.configure(state='normal' if can_send else 'disabled')
+
+    def _on_send_execute(self):
+        """Executes the Send To action based on current selections."""
+        target = self.sendto_var.get()
+        content_src = self.sendto_content_var.get()
+        destination = self.sendto_dest_var.get()
+
+        # Get content to send
+        if content_src == "response":
+            content = self.result_text.get("1.0", "end-1c")
+        else:
+            content = self.input_box.get("1.0", "end-1c")
+
+        source_name = self.backend.cell_name
+
+        if target == "New Cell":
+            artifact = self._get_current_artifact()
+            artifact['send_destination'] = destination
+            artifact['send_content'] = content
+            artifact['source_name'] = source_name
+            self.backend.spawn_child(artifact)
+        else:
+            target_id = self._nexus_id_map.get(target)
+            if not target_id:
+                return
+            payload = {
+                "target_id": target_id,
+                "content": content,
+                "source_id": self.session_id,
+                "source_name": source_name,
+                "destination": destination
+            }
+            self.backend.bus.emit("push_to_nexus", payload)
+
+    def add_onto_step(self, source_name: str, content: str):
+        """Public: Adds an ontological step (called by spawn handler or incoming push)."""
+        self._onto_steps.append({"source": source_name, "content": content})
+        self._rebuild_steps_ui()
+
+    def append_to_task(self, content: str):
+        """Public: Appends content to the Task box (called by spawn handler or incoming push)."""
+        current = self.input_box.get("1.0", "end-1c")
+        if current.strip():
+            self.input_box.insert('end', f"\n\n{content}")
+        else:
+            self.input_box.insert('end', content)
+
+    def _rebuild_steps_ui(self):
+        """Clears and redraws all step cards in the Ontological Steps frame."""
+        for widget in self.onto_steps_frame.winfo_children():
+            widget.destroy()
+
+        if not self._onto_steps:
+            tk.Label(
+                self.onto_steps_frame,
+                text="No ontological steps yet.",
+                bg=self.colors.get('background'),
+                fg=self.colors.get('foreground'),
+                font=("Segoe UI", 9, "italic"),
+                padx=8, pady=6
+            ).pack()
             return
+
+        for idx, step in enumerate(self._onto_steps):
+            is_selected = (self._selected_step == idx)
+            header_bg = self.colors.get('accent') if is_selected else self.colors.get('panel_bg')
+            header_fg = self.colors.get('button_fg', 'white') if is_selected else self.colors.get('foreground')
+
+            card = tk.Frame(
+                self.onto_steps_frame,
+                bg=self.colors.get('panel_bg'),
+                bd=1, relief='solid'
+            )
+            card.pack(fill='x', padx=4, pady=2)
+
+            # Header row
+            header = tk.Frame(card, bg=header_bg, cursor='hand2')
+            header.pack(fill='x')
+
+            tk.Label(
+                header,
+                text=f"Step {idx + 1} — Source: {step['source']}",
+                bg=header_bg, fg=header_fg,
+                font=("Segoe UI", 8, "bold"),
+                padx=6, pady=3
+            ).pack(side='left')
+
+            _hbtn = {"bg": header_bg, "fg": header_fg, "relief": "flat",
+                     "font": ("Segoe UI", 9), "cursor": "hand2", "padx": 3}
+            tk.Button(header, text="✕", **_hbtn,
+                command=lambda i=idx: self._remove_onto_step(i)).pack(side='right', padx=(0, 4))
+            tk.Button(header, text="▼", **_hbtn,
+                command=lambda i=idx: self._move_step_down(i)).pack(side='right')
+            tk.Button(header, text="▲", **_hbtn,
+                command=lambda i=idx: self._move_step_up(i)).pack(side='right')
+
+            header.bind('<Button-1>', lambda e, i=idx: self._select_step(i))
+            for child in header.winfo_children():
+                if isinstance(child, tk.Label):
+                    child.bind('<Button-1>', lambda e, i=idx: self._select_step(i))
+
+            # Content (read-only)
+            txt = tk.Text(
+                card, height=3, wrap='word',
+                bg=self.colors.get('entry_bg', self.colors.get('panel_bg')),
+                fg=self.colors.get('entry_fg', self.colors.get('foreground')),
+                font=("Consolas", 9)
+            )
+            txt.insert('1.0', step['content'])
+            txt.configure(state='disabled')
+            txt.pack(fill='x', padx=4, pady=(0, 4))
+
+    def _select_step(self, idx: int):
+        """Selects or deselects a step (toggle)."""
+        self._selected_step = idx if self._selected_step != idx else None
+        self._rebuild_steps_ui()
+
+    def _remove_onto_step(self, idx: int):
+        """Removes a step by index."""
+        if 0 <= idx < len(self._onto_steps):
+            self._onto_steps.pop(idx)
+            if self._selected_step == idx:
+                self._selected_step = None
+            elif self._selected_step is not None and self._selected_step > idx:
+                self._selected_step -= 1
+            self._rebuild_steps_ui()
+
+    def _move_step_up(self, idx: int):
+        """Moves a step up one position."""
+        if idx > 0:
+            self._onto_steps[idx], self._onto_steps[idx - 1] = \
+                self._onto_steps[idx - 1], self._onto_steps[idx]
+            if self._selected_step == idx:
+                self._selected_step = idx - 1
+            elif self._selected_step == idx - 1:
+                self._selected_step = idx
+            self._rebuild_steps_ui()
+
+    def _move_step_down(self, idx: int):
+        """Moves a step down one position."""
+        if idx < len(self._onto_steps) - 1:
+            self._onto_steps[idx], self._onto_steps[idx + 1] = \
+                self._onto_steps[idx + 1], self._onto_steps[idx]
+            if self._selected_step == idx:
+                self._selected_step = idx + 1
+            elif self._selected_step == idx + 1:
+                self._selected_step = idx
+            self._rebuild_steps_ui()
+
+    def _serialize_onto_steps(self) -> str:
+        """Serializes the Ontological Steps stack for prompt injection.
         
-        content = self.result_text.get("1.0", "end-1c")
-        self.backend.push_to_target(target_id, content)
+        Each step is clearly labeled for both human and LLM readability.
+        Injected between system prompt and task at run time.
+        """
+        if not self._onto_steps:
+            return ""
+        parts = []
+        for i, step in enumerate(self._onto_steps):
+            parts.append(
+                f"### ONTOLOGICAL STEP {i + 1} | Source: {step['source']} ###\n"
+                f"{step['content']}"
+            )
+        return "\n\n".join(parts)
 
     def _handle_incoming_push(self, payload):
-        """Appends incoming data from another cell to the input box."""
-        if payload.get('target_id') == self.session_id:
-            header = f"\n\n--- INCOMING FROM {payload.get('source_id')} ---\n"
-            self.input_box.insert('end', header + payload.get('content'))
-            self.input_box.see('end')
+        """Routes incoming content from another cell to steps stack or task box."""
+        if payload.get('target_id') != self.session_id:
+            return
+        content = payload.get('content', '')
+        source_name = payload.get('source_name', payload.get('source_id', 'Unknown Cell'))
+        destination = payload.get('destination', 'task')
+
+        if destination == 'steps':
+            self.add_onto_step(source_name, content)
+        else:
+            self.append_to_task(content)
 
     def _on_log_append(self, content):
         """Marshals background thread signal to main UI thread."""
@@ -311,20 +474,89 @@ class CELL_UI:
         # Track edit mode state
         self._name_edit_mode = False
 
-        # --- Formatting Toolbar ---
-        self.toolbar = tk.Frame(self.panel_prompt, bg=self.colors.get('panel_bg'))
-        self.toolbar.pack(fill='x', padx=10)
+        # --- Tabbed Formatting Toolbar ---
+        self.toolbar_frame = tk.Frame(self.panel_prompt, bg=self.colors.get('panel_bg'))
+        self.toolbar_frame.pack(fill='x', padx=10)
         
-        btn_opts = {"bg": self.colors.get('panel_bg'), "fg": self.colors.get('foreground', 'white'), "relief": "flat", "padx": 5}
-        self.btn_bold = tk.Button(self.toolbar, text="B", font=("TkDefaultFont", 9, "bold"), **btn_opts, command=self._bold_text)
-        self.btn_bold.pack(side='left')
-        self.btn_italic = tk.Button(self.toolbar, text="I", font=("TkDefaultFont", 9, "italic"), **btn_opts, command=self._italic_text)
-        self.btn_italic.pack(side='left')
-        self.btn_list = tk.Button(self.toolbar, text="• List", **btn_opts, command=self._bullet_list)
-        self.btn_list.pack(side='left')
+        # Tab bar (top row)
+        self.tab_bar = tk.Frame(self.toolbar_frame, bg=self.colors.get('panel_bg'))
+        self.tab_bar.pack(fill='x')
         
-        self.btn_settings = tk.Button(self.toolbar, text="⚙", **btn_opts, command=self._open_settings)
+        _tab_btn_opts = {"relief": "flat", "padx": 8, "pady": 2, "font": ("Segoe UI", 8, "bold"), "cursor": "hand2"}
+        self._active_tab = "MD"
+        
+        self.tab_btn_md = tk.Button(self.tab_bar, text="MD",
+            bg=self.colors.get('accent'), fg=self.colors.get('button_fg', 'white'),
+            command=lambda: self._switch_toolbar_tab("MD"), **_tab_btn_opts)
+        self.tab_btn_md.pack(side='left')
+        
+        self.tab_btn_json = tk.Button(self.tab_bar, text="JSON",
+            bg=self.colors.get('panel_bg'), fg=self.colors.get('foreground'),
+            command=lambda: self._switch_toolbar_tab("JSON"), **_tab_btn_opts)
+        self.tab_btn_json.pack(side='left', padx=(2, 0))
+        
+        self.tab_btn_py = tk.Button(self.tab_bar, text="PY",
+            bg=self.colors.get('panel_bg'), fg=self.colors.get('foreground'),
+            command=lambda: self._switch_toolbar_tab("PY"), **_tab_btn_opts)
+        self.tab_btn_py.pack(side='left', padx=(2, 0))
+        
+        # Settings always pinned right
+        self.btn_settings = tk.Button(self.tab_bar, text="⚙",
+            bg=self.colors.get('panel_bg'), fg=self.colors.get('foreground'),
+            relief="flat", padx=5, command=self._open_settings)
         self.btn_settings.pack(side='right')
+        
+        # Button row container (swaps on tab change)
+        self.toolbar_content = tk.Frame(self.toolbar_frame, bg=self.colors.get('panel_bg'))
+        self.toolbar_content.pack(fill='x')
+        
+        # -- MD Button Row --
+        self.toolbar_md = tk.Frame(self.toolbar_content, bg=self.colors.get('panel_bg'))
+        self.toolbar_md.pack(fill='x')
+        
+        _btn = {"bg": self.colors.get('panel_bg'), "fg": self.colors.get('foreground'), "relief": "flat", "padx": 4, "pady": 1, "font": ("Segoe UI", 9), "cursor": "hand2"}
+        
+        # Headings group
+        tk.Button(self.toolbar_md, text="H1", font=("Segoe UI", 9, "bold"), **{k: v for k, v in _btn.items() if k != 'font'}, command=lambda: self._md_heading(1)).pack(side='left')
+        tk.Button(self.toolbar_md, text="H2", font=("Segoe UI", 9, "bold"), **{k: v for k, v in _btn.items() if k != 'font'}, command=lambda: self._md_heading(2)).pack(side='left')
+        tk.Button(self.toolbar_md, text="H3", font=("Segoe UI", 9, "bold"), **{k: v for k, v in _btn.items() if k != 'font'}, command=lambda: self._md_heading(3)).pack(side='left')
+        
+        tk.Label(self.toolbar_md, text="│", bg=self.colors.get('panel_bg'), fg=self.colors.get('foreground'), padx=2).pack(side='left')
+        
+        # Inline formatting group
+        tk.Button(self.toolbar_md, text="B", font=("Segoe UI", 9, "bold"), **{k: v for k, v in _btn.items() if k != 'font'}, command=self._md_bold).pack(side='left')
+        tk.Button(self.toolbar_md, text="I", font=("Segoe UI", 9, "italic"), **{k: v for k, v in _btn.items() if k != 'font'}, command=self._md_italic).pack(side='left')
+        tk.Button(self.toolbar_md, text="`code`", **_btn, command=self._md_inline_code).pack(side='left')
+        tk.Button(self.toolbar_md, text="```block", **_btn, command=self._md_code_block).pack(side='left')
+        
+        tk.Label(self.toolbar_md, text="│", bg=self.colors.get('panel_bg'), fg=self.colors.get('foreground'), padx=2).pack(side='left')
+        
+        # Structure group
+        tk.Button(self.toolbar_md, text="- List", **_btn, command=self._md_bullet_list).pack(side='left')
+        tk.Button(self.toolbar_md, text="1. List", **_btn, command=self._md_numbered_list).pack(side='left')
+        tk.Button(self.toolbar_md, text="❝ Quote", **_btn, command=self._md_blockquote).pack(side='left')
+        
+        tk.Label(self.toolbar_md, text="│", bg=self.colors.get('panel_bg'), fg=self.colors.get('foreground'), padx=2).pack(side='left')
+        
+        tk.Button(self.toolbar_md, text="---", **_btn, command=self._md_hr).pack(side='left')
+        
+        # Clear always pinned right
+        tk.Button(self.toolbar_md, text="✕ Clear",
+            bg=self.colors.get('panel_bg'), fg=self.colors.get('error', '#e06c75'),
+            relief="flat", padx=4, pady=1, font=("Segoe UI", 9), cursor="hand2",
+            command=self._md_clear_format).pack(side='right')
+        
+        # -- JSON stub row (hidden by default) --
+        self.toolbar_json = tk.Frame(self.toolbar_content, bg=self.colors.get('panel_bg'))
+        tk.Label(self.toolbar_json, text="JSON formatting — coming soon",
+            bg=self.colors.get('panel_bg'), fg=self.colors.get('foreground'),
+            font=("Segoe UI", 9, "italic"), padx=6).pack(side='left')
+        
+        # -- PY stub row (hidden by default) --
+        self.toolbar_py = tk.Frame(self.toolbar_content, bg=self.colors.get('panel_bg'))
+        tk.Label(self.toolbar_py, text="Python formatting — coming soon",
+            bg=self.colors.get('panel_bg'), fg=self.colors.get('foreground'),
+            font=("Segoe UI", 9, "italic"), padx=6).pack(side='left')
 
         # --- Inference Config Section ---
         self.config_frame = tk.LabelFrame(self.panel_prompt, text=" Inference Parameters ", 
@@ -389,14 +621,46 @@ class CELL_UI:
 
         self.config_frame.columnconfigure(1, weight=1)
 
-        # --- Inherited Context (The DNA) ---
-        tk.Label(self.panel_prompt, text="Inherited Context (Reference Only):", bg=self.colors.get('background'), fg=self.colors.get('foreground'), font=("Segoe UI", 8, "bold")).pack(anchor='w', padx=10)
-        self.context_view = tk.Text(
-            self.panel_prompt, height=6, wrap="word", 
-            bg=self.colors.get('panel_bg'), fg=self.colors.get('entry_fg'),
-            font=("Consolas", 10), state='normal'
+        # --- Ontological Steps Stack ---
+        self.onto_steps_lf = tk.LabelFrame(
+            self.panel_prompt,
+            text=" Ontological Steps ",
+            fg=self.colors.get('foreground'),
+            bg=self.colors.get('background'),
+            relief='solid', bd=1,
+            font=("Segoe UI", 8, "bold")
         )
-        self.context_view.pack(fill='x', padx=10, pady=(0, 10))
+        self.onto_steps_lf.pack(fill='x', padx=10, pady=(0, 6))
+
+        self._onto_canvas = tk.Canvas(
+            self.onto_steps_lf,
+            bg=self.colors.get('background'),
+            highlightthickness=0,
+            height=120
+        )
+        self._onto_scrollbar = ttk.Scrollbar(
+            self.onto_steps_lf,
+            orient='vertical',
+            command=self._onto_canvas.yview
+        )
+        self.onto_steps_frame = tk.Frame(self._onto_canvas, bg=self.colors.get('background'))
+        self._onto_canvas_window = self._onto_canvas.create_window((0, 0), window=self.onto_steps_frame, anchor='nw')
+        self._onto_canvas.configure(yscrollcommand=self._onto_scrollbar.set)
+        self.onto_steps_frame.bind('<Configure>', lambda e: self._onto_canvas.configure(
+            scrollregion=self._onto_canvas.bbox('all')
+        ))
+        self._onto_canvas.bind('<Configure>', lambda e: self._onto_canvas.itemconfig(
+            self._onto_canvas_window, width=e.width
+        ))
+        self._onto_canvas.pack(side='left', fill='both', expand=True)
+        self._onto_scrollbar.pack(side='right', fill='y')
+
+        # Step data model
+        self._onto_steps = []    # list of {"source": str, "content": str}
+        self._selected_step = None
+
+        # Initial empty state
+        self._rebuild_steps_ui()
 
         # --- User Request (The Ask) ---
         tk.Label(self.panel_prompt, text="Your Request / Task:", bg=self.colors.get('background'), fg=self.colors.get('foreground'), font=("Segoe UI", 9, "bold")).pack(anchor='w', padx=10)
@@ -531,66 +795,73 @@ class CELL_UI:
         )
         self.btn_exit.pack(side='right')
 
-        # Phase 1: Nexus Pipeline Controls
-        tk.Label(hitl_bar, text="Target Nexus:", bg=self.colors.get('background'), fg=self.colors.get('foreground')).pack(side='left', padx=(10, 2))
-        self.nexus_var = tk.StringVar(value="Select...")
-        self.nexus_cb = ttk.Combobox(hitl_bar, textvariable=self.nexus_var, state='readonly', width=15)
-        self.nexus_cb.pack(side='left', padx=2)
 
-        self.btn_push = tk.Button(
-            hitl_bar, text="PUSH", bg=self.colors.get('accent'), fg="white",
-            relief="flat", command=self._on_push_to_nexus
-        )
-        self.btn_push.pack(side='left', padx=2)
-
-        # PANEL 4 — Export / Spawn (inline router)
-        self.panel_export = tk.LabelFrame(
+        # PANEL 4 — Send To
+        self.panel_sendto = tk.LabelFrame(
             self.container,
-            text=" Export / Spawn ",
+            text=" Send To ",
             fg=self.colors.get('foreground'),
             bg=self.colors.get('background'),
             relief='solid', bd=1, font=("Segoe UI", 9, "bold")
         )
-        self.panel_export.pack(in_=self.right_col, fill='x', padx=10, pady=(0, 12))
+        self.panel_sendto.pack(in_=self.right_col, fill='x', padx=10, pady=(0, 12))
 
-        self.export_router_frame = tk.Frame(self.panel_export, bg=self.colors.get('background'))
-        self.export_router_frame.pack(fill='x', padx=10, pady=10)
+        _st = tk.Frame(self.panel_sendto, bg=self.colors.get('background'))
+        _st.pack(fill='x', padx=10, pady=8)
 
-        top_row = tk.Frame(self.export_router_frame, bg=self.colors.get('background'))
-        top_row.pack(fill='x')
+        # Row 1: Target selector
+        _row1 = tk.Frame(_st, bg=self.colors.get('background'))
+        _row1.pack(fill='x', pady=(0, 4))
+        tk.Label(_row1, text="Send To:", bg=self.colors.get('background'),
+            fg=self.colors.get('foreground'), font=("Segoe UI", 9, "bold"),
+            width=10, anchor='w').pack(side='left')
+        self.sendto_var = tk.StringVar(value="Select...")
+        self.sendto_cb = ttk.Combobox(_row1, textvariable=self.sendto_var,
+            state='readonly', values=["New Cell"])
+        self.sendto_cb.pack(side='left', fill='x', expand=True, padx=(4, 0))
+        self.sendto_cb.bind('<<ComboboxSelected>>', lambda e: self._update_sendto_state())
 
-        tk.Label(top_row, text="Destination:", bg=self.colors.get('background'), fg=self.colors.get('foreground', 'white')).pack(side='left')
+        # Row 2: What to send
+        _row2 = tk.Frame(_st, bg=self.colors.get('background'))
+        _row2.pack(fill='x', pady=(0, 4))
+        tk.Label(_row2, text="Send:", bg=self.colors.get('background'),
+            fg=self.colors.get('foreground'), font=("Segoe UI", 9, "bold"),
+            width=10, anchor='w').pack(side='left')
+        self.sendto_content_var = tk.StringVar(value="response")
+        tk.Radiobutton(_row2, text="Current Response", variable=self.sendto_content_var,
+            value="response", bg=self.colors.get('background'),
+            fg=self.colors.get('foreground'), selectcolor=self.colors.get('panel_bg'),
+            font=("Segoe UI", 9)).pack(side='left')
+        tk.Radiobutton(_row2, text="Task Input", variable=self.sendto_content_var,
+            value="task", bg=self.colors.get('background'),
+            fg=self.colors.get('foreground'), selectcolor=self.colors.get('panel_bg'),
+            font=("Segoe UI", 9)).pack(side='left', padx=(8, 0))
 
-        self.export_dest_var = tk.StringVar(value="Spawn")
-        self.export_dest_cb = ttk.Combobox(
-            top_row, 
-            textvariable=self.export_dest_var, 
-            state='readonly', 
-            values=["Spawn", "File", "Database", "Vector", "Code", "Patch", "Logs"]
+        # Row 3: Destination within target cell
+        _row3 = tk.Frame(_st, bg=self.colors.get('background'))
+        _row3.pack(fill='x', pady=(0, 6))
+        tk.Label(_row3, text="Into:", bg=self.colors.get('background'),
+            fg=self.colors.get('foreground'), font=("Segoe UI", 9, "bold"),
+            width=10, anchor='w').pack(side='left')
+        self.sendto_dest_var = tk.StringVar(value="steps")
+        tk.Radiobutton(_row3, text="Ontological Steps", variable=self.sendto_dest_var,
+            value="steps", bg=self.colors.get('background'),
+            fg=self.colors.get('foreground'), selectcolor=self.colors.get('panel_bg'),
+            font=("Segoe UI", 9)).pack(side='left')
+        tk.Radiobutton(_row3, text="Task Box", variable=self.sendto_dest_var,
+            value="task", bg=self.colors.get('background'),
+            fg=self.colors.get('foreground'), selectcolor=self.colors.get('panel_bg'),
+            font=("Segoe UI", 9)).pack(side='left', padx=(8, 0))
+
+        # Send button (greyed out until response exists and target selected)
+        self.sendto_btn = tk.Button(
+            _st, text="SEND",
+            bg=self.colors.get('accent'), fg=self.colors.get('button_fg', 'white'),
+            relief='flat', state='disabled',
+            command=self._on_send_execute
         )
-        self.export_dest_cb.pack(side='left', padx=8, fill='x', expand=True)
+        self.sendto_btn.pack(fill='x')
 
-        self.export_execute_btn = tk.Button(
-            top_row, text="EXECUTE", 
-            bg=self.colors.get('accent'),
-            fg=self.colors.get('button_fg', 'white'),
-            relief="flat", state='disabled', command=self._handle_export
-        )
-        self.export_execute_btn.pack(side='right')
-
-        self.export_options_frame = tk.Frame(self.export_router_frame, bg=self.colors.get('background'))
-        self.export_options_frame.pack(fill='x', pady=(8, 0))
-
-    def _build_export_options(dest: str):
-        for w in self.export_options_frame.winfo_children(): w.destroy()
-        if dest == "Spawn":
-            tk.Button(self.export_options_frame, text="Spawn Child Cell", bg=self.colors.get('panel_bg'), fg=self.colors.get('button_fg', self.colors.get('foreground')), relief='flat', state='disabled').pack(fill='x', pady=2)
-        elif dest == "File":
-            for fmt in ("JSON", "Markdown", "Text"):
-                tk.Button(self.export_options_frame, text=f"Save {fmt}", bg=self.colors.get('panel_bg'), fg=self.colors.get('button_fg', self.colors.get('foreground')), relief='flat', state='disabled').pack(fill='x', pady=2)
-
-        self.export_dest_cb.bind('<<ComboboxSelected>>', lambda _e: _build_export_options(self.export_dest_var.get()))
-        _build_export_options("Spawn")
 
     def _get_current_artifact(self):
         """Helper to package UI state into a standard artifact."""
@@ -603,23 +874,6 @@ class CELL_UI:
             "metadata": {"model": self.model_var.get(), "source": "ui_action"}
         }
 
-    def _handle_export(self):
-        """Routes the execution command based on the selected destination."""
-        dest = self.export_dest_var.get()
-        artifact = self._get_current_artifact()
-
-        if dest == "Spawn":
-            self.backend.spawn_child(artifact)
-        elif dest == "File":
-            path = filedialog.asksaveasfilename(defaultextension=".txt", parent=self.shell.root)
-            if path:
-                self.backend.export_artifact(artifact, "File", path)
-        elif dest == "Vector":
-            # Save to default long-term memory bank
-            self.backend.export_artifact(artifact, "Vector")
-            messagebox.showinfo("Memory", "Artifact embedded into Vector Store.", parent=self.shell.root)
-        else:
-            messagebox.showinfo("Not Implemented", f"Export to {dest} is coming soon!", parent=self.shell.root)
 
     def _on_accept(self):
         """HITL: User approves the result."""
@@ -648,34 +902,164 @@ class CELL_UI:
         self.btn_reject.configure(state='disabled')
         self.input_box.focus_set()
 
-    def _apply_markdown_style(self, prefix, suffix=""):
-        """Wraps selected text in Markdown markers for AI readability."""
+    # -------------------------------------------------------------------------
+    # Toolbar Tab Switching
+    # -------------------------------------------------------------------------
+
+    def _switch_toolbar_tab(self, tab_name):
+        """Swaps the visible toolbar button row and updates tab highlight."""
+        self._active_tab = tab_name
+        
+        # Hide all content rows
+        self.toolbar_md.pack_forget()
+        self.toolbar_json.pack_forget()
+        self.toolbar_py.pack_forget()
+        
+        # Show selected row
+        tab_map = {"MD": self.toolbar_md, "JSON": self.toolbar_json, "PY": self.toolbar_py}
+        tab_map[tab_name].pack(fill='x')
+        
+        # Update tab button highlight
+        btn_map = {"MD": self.tab_btn_md, "JSON": self.tab_btn_json, "PY": self.tab_btn_py}
+        for name, btn in btn_map.items():
+            if name == tab_name:
+                btn.configure(bg=self.colors.get('accent'), fg=self.colors.get('button_fg', 'white'))
+            else:
+                btn.configure(bg=self.colors.get('panel_bg'), fg=self.colors.get('foreground'))
+
+    # -------------------------------------------------------------------------
+    # MD Formatting Helpers
+    # -------------------------------------------------------------------------
+
+    def _md_wrap_selection(self, prefix, suffix=None):
+        """Wraps selected text with prefix/suffix. If no selection, inserts placeholder."""
+        suffix = suffix if suffix is not None else prefix
         try:
             start = self.input_box.index("sel.first")
-            end = self.input_box.index("sel.second")
-            selected_text = self.input_box.get(start, end)
+            end = self.input_box.index("sel.last")
+            selected = self.input_box.get(start, end)
             self.input_box.delete(start, end)
-            self.input_box.insert(start, f"{prefix}{selected_text}{suffix or prefix}")
+            self.input_box.insert(start, f"{prefix}{selected}{suffix}")
         except tk.TclError:
-            pass
+            self.input_box.insert("insert", f"{prefix}{suffix}")
+            # Move cursor between the markers
+            cursor = self.input_box.index("insert")
+            line, col = cursor.split('.')
+            self.input_box.mark_set("insert", f"{line}.{int(col) - len(suffix)}")
 
-    def _bold_text(self):
-        self._apply_markdown_style("**")
-
-    def _italic_text(self):
-        self._apply_markdown_style("_")
-
-    def _bullet_list(self):
-        """Converts selected lines into a Markdown bulleted list."""
+    def _md_prefix_lines(self, prefix):
+        """Prefixes each selected line. Falls back to inserting on current line."""
         try:
             start = self.input_box.index("sel.first linestart")
-            end = self.input_box.index("sel.second lineend")
+            end = self.input_box.index("sel.last lineend")
             lines = self.input_box.get(start, end).splitlines()
-            bulleted_lines = [f"* {line.lstrip('* ')}" for line in lines]
+            prefixed = [f"{prefix}{line}" for line in lines]
             self.input_box.delete(start, end)
-            self.input_box.insert(start, "\n".join(bulleted_lines))
+            self.input_box.insert(start, "\n".join(prefixed))
         except tk.TclError:
-            self.input_box.insert("insert", "* ")
+            line_start = self.input_box.index("insert linestart")
+            self.input_box.insert(line_start, prefix)
+
+    def _md_heading(self, level):
+        """Inserts or replaces heading prefix on selected lines."""
+        prefix = "#" * level + " "
+        try:
+            start = self.input_box.index("sel.first linestart")
+            end = self.input_box.index("sel.last lineend")
+            lines = self.input_box.get(start, end).splitlines()
+            # Strip existing heading markers before applying new ones
+            stripped = [l.lstrip("# ") for l in lines]
+            prefixed = [f"{prefix}{l}" for l in stripped]
+            self.input_box.delete(start, end)
+            self.input_box.insert(start, "\n".join(prefixed))
+        except tk.TclError:
+            line_start = self.input_box.index("insert linestart")
+            line_text = self.input_box.get(line_start, f"{line_start} lineend")
+            self.input_box.delete(line_start, f"{line_start} lineend")
+            self.input_box.insert(line_start, f"{prefix}{line_text.lstrip('# ')}")
+
+    def _md_bold(self):
+        self._md_wrap_selection("**")
+
+    def _md_italic(self):
+        self._md_wrap_selection("_")
+
+    def _md_inline_code(self):
+        self._md_wrap_selection("`")
+
+    def _md_code_block(self):
+        """Wraps selection in a fenced code block."""
+        try:
+            start = self.input_box.index("sel.first linestart")
+            end = self.input_box.index("sel.last lineend")
+            selected = self.input_box.get(start, end)
+            self.input_box.delete(start, end)
+            self.input_box.insert(start, f"```\n{selected}\n```")
+        except tk.TclError:
+            self.input_box.insert("insert", "```\n\n```")
+            # Move cursor inside the block
+            cursor = self.input_box.index("insert")
+            line, _ = cursor.split('.')
+            self.input_box.mark_set("insert", f"{int(line) - 1}.0")
+
+    def _md_bullet_list(self):
+        """Prefixes selected lines with - for a bulleted list."""
+        self._md_prefix_lines("- ")
+
+    def _md_numbered_list(self):
+        """Prefixes selected lines with incrementing numbers."""
+        try:
+            start = self.input_box.index("sel.first linestart")
+            end = self.input_box.index("sel.last lineend")
+            lines = self.input_box.get(start, end).splitlines()
+            numbered = [f"{i + 1}. {line}" for i, line in enumerate(lines)]
+            self.input_box.delete(start, end)
+            self.input_box.insert(start, "\n".join(numbered))
+        except tk.TclError:
+            self.input_box.insert("insert", "1. ")
+
+    def _md_blockquote(self):
+        """Prefixes selected lines with > for a blockquote."""
+        self._md_prefix_lines("> ")
+
+    def _md_hr(self):
+        """Inserts a horizontal rule on a new line."""
+        cursor = self.input_box.index("insert")
+        self.input_box.insert(cursor, "\n---\n")
+
+    def _md_clear_format(self):
+        """Strips all Markdown formatting from selected text (or entire box)."""
+        import re
+        try:
+            start = self.input_box.index("sel.first")
+            end = self.input_box.index("sel.last")
+            text = self.input_box.get(start, end)
+        except tk.TclError:
+            start = "1.0"
+            end = "end-1c"
+            text = self.input_box.get(start, end)
+        
+        # Strip fenced code blocks markers
+        text = re.sub(r'^```[\w]*\n?', '', text, flags=re.MULTILINE)
+        # Strip headings
+        text = re.sub(r'^#{1,6}\s+', '', text, flags=re.MULTILINE)
+        # Strip bold/italic (order matters: bold first)
+        text = re.sub(r'\*\*(.+?)\*\*', r'\1', text)
+        text = re.sub(r'__(.+?)__', r'\1', text)
+        text = re.sub(r'\*(.+?)\*', r'\1', text)
+        text = re.sub(r'_(.+?)_', r'\1', text)
+        # Strip inline code
+        text = re.sub(r'`(.+?)`', r'\1', text)
+        # Strip bullet/number list prefixes
+        text = re.sub(r'^[-*+]\s+', '', text, flags=re.MULTILINE)
+        text = re.sub(r'^\d+\.\s+', '', text, flags=re.MULTILINE)
+        # Strip blockquotes
+        text = re.sub(r'^>\s+', '', text, flags=re.MULTILINE)
+        # Strip horizontal rules
+        text = re.sub(r'^---+\s*$', '', text, flags=re.MULTILINE)
+        
+        self.input_box.delete(start, end)
+        self.input_box.insert(start, text)
 
     def _update_widget(self, widget, content):
         if isinstance(widget, tk.Entry):
@@ -700,18 +1084,19 @@ class CELL_UI:
         self.infer_log.configure(state='disabled')
 
     def display_result(self, text: str):
-        """Displays the final artifact and enables HITL buttons."""
+        """Displays the final artifact and enables HITL + Send To controls."""
         self.result_text.configure(state='normal')
         self.result_text.delete('1.0', 'end')
         self.result_text.insert('1.0', text)
         self.result_text.configure(state='disabled')
-        
+
         if self.btn_accept:
             self.btn_accept.configure(state='normal')
         if self.btn_reject:
             self.btn_reject.configure(state='normal')
-        if self.export_execute_btn:
-            self.export_execute_btn.configure(state='normal')
+
+        self._response_ready = True
+        self._update_sendto_state()
 
     def _save_repo_dialog(self, table, content):
         """Modular save dialog for individual repositories."""
@@ -968,7 +1353,11 @@ class CELL_UI:
     def _submit(self):
         """Process submission, persist parameters, and update UI consoles."""
         content = self.input_box.get("1.0", "end-1c")
-        inherited = self.context_view.get("1.0", "end-1c")
+        inherited = self._serialize_onto_steps()
+
+        # Reset response state for new run
+        self._response_ready = False
+        self._update_sendto_state()
         model = self.model_var.get()
         role = self.role_entry.get()
         prompt = self.prompt_text.get("1.0", "end-1c")
@@ -1203,6 +1592,8 @@ class CELL_UI:
         """Updates the cell identity display (called after rename)."""
         self.cell_name_label.configure(text=self.backend.cell_name)
         self.cell_id_label.configure(text=f"ID: {self.backend.cell_id}")
+
+
 
 
 

@@ -49,7 +49,12 @@
     "requirements.txt": "unchecked",
     "setup_env.bat": "unchecked",
     "_sanbox-area\\_StopTIMER.py": "checked",
-    "_sanbox-area\\helloWorldWindowTEST.py": "checked"
+    "_sanbox-area\\helloWorldWindowTEST.py": "checked",
+    "_radomDOCS": "checked",
+    "_radomDOCS\\architecture_overview.py": "checked",
+    "_radomDOCS\\enhanced_cell_identity.py": "checked",
+    "_radomDOCS\\integration_guide.py": "checked",
+    "src\\cell_identity.py": "checked"
   },
   "dynamic_exclusions": []
 }
