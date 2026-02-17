@@ -78,6 +78,14 @@ def main():
             register_cell_orchestration(child_backend)
             
             child_ui = CELL_UI(child_proxy, child_backend)
+
+            # Wire close event to unregister cell and update all dropdowns
+            def on_child_close(cid=child_backend.cell_id):
+                cell_registry.pop(cid, None)
+                child_backend.close_cell()
+                print(f"[Registry] Cell Closed: {cid}")
+                broadcast_registry_update()
+            child_win.protocol("WM_DELETE_WINDOW", on_child_close)
             
             # Hydrate DNA into child cell based on send destination
             source = data.get('source_artifact', {})
@@ -105,9 +113,10 @@ def main():
         target_backend.bus.subscribe("register_cell", on_cell_registered)
 
         # 3. Handle Nexus/Data Pushing (The Router)
+        # Guard: only route if this backend is NOT the target (prevents infinite re-emit)
         def on_push_request(payload):
             target_id = payload.get('target_id')
-            if target_id in cell_registry:
+            if target_id in cell_registry and target_id != target_backend.cell_id:
                 print(f"[Nexus] Routing data from {payload.get('source_id')} to {target_id}")
                 cell_registry[target_id].bus.emit("push_to_nexus", payload)
 
@@ -124,6 +133,8 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
 
 
 

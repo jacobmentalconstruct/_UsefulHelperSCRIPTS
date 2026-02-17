@@ -125,13 +125,6 @@ class CELL_UI:
         # Phase 1: Identity & Registry
         self.session_id = self.backend.cell_id
         self.backend.session_id = self.session_id
-        
-        # Register with the global orchestration bus
-        self.backend.bus.emit("register_cell", {
-            "id": self.session_id, 
-            "title": self.backend.cell_name,
-            "parent_id": self.backend.parent_id
-        })
 
         # Track singleton modals / key widgets
         self._settings_window = None
@@ -177,6 +170,13 @@ class CELL_UI:
         self._build_context_menu()
         self._restore_component_state()
         self._register_signals()
+
+        # Emit AFTER signals are wired so this cell catches the registry broadcast response
+        self.backend.bus.emit("register_cell", {
+            "id": self.session_id,
+            "title": self.backend.cell_name,
+            "parent_id": self.backend.parent_id
+        })
 
     def _register_signals(self):
         """Connects UI to the nervous system."""
@@ -1592,6 +1592,7 @@ class CELL_UI:
         """Updates the cell identity display (called after rename)."""
         self.cell_name_label.configure(text=self.backend.cell_name)
         self.cell_id_label.configure(text=f"ID: {self.backend.cell_id}")
+
 
 
 
