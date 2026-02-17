@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import ttk, messagebox, filedialog
+from tkinter import ttk, messagebox, filedialog, simpledialog
 import sqlite3
 
 class CellViewerModal(tk.Toplevel):
@@ -122,8 +122,20 @@ class CELL_UI:
         self.container = shell.get_main_container()
         self.colors = shell.colors
 
+        # Phase 1: Identity & Registry
+        self.session_id = self.backend.cell_id
+        self.backend.session_id = self.session_id
+        
+        # Register with the global orchestration bus
+        self.backend.bus.emit("register_cell", {
+            "id": self.session_id, 
+            "title": self.backend.cell_name,
+            "parent_id": self.backend.parent_id
+        })
+
         # Track singleton modals / key widgets
         self._settings_window = None
+        self._rename_window = None
         self.model_lbl = None
         self.btn_save_template = None
         self.btn_load_template = None
@@ -172,8 +184,52 @@ class CELL_UI:
         if hasattr(self.backend, 'bus'):
             self.backend.bus.subscribe("log_append", self._on_log_append)
             self.backend.bus.subscribe("process_complete", self._on_process_complete)
+            self.backend.bus.subscribe("update_registry", self._update_nexus_list)
+            self.backend.bus.subscribe("push_to_nexus", self._handle_incoming_push)
             # Pass the new palette through so ttk/tk widgets can rebind safely.
             self.backend.bus.subscribe("theme_updated", self.refresh_theme)
+            # Cell identity signals
+            self.backend.bus.subscribe("cell_renamed", self._on_cell_renamed)
+            self.backend.bus.subscribe("update_window_title", self._update_window_title)
+
+    def _update_nexus_list(self, cell_data):
+        """Updates the Nexus dropdown with currently active cells."""
+        # cell_data is now: {cell_id: {"id": ..., "name": ...}}
+        # Create display strings: "Name (id)"
+        targets = [
+            f"{data['name']} ({cid})"
+            for cid, data in cell_data.items()
+            if cid != self.session_id
+        ]
+        
+        self.nexus_cb['values'] = ["Select..."] + targets
+        
+        # Store ID mapping for lookup
+        self._nexus_id_map = {
+            f"{data['name']} ({cid})": cid
+            for cid, data in cell_data.items()
+        }
+
+    def _on_push_to_nexus(self):
+        """Push result content to the selected target cell."""
+        display_name = self.nexus_var.get()
+        if display_name in ["Select...", ""]:
+            return
+        
+        # Lookup actual cell ID from display name
+        target_id = self._nexus_id_map.get(display_name)
+        if not target_id:
+            return
+        
+        content = self.result_text.get("1.0", "end-1c")
+        self.backend.push_to_target(target_id, content)
+
+    def _handle_incoming_push(self, payload):
+        """Appends incoming data from another cell to the input box."""
+        if payload.get('target_id') == self.session_id:
+            header = f"\n\n--- INCOMING FROM {payload.get('source_id')} ---\n"
+            self.input_box.insert('end', header + payload.get('content'))
+            self.input_box.see('end')
 
     def _on_log_append(self, content):
         """Marshals background thread signal to main UI thread."""
@@ -200,11 +256,60 @@ class CELL_UI:
         self.panel_prompt = tk.Frame(self.container, bg=self.colors.get('background'))
         self.panel_prompt.pack(in_=self.left_col, fill='both', expand=True)
 
-        # --- Top Label ---
-        self.top_label = tk.Label(self.panel_prompt, text="Type in your idea HERE.", 
-                 fg=self.colors.get('foreground'), bg=self.colors.get('background'),
-                 font=("Segoe UI", 12, "bold"))
-        self.top_label.pack(pady=(10, 5))
+        # --- Cell Identity Bar ---
+        self.identity_bar = tk.Frame(self.panel_prompt, bg=self.colors.get('background'))
+        self.identity_bar.pack(pady=(10, 5), padx=10, fill='x')
+        
+        # Cell ID (read-only, left side)
+        self.cell_id_label = tk.Label(
+            self.identity_bar,
+            text=f"ID: {self.backend.cell_id}",
+            fg=self.colors.get('foreground'),
+            bg=self.colors.get('background'),
+            font=("Segoe UI", 9)
+        )
+        self.cell_id_label.pack(side='left', padx=(0, 10))
+        
+        # Cell Name (editable, center-left)
+        self.cell_name_label = tk.Label(
+            self.identity_bar,
+            text=self.backend.cell_name,
+            fg=self.colors.get('accent'),
+            bg=self.colors.get('background'),
+            font=("Segoe UI", 12, "bold"),
+            cursor="hand2"
+        )
+        self.cell_name_label.pack(side='left', padx=(0, 5))
+        self.cell_name_label.bind("<Double-Button-1>", lambda e: self._toggle_name_edit())
+        
+        # Cell Name Entry (hidden by default)
+        self.cell_name_entry = tk.Entry(
+            self.identity_bar,
+            fg=self.colors.get('foreground'),
+            bg=self.colors.get('entry_bg'),
+            insertbackground=self.colors.get('foreground'),
+            font=("Segoe UI", 12, "bold"),
+            relief="flat"
+        )
+        self.cell_name_entry.bind("<Return>", lambda e: self._save_name_edit())
+        self.cell_name_entry.bind("<Tab>", lambda e: self._save_name_edit())
+        self.cell_name_entry.bind("<Escape>", lambda e: self._cancel_name_edit())
+        
+        # Pencil button (edit toggle)
+        self.pencil_btn = tk.Button(
+            self.identity_bar,
+            text="✏",
+            bg=self.colors.get('background'),
+            fg=self.colors.get('foreground'),
+            relief="flat",
+            font=("Segoe UI", 12),
+            cursor="hand2",
+            command=self._toggle_name_edit
+        )
+        self.pencil_btn.pack(side='left', padx=(5, 0))
+        
+        # Track edit mode state
+        self._name_edit_mode = False
 
         # --- Formatting Toolbar ---
         self.toolbar = tk.Frame(self.panel_prompt, bg=self.colors.get('panel_bg'))
@@ -284,18 +389,27 @@ class CELL_UI:
 
         self.config_frame.columnconfigure(1, weight=1)
 
-        # --- Main Input Box ---
+        # --- Inherited Context (The DNA) ---
+        tk.Label(self.panel_prompt, text="Inherited Context (Reference Only):", bg=self.colors.get('background'), fg=self.colors.get('foreground'), font=("Segoe UI", 8, "bold")).pack(anchor='w', padx=10)
+        self.context_view = tk.Text(
+            self.panel_prompt, height=6, wrap="word", 
+            bg=self.colors.get('panel_bg'), fg=self.colors.get('entry_fg'),
+            font=("Consolas", 10), state='normal'
+        )
+        self.context_view.pack(fill='x', padx=10, pady=(0, 10))
+
+        # --- User Request (The Ask) ---
+        tk.Label(self.panel_prompt, text="Your Request / Task:", bg=self.colors.get('background'), fg=self.colors.get('foreground'), font=("Segoe UI", 9, "bold")).pack(anchor='w', padx=10)
         self.input_box = tk.Text(
             self.panel_prompt,
-            undo=True,
-            wrap="word",
+            undo=True, wrap="word",
             bg=self.colors.get('entry_bg', self.colors.get('panel_bg')),
             fg=self.colors.get('entry_fg', self.colors.get('foreground')),
             insertbackground=self.colors.get('entry_fg', self.colors.get('foreground')),
             selectbackground=self.colors.get('select_bg', self.colors.get('accent')),
             font=("Consolas", 11)
         )
-        self.input_box.pack(fill='both', expand=True, padx=10, pady=5)
+        self.input_box.pack(fill='both', expand=True, padx=10, pady=(0, 5))
         self.input_box.focus_set()
 
         # --- Action Bar ---
@@ -416,6 +530,18 @@ class CELL_UI:
             command=self.shell.root.destroy
         )
         self.btn_exit.pack(side='right')
+
+        # Phase 1: Nexus Pipeline Controls
+        tk.Label(hitl_bar, text="Target Nexus:", bg=self.colors.get('background'), fg=self.colors.get('foreground')).pack(side='left', padx=(10, 2))
+        self.nexus_var = tk.StringVar(value="Select...")
+        self.nexus_cb = ttk.Combobox(hitl_bar, textvariable=self.nexus_var, state='readonly', width=15)
+        self.nexus_cb.pack(side='left', padx=2)
+
+        self.btn_push = tk.Button(
+            hitl_bar, text="PUSH", bg=self.colors.get('accent'), fg="white",
+            relief="flat", command=self._on_push_to_nexus
+        )
+        self.btn_push.pack(side='left', padx=2)
 
         # PANEL 4 — Export / Spawn (inline router)
         self.panel_export = tk.LabelFrame(
@@ -814,6 +940,8 @@ class CELL_UI:
         self.menu.add_command(label="Cut", command=lambda: self.input_box.event_generate("<<Cut>>"))
         self.menu.add_command(label="Copy", command=lambda: self.input_box.event_generate("<<Copy>>"))
         self.menu.add_command(label="Paste", command=lambda: self.input_box.event_generate("<<Paste>>"))
+        self.menu.add_separator()
+        self.menu.add_command(label="Rename Cell...", command=self._open_rename_dialog)
         self.input_box.bind("<Button-3>", lambda e: self.menu.post(e.x_root, e.y_root))
 
     def _save_full_template(self):
@@ -840,6 +968,7 @@ class CELL_UI:
     def _submit(self):
         """Process submission, persist parameters, and update UI consoles."""
         content = self.input_box.get("1.0", "end-1c")
+        inherited = self.context_view.get("1.0", "end-1c")
         model = self.model_var.get()
         role = self.role_entry.get()
         prompt = self.prompt_text.get("1.0", "end-1c")
@@ -862,7 +991,7 @@ class CELL_UI:
         self.result_text.configure(state='disabled')
         
         # Trigger backend processing
-        self.backend.process_submission(content, model, role, prompt)
+        self.backend.process_submission(content, model, role, prompt, inherited_context=inherited)
 
     def refresh_theme(self, new_colors=None):
         """Re-applies the current theme to all primary UI widgets."""
@@ -994,6 +1123,90 @@ class CELL_UI:
         # Export buttons
         if self.export_execute_btn is not None:
             self.export_execute_btn.configure(bg=self.colors.get('accent'), fg=self.colors.get('button_fg', 'white'))
+
+    def _on_cell_renamed(self, data):
+        """Handles cell rename events."""
+        # Update identity display when rename happens
+        self._update_identity_display()
+        # Exit edit mode if currently editing
+        if self._name_edit_mode:
+            self._exit_edit_mode()
+
+    def _update_window_title(self, new_title):
+        """Updates the window title."""
+        self.shell.root.title(new_title)
+
+    def _open_rename_dialog(self):
+        """Opens a dialog to rename the current cell."""
+        # Singleton pattern - only one rename dialog at a time
+        if self._rename_window is not None and self._rename_window.winfo_exists():
+            self._rename_window.focus()
+            return
+        
+        new_name = simpledialog.askstring(
+            "Rename Cell",
+            f"Enter new name for '{self.backend.cell_name}':",
+            initialvalue=self.backend.cell_name,
+            parent=self.shell.root
+        )
+        
+        if new_name and new_name.strip():
+            self.backend.rename_cell(new_name.strip())
+            self._update_identity_display()
+
+    def _toggle_name_edit(self):
+        """Toggles between label and entry mode for cell name."""
+        if self._name_edit_mode:
+            # Currently editing - save and exit edit mode
+            self._save_name_edit()
+        else:
+            # Enter edit mode
+            self._name_edit_mode = True
+            
+            # Hide label, show entry
+            self.cell_name_label.pack_forget()
+            self.cell_name_entry.delete(0, 'end')
+            self.cell_name_entry.insert(0, self.backend.cell_name)
+            self.cell_name_entry.pack(side='left', padx=(0, 5), fill='x', expand=True)
+            self.cell_name_entry.focus()
+            self.cell_name_entry.select_range(0, 'end')
+
+    def _save_name_edit(self):
+        """Saves the edited cell name and exits edit mode."""
+        if not self._name_edit_mode:
+            return
+        
+        new_name = self.cell_name_entry.get().strip()
+        
+        if new_name and new_name != self.backend.cell_name:
+            # Name changed - propagate through backend
+            self.backend.rename_cell(new_name)
+        
+        # Exit edit mode
+        self._exit_edit_mode()
+
+    def _cancel_name_edit(self):
+        """Cancels editing without saving."""
+        if self._name_edit_mode:
+            self._exit_edit_mode()
+
+    def _exit_edit_mode(self):
+        """Exits edit mode and restores label display."""
+        self._name_edit_mode = False
+        
+        # Hide entry, show label
+        self.cell_name_entry.pack_forget()
+        self.cell_name_label.configure(text=self.backend.cell_name)
+        self.cell_name_label.pack(side='left', padx=(0, 5))
+
+    def _update_identity_display(self):
+        """Updates the cell identity display (called after rename)."""
+        self.cell_name_label.configure(text=self.backend.cell_name)
+        self.cell_id_label.configure(text=f"ID: {self.backend.cell_id}")
+
+
+
+
 
 
 

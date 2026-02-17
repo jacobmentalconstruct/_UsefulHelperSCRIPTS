@@ -1,9 +1,9 @@
 {
   "folder_states": {
     ".": "checked",
-    "_sanbox-area": "checked",
+    "_sanbox-area": "unchecked",
     "_sanbox-area\\app.py": "checked",
-    "_uimapper_reports": "checked",
+    "_uimapper_reports": "unchecked",
     "_uimapper_reports\\uimap_report.json": "checked",
     "_uimapper_reports\\uimap_report.md": "checked",
     "src": "checked",
@@ -39,15 +39,17 @@
     "src\\microservices\\document_utils.py": "checked",
     "src\\microservices\\fix.py": "checked",
     "src\\microservices\\microservice_std_lib.py": "checked",
-    "src\\microservices\\microservices.7z": "checked",
+    "src\\microservices\\microservices.7z": "unchecked",
     "src\\__init__.py": "checked",
     "src\\app.py": "checked",
     "src\\backend.py": "checked",
     "src\\ui.py": "checked",
-    ".gitignore": "checked",
-    "LICENSE.md": "checked",
-    "requirements.txt": "checked",
-    "setup_env.bat": "checked"
+    ".gitignore": "unchecked",
+    "LICENSE.md": "unchecked",
+    "requirements.txt": "unchecked",
+    "setup_env.bat": "unchecked",
+    "_sanbox-area\\_StopTIMER.py": "checked",
+    "_sanbox-area\\helloWorldWindowTEST.py": "checked"
   },
   "dynamic_exclusions": []
 }

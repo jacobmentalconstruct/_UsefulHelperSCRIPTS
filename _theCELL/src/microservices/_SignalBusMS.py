@@ -32,6 +32,11 @@ class SignalBusMS(BaseService):
     SIGNAL_LOG_APPEND = "log_append"
     SIGNAL_ERROR = "notify_error"
 
+    # --- Nexus / Ledger Signals ---
+    SIGNAL_PUSH_DATA = "push_to_nexus"          # Data transfer between cells
+    SIGNAL_REGISTER_CELL = "register_cell"      # Notify Shell of new cell presence
+    SIGNAL_UPDATE_REGISTRY = "update_registry"  # Sync dropdowns with active cells
+
     def __init__(self, config: Optional[Dict[str, Any]] = None):
         super().__init__('SignalBus')
         self.config = config or {}
@@ -115,4 +120,5 @@ if __name__ == '__main__':
     # Simulate a backend event
     delivered = bus.emit("hunk_processed", {"file": "app.py", "lines": 50})
     print(f"Signal delivered to {delivered} listeners.")
+
 

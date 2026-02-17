@@ -29,7 +29,7 @@
       "config_calls": [],
       "created_at": {
         "col": 8,
-        "lineno": 216,
+        "lineno": 250,
         "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
       },
       "kwargs": {
@@ -50,7 +50,7 @@
       "config_calls": [],
       "created_at": {
         "col": 8,
-        "lineno": 218,
+        "lineno": 252,
         "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
       },
       "kwargs": {
@@ -70,7 +70,7 @@
       "config_calls": [],
       "created_at": {
         "col": 8,
-        "lineno": 221,
+        "lineno": 255,
         "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
       },
       "kwargs": {
@@ -88,7 +88,7 @@
       "config_calls": [],
       "created_at": {
         "col": 8,
-        "lineno": 225,
+        "lineno": 259,
         "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
       },
       "kwargs": {
@@ -110,7 +110,7 @@
       "config_calls": [],
       "created_at": {
         "col": 8,
-        "lineno": 231,
+        "lineno": 265,
         "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
       },
       "kwargs": {
@@ -129,7 +129,7 @@
       "config_calls": [],
       "created_at": {
         "col": 8,
-        "lineno": 234,
+        "lineno": 268,
         "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
       },
       "kwargs": {
@@ -146,7 +146,7 @@
       "config_calls": [],
       "created_at": {
         "col": 8,
-        "lineno": 239,
+        "lineno": 273,
         "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
       },
       "kwargs": {
@@ -165,7 +165,7 @@
       "config_calls": [],
       "created_at": {
         "col": 8,
-        "lineno": 241,
+        "lineno": 275,
         "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
       },
       "kwargs": {
@@ -182,7 +182,7 @@
       "config_calls": [],
       "created_at": {
         "col": 8,
-        "lineno": 244,
+        "lineno": 278,
         "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
       },
       "kwargs": {
@@ -203,7 +203,7 @@
       "config_calls": [],
       "created_at": {
         "col": 8,
-        "lineno": 253,
+        "lineno": 287,
         "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
       },
       "kwargs": {
@@ -243,7 +243,7 @@
       "config_calls": [],
       "created_at": {
         "col": 8,
-        "lineno": 256,
+        "lineno": 290,
         "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
       },
       "kwargs": {
@@ -264,7 +264,7 @@
       "config_calls": [],
       "created_at": {
         "col": 8,
-        "lineno": 261,
+        "lineno": 295,
         "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
       },
       "kwargs": {
@@ -283,7 +283,7 @@
       "config_calls": [],
       "created_at": {
         "col": 8,
-        "lineno": 263,
+        "lineno": 297,
         "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
       },
       "kwargs": {
@@ -300,7 +300,7 @@
       "config_calls": [],
       "created_at": {
         "col": 8,
-        "lineno": 266,
+        "lineno": 300,
         "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
       },
       "kwargs": {
@@ -321,7 +321,7 @@
       "config_calls": [],
       "created_at": {
         "col": 8,
-        "lineno": 276,
+        "lineno": 310,
         "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
       },
       "kwargs": {
@@ -340,7 +340,7 @@
       "config_calls": [],
       "created_at": {
         "col": 8,
-        "lineno": 278,
+        "lineno": 312,
         "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
       },
       "kwargs": {
@@ -363,7 +363,7 @@
       "config_calls": [],
       "created_at": {
         "col": 8,
-        "lineno": 281,
+        "lineno": 315,
         "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
       },
       "kwargs": {
@@ -384,16 +384,15 @@
       "config_calls": [],
       "created_at": {
         "col": 8,
-        "lineno": 288,
+        "lineno": 323,
         "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
       },
       "kwargs": {
         "bg": "self.colors.get(...)",
         "fg": "self.colors.get(...)",
         "font": "Tuple",
-        "insertbackground": "self.colors.get(...)",
-        "selectbackground": "self.colors.get(...)",
-        "undo": "True",
+        "height": "6",
+        "state": "'normal'",
         "wrap": "'word'"
       },
       "layout_calls": [],
@@ -407,7 +406,30 @@
       "config_calls": [],
       "created_at": {
         "col": 8,
-        "lineno": 302,
+        "lineno": 332,
+        "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
+      },
+      "kwargs": {
+        "bg": "self.colors.get(...)",
+        "fg": "self.colors.get(...)",
+        "font": "Tuple",
+        "insertbackground": "self.colors.get(...)",
+        "selectbackground": "self.colors.get(...)",
+        "undo": "True",
+        "wrap": "'word'"
+      },
+      "layout_calls": [],
+      "parent_id": null,
+      "widget_id": "w28",
+      "widget_type": "Text"
+    },
+    "w29": {
+      "bind_events": [],
+      "command_targets": [],
+      "config_calls": [],
+      "created_at": {
+        "col": 8,
+        "lineno": 345,
         "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
       },
       "kwargs": {
@@ -415,31 +437,8 @@
       },
       "layout_calls": [],
       "parent_id": null,
-      "widget_id": "w28",
-      "widget_type": "Frame"
-    },
-    "w29": {
-      "bind_events": [],
-      "command_targets": [
-        "self._save_full_template"
-      ],
-      "config_calls": [],
-      "created_at": {
-        "col": 8,
-        "lineno": 305,
-        "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
-      },
-      "kwargs": {
-        "bg": "self.colors.get(...)",
-        "command": "self._save_full_template",
-        "fg": "self.colors.get(...)",
-        "font": "Tuple",
-        "text": "'SAVE AS TEMPLATE'"
-      },
-      "layout_calls": [],
-      "parent_id": null,
       "widget_id": "w29",
-      "widget_type": "Button"
+      "widget_type": "Frame"
     },
     "w3": {
       "bind_events": [],
@@ -447,7 +446,7 @@
       "config_calls": [],
       "created_at": {
         "col": 8,
-        "lineno": 190,
+        "lineno": 224,
         "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
       },
       "kwargs": {
@@ -461,12 +460,35 @@
     "w30": {
       "bind_events": [],
       "command_targets": [
+        "self._save_full_template"
+      ],
+      "config_calls": [],
+      "created_at": {
+        "col": 8,
+        "lineno": 348,
+        "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
+      },
+      "kwargs": {
+        "bg": "self.colors.get(...)",
+        "command": "self._save_full_template",
+        "fg": "self.colors.get(...)",
+        "font": "Tuple",
+        "text": "'SAVE AS TEMPLATE'"
+      },
+      "layout_calls": [],
+      "parent_id": null,
+      "widget_id": "w30",
+      "widget_type": "Button"
+    },
+    "w31": {
+      "bind_events": [],
+      "command_targets": [
         "Lambda"
       ],
       "config_calls": [],
       "created_at": {
         "col": 8,
-        "lineno": 315,
+        "lineno": 358,
         "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
       },
       "kwargs": {
@@ -478,10 +500,10 @@
       },
       "layout_calls": [],
       "parent_id": null,
-      "widget_id": "w30",
+      "widget_id": "w31",
       "widget_type": "Button"
     },
-    "w31": {
+    "w32": {
       "bind_events": [],
       "command_targets": [
         "self._submit"
@@ -489,7 +511,7 @@
       "config_calls": [],
       "created_at": {
         "col": 8,
-        "lineno": 325,
+        "lineno": 368,
         "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
       },
       "kwargs": {
@@ -501,16 +523,16 @@
       },
       "layout_calls": [],
       "parent_id": null,
-      "widget_id": "w31",
+      "widget_id": "w32",
       "widget_type": "Button"
     },
-    "w32": {
+    "w33": {
       "bind_events": [],
       "command_targets": [],
       "config_calls": [],
       "created_at": {
         "col": 8,
-        "lineno": 338,
+        "lineno": 381,
         "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
       },
       "kwargs": {
@@ -523,16 +545,16 @@
       },
       "layout_calls": [],
       "parent_id": null,
-      "widget_id": "w32",
+      "widget_id": "w33",
       "widget_type": "LabelFrame"
     },
-    "w33": {
+    "w34": {
       "bind_events": [],
       "command_targets": [],
       "config_calls": [],
       "created_at": {
         "col": 8,
-        "lineno": 347,
+        "lineno": 390,
         "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
       },
       "kwargs": {
@@ -545,16 +567,16 @@
       },
       "layout_calls": [],
       "parent_id": null,
-      "widget_id": "w33",
+      "widget_id": "w34",
       "widget_type": "Text"
     },
-    "w34": {
+    "w35": {
       "bind_events": [],
       "command_targets": [],
       "config_calls": [],
       "created_at": {
         "col": 8,
-        "lineno": 363,
+        "lineno": 406,
         "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
       },
       "kwargs": {
@@ -567,16 +589,16 @@
       },
       "layout_calls": [],
       "parent_id": null,
-      "widget_id": "w34",
+      "widget_id": "w35",
       "widget_type": "LabelFrame"
     },
-    "w35": {
+    "w36": {
       "bind_events": [],
       "command_targets": [],
       "config_calls": [],
       "created_at": {
         "col": 8,
-        "lineno": 372,
+        "lineno": 415,
         "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
       },
       "kwargs": {
@@ -589,16 +611,16 @@
       },
       "layout_calls": [],
       "parent_id": null,
-      "widget_id": "w35",
+      "widget_id": "w36",
       "widget_type": "Text"
     },
-    "w36": {
+    "w37": {
       "bind_events": [],
       "command_targets": [],
       "config_calls": [],
       "created_at": {
         "col": 8,
-        "lineno": 385,
+        "lineno": 428,
         "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
       },
       "kwargs": {
@@ -608,10 +630,10 @@
         "pack(fill='x', padx=10, pady=Tuple)"
       ],
       "parent_id": null,
-      "widget_id": "w36",
+      "widget_id": "w37",
       "widget_type": "Frame"
     },
-    "w37": {
+    "w38": {
       "bind_events": [],
       "command_targets": [
         "self._on_accept"
@@ -619,7 +641,7 @@
       "config_calls": [],
       "created_at": {
         "col": 8,
-        "lineno": 388,
+        "lineno": 431,
         "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
       },
       "kwargs": {
@@ -631,11 +653,11 @@
         "text": "'ACCEPT'"
       },
       "layout_calls": [],
-      "parent_id": "w36",
-      "widget_id": "w37",
+      "parent_id": "w37",
+      "widget_id": "w38",
       "widget_type": "Button"
     },
-    "w38": {
+    "w39": {
       "bind_events": [],
       "command_targets": [
         "self._on_reject"
@@ -643,7 +665,7 @@
       "config_calls": [],
       "created_at": {
         "col": 8,
-        "lineno": 399,
+        "lineno": 442,
         "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
       },
       "kwargs": {
@@ -655,30 +677,7 @@
         "text": "'REJECT & EDIT'"
       },
       "layout_calls": [],
-      "parent_id": "w36",
-      "widget_id": "w38",
-      "widget_type": "Button"
-    },
-    "w39": {
-      "bind_events": [],
-      "command_targets": [
-        "self.shell.root.destroy"
-      ],
-      "config_calls": [],
-      "created_at": {
-        "col": 8,
-        "lineno": 410,
-        "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
-      },
-      "kwargs": {
-        "bg": "self.colors.get(...)",
-        "command": "self.shell.root.destroy",
-        "fg": "self.colors.get(...)",
-        "relief": "'flat'",
-        "text": "'EXIT CELL'"
-      },
-      "layout_calls": [],
-      "parent_id": "w36",
+      "parent_id": "w37",
       "widget_id": "w39",
       "widget_type": "Button"
     },
@@ -688,7 +687,7 @@
       "config_calls": [],
       "created_at": {
         "col": 8,
-        "lineno": 193,
+        "lineno": 227,
         "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
       },
       "kwargs": {
@@ -701,11 +700,76 @@
     },
     "w40": {
       "bind_events": [],
+      "command_targets": [
+        "self.shell.root.destroy"
+      ],
+      "config_calls": [],
+      "created_at": {
+        "col": 8,
+        "lineno": 453,
+        "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
+      },
+      "kwargs": {
+        "bg": "self.colors.get(...)",
+        "command": "self.shell.root.destroy",
+        "fg": "self.colors.get(...)",
+        "relief": "'flat'",
+        "text": "'EXIT CELL'"
+      },
+      "layout_calls": [],
+      "parent_id": "w37",
+      "widget_id": "w40",
+      "widget_type": "Button"
+    },
+    "w41": {
+      "bind_events": [],
       "command_targets": [],
       "config_calls": [],
       "created_at": {
         "col": 8,
-        "lineno": 421,
+        "lineno": 466,
+        "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
+      },
+      "kwargs": {
+        "state": "'readonly'",
+        "textvariable": "self.nexus_var",
+        "width": "15"
+      },
+      "layout_calls": [],
+      "parent_id": "w37",
+      "widget_id": "w41",
+      "widget_type": "Combobox"
+    },
+    "w42": {
+      "bind_events": [],
+      "command_targets": [
+        "self._on_push_to_nexus"
+      ],
+      "config_calls": [],
+      "created_at": {
+        "col": 8,
+        "lineno": 469,
+        "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
+      },
+      "kwargs": {
+        "bg": "self.colors.get(...)",
+        "command": "self._on_push_to_nexus",
+        "fg": "'white'",
+        "relief": "'flat'",
+        "text": "'PUSH'"
+      },
+      "layout_calls": [],
+      "parent_id": "w37",
+      "widget_id": "w42",
+      "widget_type": "Button"
+    },
+    "w43": {
+      "bind_events": [],
+      "command_targets": [],
+      "config_calls": [],
+      "created_at": {
+        "col": 8,
+        "lineno": 476,
         "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
       },
       "kwargs": {
@@ -718,16 +782,16 @@
       },
       "layout_calls": [],
       "parent_id": null,
-      "widget_id": "w40",
+      "widget_id": "w43",
       "widget_type": "LabelFrame"
     },
-    "w41": {
+    "w44": {
       "bind_events": [],
       "command_targets": [],
       "config_calls": [],
       "created_at": {
         "col": 8,
-        "lineno": 430,
+        "lineno": 485,
         "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
       },
       "kwargs": {
@@ -735,16 +799,16 @@
       },
       "layout_calls": [],
       "parent_id": null,
-      "widget_id": "w41",
+      "widget_id": "w44",
       "widget_type": "Frame"
     },
-    "w42": {
+    "w45": {
       "bind_events": [],
       "command_targets": [],
       "config_calls": [],
       "created_at": {
         "col": 8,
-        "lineno": 433,
+        "lineno": 488,
         "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
       },
       "kwargs": {
@@ -754,16 +818,16 @@
         "pack(fill='x')"
       ],
       "parent_id": null,
-      "widget_id": "w42",
+      "widget_id": "w45",
       "widget_type": "Frame"
     },
-    "w43": {
+    "w46": {
       "bind_events": [],
       "command_targets": [],
       "config_calls": [],
       "created_at": {
         "col": 8,
-        "lineno": 439,
+        "lineno": 494,
         "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
       },
       "kwargs": {
@@ -772,11 +836,11 @@
         "values": "List"
       },
       "layout_calls": [],
-      "parent_id": "w42",
-      "widget_id": "w43",
+      "parent_id": "w45",
+      "widget_id": "w46",
       "widget_type": "Combobox"
     },
-    "w44": {
+    "w47": {
       "bind_events": [],
       "command_targets": [
         "self._handle_export"
@@ -784,7 +848,7 @@
       "config_calls": [],
       "created_at": {
         "col": 8,
-        "lineno": 447,
+        "lineno": 502,
         "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
       },
       "kwargs": {
@@ -796,17 +860,17 @@
         "text": "'EXECUTE'"
       },
       "layout_calls": [],
-      "parent_id": "w42",
-      "widget_id": "w44",
+      "parent_id": "w45",
+      "widget_id": "w47",
       "widget_type": "Button"
     },
-    "w45": {
+    "w48": {
       "bind_events": [],
       "command_targets": [],
       "config_calls": [],
       "created_at": {
         "col": 8,
-        "lineno": 455,
+        "lineno": 510,
         "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
       },
       "kwargs": {
@@ -814,10 +878,10 @@
       },
       "layout_calls": [],
       "parent_id": null,
-      "widget_id": "w45",
+      "widget_id": "w48",
       "widget_type": "Frame"
     },
-    "w46": {
+    "w49": {
       "bind_events": [
         "'<Return>' -> Lambda",
         "'<Escape>' -> Lambda"
@@ -828,61 +892,7 @@
       ],
       "created_at": {
         "col": 8,
-        "lineno": 592,
-        "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
-      },
-      "kwargs": {},
-      "layout_calls": [],
-      "parent_id": null,
-      "widget_id": "w46",
-      "widget_type": "Toplevel"
-    },
-    "w47": {
-      "bind_events": [],
-      "command_targets": [],
-      "config_calls": [],
-      "created_at": {
-        "col": 8,
-        "lineno": 601,
-        "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
-      },
-      "kwargs": {},
-      "layout_calls": [
-        "pack(padx=10, fill='x')"
-      ],
-      "parent_id": "w46",
-      "widget_id": "w47",
-      "widget_type": "Entry"
-    },
-    "w48": {
-      "bind_events": [],
-      "command_targets": [],
-      "config_calls": [],
-      "created_at": {
-        "col": 8,
-        "lineno": 636,
-        "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
-      },
-      "kwargs": {
-        "bg": "self.colors.get(...)"
-      },
-      "layout_calls": [
-        "pack(pady=10)"
-      ],
-      "parent_id": "w46",
-      "widget_id": "w48",
-      "widget_type": "Frame"
-    },
-    "w49": {
-      "bind_events": [],
-      "command_targets": [],
-      "config_calls": [
-        "configure(bg=self.colors.get(...))",
-        "configure(bg=self.colors.get(...))"
-      ],
-      "created_at": {
-        "col": 8,
-        "lineno": 668,
+        "lineno": 647,
         "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
       },
       "kwargs": {},
@@ -897,7 +907,7 @@
       "config_calls": [],
       "created_at": {
         "col": 8,
-        "lineno": 196,
+        "lineno": 230,
         "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
       },
       "kwargs": {
@@ -911,12 +921,66 @@
     "w50": {
       "bind_events": [],
       "command_targets": [],
+      "config_calls": [],
+      "created_at": {
+        "col": 8,
+        "lineno": 656,
+        "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
+      },
+      "kwargs": {},
+      "layout_calls": [
+        "pack(padx=10, fill='x')"
+      ],
+      "parent_id": "w49",
+      "widget_id": "w50",
+      "widget_type": "Entry"
+    },
+    "w51": {
+      "bind_events": [],
+      "command_targets": [],
+      "config_calls": [],
+      "created_at": {
+        "col": 8,
+        "lineno": 691,
+        "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
+      },
+      "kwargs": {
+        "bg": "self.colors.get(...)"
+      },
+      "layout_calls": [
+        "pack(pady=10)"
+      ],
+      "parent_id": "w49",
+      "widget_id": "w51",
+      "widget_type": "Frame"
+    },
+    "w52": {
+      "bind_events": [],
+      "command_targets": [],
+      "config_calls": [
+        "configure(bg=self.colors.get(...))",
+        "configure(bg=self.colors.get(...))"
+      ],
+      "created_at": {
+        "col": 8,
+        "lineno": 723,
+        "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
+      },
+      "kwargs": {},
+      "layout_calls": [],
+      "parent_id": null,
+      "widget_id": "w52",
+      "widget_type": "Toplevel"
+    },
+    "w53": {
+      "bind_events": [],
+      "command_targets": [],
       "config_calls": [
         "configure(bg=self.colors.get(...), fg=self.colors.get(...))"
       ],
       "created_at": {
         "col": 8,
-        "lineno": 689,
+        "lineno": 744,
         "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
       },
       "kwargs": {
@@ -927,17 +991,17 @@
       "layout_calls": [
         "pack(pady=Tuple)"
       ],
-      "parent_id": "w49",
-      "widget_id": "w50",
+      "parent_id": "w52",
+      "widget_id": "w53",
       "widget_type": "Label"
     },
-    "w51": {
+    "w54": {
       "bind_events": [],
       "command_targets": [],
       "config_calls": [],
       "created_at": {
         "col": 8,
-        "lineno": 693,
+        "lineno": 748,
         "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
       },
       "kwargs": {
@@ -948,11 +1012,11 @@
       "layout_calls": [
         "pack(pady=2)"
       ],
-      "parent_id": "w49",
-      "widget_id": "w51",
+      "parent_id": "w52",
+      "widget_id": "w54",
       "widget_type": "Combobox"
     },
-    "w52": {
+    "w55": {
       "bind_events": [],
       "command_targets": [],
       "config_calls": [
@@ -960,7 +1024,7 @@
       ],
       "created_at": {
         "col": 8,
-        "lineno": 697,
+        "lineno": 752,
         "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
       },
       "kwargs": {
@@ -971,11 +1035,11 @@
       "layout_calls": [
         "pack(pady=Tuple)"
       ],
-      "parent_id": "w49",
-      "widget_id": "w52",
+      "parent_id": "w52",
+      "widget_id": "w55",
       "widget_type": "Label"
     },
-    "w53": {
+    "w56": {
       "bind_events": [],
       "command_targets": [],
       "config_calls": [
@@ -983,7 +1047,7 @@
       ],
       "created_at": {
         "col": 8,
-        "lineno": 700,
+        "lineno": 755,
         "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
       },
       "kwargs": {
@@ -995,11 +1059,11 @@
       "layout_calls": [
         "pack(pady=2)"
       ],
-      "parent_id": "w49",
-      "widget_id": "w53",
+      "parent_id": "w52",
+      "widget_id": "w56",
       "widget_type": "Entry"
     },
-    "w54": {
+    "w57": {
       "bind_events": [],
       "command_targets": [],
       "config_calls": [
@@ -1007,7 +1071,7 @@
       ],
       "created_at": {
         "col": 8,
-        "lineno": 711,
+        "lineno": 766,
         "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
       },
       "kwargs": {
@@ -1016,17 +1080,17 @@
       "layout_calls": [
         "pack(side='bottom', fill='x', pady=20)"
       ],
-      "parent_id": "w49",
-      "widget_id": "w54",
+      "parent_id": "w52",
+      "widget_id": "w57",
       "widget_type": "Frame"
     },
-    "w55": {
+    "w58": {
       "bind_events": [],
       "command_targets": [],
       "config_calls": [],
       "created_at": {
         "col": 8,
-        "lineno": 798,
+        "lineno": 853,
         "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
       },
       "kwargs": {
@@ -1035,17 +1099,17 @@
       "layout_calls": [
         "pack(anchor='center')"
       ],
-      "parent_id": "w54",
-      "widget_id": "w55",
+      "parent_id": "w57",
+      "widget_id": "w58",
       "widget_type": "Frame"
     },
-    "w56": {
+    "w59": {
       "bind_events": [],
       "command_targets": [],
       "config_calls": [],
       "created_at": {
         "col": 8,
-        "lineno": 813,
+        "lineno": 868,
         "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
       },
       "kwargs": {
@@ -1053,7 +1117,7 @@
       },
       "layout_calls": [],
       "parent_id": null,
-      "widget_id": "w56",
+      "widget_id": "w59",
       "widget_type": "Menu"
     },
     "w6": {
@@ -1062,7 +1126,7 @@
       "config_calls": [],
       "created_at": {
         "col": 8,
-        "lineno": 200,
+        "lineno": 234,
         "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
       },
       "kwargs": {
@@ -1079,7 +1143,7 @@
       "config_calls": [],
       "created_at": {
         "col": 8,
-        "lineno": 204,
+        "lineno": 238,
         "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
       },
       "kwargs": {
@@ -1099,7 +1163,7 @@
       "config_calls": [],
       "created_at": {
         "col": 8,
-        "lineno": 210,
+        "lineno": 244,
         "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
       },
       "kwargs": {
@@ -1118,7 +1182,7 @@
       "config_calls": [],
       "created_at": {
         "col": 8,
-        "lineno": 214,
+        "lineno": 248,
         "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\src\\ui.py"
       },
       "kwargs": {

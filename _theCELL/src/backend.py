@@ -16,6 +16,7 @@ from src.microservices._CodeFormatterMS import CodeFormatterMS
 from src.microservices._TreeMapperMS import TreeMapperMS
 from src.microservices._VectorFactoryMS import VectorFactoryMS
 from src.microservices.microservice_std_lib import service_metadata
+from src.cell_identity import CellIdentity, CellRegistry
 
 class Backend:
     """
@@ -23,11 +24,25 @@ class Backend:
     SERVICES: Ingest, Validation, SignalBus, Memory, Factory, Notifier, ConfigStore
     STATE: Persistent (SQLite / JSON)
     """
-    def __init__(self, db_path: str = None, memory_path: str = None):
+    def __init__(self, registry: CellRegistry, db_path: str = None, memory_path: str = None, 
+                 cell_id: str = None, parent_id: str = None, cell_name: str = None):
         # BOOTSTRAP: Define persistence paths
         project_root = os.path.abspath(os.getcwd())
         db_dir = os.path.join(project_root, "_db")
         os.makedirs(db_dir, exist_ok=True)
+
+        # IDENTITY: Traceable lineage and naming (integrated with CellRegistry)
+        self.identity = CellIdentity(cell_id, cell_name, parent_id)
+        
+        # Convenience accessors (backward compatible)
+        self.cell_id = self.identity.cell_id
+        self.cell_name = self.identity.cell_name
+        self.parent_id = self.identity.parent_id
+        self.children_ids = list(self.identity.children.keys())
+        
+        # Store registry reference and register this cell
+        self.registry = registry
+        self.registry.register_cell(self.identity)
 
         if db_path is None:
             db_path = os.path.join(db_dir, "app_internal.db")
@@ -193,7 +208,7 @@ class Backend:
             return True
         except sqlite3.Error: return False
 
-    def process_submission(self, content: str, model: str, role: str, prompt: str) -> Dict[str, Any]:
+    def process_submission(self, content: str, model: str, role: str, prompt: str, inherited_context: str = "") -> Dict[str, Any]:
         # ACTION: Generate Artifact -> Start Threaded Inference
         # INPUTS: content (raw), model (ID), role (text), prompt (text)
         artifact = {
@@ -205,7 +220,8 @@ class Backend:
             },
             "instructions": {
                 "system_role": role,
-                "system_prompt": prompt
+                "system_prompt": prompt,
+                "inherited_context": inherited_context
             },
             "payload": content.strip()
         }
@@ -231,10 +247,14 @@ class Backend:
             model = artifact['metadata']['model']
             sys_role = artifact['instructions']['system_role']
             sys_prompt = artifact['instructions']['system_prompt']
+            inherited = artifact['instructions'].get('inherited_context', '')
             user_payload = artifact['payload']
 
-            # Combine role/prompt context
-            full_system = f"{sys_role}\n{sys_prompt}".strip()
+            # Structured Prompt Construction: Role > System > Request > Last Response
+            full_system = f"ROLE: {sys_role}\n\nSYSTEM INSTRUCTIONS:\n{sys_prompt}".strip()
+            
+            if inherited:
+                user_payload = f"TASK: {user_payload}\n\n### REFERENCE CONTEXT (LAST RESPONSE) ###\n{inherited}"
 
             response_buffer = []
             
@@ -303,6 +323,15 @@ class Backend:
         """Submits the turn to the FeedbackValidator for training."""
         self.validator.validate_artifact(artifact, is_accepted)
 
+    def push_to_target(self, target_cell_id: str, content: str) -> None:
+        """Emits a signal to push content to a specific Nexus/Ledger cell."""
+        payload = {
+            "target_id": target_cell_id,
+            "content": content,
+            "source_id": getattr(self, 'session_id', 'unknown')
+        }
+        self.bus.emit(SignalBusMS.SIGNAL_PUSH_DATA, payload)
+
     # --- Phase 7: Long-Term Memory Helpers ---
     def _summarize_memory_stub(self, text: str) -> str:
         """Simple truncation summarizer. Ideally uses an LLM call."""
@@ -316,6 +345,48 @@ class Backend:
         }
         # We use the factory to 'hydrate' this into the memory bank
         self.factory.hydrate_artifact(artifact, mode="memory", destination="long_term_history")
+
+    def rename_cell(self, new_name: str) -> None:
+        """
+        User-facing method to rename this cell.
+        Propagates change through registry to all references.
+        """
+        old_name = self.cell_name
+        self.registry.rename_cell(self.cell_id, new_name)
+        
+        # Update local reference
+        self.cell_name = self.identity.cell_name
+        
+        # Emit signals for UI update
+        self.bus.emit("cell_renamed", {
+            "cell_id": self.cell_id,
+            "old_name": old_name,
+            "new_name": new_name
+        })
+        
+        self.bus.emit("update_window_title", f"_theCELL [{self.cell_name}]")
+
+    def get_family_tree(self) -> dict:
+        """
+        Returns detailed family relationship data for this cell.
+        """
+        return {
+            "identity": self.identity.to_dict(),
+            "lineage": self.registry.get_lineage(self.cell_id),
+            "children": self.registry.get_children(self.cell_id),
+            "descendants": self.registry.get_descendants(self.cell_id)
+        }
+
+    def close_cell(self) -> None:
+        """
+        Clean up when cell window is closed.
+        Unregisters from global registry.
+        """
+        self.registry.unregister_cell(self.cell_id)
+
+
+
+
 
 
 
