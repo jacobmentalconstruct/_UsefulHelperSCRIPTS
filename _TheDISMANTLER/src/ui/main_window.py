@@ -6,6 +6,7 @@ import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
 from theme import THEME
 from ui.workspace_tab import WorkspaceTab
+from ui.modules.transformer_panel import TransformerPanel
 from backend.modules.ast_lens import format_tree
 
 
@@ -161,6 +162,8 @@ class MainWindow(tk.Toplevel):
         # Tools
         tools_menu = tk.Menu(menubar, tearoff=0, bg=THEME["bg2"], fg=THEME["fg"])
         tools_menu.add_command(label="AST Lens", command=self._open_ast_lens)
+        tools_menu.add_command(label="Transformer Engine", command=self._open_transformer)
+        tools_menu.add_separator()
         tools_menu.add_command(label="Refresh Models", command=self._refresh_models)
         menubar.add_cascade(label="Tools", menu=tools_menu)
 
@@ -331,6 +334,10 @@ class MainWindow(tk.Toplevel):
         lens_tab.editor.text.config(state="disabled")  # read-only
         self.notebook.add(lens_tab, text=f"  AST: {tab.get_tab_title()}  ")
         self.notebook.select(lens_tab)
+
+    def _open_transformer(self):
+        """Open the Modular Transformation Engine UI."""
+        TransformerPanel(self, backend=self.backend)
 
     def _refresh_models(self):
         """Tell all workspace tabs to refresh their model selectors."""
