@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python3 -c \" import json with open\\(r''C:\\\\Users\\\\jacob\\\\.claude\\\\projects\\\\C--Users-jacob-Documents--UsefulHelperSCRIPTS---ARCHIVES----KleinBOTTLE\\\\838e863a-da43-4735-9825-cc41b3fb103a\\\\tool-results\\\\toolu_01Ve1CXYGni8Ti9DaPk4WDCo.json'', ''r''\\) as f: data = json.load\\(f\\) for item in data: if item[''type''] == ''text'': print\\(item[''text'']\\) \")",
+      "Bash(python -c \":*)"
+    ]
+  }
+}

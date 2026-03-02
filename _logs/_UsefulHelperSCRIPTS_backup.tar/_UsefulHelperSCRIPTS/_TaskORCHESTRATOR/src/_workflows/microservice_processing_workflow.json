@@ -1,0 +1,8 @@
+{
+  "name": "Default Microservice Extraction",
+  "description": "Iterates through Python files and runs the AST-based extraction tasklist.",
+  "tasklist_to_use": "default_ast_patch_generator.json",
+  "target_dir": "./src",
+  "extension": ".py",
+  "stop_on_error": true
+}

@@ -1,7 +1,3 @@
-Based on the code provided, here is a professional, comprehensive, and clean `README.md` file. It highlights the dual nature of the tool (GUI + CLI), its zero-dependency architecture, and its safety features.
-
------
-
 # Git Commit & Push Helper
 
 A lightweight, zero-dependency Python tool designed to streamline the `git add .` $\to$ `git commit` $\to$ `git push` workflow. It features a modern Dark Mode GUI for desktop use and a fully functional CLI for automation scripts.

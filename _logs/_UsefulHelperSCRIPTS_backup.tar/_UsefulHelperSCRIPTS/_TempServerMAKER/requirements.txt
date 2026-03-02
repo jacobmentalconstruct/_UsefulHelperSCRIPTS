@@ -1,0 +1,4 @@
+# Standard Library dependencies:
+# os, sys, json, http.server, socket, threading, webbrowser, ast, pathlib
+#
+# No external pip packages required for core functionality.

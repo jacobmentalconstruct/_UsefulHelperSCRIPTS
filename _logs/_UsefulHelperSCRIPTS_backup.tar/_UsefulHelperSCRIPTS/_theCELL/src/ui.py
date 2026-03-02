@@ -1,0 +1,1621 @@
+import tkinter as tk
+from tkinter import ttk, messagebox, filedialog, simpledialog
+import sqlite3
+
+class CellViewerModal(tk.Toplevel):
+    """Reusable DB browser for instruction repositories."""
+    def __init__(self, parent, colors, table_name, backend, on_select_callback):
+        super().__init__(parent)
+        self.title(f"Browse: {table_name.replace('_', ' ').title()}")
+        self.geometry("600x400")
+        self.configure(bg=colors.get('background'))
+        self.backend = backend
+        self.table_name = table_name
+        self.callback = on_select_callback
+
+        # Treeview for Tabular Data
+        style = ttk.Style()
+        style.configure(
+            "Treeview",
+            background=colors.get('entry_bg', colors.get('panel_bg')),
+            foreground=colors.get('entry_fg', colors.get('foreground')),
+            fieldbackground=colors.get('entry_bg', colors.get('panel_bg')),
+            borderwidth=0
+        )
+        style.configure(
+            "Treeview.Heading",
+            background=colors.get('heading_bg', colors.get('panel_bg')),
+            foreground=colors.get('heading_fg', colors.get('foreground'))
+        )
+        style.map(
+            "Treeview",
+            background=[('selected', colors.get('select_bg', colors.get('accent')))],
+            foreground=[('selected', colors.get('select_fg', colors.get('entry_fg', colors.get('foreground'))))]
+        )
+        self.tree = ttk.Treeview(self, columns=("ID", "Name", "Preview", "Default"), show='headings')
+        
+        for col in ("ID", "Name", "Preview", "Default"): 
+            self.tree.heading(col, text=col)
+            self.tree.column(col, width=50 if col in ('ID', 'Default') else 150 if col == 'Name' else 250)
+        
+        self.tree.pack(fill='both', expand=True, padx=10, pady=10)
+        self._refresh_data()
+
+        # Subscribe to theme updates
+        if hasattr(self.backend, 'bus'):
+            self.backend.bus.subscribe("theme_updated", self.refresh_theme)
+
+        self.btn_frame = tk.Frame(self, bg=colors.get('background'))
+        self.btn_frame.pack(fill='x', padx=10, pady=5)
+        
+        btn_opts = {
+            "bg": colors.get('panel_bg', colors.get('background')),
+            "fg": colors.get('button_fg', colors.get('foreground')),
+            "relief": "flat"
+        }
+        tk.Button(self.btn_frame, text="Load Selection", command=self._on_load, **btn_opts).pack(side='left', padx=5)
+        tk.Button(self.btn_frame, text="Set as Default", command=self._on_default, **btn_opts).pack(side='left', padx=5)
+        tk.Button(
+            self.btn_frame,
+            text="Delete",
+            bg=colors.get('error', colors.get('accent')),
+            fg=colors.get('button_fg', colors.get('foreground')),
+            relief="flat",
+            command=self._on_delete
+        ).pack(side='right', padx=5)
+
+    def _refresh_data(self):
+        self.tree.delete(*self.tree.get_children())
+        for item in self.backend.get_repository_items(self.table_name):
+            # item = (id, name, content, is_default)
+            self.tree.insert("", "end", values=(item[0], item[1], item[2][:100].replace('\n', ' '), "★" if item[3] else ""))
+
+    def _on_load(self):
+        selected = self.tree.selection()
+        if selected:
+            item_values = self.tree.item(selected[0], 'values')
+            with sqlite3.connect(self.backend.db_path) as conn:
+                if self.table_name == 'personas':
+                    # Bonded Template: Returns a tuple for the callback to handle
+                    res = conn.execute("SELECT role_text, sys_prompt_text, task_prompt_text FROM personas WHERE id=?", (item_values[0],)).fetchone()
+                    if res: self.callback(res) 
+                else:
+                    # Atomic Fragment
+                    res = conn.execute(f"SELECT content FROM {self.table_name} WHERE id=?", (item_values[0],)).fetchone()
+                    if res: self.callback(res[0])
+            self.destroy()
+
+    def _on_default(self):
+        selected = self.tree.selection()
+        if selected:
+            item_id = self.tree.item(selected[0], 'values')[0]
+            self.backend.set_as_default(self.table_name, item_id)
+            self._refresh_data()
+
+    def _on_delete(self):
+        selected = self.tree.selection()
+        if selected:
+            item_id = self.tree.item(selected[0], 'values')[0]
+            self.backend.delete_repository_item(self.table_name, item_id)
+            self._refresh_data()
+
+    def refresh_theme(self, new_colors):
+        self.configure(bg=new_colors.get('background'))
+        self.btn_frame.configure(bg=new_colors.get('background'))
+        style = ttk.Style()
+        style.configure(
+            "Treeview",
+            background=new_colors.get('entry_bg', new_colors.get('panel_bg')),
+            foreground=new_colors.get('entry_fg', new_colors.get('foreground')),
+            fieldbackground=new_colors.get('entry_bg', new_colors.get('panel_bg'))
+        )
+        style.configure(
+            "Treeview.Heading",
+            background=new_colors.get('heading_bg', new_colors.get('panel_bg')),
+            foreground=new_colors.get('heading_fg', new_colors.get('foreground'))
+        )
+
+class CELL_UI:
+    def __init__(self, shell, backend):
+        self.shell = shell
+        self.backend = backend
+        self.container = shell.get_main_container()
+        self.colors = shell.colors
+
+        # Phase 1: Identity & Registry
+        self.session_id = self.backend.cell_id
+        self.backend.session_id = self.session_id
+
+        # Track singleton modals / key widgets
+        self._settings_window = None
+        self._rename_window = None
+        self.model_lbl = None
+        self.btn_save_template = None
+        self.btn_load_template = None
+        self.btn_submit = None
+
+        # Panels (Step 2 stubs)
+        self.panel_prompt = None
+        self.panel_inference = None
+        self.panel_result = None
+        self.panel_export = None
+
+        # Two-column layout containers (Step 1 layout)
+        self.main_row = None
+        self.left_col = None
+        self.right_col = None
+
+        # Action bar ref (so it can be themed)
+        self.action_frame = None
+
+        # Panel widgets (stubs)
+        self.infer_log = None
+        self.result_text = None
+        self.btn_accept = None
+        self.btn_reject = None
+        self.btn_exit = None
+
+        # Send To panel widgets
+        self.panel_sendto = None
+        self.sendto_cb = None
+        self.sendto_btn = None
+        self._nexus_id_map = {}
+        self._response_ready = False
+        
+        # Restore window state from DB
+        saved_geo = self.backend.get_setting('window_geometry')
+        if saved_geo: self.shell.root.geometry(saved_geo)
+        
+        self._setup_main_window()
+        self._build_context_menu()
+        self._restore_component_state()
+        self._register_signals()
+
+        # Emit AFTER signals are wired so this cell catches the registry broadcast response
+        self.backend.bus.emit("register_cell", {
+            "id": self.session_id,
+            "title": self.backend.cell_name,
+            "parent_id": self.backend.parent_id
+        })
+
+    def _register_signals(self):
+        """Connects UI to the nervous system."""
+        if hasattr(self.backend, 'bus'):
+            self.backend.bus.subscribe("log_append", self._on_log_append)
+            self.backend.bus.subscribe("process_complete", self._on_process_complete)
+            self.backend.bus.subscribe("update_registry", self._update_nexus_list)
+            self.backend.bus.subscribe("push_to_nexus", self._handle_incoming_push)
+            # Pass the new palette through so ttk/tk widgets can rebind safely.
+            self.backend.bus.subscribe("theme_updated", self.refresh_theme)
+            # Cell identity signals
+            self.backend.bus.subscribe("cell_renamed", self._on_cell_renamed)
+            self.backend.bus.subscribe("update_window_title", self._update_window_title)
+
+    def _update_nexus_list(self, cell_data):
+        """Updates the Send To dropdown with currently active cells."""
+        # cell_data is: {cell_id: {"id": ..., "name": ...}}
+        targets = [
+            f"{data['name']} ({cid})"
+            for cid, data in cell_data.items()
+            if cid != self.session_id
+        ]
+
+        if self.sendto_cb:
+            self.sendto_cb['values'] = ["New Cell"] + targets
+
+        # Store ID mapping for lookup
+        self._nexus_id_map = {
+            f"{data['name']} ({cid})": cid
+            for cid, data in cell_data.items()
+        }
+
+    def _update_sendto_state(self):
+        """Enables or disables SEND button based on response readiness and target selection."""
+        if not self.sendto_btn:
+            return
+        target = self.sendto_var.get() if self.sendto_var else "Select..."
+        can_send = self._response_ready and target not in ("Select...", "")
+        self.sendto_btn.configure(state='normal' if can_send else 'disabled')
+
+    def _on_send_execute(self):
+        """Executes the Send To action based on current selections."""
+        target = self.sendto_var.get()
+        content_src = self.sendto_content_var.get()
+        destination = self.sendto_dest_var.get()
+
+        # Get content to send
+        if content_src == "response":
+            content = self.result_text.get("1.0", "end-1c")
+        else:
+            content = self.input_box.get("1.0", "end-1c")
+
+        source_name = self.backend.cell_name
+
+        if target == "New Cell":
+            artifact = self._get_current_artifact()
+            artifact['send_destination'] = destination
+            artifact['send_content'] = content
+            artifact['source_name'] = source_name
+            self.backend.spawn_child(artifact)
+        else:
+            target_id = self._nexus_id_map.get(target)
+            if not target_id:
+                return
+            payload = {
+                "target_id": target_id,
+                "content": content,
+                "source_id": self.session_id,
+                "source_name": source_name,
+                "destination": destination
+            }
+            self.backend.bus.emit("push_to_nexus", payload)
+
+    def add_onto_step(self, source_name: str, content: str):
+        """Public: Adds an ontological step (called by spawn handler or incoming push)."""
+        self._onto_steps.append({"source": source_name, "content": content})
+        self._rebuild_steps_ui()
+
+    def append_to_task(self, content: str):
+        """Public: Appends content to the Task box (called by spawn handler or incoming push)."""
+        current = self.input_box.get("1.0", "end-1c")
+        if current.strip():
+            self.input_box.insert('end', f"\n\n{content}")
+        else:
+            self.input_box.insert('end', content)
+
+    def _rebuild_steps_ui(self):
+        """Clears and redraws all step cards in the Ontological Steps frame."""
+        for widget in self.onto_steps_frame.winfo_children():
+            widget.destroy()
+
+        if not self._onto_steps:
+            tk.Label(
+                self.onto_steps_frame,
+                text="No ontological steps yet.",
+                bg=self.colors.get('background'),
+                fg=self.colors.get('foreground'),
+                font=("Segoe UI", 9, "italic"),
+                padx=8, pady=6
+            ).pack()
+            return
+
+        for idx, step in enumerate(self._onto_steps):
+            is_selected = (self._selected_step == idx)
+            header_bg = self.colors.get('accent') if is_selected else self.colors.get('panel_bg')
+            header_fg = self.colors.get('button_fg', 'white') if is_selected else self.colors.get('foreground')
+
+            card = tk.Frame(
+                self.onto_steps_frame,
+                bg=self.colors.get('panel_bg'),
+                bd=1, relief='solid'
+            )
+            card.pack(fill='x', padx=4, pady=2)
+
+            # Header row
+            header = tk.Frame(card, bg=header_bg, cursor='hand2')
+            header.pack(fill='x')
+
+            tk.Label(
+                header,
+                text=f"Step {idx + 1} — Source: {step['source']}",
+                bg=header_bg, fg=header_fg,
+                font=("Segoe UI", 8, "bold"),
+                padx=6, pady=3
+            ).pack(side='left')
+
+            _hbtn = {"bg": header_bg, "fg": header_fg, "relief": "flat",
+                     "font": ("Segoe UI", 9), "cursor": "hand2", "padx": 3}
+            tk.Button(header, text="✕", **_hbtn,
+                command=lambda i=idx: self._remove_onto_step(i)).pack(side='right', padx=(0, 4))
+            tk.Button(header, text="▼", **_hbtn,
+                command=lambda i=idx: self._move_step_down(i)).pack(side='right')
+            tk.Button(header, text="▲", **_hbtn,
+                command=lambda i=idx: self._move_step_up(i)).pack(side='right')
+
+            header.bind('<Button-1>', lambda e, i=idx: self._select_step(i))
+            for child in header.winfo_children():
+                if isinstance(child, tk.Label):
+                    child.bind('<Button-1>', lambda e, i=idx: self._select_step(i))
+
+            # Content (read-only)
+            txt = tk.Text(
+                card, height=3, wrap='word',
+                bg=self.colors.get('entry_bg', self.colors.get('panel_bg')),
+                fg=self.colors.get('entry_fg', self.colors.get('foreground')),
+                font=("Consolas", 9)
+            )
+            txt.insert('1.0', step['content'])
+            txt.configure(state='disabled')
+            txt.pack(fill='x', padx=4, pady=(0, 4))
+
+    def _select_step(self, idx: int):
+        """Selects or deselects a step (toggle)."""
+        self._selected_step = idx if self._selected_step != idx else None
+        self._rebuild_steps_ui()
+
+    def _remove_onto_step(self, idx: int):
+        """Removes a step by index."""
+        if 0 <= idx < len(self._onto_steps):
+            self._onto_steps.pop(idx)
+            if self._selected_step == idx:
+                self._selected_step = None
+            elif self._selected_step is not None and self._selected_step > idx:
+                self._selected_step -= 1
+            self._rebuild_steps_ui()
+
+    def _move_step_up(self, idx: int):
+        """Moves a step up one position."""
+        if idx > 0:
+            self._onto_steps[idx], self._onto_steps[idx - 1] = \
+                self._onto_steps[idx - 1], self._onto_steps[idx]
+            if self._selected_step == idx:
+                self._selected_step = idx - 1
+            elif self._selected_step == idx - 1:
+                self._selected_step = idx
+            self._rebuild_steps_ui()
+
+    def _move_step_down(self, idx: int):
+        """Moves a step down one position."""
+        if idx < len(self._onto_steps) - 1:
+            self._onto_steps[idx], self._onto_steps[idx + 1] = \
+                self._onto_steps[idx + 1], self._onto_steps[idx]
+            if self._selected_step == idx:
+                self._selected_step = idx + 1
+            elif self._selected_step == idx + 1:
+                self._selected_step = idx
+            self._rebuild_steps_ui()
+
+    def _serialize_onto_steps(self) -> str:
+        """Serializes the Ontological Steps stack for prompt injection.
+        
+        Each step is clearly labeled for both human and LLM readability.
+        Injected between system prompt and task at run time.
+        """
+        if not self._onto_steps:
+            return ""
+        parts = []
+        for i, step in enumerate(self._onto_steps):
+            parts.append(
+                f"### ONTOLOGICAL STEP {i + 1} | Source: {step['source']} ###\n"
+                f"{step['content']}"
+            )
+        return "\n\n".join(parts)
+
+    def _handle_incoming_push(self, payload):
+        """Routes incoming content from another cell to steps stack or task box."""
+        if payload.get('target_id') != self.session_id:
+            return
+        content = payload.get('content', '')
+        source_name = payload.get('source_name', payload.get('source_id', 'Unknown Cell'))
+        destination = payload.get('destination', 'task')
+
+        if destination == 'steps':
+            self.add_onto_step(source_name, content)
+        else:
+            self.append_to_task(content)
+
+    def _on_log_append(self, content):
+        """Marshals background thread signal to main UI thread."""
+        self.shell.root.after(0, lambda: self.append_log(content))
+
+    def _on_process_complete(self, artifact):
+        """Marshals completion signal to main UI thread."""
+        text = artifact.get('response', '')
+        self.shell.root.after(0, lambda: self.display_result(text))
+
+    def _setup_main_window(self):
+        # PANEL 1 (Prompt Setup): left column
+        # Panels 2-4 (Inference / HITL / Export): right column
+        self.main_row = tk.Frame(self.container, bg=self.colors.get('background'))
+        self.main_row.pack(fill='both', expand=True)
+
+        self.left_col = tk.Frame(self.main_row, bg=self.colors.get('background'))
+        self.left_col.pack(side='left', fill='both', expand=True)
+
+        self.right_col = tk.Frame(self.main_row, bg=self.colors.get('background'))
+        self.right_col.pack(side='right', fill='y', padx=(8, 0))
+
+        # PANEL 1 (Prompt Setup)
+        self.panel_prompt = tk.Frame(self.container, bg=self.colors.get('background'))
+        self.panel_prompt.pack(in_=self.left_col, fill='both', expand=True)
+
+        # --- Cell Identity Bar ---
+        self.identity_bar = tk.Frame(self.panel_prompt, bg=self.colors.get('background'))
+        self.identity_bar.pack(pady=(10, 5), padx=10, fill='x')
+        
+        # Cell ID (read-only, left side)
+        self.cell_id_label = tk.Label(
+            self.identity_bar,
+            text=f"ID: {self.backend.cell_id}",
+            fg=self.colors.get('foreground'),
+            bg=self.colors.get('background'),
+            font=("Segoe UI", 9)
+        )
+        self.cell_id_label.pack(side='left', padx=(0, 10))
+        
+        # Cell Name (editable, center-left)
+        self.cell_name_label = tk.Label(
+            self.identity_bar,
+            text=self.backend.cell_name,
+            fg=self.colors.get('accent'),
+            bg=self.colors.get('background'),
+            font=("Segoe UI", 12, "bold"),
+            cursor="hand2"
+        )
+        self.cell_name_label.pack(side='left', padx=(0, 5))
+        self.cell_name_label.bind("<Double-Button-1>", lambda e: self._toggle_name_edit())
+        
+        # Cell Name Entry (hidden by default)
+        self.cell_name_entry = tk.Entry(
+            self.identity_bar,
+            fg=self.colors.get('foreground'),
+            bg=self.colors.get('entry_bg'),
+            insertbackground=self.colors.get('foreground'),
+            font=("Segoe UI", 12, "bold"),
+            relief="flat"
+        )
+        self.cell_name_entry.bind("<Return>", lambda e: self._save_name_edit())
+        self.cell_name_entry.bind("<Tab>", lambda e: self._save_name_edit())
+        self.cell_name_entry.bind("<Escape>", lambda e: self._cancel_name_edit())
+        
+        # Pencil button (edit toggle)
+        self.pencil_btn = tk.Button(
+            self.identity_bar,
+            text="✏",
+            bg=self.colors.get('background'),
+            fg=self.colors.get('foreground'),
+            relief="flat",
+            font=("Segoe UI", 12),
+            cursor="hand2",
+            command=self._toggle_name_edit
+        )
+        self.pencil_btn.pack(side='left', padx=(5, 0))
+        
+        # Track edit mode state
+        self._name_edit_mode = False
+
+        # --- Tabbed Formatting Toolbar ---
+        self.toolbar_frame = tk.Frame(self.panel_prompt, bg=self.colors.get('panel_bg'))
+        self.toolbar_frame.pack(fill='x', padx=10)
+        
+        # Tab bar (top row)
+        self.tab_bar = tk.Frame(self.toolbar_frame, bg=self.colors.get('panel_bg'))
+        self.tab_bar.pack(fill='x')
+        
+        _tab_btn_opts = {"relief": "flat", "padx": 8, "pady": 2, "font": ("Segoe UI", 8, "bold"), "cursor": "hand2"}
+        self._active_tab = "MD"
+        
+        self.tab_btn_md = tk.Button(self.tab_bar, text="MD",
+            bg=self.colors.get('accent'), fg=self.colors.get('button_fg', 'white'),
+            command=lambda: self._switch_toolbar_tab("MD"), **_tab_btn_opts)
+        self.tab_btn_md.pack(side='left')
+        
+        self.tab_btn_json = tk.Button(self.tab_bar, text="JSON",
+            bg=self.colors.get('panel_bg'), fg=self.colors.get('foreground'),
+            command=lambda: self._switch_toolbar_tab("JSON"), **_tab_btn_opts)
+        self.tab_btn_json.pack(side='left', padx=(2, 0))
+        
+        self.tab_btn_py = tk.Button(self.tab_bar, text="PY",
+            bg=self.colors.get('panel_bg'), fg=self.colors.get('foreground'),
+            command=lambda: self._switch_toolbar_tab("PY"), **_tab_btn_opts)
+        self.tab_btn_py.pack(side='left', padx=(2, 0))
+        
+        # Settings always pinned right
+        self.btn_settings = tk.Button(self.tab_bar, text="⚙",
+            bg=self.colors.get('panel_bg'), fg=self.colors.get('foreground'),
+            relief="flat", padx=5, command=self._open_settings)
+        self.btn_settings.pack(side='right')
+        
+        # Button row container (swaps on tab change)
+        self.toolbar_content = tk.Frame(self.toolbar_frame, bg=self.colors.get('panel_bg'))
+        self.toolbar_content.pack(fill='x')
+        
+        # -- MD Button Row --
+        self.toolbar_md = tk.Frame(self.toolbar_content, bg=self.colors.get('panel_bg'))
+        self.toolbar_md.pack(fill='x')
+        
+        _btn = {"bg": self.colors.get('panel_bg'), "fg": self.colors.get('foreground'), "relief": "flat", "padx": 4, "pady": 1, "font": ("Segoe UI", 9), "cursor": "hand2"}
+        
+        # Headings group
+        tk.Button(self.toolbar_md, text="H1", font=("Segoe UI", 9, "bold"), **{k: v for k, v in _btn.items() if k != 'font'}, command=lambda: self._md_heading(1)).pack(side='left')
+        tk.Button(self.toolbar_md, text="H2", font=("Segoe UI", 9, "bold"), **{k: v for k, v in _btn.items() if k != 'font'}, command=lambda: self._md_heading(2)).pack(side='left')
+        tk.Button(self.toolbar_md, text="H3", font=("Segoe UI", 9, "bold"), **{k: v for k, v in _btn.items() if k != 'font'}, command=lambda: self._md_heading(3)).pack(side='left')
+        
+        tk.Label(self.toolbar_md, text="│", bg=self.colors.get('panel_bg'), fg=self.colors.get('foreground'), padx=2).pack(side='left')
+        
+        # Inline formatting group
+        tk.Button(self.toolbar_md, text="B", font=("Segoe UI", 9, "bold"), **{k: v for k, v in _btn.items() if k != 'font'}, command=self._md_bold).pack(side='left')
+        tk.Button(self.toolbar_md, text="I", font=("Segoe UI", 9, "italic"), **{k: v for k, v in _btn.items() if k != 'font'}, command=self._md_italic).pack(side='left')
+        tk.Button(self.toolbar_md, text="`code`", **_btn, command=self._md_inline_code).pack(side='left')
+        tk.Button(self.toolbar_md, text="```block", **_btn, command=self._md_code_block).pack(side='left')
+        
+        tk.Label(self.toolbar_md, text="│", bg=self.colors.get('panel_bg'), fg=self.colors.get('foreground'), padx=2).pack(side='left')
+        
+        # Structure group
+        tk.Button(self.toolbar_md, text="- List", **_btn, command=self._md_bullet_list).pack(side='left')
+        tk.Button(self.toolbar_md, text="1. List", **_btn, command=self._md_numbered_list).pack(side='left')
+        tk.Button(self.toolbar_md, text="❝ Quote", **_btn, command=self._md_blockquote).pack(side='left')
+        
+        tk.Label(self.toolbar_md, text="│", bg=self.colors.get('panel_bg'), fg=self.colors.get('foreground'), padx=2).pack(side='left')
+        
+        tk.Button(self.toolbar_md, text="---", **_btn, command=self._md_hr).pack(side='left')
+        
+        # Clear always pinned right
+        tk.Button(self.toolbar_md, text="✕ Clear",
+            bg=self.colors.get('panel_bg'), fg=self.colors.get('error', '#e06c75'),
+            relief="flat", padx=4, pady=1, font=("Segoe UI", 9), cursor="hand2",
+            command=self._md_clear_format).pack(side='right')
+        
+        # -- JSON stub row (hidden by default) --
+        self.toolbar_json = tk.Frame(self.toolbar_content, bg=self.colors.get('panel_bg'))
+        tk.Label(self.toolbar_json, text="JSON formatting — coming soon",
+            bg=self.colors.get('panel_bg'), fg=self.colors.get('foreground'),
+            font=("Segoe UI", 9, "italic"), padx=6).pack(side='left')
+        
+        # -- PY stub row (hidden by default) --
+        self.toolbar_py = tk.Frame(self.toolbar_content, bg=self.colors.get('panel_bg'))
+        tk.Label(self.toolbar_py, text="Python formatting — coming soon",
+            bg=self.colors.get('panel_bg'), fg=self.colors.get('foreground'),
+            font=("Segoe UI", 9, "italic"), padx=6).pack(side='left')
+
+        # --- Inference Config Section ---
+        self.config_frame = tk.LabelFrame(self.panel_prompt, text=" Inference Parameters ", 
+                                     fg=self.colors.get('foreground'), bg=self.colors.get('background'),
+                                     relief='solid', bd=1, font=("Segoe UI", 9, "bold"))
+        self.config_frame.pack(fill='x', padx=10, pady=10)
+
+        # Model Selection
+        self.model_lbl = tk.Label(self.config_frame, text="Model:", bg=self.colors.get('background'), fg=self.colors.get('foreground', 'white'))
+        self.model_lbl.grid(row=0, column=0, sticky='w', padx=5)
+        self.model_var = tk.StringVar()
+        self.model_dropdown = ttk.Combobox(self.config_frame, textvariable=self.model_var)
+        self.model_dropdown['values'] = self.backend.get_models()
+        self.model_dropdown.grid(row=0, column=1, sticky='ew', padx=5, pady=2)
+        
+        # Direct Role Input
+        self.role_lbl = tk.Label(self.config_frame, text="System Role:", bg=self.colors.get('background'), fg=self.colors.get('foreground', 'white'))
+        self.role_lbl.grid(row=1, column=0, sticky='w', padx=5)
+        self.role_inner = tk.Frame(self.config_frame, bg=self.colors.get('background'))
+        self.role_inner.grid(row=1, column=1, sticky='ew')
+        
+        self.role_entry = tk.Entry(
+            self.role_inner,
+            bg=self.colors.get('entry_bg', self.colors.get('panel_bg')),
+            fg=self.colors.get('entry_fg', self.colors.get('foreground')),
+            insertbackground=self.colors.get('entry_fg', self.colors.get('foreground'))
+        )
+        self.role_entry.insert(0, self.backend.system_role)
+        self.role_entry.pack(side='left', fill='x', expand=True, padx=(5, 2), pady=2)
+        
+        self.btn_role_save = tk.Button(self.role_inner, text="💾", bg=self.colors.get('panel_bg'), fg=self.colors.get('button_fg', self.colors.get('foreground', 'white')), relief="flat", 
+                  command=lambda: self._save_repo_dialog('saved_roles', self.role_entry.get()))
+        self.btn_role_save.pack(side='left', padx=2)
+        self.btn_role_open = tk.Button(self.role_inner, text="📂", bg=self.colors.get('panel_bg'), fg=self.colors.get('button_fg', self.colors.get('foreground', 'white')), relief="flat", 
+                  command=lambda: self._open_viewer('saved_roles', lambda c: self._update_widget(self.role_entry, c)))
+        self.btn_role_open.pack(side='left', padx=2)
+
+        # Direct Prompt Input
+        self.prompt_lbl = tk.Label(self.config_frame, text="System Prompt:", bg=self.colors.get('background'), fg=self.colors.get('foreground', 'white'))
+        self.prompt_lbl.grid(row=2, column=0, sticky='nw', padx=5)
+        self.prompt_inner = tk.Frame(self.config_frame, bg=self.colors.get('background'))
+        self.prompt_inner.grid(row=2, column=1, sticky='ew')
+        
+        self.prompt_text = tk.Text(
+            self.prompt_inner,
+            height=3,
+            bg=self.colors.get('entry_bg', self.colors.get('panel_bg')),
+            fg=self.colors.get('entry_fg', self.colors.get('foreground')),
+            insertbackground=self.colors.get('entry_fg', self.colors.get('foreground')),
+            font=("Segoe UI", 9)
+        )
+        self.prompt_text.pack(side='left', fill='x', expand=True, padx=(5, 2), pady=2)
+        
+        self.prompt_btns_frame = tk.Frame(self.prompt_inner, bg=self.colors.get('background'))
+        self.prompt_btns_frame.pack(side='left', fill='y')
+        self.btn_prompt_save = tk.Button(self.prompt_btns_frame, text="💾", bg=self.colors.get('panel_bg'), fg=self.colors.get('button_fg', self.colors.get('foreground', 'white')), relief="flat", 
+                  command=lambda: self._save_repo_dialog('saved_sys_prompts', self.prompt_text.get('1.0', 'end-1c')))
+        self.btn_prompt_save.pack(pady=2)
+        self.btn_prompt_open = tk.Button(self.prompt_btns_frame, text="📂", bg=self.colors.get('panel_bg'), fg=self.colors.get('button_fg', self.colors.get('foreground', 'white')), relief="flat", 
+                  command=lambda: self._open_viewer('saved_sys_prompts', lambda c: self._update_widget(self.prompt_text, c)))
+        self.btn_prompt_open.pack(pady=2)
+
+        self.config_frame.columnconfigure(1, weight=1)
+
+        # --- Ontological Steps Stack ---
+        self.onto_steps_lf = tk.LabelFrame(
+            self.panel_prompt,
+            text=" Ontological Steps ",
+            fg=self.colors.get('foreground'),
+            bg=self.colors.get('background'),
+            relief='solid', bd=1,
+            font=("Segoe UI", 8, "bold")
+        )
+        self.onto_steps_lf.pack(fill='x', padx=10, pady=(0, 6))
+
+        self._onto_canvas = tk.Canvas(
+            self.onto_steps_lf,
+            bg=self.colors.get('background'),
+            highlightthickness=0,
+            height=120
+        )
+        self._onto_scrollbar = ttk.Scrollbar(
+            self.onto_steps_lf,
+            orient='vertical',
+            command=self._onto_canvas.yview
+        )
+        self.onto_steps_frame = tk.Frame(self._onto_canvas, bg=self.colors.get('background'))
+        self._onto_canvas_window = self._onto_canvas.create_window((0, 0), window=self.onto_steps_frame, anchor='nw')
+        self._onto_canvas.configure(yscrollcommand=self._onto_scrollbar.set)
+        self.onto_steps_frame.bind('<Configure>', lambda e: self._onto_canvas.configure(
+            scrollregion=self._onto_canvas.bbox('all')
+        ))
+        self._onto_canvas.bind('<Configure>', lambda e: self._onto_canvas.itemconfig(
+            self._onto_canvas_window, width=e.width
+        ))
+        self._onto_canvas.pack(side='left', fill='both', expand=True)
+        self._onto_scrollbar.pack(side='right', fill='y')
+
+        # Step data model
+        self._onto_steps = []    # list of {"source": str, "content": str}
+        self._selected_step = None
+
+        # Initial empty state
+        self._rebuild_steps_ui()
+
+        # --- User Request (The Ask) ---
+        tk.Label(self.panel_prompt, text="Your Request / Task:", bg=self.colors.get('background'), fg=self.colors.get('foreground'), font=("Segoe UI", 9, "bold")).pack(anchor='w', padx=10)
+        self.input_box = tk.Text(
+            self.panel_prompt,
+            undo=True, wrap="word",
+            bg=self.colors.get('entry_bg', self.colors.get('panel_bg')),
+            fg=self.colors.get('entry_fg', self.colors.get('foreground')),
+            insertbackground=self.colors.get('entry_fg', self.colors.get('foreground')),
+            selectbackground=self.colors.get('select_bg', self.colors.get('accent')),
+            font=("Consolas", 11)
+        )
+        self.input_box.pack(fill='both', expand=True, padx=10, pady=(0, 5))
+        self.input_box.focus_set()
+
+        # --- Action Bar ---
+        self.action_frame = tk.Frame(self.panel_prompt, bg=self.colors.get('background'))
+        self.action_frame.pack(fill='x', padx=10, pady=(0, 10))
+
+        self.btn_save_template = tk.Button(
+            self.action_frame,
+            text="SAVE AS TEMPLATE",
+            bg=self.colors.get('panel_bg'),
+            fg=self.colors.get('button_fg', self.colors.get('foreground', 'white')),
+            font=("Segoe UI", 9),
+            command=self._save_full_template
+        )
+        self.btn_save_template.pack(side='left', fill='x', expand=True, padx=(0, 2))
+
+        self.btn_load_template = tk.Button(
+            self.action_frame,
+            text="LOAD TEMPLATE",
+            bg=self.colors.get('panel_bg'),
+            fg=self.colors.get('button_fg', self.colors.get('foreground', 'white')),
+            font=("Segoe UI", 9),
+            command=lambda: self._open_viewer('personas', None)
+        )
+        self.btn_load_template.pack(side='left', fill='x', expand=True, padx=(2, 5))
+
+        self.btn_submit = tk.Button(
+            self.action_frame,
+            text="RUN CELL",
+            bg=self.colors.get('accent'),
+            fg=self.colors.get('button_fg', self.colors.get('foreground')),
+            font=("Segoe UI", 10, "bold"),
+            command=self._submit
+        )
+        self.btn_submit.pack(side='left', fill='x', expand=True)
+
+        # ------------------------------------------------------------------
+        # PANEL 2 — Inference Console
+        # ------------------------------------------------------------------
+        self.panel_inference = tk.LabelFrame(
+            self.container,
+            text=" Inference Console ",
+            fg=self.colors.get('foreground'),
+            bg=self.colors.get('background'),
+            relief='solid', bd=1, font=("Segoe UI", 9, "bold")
+        )
+        self.panel_inference.pack(in_=self.right_col, fill='x', padx=10, pady=(0, 10))
+
+        self.infer_log = tk.Text(
+            self.panel_inference,
+            height=6,
+            wrap="word",
+            bg=self.colors.get('entry_bg', self.colors.get('panel_bg')),
+            fg=self.colors.get('entry_fg', self.colors.get('foreground')),
+            insertbackground=self.colors.get('entry_fg', self.colors.get('foreground')),
+            font=("Consolas", 10)
+        )
+        self.infer_log.insert('1.0', "[Stub] Inference logs will stream here during the run.\n")
+        self.infer_log.configure(state='disabled')
+        self.infer_log.pack(fill='x', expand=False, padx=10, pady=8)
+
+        # ------------------------------------------------------------------
+        # PANEL 3 — Result + HITL
+        # ------------------------------------------------------------------
+        self.panel_result = tk.LabelFrame(
+            self.container,
+            text=" Result + HITL ",
+            fg=self.colors.get('foreground'),
+            bg=self.colors.get('background'),
+            relief='solid', bd=1, font=("Segoe UI", 9, "bold")
+        )
+        self.panel_result.pack(in_=self.right_col, fill='both', expand=True, padx=10, pady=(0, 10))
+
+        self.result_text = tk.Text(
+            self.panel_result,
+            height=8,
+            wrap="word",
+            bg=self.colors.get('entry_bg', self.colors.get('panel_bg')),
+            fg=self.colors.get('entry_fg', self.colors.get('foreground')),
+            insertbackground=self.colors.get('entry_fg', self.colors.get('foreground')),
+            font=("Consolas", 11)
+        )
+        self.result_text.insert('1.0', "[Stub] Model response will appear here.\n")
+        self.result_text.configure(state='disabled')
+        self.result_text.pack(fill='both', expand=True, padx=10, pady=(8, 6))
+
+        hitl_bar = tk.Frame(self.panel_result, bg=self.colors.get('background'))
+        hitl_bar.pack(fill='x', padx=10, pady=(0, 10))
+
+        self.btn_accept = tk.Button(
+            hitl_bar,
+            text="ACCEPT",
+            bg=self.colors.get('accent'),
+            fg=self.colors.get('button_fg', 'white'),
+            relief="flat",
+            state='disabled',
+            command=self._on_accept
+        )
+        self.btn_accept.pack(side='left', padx=(0, 6))
+
+        self.btn_reject = tk.Button(
+            hitl_bar,
+            text="REJECT & EDIT",
+            bg=self.colors.get('button_bg', self.colors.get('panel_bg')),
+            fg=self.colors.get('button_fg', self.colors.get('foreground')),
+            relief="flat",
+            state='disabled',
+            command=self._on_reject
+        )
+        self.btn_reject.pack(side='left', padx=(0, 6))
+
+        self.btn_exit = tk.Button(
+            hitl_bar,
+            text="EXIT CELL",
+            bg=self.colors.get('button_bg', self.colors.get('panel_bg')),
+            fg=self.colors.get('button_fg', self.colors.get('foreground')),
+            relief="flat",
+            command=self.shell.root.destroy
+        )
+        self.btn_exit.pack(side='right')
+
+
+        # PANEL 4 — Send To
+        self.panel_sendto = tk.LabelFrame(
+            self.container,
+            text=" Send To ",
+            fg=self.colors.get('foreground'),
+            bg=self.colors.get('background'),
+            relief='solid', bd=1, font=("Segoe UI", 9, "bold")
+        )
+        self.panel_sendto.pack(in_=self.right_col, fill='x', padx=10, pady=(0, 12))
+
+        _st = tk.Frame(self.panel_sendto, bg=self.colors.get('background'))
+        _st.pack(fill='x', padx=10, pady=8)
+
+        # Row 1: Target selector
+        _row1 = tk.Frame(_st, bg=self.colors.get('background'))
+        _row1.pack(fill='x', pady=(0, 4))
+        tk.Label(_row1, text="Send To:", bg=self.colors.get('background'),
+            fg=self.colors.get('foreground'), font=("Segoe UI", 9, "bold"),
+            width=10, anchor='w').pack(side='left')
+        self.sendto_var = tk.StringVar(value="Select...")
+        self.sendto_cb = ttk.Combobox(_row1, textvariable=self.sendto_var,
+            state='readonly', values=["New Cell"])
+        self.sendto_cb.pack(side='left', fill='x', expand=True, padx=(4, 0))
+        self.sendto_cb.bind('<<ComboboxSelected>>', lambda e: self._update_sendto_state())
+
+        # Row 2: What to send
+        _row2 = tk.Frame(_st, bg=self.colors.get('background'))
+        _row2.pack(fill='x', pady=(0, 4))
+        tk.Label(_row2, text="Send:", bg=self.colors.get('background'),
+            fg=self.colors.get('foreground'), font=("Segoe UI", 9, "bold"),
+            width=10, anchor='w').pack(side='left')
+        self.sendto_content_var = tk.StringVar(value="response")
+        tk.Radiobutton(_row2, text="Current Response", variable=self.sendto_content_var,
+            value="response", bg=self.colors.get('background'),
+            fg=self.colors.get('foreground'), selectcolor=self.colors.get('panel_bg'),
+            font=("Segoe UI", 9)).pack(side='left')
+        tk.Radiobutton(_row2, text="Task Input", variable=self.sendto_content_var,
+            value="task", bg=self.colors.get('background'),
+            fg=self.colors.get('foreground'), selectcolor=self.colors.get('panel_bg'),
+            font=("Segoe UI", 9)).pack(side='left', padx=(8, 0))
+
+        # Row 3: Destination within target cell
+        _row3 = tk.Frame(_st, bg=self.colors.get('background'))
+        _row3.pack(fill='x', pady=(0, 6))
+        tk.Label(_row3, text="Into:", bg=self.colors.get('background'),
+            fg=self.colors.get('foreground'), font=("Segoe UI", 9, "bold"),
+            width=10, anchor='w').pack(side='left')
+        self.sendto_dest_var = tk.StringVar(value="steps")
+        tk.Radiobutton(_row3, text="Ontological Steps", variable=self.sendto_dest_var,
+            value="steps", bg=self.colors.get('background'),
+            fg=self.colors.get('foreground'), selectcolor=self.colors.get('panel_bg'),
+            font=("Segoe UI", 9)).pack(side='left')
+        tk.Radiobutton(_row3, text="Task Box", variable=self.sendto_dest_var,
+            value="task", bg=self.colors.get('background'),
+            fg=self.colors.get('foreground'), selectcolor=self.colors.get('panel_bg'),
+            font=("Segoe UI", 9)).pack(side='left', padx=(8, 0))
+
+        # Send button (greyed out until response exists and target selected)
+        self.sendto_btn = tk.Button(
+            _st, text="SEND",
+            bg=self.colors.get('accent'), fg=self.colors.get('button_fg', 'white'),
+            relief='flat', state='disabled',
+            command=self._on_send_execute
+        )
+        self.sendto_btn.pack(fill='x')
+
+
+    def _get_current_artifact(self):
+        """Helper to package UI state into a standard artifact."""
+        return {
+            "payload": self.result_text.get("1.0", "end-1c"),
+            "instructions": {
+                "system_role": self.role_entry.get(),
+                "system_prompt": self.prompt_text.get("1.0", "end-1c")
+            },
+            "metadata": {"model": self.model_var.get(), "source": "ui_action"}
+        }
+
+
+    def _on_accept(self):
+        """HITL: User approves the result."""
+        artifact = self._get_current_artifact()
+        self.backend.record_feedback(artifact, is_accepted=True)
+        self.btn_accept.configure(state='disabled', text="ACCEPTED")
+        self.btn_reject.configure(state='disabled')
+
+    def _on_reject(self):
+        """HITL: User rejects. Unlock input for editing."""
+        artifact = self._get_current_artifact()
+        self.backend.record_feedback(artifact, is_accepted=False)
+        
+        # Move result back to input box for refinement
+        rejected_content = self.result_text.get("1.0", "end-1c")
+        self.input_box.delete("1.0", "end")
+        self.input_box.insert("1.0", rejected_content)
+        
+        # Reset UI state
+        self.result_text.configure(state='normal')
+        self.result_text.delete("1.0", "end")
+        self.result_text.insert("1.0", "[Drafting refinement...]")
+        self.result_text.configure(state='disabled')
+        
+        self.btn_accept.configure(state='disabled')
+        self.btn_reject.configure(state='disabled')
+        self.input_box.focus_set()
+
+    # -------------------------------------------------------------------------
+    # Toolbar Tab Switching
+    # -------------------------------------------------------------------------
+
+    def _switch_toolbar_tab(self, tab_name):
+        """Swaps the visible toolbar button row and updates tab highlight."""
+        self._active_tab = tab_name
+        
+        # Hide all content rows
+        self.toolbar_md.pack_forget()
+        self.toolbar_json.pack_forget()
+        self.toolbar_py.pack_forget()
+        
+        # Show selected row
+        tab_map = {"MD": self.toolbar_md, "JSON": self.toolbar_json, "PY": self.toolbar_py}
+        tab_map[tab_name].pack(fill='x')
+        
+        # Update tab button highlight
+        btn_map = {"MD": self.tab_btn_md, "JSON": self.tab_btn_json, "PY": self.tab_btn_py}
+        for name, btn in btn_map.items():
+            if name == tab_name:
+                btn.configure(bg=self.colors.get('accent'), fg=self.colors.get('button_fg', 'white'))
+            else:
+                btn.configure(bg=self.colors.get('panel_bg'), fg=self.colors.get('foreground'))
+
+    # -------------------------------------------------------------------------
+    # MD Formatting Helpers
+    # -------------------------------------------------------------------------
+
+    def _md_wrap_selection(self, prefix, suffix=None):
+        """Wraps selected text with prefix/suffix. If no selection, inserts placeholder."""
+        suffix = suffix if suffix is not None else prefix
+        try:
+            start = self.input_box.index("sel.first")
+            end = self.input_box.index("sel.last")
+            selected = self.input_box.get(start, end)
+            self.input_box.delete(start, end)
+            self.input_box.insert(start, f"{prefix}{selected}{suffix}")
+        except tk.TclError:
+            self.input_box.insert("insert", f"{prefix}{suffix}")
+            # Move cursor between the markers
+            cursor = self.input_box.index("insert")
+            line, col = cursor.split('.')
+            self.input_box.mark_set("insert", f"{line}.{int(col) - len(suffix)}")
+
+    def _md_prefix_lines(self, prefix):
+        """Prefixes each selected line. Falls back to inserting on current line."""
+        try:
+            start = self.input_box.index("sel.first linestart")
+            end = self.input_box.index("sel.last lineend")
+            lines = self.input_box.get(start, end).splitlines()
+            prefixed = [f"{prefix}{line}" for line in lines]
+            self.input_box.delete(start, end)
+            self.input_box.insert(start, "\n".join(prefixed))
+        except tk.TclError:
+            line_start = self.input_box.index("insert linestart")
+            self.input_box.insert(line_start, prefix)
+
+    def _md_heading(self, level):
+        """Inserts or replaces heading prefix on selected lines."""
+        prefix = "#" * level + " "
+        try:
+            start = self.input_box.index("sel.first linestart")
+            end = self.input_box.index("sel.last lineend")
+            lines = self.input_box.get(start, end).splitlines()
+            # Strip existing heading markers before applying new ones
+            stripped = [l.lstrip("# ") for l in lines]
+            prefixed = [f"{prefix}{l}" for l in stripped]
+            self.input_box.delete(start, end)
+            self.input_box.insert(start, "\n".join(prefixed))
+        except tk.TclError:
+            line_start = self.input_box.index("insert linestart")
+            line_text = self.input_box.get(line_start, f"{line_start} lineend")
+            self.input_box.delete(line_start, f"{line_start} lineend")
+            self.input_box.insert(line_start, f"{prefix}{line_text.lstrip('# ')}")
+
+    def _md_bold(self):
+        self._md_wrap_selection("**")
+
+    def _md_italic(self):
+        self._md_wrap_selection("_")
+
+    def _md_inline_code(self):
+        self._md_wrap_selection("`")
+
+    def _md_code_block(self):
+        """Wraps selection in a fenced code block."""
+        try:
+            start = self.input_box.index("sel.first linestart")
+            end = self.input_box.index("sel.last lineend")
+            selected = self.input_box.get(start, end)
+            self.input_box.delete(start, end)
+            self.input_box.insert(start, f"```\n{selected}\n```")
+        except tk.TclError:
+            self.input_box.insert("insert", "```\n\n```")
+            # Move cursor inside the block
+            cursor = self.input_box.index("insert")
+            line, _ = cursor.split('.')
+            self.input_box.mark_set("insert", f"{int(line) - 1}.0")
+
+    def _md_bullet_list(self):
+        """Prefixes selected lines with - for a bulleted list."""
+        self._md_prefix_lines("- ")
+
+    def _md_numbered_list(self):
+        """Prefixes selected lines with incrementing numbers."""
+        try:
+            start = self.input_box.index("sel.first linestart")
+            end = self.input_box.index("sel.last lineend")
+            lines = self.input_box.get(start, end).splitlines()
+            numbered = [f"{i + 1}. {line}" for i, line in enumerate(lines)]
+            self.input_box.delete(start, end)
+            self.input_box.insert(start, "\n".join(numbered))
+        except tk.TclError:
+            self.input_box.insert("insert", "1. ")
+
+    def _md_blockquote(self):
+        """Prefixes selected lines with > for a blockquote."""
+        self._md_prefix_lines("> ")
+
+    def _md_hr(self):
+        """Inserts a horizontal rule on a new line."""
+        cursor = self.input_box.index("insert")
+        self.input_box.insert(cursor, "\n---\n")
+
+    def _md_clear_format(self):
+        """Strips all Markdown formatting from selected text (or entire box)."""
+        import re
+        try:
+            start = self.input_box.index("sel.first")
+            end = self.input_box.index("sel.last")
+            text = self.input_box.get(start, end)
+        except tk.TclError:
+            start = "1.0"
+            end = "end-1c"
+            text = self.input_box.get(start, end)
+        
+        # Strip fenced code blocks markers
+        text = re.sub(r'^```[\w]*\n?', '', text, flags=re.MULTILINE)
+        # Strip headings
+        text = re.sub(r'^#{1,6}\s+', '', text, flags=re.MULTILINE)
+        # Strip bold/italic (order matters: bold first)
+        text = re.sub(r'\*\*(.+?)\*\*', r'\1', text)
+        text = re.sub(r'__(.+?)__', r'\1', text)
+        text = re.sub(r'\*(.+?)\*', r'\1', text)
+        text = re.sub(r'_(.+?)_', r'\1', text)
+        # Strip inline code
+        text = re.sub(r'`(.+?)`', r'\1', text)
+        # Strip bullet/number list prefixes
+        text = re.sub(r'^[-*+]\s+', '', text, flags=re.MULTILINE)
+        text = re.sub(r'^\d+\.\s+', '', text, flags=re.MULTILINE)
+        # Strip blockquotes
+        text = re.sub(r'^>\s+', '', text, flags=re.MULTILINE)
+        # Strip horizontal rules
+        text = re.sub(r'^---+\s*$', '', text, flags=re.MULTILINE)
+        
+        self.input_box.delete(start, end)
+        self.input_box.insert(start, text)
+
+    def _update_widget(self, widget, content):
+        if isinstance(widget, tk.Entry):
+            widget.delete(0, 'end')
+            widget.insert(0, content)
+        elif isinstance(widget, tk.Text):
+            # Ensure widget is editable before update
+            original_state = widget.cget('state')
+            widget.configure(state='normal')
+            widget.delete('1.0', 'end')
+            widget.insert('1.0', content)
+            # Only lock it back if it was originally disabled (e.g. logs), otherwise leave editable
+            if original_state == 'disabled':
+                widget.configure(state='disabled')
+
+    def append_log(self, message: str):
+        """Appends text to the inference console (Thread-Safe via _on_log_append)."""
+        if self.infer_log is None: return
+        self.infer_log.configure(state='normal')
+        self.infer_log.insert('end', message) # Streamed tokens don't force newlines
+        self.infer_log.see('end')
+        self.infer_log.configure(state='disabled')
+
+    def display_result(self, text: str):
+        """Displays the final artifact and enables HITL + Send To controls."""
+        self.result_text.configure(state='normal')
+        self.result_text.delete('1.0', 'end')
+        self.result_text.insert('1.0', text)
+        self.result_text.configure(state='disabled')
+
+        if self.btn_accept:
+            self.btn_accept.configure(state='normal')
+        if self.btn_reject:
+            self.btn_reject.configure(state='normal')
+
+        self._response_ready = True
+        self._update_sendto_state()
+
+    def _save_repo_dialog(self, table, content):
+        """Modular save dialog for individual repositories."""
+        dialog = tk.Toplevel(self.shell.root)
+        dialog.title(f"Save to {table.split('_')[-1].title()}")
+        dialog.geometry("300x150")
+        dialog.configure(bg=self.colors.get('background'))
+
+        dialog.transient(self.shell.root)
+        dialog.grab_set()
+
+        tk.Label(dialog, text="Name Selection:", bg=self.colors.get('background'), fg=self.colors.get('foreground', 'white')).pack(pady=5)
+        name_entry = tk.Entry(dialog)
+        name_entry.pack(padx=10, fill='x')
+        name_entry.focus_set()
+
+        default_var = tk.BooleanVar()
+        tk.Checkbutton(
+            dialog,
+            text="Set as Default",
+            variable=default_var,
+            bg=self.colors.get('background'),
+            fg=self.colors.get('foreground', 'white'),
+            selectcolor=self.colors.get('panel_bg', '#444')
+        ).pack()
+
+        def confirm():
+            name = name_entry.get().strip()
+            if not name:
+                messagebox.showwarning("Missing name", "Please enter a name.", parent=dialog)
+                return
+
+            try:
+                if table == 'personas':
+                    success = self.backend.save_persona(name, content[0], content[1], content[2], default_var.get())
+                else:
+                    success = self.backend.save_repository_item(table, name, content, default_var.get())
+            except Exception as e:
+                messagebox.showerror("Save failed", f"Unexpected error: {e}", parent=dialog)
+                return
+
+            if success:
+                messagebox.showinfo("Success", "Saved successfully!", parent=dialog)
+                dialog.destroy()
+            else:
+                messagebox.showerror("Save failed", "Could not save. Check the app log for the SQLite error.", parent=dialog)
+
+        btn_frame = tk.Frame(dialog, bg=self.colors.get('background'))
+        btn_frame.pack(pady=10)
+
+        tk.Button(btn_frame, text="Save", width=10, command=confirm).pack(side='left', padx=5)
+        tk.Button(btn_frame, text="Cancel", width=10, command=dialog.destroy).pack(side='left', padx=5)
+
+        dialog.bind("<Return>", lambda _e: confirm())
+        dialog.bind("<Escape>", lambda _e: dialog.destroy())
+
+    def _open_viewer(self, table, callback):
+        """Opens the Universal Cell Viewer Modal with context-aware callbacks."""
+        if table == 'personas':
+            def persona_callback(data):
+                self._update_widget(self.role_entry, data[0])
+                self._update_widget(self.prompt_text, data[1])
+                self._update_widget(self.input_box, data[2])
+            callback = persona_callback
+            
+        CellViewerModal(self.shell.root, self.colors, table, self.backend, callback)
+
+    def _open_settings(self):
+        # Enforce singleton Settings modal
+        if self._settings_window is not None:
+            try:
+                if self._settings_window.winfo_exists():
+                    self._settings_window.deiconify()
+                    self._settings_window.lift()
+                    self._settings_window.focus_force()
+                    return
+            except Exception:
+                self._settings_window = None
+
+        settings = tk.Toplevel(self.shell.root)
+        self._settings_window = settings
+        settings.title("Settings")
+        settings.geometry("350x250")
+        settings.configure(bg=self.colors.get('background'))
+
+        def _close_settings():
+            self._settings_window = None
+            try:
+                settings.destroy()
+            except Exception:
+                pass
+
+        settings.protocol("WM_DELETE_WINDOW", _close_settings)
+
+        # Load persisted theme (default Dark)
+        current_theme = (self.backend.get_setting('theme_preference') or 'Dark').strip().title()
+        if current_theme not in ('Dark', 'Light'):
+            current_theme = 'Dark'
+
+        # Theme Section
+        lbl_theme = tk.Label(settings, text="Theme:", bg=self.colors.get('background'), fg=self.colors.get('foreground', 'white'))
+        lbl_theme.pack(pady=(15, 2))
+        
+        theme_var = tk.StringVar(value=current_theme)
+        theme_cb = ttk.Combobox(settings, textvariable=theme_var, values=["Dark", "Light"], state='readonly')
+        theme_cb.pack(pady=2)
+
+        # Geometry Section
+        lbl_size = tk.Label(settings, text="Window Size (WxH):", bg=self.colors.get('background'), fg=self.colors.get('foreground', 'white'))
+        lbl_size.pack(pady=(15, 2))
+        
+        size_entry = tk.Entry(
+            settings,
+            bg=self.colors.get('entry_bg', self.colors.get('panel_bg')),
+            fg=self.colors.get('entry_fg', self.colors.get('foreground')),
+            insertbackground=self.colors.get('entry_fg', self.colors.get('foreground')),
+            relief="flat"
+        )
+        current_geo = self.shell.root.geometry().split('+')[0]
+        size_entry.insert(0, current_geo)
+        size_entry.pack(pady=2)
+
+        btn_frame = tk.Frame(settings, bg=self.colors.get('background'))
+        btn_frame.pack(side='bottom', fill='x', pady=20)
+
+        def apply_changes():
+            # 1. Apply Geometry
+            new_geo = size_entry.get().strip()
+            if new_geo:
+                try:
+                    self.shell.root.geometry(new_geo)
+                    self.backend.save_setting('window_geometry', new_geo)
+                except Exception:
+                    pass # Ignore invalid geometry strings
+
+            # 2. Apply Theme
+            selected_theme = (theme_var.get() or 'Dark').strip().title()
+            if selected_theme not in ('Dark', 'Light'):
+                selected_theme = 'Dark'
+
+            self.backend.save_setting('theme_preference', selected_theme)
+            if hasattr(self.shell, 'set_theme'):
+                self.shell.set_theme(selected_theme)
+                self.colors = self.shell.colors
+                self.refresh_theme()
+                
+                # Refresh settings window colors immediately (including entry/button surfaces)
+                settings.configure(bg=self.colors.get('background'))
+                lbl_theme.configure(bg=self.colors.get('background'), fg=self.colors.get('foreground'))
+                lbl_size.configure(bg=self.colors.get('background'), fg=self.colors.get('foreground'))
+                btn_frame.configure(bg=self.colors.get('background'))
+
+                try:
+                    size_entry.configure(
+                        bg=self.colors.get('entry_bg', self.colors.get('panel_bg')),
+                        fg=self.colors.get('entry_fg', self.colors.get('foreground')),
+                        insertbackground=self.colors.get('entry_fg', self.colors.get('foreground'))
+                    )
+                except Exception:
+                    pass
+
+                # Theme all buttons we created in this window
+                try:
+                    for w in container.winfo_children():
+                        if isinstance(w, tk.Button):
+                            w.configure(
+                                bg=self.colors.get('panel_bg'),
+                                fg=self.colors.get('button_fg', self.colors.get('foreground')),
+                                activebackground=self.colors.get('panel_bg'),
+                                activeforeground=self.colors.get('button_fg', self.colors.get('foreground'))
+                            )
+                except Exception:
+                    pass
+
+                # Recursive cleanup pass: remove any lingering OS-default surfaces
+                try:
+                    def _walk(w):
+                        for child in w.winfo_children():
+                            try:
+                                if isinstance(child, (tk.Frame, tk.LabelFrame, tk.Toplevel)):
+                                    child.configure(bg=self.colors.get('background'))
+                                elif isinstance(child, tk.Label):
+                                    child.configure(bg=self.colors.get('background'), fg=self.colors.get('foreground'))
+                                elif isinstance(child, tk.Entry):
+                                    child.configure(
+                                        bg=self.colors.get('entry_bg', self.colors.get('panel_bg')),
+                                        fg=self.colors.get('entry_fg', self.colors.get('foreground')),
+                                        insertbackground=self.colors.get('entry_fg', self.colors.get('foreground'))
+                                    )
+                                elif isinstance(child, tk.Button):
+                                    child.configure(
+                                        bg=self.colors.get('panel_bg'),
+                                        fg=self.colors.get('button_fg', self.colors.get('foreground')),
+                                        activebackground=self.colors.get('panel_bg'),
+                                        activeforeground=self.colors.get('button_fg', self.colors.get('foreground'))
+                                    )
+                            except Exception:
+                                pass
+                            _walk(child)
+                    _walk(settings)
+                except Exception:
+                    pass
+
+        def on_ok():
+            apply_changes()
+            _close_settings()
+
+        # Buttons: Apply | OK | Cancel
+        # We use pack with side to center them or space them out
+        container = tk.Frame(btn_frame, bg=self.colors.get('background'))
+        container.pack(anchor='center')
+
+        btn_opts = {
+            "bg": self.colors.get('panel_bg'), 
+            "fg": self.colors.get('button_fg', self.colors.get('foreground')),
+            "relief": "flat",
+            "width": 8
+        }
+
+        tk.Button(container, text="Apply", command=apply_changes, **btn_opts).pack(side='left', padx=5)
+        tk.Button(container, text="OK", command=on_ok, **btn_opts).pack(side='left', padx=5)
+        tk.Button(container, text="Cancel", command=_close_settings, **btn_opts).pack(side='left', padx=5)
+
+    def _build_context_menu(self):
+        self.menu = tk.Menu(self.input_box, tearoff=0)
+        self.menu.add_command(label="Cut", command=lambda: self.input_box.event_generate("<<Cut>>"))
+        self.menu.add_command(label="Copy", command=lambda: self.input_box.event_generate("<<Copy>>"))
+        self.menu.add_command(label="Paste", command=lambda: self.input_box.event_generate("<<Paste>>"))
+        self.menu.add_separator()
+        self.menu.add_command(label="Rename Cell...", command=self._open_rename_dialog)
+        self.input_box.bind("<Button-3>", lambda e: self.menu.post(e.x_root, e.y_root))
+
+    def _save_full_template(self):
+        """Captures the entire state of the config bar as a bonded Persona."""
+        role = self.role_entry.get()
+        sys_p = self.prompt_text.get("1.0", "end-1c")
+        task_p = self.input_box.get("1.0", "end-1c")
+        self._save_repo_dialog('personas', (role, sys_p, task_p))
+
+    def _restore_component_state(self):
+        """Restores components using Defaults first, then Session state."""
+        default_role = self.backend.get_default_item('saved_roles')
+        last_role = self.backend.get_setting('last_system_role')
+        self._update_widget(self.role_entry, default_role or last_role or "")
+
+        default_sys = self.backend.get_default_item('saved_sys_prompts')
+        last_sys = self.backend.get_setting('last_system_prompt')
+        self._update_widget(self.prompt_text, default_sys or last_sys or "")
+
+        last_model = self.backend.get_setting('last_model')
+        if last_model in self.model_dropdown['values']:
+            self.model_var.set(last_model)
+
+    def _submit(self):
+        """Process submission, persist parameters, and update UI consoles."""
+        content = self.input_box.get("1.0", "end-1c")
+        inherited = self._serialize_onto_steps()
+
+        # Reset response state for new run
+        self._response_ready = False
+        self._update_sendto_state()
+        model = self.model_var.get()
+        role = self.role_entry.get()
+        prompt = self.prompt_text.get("1.0", "end-1c")
+        
+        # Persist settings via backend
+        self.backend.save_setting('last_model', model)
+        self.backend.save_setting('last_system_role', role)
+        self.backend.save_setting('last_system_prompt', prompt)
+
+        # Prepare Inference Log
+        self.infer_log.configure(state='normal')
+        self.infer_log.delete('1.0', 'end')
+        self.infer_log.insert('1.0', f"[System] Initiating run with {model}...\n")
+        self.infer_log.configure(state='disabled')
+
+        # Prepare Result Box
+        self.result_text.configure(state='normal')
+        self.result_text.delete('1.0', 'end')
+        self.result_text.insert('1.0', "Waiting for model response...\n")
+        self.result_text.configure(state='disabled')
+        
+        # Trigger backend processing
+        self.backend.process_submission(content, model, role, prompt, inherited_context=inherited)
+
+    def refresh_theme(self, new_colors=None):
+        """Re-applies the current theme to all primary UI widgets."""
+        # Pull the newest palette. (If the shell swaps dict objects, this keeps us aligned.)
+        self.colors = new_colors or self.shell.colors
+
+        # Update Containers
+        self.container.configure(bg=self.colors.get('background'))
+
+        if self.main_row is not None:
+            self.main_row.configure(bg=self.colors.get('background'))
+        if self.left_col is not None:
+            self.left_col.configure(bg=self.colors.get('background'))
+        if self.right_col is not None:
+            self.right_col.configure(bg=self.colors.get('background'))
+
+        if self.panel_prompt is not None:
+            self.panel_prompt.configure(bg=self.colors.get('background'))
+
+        if self.action_frame is not None:
+            self.action_frame.configure(bg=self.colors.get('background'))
+        self.toolbar.configure(bg=self.colors.get('panel_bg'))
+        self.config_frame.configure(fg=self.colors.get('foreground'), bg=self.colors.get('background'))
+        self.role_inner.configure(bg=self.colors.get('background'))
+        self.prompt_inner.configure(bg=self.colors.get('background'))
+        self.prompt_btns_frame.configure(bg=self.colors.get('background'))
+
+        if self.action_frame is not None:
+            self.action_frame.configure(bg=self.colors.get('background'))
+
+        # Right-column panels
+        panel_list = [self.panel_inference, self.panel_result, self.panel_export]
+        for panel in panel_list:
+            if panel is not None:
+                try:
+                    panel.configure(
+                        bg=self.colors.get('background'),
+                        fg=self.colors.get('foreground'),
+                        highlightbackground=self.colors.get('border')
+                    )
+                except Exception:
+                    # Some Tk/ttk widgets may not accept fg/highlightbackground
+                    try:
+                        panel.configure(bg=self.colors.get('background'))
+                    except Exception:
+                        pass
+
+        if self.export_router_frame is not None:
+            self.export_router_frame.configure(bg=self.colors.get('background'))
+            for child in self.export_router_frame.winfo_children():
+                try:
+                    child.configure(bg=self.colors.get('background'), fg=self.colors.get('foreground'))
+                except Exception:
+                    try:
+                        child.configure(bg=self.colors.get('background'))
+                    except Exception:
+                        pass
+
+        if self.export_options_frame is not None:
+            self.export_options_frame.configure(bg=self.colors.get('background'))
+
+        # Update Labels
+        self.top_label.configure(fg=self.colors.get('foreground'), bg=self.colors.get('background'))
+        if self.model_lbl is not None:
+            self.model_lbl.configure(bg=self.colors.get('background'), fg=self.colors.get('foreground'))
+        self.role_lbl.configure(bg=self.colors.get('background'), fg=self.colors.get('foreground'))
+        self.prompt_lbl.configure(bg=self.colors.get('background'), fg=self.colors.get('foreground'))
+
+        # Update Entries and Text widgets
+        self.role_entry.configure(bg=self.colors.get('entry_bg'), fg=self.colors.get('entry_fg'), insertbackground=self.colors.get('entry_fg'))
+        self.prompt_text.configure(bg=self.colors.get('entry_bg'), fg=self.colors.get('entry_fg'), insertbackground=self.colors.get('entry_fg'))
+        self.input_box.configure(bg=self.colors.get('entry_bg'), fg=self.colors.get('entry_fg'), insertbackground=self.colors.get('entry_fg'), selectbackground=self.colors.get('select_bg'))
+
+        # TTK STYLES: ttk widgets (Combobox/Treeview/etc.) won't pick up tk bg/fg changes.
+        # If we don't restyle them, they can keep OS-default (often white) surfaces after a swap.
+        try:
+            style = ttk.Style()
+            style.configure(
+                "TCombobox",
+                fieldbackground=self.colors.get('entry_bg', self.colors.get('panel_bg')),
+                background=self.colors.get('panel_bg', self.colors.get('background')),
+                foreground=self.colors.get('entry_fg', self.colors.get('foreground')),
+                arrowcolor=self.colors.get('foreground')
+            )
+            style.map(
+                "TCombobox",
+                fieldbackground=[('readonly', self.colors.get('entry_bg', self.colors.get('panel_bg')))],
+                foreground=[('readonly', self.colors.get('entry_fg', self.colors.get('foreground')))]
+            )
+        except Exception:
+            pass
+
+        # Panel 2/3 stubs
+        if self.infer_log is not None:
+            self.infer_log.configure(bg=self.colors.get('entry_bg'), fg=self.colors.get('entry_fg'), insertbackground=self.colors.get('entry_fg'))
+        if self.result_text is not None:
+            self.result_text.configure(bg=self.colors.get('entry_bg'), fg=self.colors.get('entry_fg'), insertbackground=self.colors.get('entry_fg'), selectbackground=self.colors.get('select_bg'))
+
+        # Update Buttons (toolbar + small repo buttons)
+        btn_list = [self.btn_bold, self.btn_italic, self.btn_list, self.btn_settings, self.btn_role_save, self.btn_role_open, self.btn_prompt_save, self.btn_prompt_open]
+        for btn in btn_list:
+            btn.configure(bg=self.colors.get('panel_bg'), fg=self.colors.get('foreground'))
+
+        # Update Action Bar buttons
+        if self.btn_save_template is not None:
+            self.btn_save_template.configure(
+                bg=self.colors.get('panel_bg'),
+                fg=self.colors.get('button_fg', self.colors.get('foreground'))
+            )
+        if self.btn_load_template is not None:
+            self.btn_load_template.configure(
+                bg=self.colors.get('panel_bg'),
+                fg=self.colors.get('button_fg', self.colors.get('foreground'))
+            )
+        if self.btn_submit is not None:
+            self.btn_submit.configure(
+                bg=self.colors.get('accent'),
+                fg=self.colors.get('button_fg', self.colors.get('foreground'))
+            )
+
+        # HITL buttons
+        if self.btn_accept is not None:
+            self.btn_accept.configure(bg=self.colors.get('accent'), fg=self.colors.get('button_fg', 'white'))
+        if self.btn_reject is not None:
+            self.btn_reject.configure(bg=self.colors.get('button_bg', self.colors.get('panel_bg')), fg=self.colors.get('button_fg', self.colors.get('foreground')))
+        if self.btn_exit is not None:
+            self.btn_exit.configure(bg=self.colors.get('button_bg', self.colors.get('panel_bg')), fg=self.colors.get('button_fg', self.colors.get('foreground')))
+
+        # Export buttons
+        if self.export_execute_btn is not None:
+            self.export_execute_btn.configure(bg=self.colors.get('accent'), fg=self.colors.get('button_fg', 'white'))
+
+    def _on_cell_renamed(self, data):
+        """Handles cell rename events."""
+        # Update identity display when rename happens
+        self._update_identity_display()
+        # Exit edit mode if currently editing
+        if self._name_edit_mode:
+            self._exit_edit_mode()
+
+    def _update_window_title(self, new_title):
+        """Updates the window title."""
+        self.shell.root.title(new_title)
+
+    def _open_rename_dialog(self):
+        """Opens a dialog to rename the current cell."""
+        # Singleton pattern - only one rename dialog at a time
+        if self._rename_window is not None and self._rename_window.winfo_exists():
+            self._rename_window.focus()
+            return
+        
+        new_name = simpledialog.askstring(
+            "Rename Cell",
+            f"Enter new name for '{self.backend.cell_name}':",
+            initialvalue=self.backend.cell_name,
+            parent=self.shell.root
+        )
+        
+        if new_name and new_name.strip():
+            self.backend.rename_cell(new_name.strip())
+            self._update_identity_display()
+
+    def _toggle_name_edit(self):
+        """Toggles between label and entry mode for cell name."""
+        if self._name_edit_mode:
+            # Currently editing - save and exit edit mode
+            self._save_name_edit()
+        else:
+            # Enter edit mode
+            self._name_edit_mode = True
+            
+            # Hide label, show entry
+            self.cell_name_label.pack_forget()
+            self.cell_name_entry.delete(0, 'end')
+            self.cell_name_entry.insert(0, self.backend.cell_name)
+            self.cell_name_entry.pack(side='left', padx=(0, 5), fill='x', expand=True)
+            self.cell_name_entry.focus()
+            self.cell_name_entry.select_range(0, 'end')
+
+    def _save_name_edit(self):
+        """Saves the edited cell name and exits edit mode."""
+        if not self._name_edit_mode:
+            return
+        
+        new_name = self.cell_name_entry.get().strip()
+        
+        if new_name and new_name != self.backend.cell_name:
+            # Name changed - propagate through backend
+            self.backend.rename_cell(new_name)
+        
+        # Exit edit mode
+        self._exit_edit_mode()
+
+    def _cancel_name_edit(self):
+        """Cancels editing without saving."""
+        if self._name_edit_mode:
+            self._exit_edit_mode()
+
+    def _exit_edit_mode(self):
+        """Exits edit mode and restores label display."""
+        self._name_edit_mode = False
+        
+        # Hide entry, show label
+        self.cell_name_entry.pack_forget()
+        self.cell_name_label.configure(text=self.backend.cell_name)
+        self.cell_name_label.pack(side='left', padx=(0, 5))
+
+    def _update_identity_display(self):
+        """Updates the cell identity display (called after rename)."""
+        self.cell_name_label.configure(text=self.backend.cell_name)
+        self.cell_id_label.configure(text=f"ID: {self.backend.cell_id}")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,26 @@
+[
+  {
+    "role": "Strict Analyst",
+    "prompt": "Analyze the user's request and the current environment. Output a JSON 'plan' consisting of the sequence of tools needed and the specific AI personas required."
+  },
+  {
+    "role": "Mechanical Tool",
+    "prompt": "scan_file_structure"
+  },
+  {
+    "role": "Helpful Assistant",
+    "prompt": "Based on the plan and the file structure, execute the first major phase of the user's request. Provide code or configuration as needed."
+  },
+  {
+    "role": "The Surgeon",
+    "prompt": "Generate the necessary TokenizingPatcher hunks to apply the changes discussed in the previous step."
+  },
+  {
+    "role": "Mechanical Tool",
+    "prompt": "apply_safe_patch"
+  },
+  {
+    "role": "Strict Analyst",
+    "prompt": "Review the final state. Output a JSON 'validation' report: {\"status\": \"success|fail\", \"remaining_steps\": []}."
+  }
+]

@@ -1,0 +1,62 @@
+version: '3.8'
+services:
+  normalize_text_8964669d57d7:
+    build: ./src/microservices/normalize_text_8964669d57d7
+    ports:
+      - '8001:8000'
+    restart: unless-stopped
+  contentaddressablestore_3373ca773c28:
+    build: ./src/microservices/contentaddressablestore_3373ca773c28
+    ports:
+      - '8002:8000'
+    restart: unless-stopped
+  propertygraph_a196ad65f5b6:
+    build: ./src/microservices/propertygraph_a196ad65f5b6
+    ports:
+      - '8003:8000'
+    restart: unless-stopped
+  knowledgegraph_99eaebd3441f:
+    build: ./src/microservices/knowledgegraph_99eaebd3441f
+    ports:
+      - '8004:8000'
+    restart: unless-stopped
+  vectorstore_34005ccaf585:
+    build: ./src/microservices/vectorstore_34005ccaf585
+    ports:
+      - '8005:8000'
+    restart: unless-stopped
+  block_b30c34b0b097:
+    build: ./src/microservices/block_b30c34b0b097
+    ports:
+      - '8006:8000'
+    restart: unless-stopped
+  edgeref_c82d4dd6ccaa:
+    build: ./src/microservices/edgeref_c82d4dd6ccaa
+    ports:
+      - '8007:8000'
+    restart: unless-stopped
+  parser_e1bdfcbf4bab:
+    build: ./src/microservices/parser_e1bdfcbf4bab
+    ports:
+      - '8008:8000'
+    restart: unless-stopped
+  pythonparser_5678ebdaba83:
+    build: ./src/microservices/pythonparser_5678ebdaba83
+    ports:
+      - '8009:8000'
+    restart: unless-stopped
+  textparser_9a74ee8af072:
+    build: ./src/microservices/textparser_9a74ee8af072
+    ports:
+      - '8010:8000'
+    restart: unless-stopped
+  ingestor_813c762e996d:
+    build: ./src/microservices/ingestor_813c762e996d
+    ports:
+      - '8011:8000'
+    restart: unless-stopped
+  main_338f5c239d2e:
+    build: ./src/microservices/main_338f5c239d2e
+    ports:
+      - '8012:8000'
+    restart: unless-stopped

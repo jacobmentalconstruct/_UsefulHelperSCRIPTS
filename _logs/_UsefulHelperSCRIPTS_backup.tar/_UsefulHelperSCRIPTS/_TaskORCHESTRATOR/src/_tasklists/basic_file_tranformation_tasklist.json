@@ -1,0 +1,22 @@
+[
+  {
+    "role": "Strict Analyst",
+    "prompt": "Identify the file type and extract all unique logic blocks. Map the relationship between components."
+  },
+  {
+    "role": "Mechanical Tool",
+    "prompt": "read_template"
+  },
+  {
+    "role": "The Architect",
+    "prompt": "Using the template from Step 2, map the extracted logic into the required structure. Ensure all placeholders like {{NAME}} or {{LOGIC}} are defined."
+  },
+  {
+    "role": "The Surgeon",
+    "prompt": "Generate a full-file replacement patch that integrates the logic into the new boilerplate."
+  },
+  {
+    "role": "Mechanical Tool",
+    "prompt": "apply_safe_patch"
+  }
+]

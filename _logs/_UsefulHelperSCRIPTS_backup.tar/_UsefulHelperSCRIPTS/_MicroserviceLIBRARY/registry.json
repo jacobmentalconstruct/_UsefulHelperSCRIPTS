@@ -1,0 +1,1960 @@
+[
+  {
+    "token_id": "MS_82159302",
+    "name": "ArchiveBotMS",
+    "path": "_ArchiveBotMS.py",
+    "description": "",
+    "methods": {
+      "create_backup": {
+        "args": [
+          "source_path",
+          "output_dir",
+          "extra_exclusions",
+          "use_default_exclusions"
+        ],
+        "doc": ""
+      }
+    },
+    "dependencies": [
+      "datetime",
+      "fnmatch",
+      "logging",
+      "microservice_std_lib",
+      "os",
+      "pathlib",
+      "tarfile",
+      "tempfile",
+      "typing"
+    ]
+  },
+  {
+    "token_id": "MS_712B803A",
+    "name": "AuthMS",
+    "path": "_AuthMS.py",
+    "description": "ROLE: Simple authentication microservice providing username/password login\n      and signed session tokens.\n\nINPUTS:\n  - config: Optional configuration dict. Recognized keys:\n      - 'secret_key': Secret used to sign tokens.\n\nOUTPUTS:\n  - Exposes `login` and `validate_session` endpoints for use in pipelines.",
+    "methods": {
+      "login": {
+        "args": [
+          "username",
+          "password"
+        ],
+        "doc": "Attempt to log in with the provided username and password.\n\n:param username: Login identifier.\n:param password: Plain-text password.\n:returns: Signed session token if successful, None otherwise."
+      },
+      "validate_session": {
+        "args": [
+          "token"
+        ],
+        "doc": "Check if a serialized token is valid and not expired.\n\n:param token: Session token string.\n:returns: True if token is valid and not expired, False otherwise."
+      }
+    },
+    "dependencies": [
+      "base64",
+      "hashlib",
+      "json",
+      "logging",
+      "microservice_std_lib",
+      "time",
+      "typing"
+    ]
+  },
+  {
+    "token_id": "MS_B53FC606",
+    "name": "CartridgeServiceMS",
+    "path": "_CartridgeServiceMS.py",
+    "description": "The Source of Truth.\nManages the Unified Neural Cartridge Format (UNCF v1.0).",
+    "methods": {
+      "get_vector_dim": {
+        "args": [],
+        "doc": "Retrieves the expected vector dimension from the manifest spec."
+      },
+      "initialize_manifest": {
+        "args": [],
+        "doc": "Populates the boot sector with strict RagFORGE Cartridge Schema (UNCF) v1.1."
+      },
+      "set_manifest": {
+        "args": [
+          "key",
+          "value"
+        ],
+        "doc": "Upsert metadata key."
+      },
+      "get_manifest": {
+        "args": [
+          "key"
+        ],
+        "doc": "Retrieve metadata key."
+      },
+      "validate_cartridge": {
+        "args": [],
+        "doc": "Quality Control: Checks if the cartridge is Agent-Safe."
+      },
+      "store_file": {
+        "args": [
+          "vfs_path",
+          "origin_path",
+          "content",
+          "blob",
+          "mime_type",
+          "origin_type"
+        ],
+        "doc": "The Universal Input Method. \nStores raw data. If file exists, updates it and resets status to 'RAW' for re-refining."
+      },
+      "get_pending_files": {
+        "args": [
+          "limit"
+        ],
+        "doc": "Fetches files waiting for the Refinery."
+      },
+      "update_status": {
+        "args": [
+          "file_id",
+          "status",
+          "metadata"
+        ],
+        "doc": ""
+      },
+      "ensure_directory": {
+        "args": [
+          "vfs_path"
+        ],
+        "doc": "Idempotent insert for VFS directories."
+      },
+      "get_status_flags": {
+        "args": [],
+        "doc": "Returns key manifest status flags in a single call."
+      },
+      "list_files": {
+        "args": [
+          "prefix",
+          "status",
+          "limit"
+        ],
+        "doc": "Enumerate files in the cartridge (optionally filtered by VFS prefix and/or status)."
+      },
+      "get_file_record": {
+        "args": [
+          "vfs_path"
+        ],
+        "doc": "Fetch a single file record by VFS path."
+      },
+      "list_directories": {
+        "args": [
+          "prefix"
+        ],
+        "doc": "Enumerate directories in the cartridge VFS."
+      },
+      "get_directory_tree": {
+        "args": [
+          "root"
+        ],
+        "doc": "Builds a nested directory tree starting at `root` (\"\" for full tree)."
+      },
+      "get_status_summary": {
+        "args": [],
+        "doc": "Counts files by status and provides a quick cartridge overview."
+      },
+      "add_node": {
+        "args": [
+          "node_id",
+          "node_type",
+          "label",
+          "data"
+        ],
+        "doc": ""
+      },
+      "add_edge": {
+        "args": [
+          "source",
+          "target",
+          "relation",
+          "weight"
+        ],
+        "doc": ""
+      },
+      "search_embeddings": {
+        "args": [
+          "query_vector",
+          "limit"
+        ],
+        "doc": "Performs semantic search using sqlite-vec."
+      }
+    },
+    "dependencies": [
+      "datetime",
+      "json",
+      "microservice_std_lib",
+      "os",
+      "pathlib",
+      "sqlite3",
+      "sqlite_vec",
+      "struct",
+      "tempfile",
+      "time",
+      "typing",
+      "uuid"
+    ]
+  },
+  {
+    "token_id": "MS_D14BCEE8",
+    "name": "ChalkBoardMS",
+    "path": "_ChalkBoardMS.py",
+    "description": "",
+    "methods": {
+      "loaded": {
+        "args": [],
+        "doc": "Called by JS when the page is ready."
+      },
+      "log_action": {
+        "args": [
+          "action_name"
+        ],
+        "doc": "Called by JS when user interacts."
+      },
+      "update_sign": {
+        "args": [
+          "text",
+          "theme"
+        ],
+        "doc": "Updates the embedded HTML via JS injection."
+      },
+      "trigger_effect": {
+        "args": [
+          "effect"
+        ],
+        "doc": "Triggers CSS animations like 'shake'."
+      }
+    },
+    "dependencies": [
+      "json",
+      "microservice_std_lib",
+      "os",
+      "webview"
+    ]
+  },
+  {
+    "token_id": "MS_0E8A6CD8",
+    "name": "ChunkingRouterMS",
+    "path": "_ChunkingRouterMS.py",
+    "description": "The Editor: A 'Recursive' text splitter.\nIt respects the natural structure of text (Paragraphs -> Sentences -> Words)\nrather than just hacking it apart by character count.",
+    "methods": {
+      "chunk_file": {
+        "args": [
+          "text",
+          "filename",
+          "max_size",
+          "overlap"
+        ],
+        "doc": "Extension-aware router."
+      }
+    },
+    "dependencies": [
+      "_PythonChunkerMS",
+      "microservice_std_lib",
+      "re",
+      "typing"
+    ]
+  },
+  {
+    "token_id": "MS_D918BB0A",
+    "name": "CodeChunkerMS",
+    "path": "_CodeChunkerMS.py",
+    "description": "The Surgeon (Pure Python Edition): Splits code into semantic blocks\n(Classes, Functions) using indentation and regex heuristics.\n\nAdvantages: Zero dependencies. Works on any machine.\nDisadvantages: Slightly less precise than Tree-Sitter for messy code.",
+    "methods": {
+      "chunk_file": {
+        "args": [
+          "file_path",
+          "max_chars"
+        ],
+        "doc": "Reads a file and breaks it into logical blocks based on indentation."
+      }
+    },
+    "dependencies": [
+      "microservice_std_lib",
+      "os",
+      "pathlib",
+      "re",
+      "tempfile",
+      "typing"
+    ]
+  },
+  {
+    "token_id": "MS_286694E7",
+    "name": "CodeFormatterMS",
+    "path": "_CodeFormatterMS.py",
+    "description": "The Architect.\nUses the WhitespaceEngine to enforce strict indentation rules, \nfixing 'staircase' formatting and mixed tabs/spaces.",
+    "methods": {
+      "normalize_code": {
+        "args": [
+          "content",
+          "use_tabs",
+          "spaces"
+        ],
+        "doc": "Pure logic endpoint: Takes string, returns string + patch.\nDoes not touch the filesystem."
+      },
+      "format_file": {
+        "args": [
+          "file_path",
+          "use_tabs",
+          "spaces"
+        ],
+        "doc": "Filesystem endpoint: In-place repair of a file."
+      }
+    },
+    "dependencies": [
+      "json",
+      "logging",
+      "microservice_std_lib",
+      "pathlib",
+      "re",
+      "typing"
+    ]
+  },
+  {
+    "token_id": "MS_7A85FF81",
+    "name": "CodeGrapherMS",
+    "path": "_CodeGrapherMS.py",
+    "description": "The Cartographer of Logic: Parses Python code to extract high-level \nsymbols (classes, functions) and maps their 'Call' relationships.\n\nOutput: A graph structure (Nodes + Edges) suitable for visualization \nor dependency analysis.",
+    "methods": {
+      "scan_directory": {
+        "args": [
+          "root_path"
+        ],
+        "doc": "Recursively scans a directory for .py files and builds the graph."
+      }
+    },
+    "dependencies": [
+      "ast",
+      "json",
+      "microservice_std_lib",
+      "os",
+      "pathlib",
+      "sys",
+      "typing"
+    ]
+  },
+  {
+    "token_id": "MS_7BE95FCF",
+    "name": "CodeJanitorMS",
+    "path": "_CodeJanitorMS.py",
+    "description": "",
+    "methods": {
+      "enforce_standards": {
+        "args": [
+          "dry_run"
+        ],
+        "doc": ""
+      }
+    },
+    "dependencies": [
+      "logging",
+      "microservice_std_lib",
+      "pathlib",
+      "re",
+      "typing"
+    ]
+  },
+  {
+    "token_id": "MS_30C25085",
+    "name": "CognitiveMemoryMS",
+    "path": "_CognitiveMemoryMS.py",
+    "description": "The Hippocampus: Manages Short-Term (Working) Memory and orchestrates \nflushing to Long-Term Memory (Vector Store).",
+    "methods": {
+      "add_entry": {
+        "args": [
+          "role",
+          "content",
+          "metadata"
+        ],
+        "doc": "Adds an item to working memory and persists it."
+      },
+      "get_context": {
+        "args": [
+          "limit"
+        ],
+        "doc": "Returns the most recent conversation history formatted for an LLM."
+      },
+      "get_full_history": {
+        "args": [],
+        "doc": "Returns the raw list of memory objects."
+      },
+      "commit_turn": {
+        "args": [],
+        "doc": "Signal that a \"Turn\" (User + AI response) is complete.\nChecks if memory is full and triggers a flush if needed."
+      }
+    },
+    "dependencies": [
+      "datetime",
+      "importlib",
+      "json",
+      "logging",
+      "microservice_std_lib",
+      "os",
+      "pathlib",
+      "pydantic",
+      "sys",
+      "typing",
+      "uuid"
+    ]
+  },
+  {
+    "token_id": "MS_AC0BAF8F",
+    "name": "ContentExtractorMS",
+    "path": "_ContentExtractorMS.py",
+    "description": "The Decoder.\nA standalone utility microservice that separates the concern of \ndocument parsing from ingestion logic.",
+    "methods": {
+      "get_health": {
+        "args": [],
+        "doc": "Returns the operational status and library availability."
+      },
+      "extract_text": {
+        "args": [
+          "blob",
+          "mime_type"
+        ],
+        "doc": "Main routing logic for extraction. \n logic is internalized here."
+      }
+    },
+    "dependencies": [
+      "bs4",
+      "io",
+      "microservice_std_lib",
+      "pypdf",
+      "re",
+      "time",
+      "typing"
+    ]
+  },
+  {
+    "token_id": "MS_97FCA3AF",
+    "name": "ContextAggregatorMS",
+    "path": "_ContextAggregatorMS.py",
+    "description": "The Context Builder: Flattens a project folder into a single readable text file.",
+    "methods": {
+      "aggregate": {
+        "args": [
+          "root_path",
+          "output_file",
+          "extra_exclusions",
+          "use_default_exclusions"
+        ],
+        "doc": ""
+      }
+    },
+    "dependencies": [
+      "datetime",
+      "fnmatch",
+      "logging",
+      "microservice_std_lib",
+      "os",
+      "pathlib",
+      "typing"
+    ]
+  },
+  {
+    "token_id": "MS_C5235D34",
+    "name": "ContextPackerMS",
+    "path": "_ContextPackerMS.py",
+    "description": "The Packer: Walks a directory and dumps all text-readable files \ninto a single monolithic text file with delimiters.",
+    "methods": {
+      "pack_directory": {
+        "args": [
+          "root_path",
+          "output_filename",
+          "additional_excludes"
+        ],
+        "doc": "Walks the directory and writes file contents to the output file."
+      }
+    },
+    "dependencies": [
+      "logging",
+      "microservice_std_lib",
+      "os",
+      "pathlib",
+      "typing"
+    ]
+  },
+  {
+    "token_id": "MS_CCCC1208",
+    "name": "DiffEngineMS",
+    "path": "_DiffEngineMS.py",
+    "description": "The Timekeeper: Implements a 'Hybrid' versioning architecture.\n1. HEAD: Stores full current content for fast read access (UI/RAG).\n2. HISTORY: Stores diff deltas using difflib for audit trails.",
+    "methods": {
+      "update_file": {
+        "args": [
+          "path",
+          "new_content",
+          "author"
+        ],
+        "doc": "The Atomic Update Operation:\n1. Checks current state.\n2. Calculates Diff.\n3. Writes Diff to History.\n4. Updates Head to New Content."
+      },
+      "get_head": {
+        "args": [
+          "path"
+        ],
+        "doc": "Fast retrieval of current content."
+      },
+      "get_history": {
+        "args": [
+          "path"
+        ],
+        "doc": "Retrieves the full evolution history of a file."
+      }
+    },
+    "dependencies": [
+      "datetime",
+      "difflib",
+      "logging",
+      "microservice_std_lib",
+      "os",
+      "pathlib",
+      "sqlite3",
+      "typing",
+      "uuid"
+    ]
+  },
+  {
+    "token_id": "MS_2E13D7BF",
+    "name": "EnvironmentManagerMS",
+    "path": "_EnvironmentManagerMS.py",
+    "description": "The Operator.\nFinds the right Python interpreter (System vs Venv) and launches processes.",
+    "methods": {
+      "resolve_python": {
+        "args": [
+          "project_path",
+          "config_override"
+        ],
+        "doc": "Priority:\n1. Explicit config override\n2. Local .venv\n3. System default (py or sys.executable)"
+      },
+      "launch_script": {
+        "args": [
+          "project_path",
+          "script_rel_path",
+          "env_vars"
+        ],
+        "doc": ""
+      }
+    },
+    "dependencies": [
+      "logging",
+      "microservice_std_lib",
+      "os",
+      "pathlib",
+      "subprocess",
+      "sys",
+      "typing"
+    ]
+  },
+  {
+    "token_id": "MS_240BD73E",
+    "name": "ExplorerWidgetMS",
+    "path": "_ExplorerWidgetMS.py",
+    "description": "A standalone file system tree viewer.",
+    "methods": {
+      "refresh_tree": {
+        "args": [],
+        "doc": ""
+      },
+      "get_selected_paths": {
+        "args": [],
+        "doc": ""
+      },
+      "process_gui_queue": {
+        "args": [],
+        "doc": ""
+      }
+    },
+    "dependencies": [
+      "importlib",
+      "microservice_std_lib",
+      "os",
+      "pathlib",
+      "queue",
+      "sys",
+      "threading",
+      "tkinter",
+      "typing"
+    ]
+  },
+  {
+    "token_id": "MS_B87AB5EB",
+    "name": "FingerprintScannerMS",
+    "path": "_FingerprintScannerMS.py",
+    "description": "The Detective: Scans a directory tree and generates a deterministic\n'Fingerprint' (SHA-256 Merkle Root) representing its exact state.",
+    "methods": {
+      "scan_project": {
+        "args": [
+          "root_path"
+        ],
+        "doc": "Scans the project and returns a comprehensive state object."
+      }
+    },
+    "dependencies": [
+      "fnmatch",
+      "hashlib",
+      "logging",
+      "microservice_std_lib",
+      "os",
+      "pathlib",
+      "shutil",
+      "time",
+      "typing"
+    ]
+  },
+  {
+    "token_id": "MS_8CED7E7B",
+    "name": "GitPilotMS",
+    "path": "_GitPilotMS.py",
+    "description": "",
+    "methods": {
+      "set_repo": {
+        "args": [
+          "path"
+        ],
+        "doc": ""
+      }
+    },
+    "dependencies": [
+      "dataclasses",
+      "microservice_std_lib",
+      "os",
+      "pathlib",
+      "queue",
+      "subprocess",
+      "threading",
+      "time",
+      "tkinter",
+      "typing"
+    ]
+  },
+  {
+    "token_id": "MS_B7BF2C48",
+    "name": "HeuristicSumMS",
+    "path": "_HeuristicSumMS.py",
+    "description": "The Skimmer: Generates quick summaries of code/text files without AI.\nScans for high-value lines (headers, signatures, docstrings) and concatenates them.",
+    "methods": {
+      "summarize": {
+        "args": [
+          "text",
+          "filename",
+          "max_chars"
+        ],
+        "doc": "Generates a summary string from the provided text."
+      }
+    },
+    "dependencies": [
+      "microservice_std_lib",
+      "os",
+      "re",
+      "typing"
+    ]
+  },
+  {
+    "token_id": "MS_6D21E917",
+    "name": "IngestEngineMS",
+    "path": "_IngestEngineMS.py",
+    "description": "The Heavy Lifter: Reads files, chunks text, fetches embeddings,\npopulates the Graph Nodes, and weaves Graph Edges.",
+    "methods": {
+      "abort": {
+        "args": [],
+        "doc": ""
+      },
+      "check_ollama_connection": {
+        "args": [],
+        "doc": ""
+      },
+      "get_available_models": {
+        "args": [],
+        "doc": ""
+      },
+      "process_files": {
+        "args": [
+          "file_paths",
+          "model_name"
+        ],
+        "doc": ""
+      }
+    },
+    "dependencies": [
+      "dataclasses",
+      "importlib",
+      "json",
+      "microservice_std_lib",
+      "os",
+      "re",
+      "requests",
+      "sqlite3",
+      "sys",
+      "time",
+      "typing"
+    ]
+  },
+  {
+    "token_id": "MS_CEB3C2F6",
+    "name": "IntakeServiceMS",
+    "path": "_IntakeServiceMS.py",
+    "description": "The Vacuum. \nNow supports two-phase ingestion:\n1. Scan -> Build Tree (with .gitignore respect)\n2. Ingest -> Process selected paths",
+    "methods": {
+      "get_health": {
+        "args": [],
+        "doc": "Returns the operational status of the IntakeServiceMS."
+      },
+      "ingest_source": {
+        "args": [
+          "source_path"
+        ],
+        "doc": "Headless/CLI Entry point: Scans and Ingests in one go."
+      },
+      "scan_path": {
+        "args": [
+          "root_path",
+          "web_depth"
+        ],
+        "doc": "Unified Scanner Interface.\nDelegates to ScoutMS for both Web and Local FS to ensure consistent node structure."
+      },
+      "ingest_selected": {
+        "args": [
+          "file_list",
+          "root_path"
+        ],
+        "doc": "Ingests only the specific files passed in the list."
+      },
+      "save_persistence": {
+        "args": [
+          "root_path",
+          "checked_map"
+        ],
+        "doc": "Saves user selections into the Cartridge Manifest (Portable)."
+      }
+    },
+    "dependencies": [
+      "_CartridgeServiceMS",
+      "_ScannerMS",
+      "base_service",
+      "bs4",
+      "document_utils",
+      "fnmatch",
+      "json",
+      "microservice_std_lib",
+      "mimetypes",
+      "os",
+      "pathlib",
+      "requests",
+      "typing"
+    ]
+  },
+  {
+    "token_id": "MS_6D977CA1",
+    "name": "IsoProcessMS",
+    "path": "_IsoProcessMS.py",
+    "description": "The Safety Valve: Spawns isolated processes with real-time logging feedback.",
+    "methods": {
+      "execute": {
+        "args": [
+          "payload",
+          "config"
+        ],
+        "doc": ""
+      }
+    },
+    "dependencies": [
+      "logging",
+      "microservice_std_lib",
+      "multiprocessing",
+      "queue",
+      "time",
+      "typing"
+    ]
+  },
+  {
+    "token_id": "MS_B73D91A1",
+    "name": "LexicalSearchMS",
+    "path": "_LexicalSearchMS.py",
+    "description": "The Librarian's Index: A lightweight, AI-free search engine.\n\nUses SQLite's FTS5 extension to provide fast, ranked keyword search (BM25).\nIdeal for environments where installing PyTorch/Transformers is impossible\nor overkill.",
+    "methods": {
+      "add_document": {
+        "args": [
+          "doc_id",
+          "text",
+          "metadata"
+        ],
+        "doc": "Adds or updates a document in the index."
+      },
+      "search": {
+        "args": [
+          "query",
+          "top_k"
+        ],
+        "doc": "Performs a BM25 Ranked Search."
+      }
+    },
+    "dependencies": [
+      "json",
+      "microservice_std_lib",
+      "os",
+      "pathlib",
+      "sqlite3",
+      "typing"
+    ]
+  },
+  {
+    "token_id": "MS_100A23E3",
+    "name": "LibrarianMS",
+    "path": "_LibrarianMS.py",
+    "description": "The Swarm Librarian.\nSpawns concurrent AI workers to scan the codebase and create a system manifest.\nOptimized for Ryzen CPUs and 32GB RAM.",
+    "methods": {
+      "generate_catalog": {
+        "args": [
+          "output_file"
+        ],
+        "doc": "Main entry point. Uses ThreadPoolExecutor for parallel processing."
+      }
+    },
+    "dependencies": [
+      "ast",
+      "concurrent",
+      "datetime",
+      "importlib",
+      "json",
+      "logging",
+      "microservice_std_lib",
+      "os",
+      "pathlib",
+      "requests",
+      "typing"
+    ]
+  },
+  {
+    "token_id": "MS_100A23E3",
+    "name": "LibrarianMS",
+    "path": "_LibrarianServiceMS.py",
+    "description": "",
+    "methods": {
+      "generate_catalog": {
+        "args": [
+          "output_file"
+        ],
+        "doc": ""
+      }
+    },
+    "dependencies": [
+      "ast",
+      "concurrent",
+      "datetime",
+      "importlib",
+      "logging",
+      "microservice_std_lib",
+      "os",
+      "pathlib",
+      "requests",
+      "typing"
+    ]
+  },
+  {
+    "token_id": "MS_8EEDB65C",
+    "name": "LogViewMS",
+    "path": "_LogViewMS.py",
+    "description": "The Console: A professional log viewer widget.\nFeatures:\n- Thread-safe (consumes from a Queue).\n- Message Consolidation (\"Error occurred (x5)\").\n- Level Filtering (Toggle INFO/DEBUG/ERROR).",
+    "methods": {
+      "clear": {
+        "args": [],
+        "doc": ""
+      },
+      "save": {
+        "args": [],
+        "doc": ""
+      }
+    },
+    "dependencies": [
+      "datetime",
+      "logging",
+      "microservice_std_lib",
+      "queue",
+      "tkinter",
+      "typing"
+    ]
+  },
+  {
+    "token_id": "MS_FD93FB4F",
+    "name": "MonacoHostMS",
+    "path": "_MonacoHostMS.py",
+    "description": "Hosts the Monaco Editor.\nThis service spawns a GUI window and cannot be run in headless environments.",
+    "methods": {
+      "launch": {
+        "args": [
+          "title",
+          "width",
+          "height",
+          "func"
+        ],
+        "doc": "Create and launch the window.\n:param func: Optional function to run in a separate thread after launch."
+      },
+      "set_save_callback": {
+        "args": [
+          "callback"
+        ],
+        "doc": "Sets the function to trigger when Ctrl+S is pressed in the editor."
+      },
+      "open_file": {
+        "args": [
+          "filepath",
+          "content"
+        ],
+        "doc": "Opens a file in the editor (must be called from a background thread or callback)."
+      }
+    },
+    "dependencies": [
+      "importlib",
+      "json",
+      "logging",
+      "microservice_std_lib",
+      "sys",
+      "threading",
+      "typing",
+      "webview"
+    ]
+  },
+  {
+    "token_id": "MS_1F8493F8",
+    "name": "NetworkLayoutMS",
+    "path": "_NetworkLayoutMS.py",
+    "description": "The Topologist: Calculates visual coordinates for graph nodes using\nserver-side algorithms (NetworkX). \nUseful for generating static map snapshots or pre-calculating positions \nto offload client-side rendering.",
+    "methods": {
+      "calculate_layout": {
+        "args": [
+          "nodes",
+          "edges",
+          "algorithm"
+        ],
+        "doc": "Computes (x, y) coordinates for the given graph.\n\n:param nodes: List of node IDs.\n:param edges: List of (source, target) tuples.\n:param algorithm: 'spring' (Force-directed) or 'circular'.\n:return: Dictionary {node_id: (x, y)}"
+      }
+    },
+    "dependencies": [
+      "importlib",
+      "logging",
+      "microservice_std_lib",
+      "networkx",
+      "sys",
+      "typing"
+    ]
+  },
+  {
+    "token_id": "MS_E7AE2BD6",
+    "name": "NeuralGraphEngineMS",
+    "path": "_NeuralGraphEngineMS.py",
+    "description": "",
+    "methods": {
+      "get_health": {
+        "args": [],
+        "doc": "Returns the operational status of the NeuralGraphEngineMS."
+      },
+      "resize": {
+        "args": [
+          "width",
+          "height"
+        ],
+        "doc": ""
+      },
+      "set_data": {
+        "args": [
+          "nodes",
+          "links"
+        ],
+        "doc": ""
+      },
+      "screen_to_world": {
+        "args": [
+          "sx",
+          "sy"
+        ],
+        "doc": ""
+      },
+      "get_node_at": {
+        "args": [
+          "sx",
+          "sy"
+        ],
+        "doc": ""
+      },
+      "handle_mouse_down": {
+        "args": [
+          "x",
+          "y"
+        ],
+        "doc": ""
+      },
+      "handle_mouse_move": {
+        "args": [
+          "x",
+          "y",
+          "is_dragging"
+        ],
+        "doc": ""
+      },
+      "handle_mouse_up": {
+        "args": [],
+        "doc": ""
+      },
+      "pan": {
+        "args": [
+          "dx",
+          "dy"
+        ],
+        "doc": ""
+      },
+      "zoom_camera": {
+        "args": [
+          "amount",
+          "mouse_x",
+          "mouse_y"
+        ],
+        "doc": ""
+      },
+      "highlight_nodes": {
+        "args": [
+          "node_ids"
+        ],
+        "doc": "Highlights specific nodes by ID."
+      },
+      "step_physics": {
+        "args": [],
+        "doc": ""
+      },
+      "get_image_bytes": {
+        "args": [],
+        "doc": ""
+      }
+    },
+    "dependencies": [
+      "math",
+      "microservice_std_lib",
+      "pygame",
+      "random",
+      "time"
+    ]
+  },
+  {
+    "token_id": "MS_BC3EA28D",
+    "name": "NeuralGraphViewerMS",
+    "path": "_NeuralGraphViewerMS.py",
+    "description": "",
+    "methods": {
+      "bind_services": {
+        "args": [
+          "cartridge",
+          "neural"
+        ],
+        "doc": ""
+      },
+      "run_search": {
+        "args": [
+          "event"
+        ],
+        "doc": ""
+      },
+      "load_from_db": {
+        "args": [
+          "db_path"
+        ],
+        "doc": "Loads graph data from SQLite.\nDoes NOT block the UI. The physics engine will settle the nodes frame-by-frame."
+      },
+      "on_resize": {
+        "args": [
+          "event"
+        ],
+        "doc": ""
+      },
+      "on_double_click": {
+        "args": [
+          "event"
+        ],
+        "doc": ""
+      },
+      "on_click": {
+        "args": [
+          "event"
+        ],
+        "doc": ""
+      },
+      "on_release": {
+        "args": [
+          "event"
+        ],
+        "doc": ""
+      },
+      "on_drag": {
+        "args": [
+          "event"
+        ],
+        "doc": ""
+      },
+      "on_hover": {
+        "args": [
+          "event"
+        ],
+        "doc": ""
+      },
+      "on_zoom": {
+        "args": [
+          "amount"
+        ],
+        "doc": ""
+      },
+      "on_windows_scroll": {
+        "args": [
+          "event"
+        ],
+        "doc": ""
+      },
+      "animate": {
+        "args": [],
+        "doc": "The Heartbeat Loop.\nRuns at ~30 FPS. Handles Physics + Rendering."
+      }
+    },
+    "dependencies": [
+      "PIL",
+      "_NeuralGraphEngineMS",
+      "json",
+      "microservice_std_lib",
+      "os",
+      "sqlite3",
+      "tkinter"
+    ]
+  },
+  {
+    "token_id": "MS_BE7F8AE6",
+    "name": "NeuralServiceMS",
+    "path": "_NeuralServiceMS.py",
+    "description": "The Brain Interface: Orchestrates local AI operations via Ollama for inference and embeddings.",
+    "methods": {
+      "update_models": {
+        "args": [
+          "fast_model",
+          "smart_model",
+          "embed_model"
+        ],
+        "doc": "Called by the UI Settings Modal to change models on the fly."
+      },
+      "get_available_models": {
+        "args": [],
+        "doc": "Fetches list from Ollama for the UI dropdown."
+      },
+      "check_connection": {
+        "args": [],
+        "doc": "Pings Ollama to see if it's alive."
+      },
+      "get_embedding": {
+        "args": [
+          "text"
+        ],
+        "doc": "Generates a vector using the configured embedding model."
+      },
+      "request_inference": {
+        "args": [
+          "prompt",
+          "tier",
+          "format_json"
+        ],
+        "doc": "Synchronous inference request.\ntier: 'fast', 'smart', or other keys in self.models"
+      },
+      "process_parallel": {
+        "args": [
+          "items",
+          "worker_func"
+        ],
+        "doc": "Helper to run a function across many items using a ThreadPool.\nUseful for batch ingestion.\nNote: Not exposed as an endpoint as it takes a function as an argument."
+      }
+    },
+    "dependencies": [
+      "concurrent",
+      "json",
+      "logging",
+      "microservice_std_lib",
+      "requests",
+      "typing"
+    ]
+  },
+  {
+    "token_id": "MS_6EDB246A",
+    "name": "ProjectForgeMS",
+    "path": "_ProjectForgeMS.py",
+    "description": "The Blacksmith.\nCreates directory structures, stamps out boilerplate code, and injects dependencies.",
+    "methods": {
+      "forge_project": {
+        "args": [
+          "parent_path",
+          "project_name",
+          "dependencies",
+          "project_type"
+        ],
+        "doc": "Stamps out a new project folder."
+      }
+    },
+    "dependencies": [
+      "logging",
+      "microservice_std_lib",
+      "os",
+      "pathlib",
+      "shutil",
+      "typing"
+    ]
+  },
+  {
+    "token_id": "MS_42FE6B64",
+    "name": "PromptOptimizerMS",
+    "path": "_PromptOptimizerMS.py",
+    "description": "The Tuner: Uses an LLM to refine prompts or generate variations.\nRequires an 'inference_func' to be passed in the config, which accepts a string\nand returns a string (simulating an LLM call).",
+    "methods": {
+      "refine_prompt": {
+        "args": [
+          "draft_prompt",
+          "feedback"
+        ],
+        "doc": "Rewrites a prompt based on feedback."
+      },
+      "generate_variations": {
+        "args": [
+          "draft_prompt",
+          "num_variations",
+          "context_data"
+        ],
+        "doc": "Generates multiple versions of a prompt for testing."
+      }
+    },
+    "dependencies": [
+      "json",
+      "logging",
+      "microservice_std_lib",
+      "typing"
+    ]
+  },
+  {
+    "token_id": "MS_8FC21A0E",
+    "name": "PromptVaultMS",
+    "path": "_PromptVaultMS.py",
+    "description": "The Vault: A persistent SQLite store for managing, versioning, \nand rendering AI prompts.",
+    "methods": {
+      "create_template": {
+        "args": [
+          "slug",
+          "title",
+          "content",
+          "author",
+          "tags"
+        ],
+        "doc": "Creates a new prompt template with an initial version 1."
+      },
+      "add_version": {
+        "args": [
+          "slug",
+          "content",
+          "author"
+        ],
+        "doc": "Adds a new version to an existing template."
+      },
+      "get_template": {
+        "args": [
+          "slug"
+        ],
+        "doc": "Retrieves a full template with all history."
+      },
+      "render": {
+        "args": [
+          "slug",
+          "context"
+        ],
+        "doc": "Fetches the latest version and renders it with Jinja2."
+      },
+      "list_slugs": {
+        "args": [],
+        "doc": ""
+      }
+    },
+    "dependencies": [
+      "datetime",
+      "importlib",
+      "jinja2",
+      "json",
+      "logging",
+      "microservice_std_lib",
+      "os",
+      "pathlib",
+      "pydantic",
+      "sqlite3",
+      "sys",
+      "typing",
+      "uuid"
+    ]
+  },
+  {
+    "token_id": "MS_037ABE0D",
+    "name": "PythonChunkerMS",
+    "path": "_PythonChunkerMS.py",
+    "description": "Specialized Python AST Chunker.\nFocuses exclusively on identifying classes and functions to preserve code logic.",
+    "methods": {
+      "get_health": {
+        "args": [],
+        "doc": "Returns the operational status of the PythonChunkerMS."
+      },
+      "chunk": {
+        "args": [
+          "content"
+        ],
+        "doc": "Parses Python source into semantic CodeChunks."
+      }
+    },
+    "dependencies": [
+      "ast",
+      "dataclasses",
+      "microservice_std_lib",
+      "time",
+      "typing"
+    ]
+  },
+  {
+    "token_id": "MS_88923AC3",
+    "name": "RefineryServiceMS",
+    "path": "_RefineryServiceMS.py",
+    "description": "The Night Shift.\nPolls the DB for 'RAW' files and processes them into Chunks and Graph Nodes.\n\nGraph Enrichment:\n- Code: function/class nodes, resolved import edges when possible.\n- Docs: section/chapter nodes for long-form text (md/txt/rst).",
+    "methods": {
+      "get_health": {
+        "args": [],
+        "doc": "Returns the operational status of the RefineryServiceMS."
+      },
+      "process_pending": {
+        "args": [
+          "batch_size"
+        ],
+        "doc": "Main loop. Returns number of files processed."
+      }
+    },
+    "dependencies": [
+      "_CartridgeServiceMS",
+      "_ChunkingRouterMS",
+      "_NeuralServiceMS",
+      "ast",
+      "concurrent",
+      "json",
+      "logging",
+      "microservice_std_lib",
+      "os",
+      "re",
+      "time",
+      "typing"
+    ]
+  },
+  {
+    "token_id": "MS_0694A27B",
+    "name": "RegexWeaverMS",
+    "path": "_RegexWeaverMS.py",
+    "description": "The Weaver: A fault-tolerant dependency extractor.\nUses Regex to find imports, making it faster and more permissive\nthan AST parsers (works on broken code).",
+    "methods": {
+      "extract_dependencies": {
+        "args": [
+          "content",
+          "language"
+        ],
+        "doc": "Scans code content for import statements.\n:param language: 'python' or 'javascript' (includes ts/jsx)."
+      }
+    },
+    "dependencies": [
+      "logging",
+      "microservice_std_lib",
+      "re",
+      "typing"
+    ]
+  },
+  {
+    "token_id": "MS_12D07056",
+    "name": "RoleManagerMS",
+    "path": "_RoleManagerMS.py",
+    "description": "The Casting Director: Manages Agent Personas (Roles).\nPersists configuration for System Prompts, Attached KBs, and Memory Settings.",
+    "methods": {
+      "create_role": {
+        "args": [
+          "name",
+          "system_prompt",
+          "description",
+          "kbs"
+        ],
+        "doc": "Creates a new Agent Persona."
+      },
+      "get_role": {
+        "args": [
+          "name_or_id"
+        ],
+        "doc": "Retrieves a role by Name or ID."
+      },
+      "list_roles": {
+        "args": [],
+        "doc": ""
+      },
+      "delete_role": {
+        "args": [
+          "name"
+        ],
+        "doc": ""
+      }
+    },
+    "dependencies": [
+      "datetime",
+      "importlib",
+      "json",
+      "logging",
+      "microservice_std_lib",
+      "os",
+      "pathlib",
+      "pydantic",
+      "sqlite3",
+      "sys",
+      "typing",
+      "uuid"
+    ]
+  },
+  {
+    "token_id": "MS_AD63F401",
+    "name": "SandboxManagerMS",
+    "path": "_SandboxManagerMS.py",
+    "description": "The Safety Harness: Manages a 'Sandbox' mirror of a 'Live' project.\nAllows for safe experimentation, diffing, and atomic promotion of changes.",
+    "methods": {
+      "init_sandbox": {
+        "args": [
+          "force"
+        ],
+        "doc": "Creates or resets the sandbox by mirroring the live project."
+      },
+      "reset_sandbox": {
+        "args": [],
+        "doc": "Discards all sandbox changes and re-syncs from live."
+      },
+      "get_diff": {
+        "args": [],
+        "doc": "Compares Sandbox vs Live. Returns added, modified, and deleted files."
+      },
+      "promote_changes": {
+        "args": [],
+        "doc": "Applies changes from Sandbox to Live.\nReturns (added_count, modified_count, deleted_count)."
+      }
+    },
+    "dependencies": [
+      "hashlib",
+      "logging",
+      "microservice_std_lib",
+      "os",
+      "pathlib",
+      "shutil",
+      "typing"
+    ]
+  },
+  {
+    "token_id": "MS_7237CDDC",
+    "name": "ScannerMS",
+    "path": "_ScannerMS.py",
+    "description": "The Scanner: Walks the file system, filters junk, and detects binary files.\nGenerates the tree structure used by the UI.",
+    "methods": {
+      "is_binary": {
+        "args": [
+          "file_path"
+        ],
+        "doc": "Determines if a file is binary using two heuristics:\n1. Extension check (Fast)\n2. Content check for null bytes (Accurate)"
+      },
+      "scan_directory": {
+        "args": [
+          "root_path"
+        ],
+        "doc": "Recursively scans a directory and returns a JSON-compatible tree.\nReturns None if path is invalid."
+      },
+      "flatten_tree": {
+        "args": [
+          "tree_node"
+        ],
+        "doc": "Helper to extract all valid file paths from a tree node \n(e.g., when the user clicks 'Start Ingest')."
+      }
+    },
+    "dependencies": [
+      "microservice_std_lib",
+      "os",
+      "time",
+      "typing"
+    ]
+  },
+  {
+    "token_id": "MS_DFC1A928",
+    "name": "ScoutMS",
+    "path": "_ScoutMS.py",
+    "description": "The Scanner: Walks file systems OR crawls websites (Depth-Aware).",
+    "methods": {
+      "is_binary": {
+        "args": [
+          "file_path"
+        ],
+        "doc": ""
+      },
+      "scan_directory": {
+        "args": [
+          "root_path",
+          "web_depth"
+        ],
+        "doc": "Main Entry Point.\n:param root_path: File path or URL.\n:param web_depth: How many links deep to crawl (0 = single page)."
+      },
+      "flatten_tree": {
+        "args": [
+          "tree_node"
+        ],
+        "doc": ""
+      }
+    },
+    "dependencies": [
+      "bs4",
+      "microservice_std_lib",
+      "os",
+      "requests",
+      "time",
+      "typing",
+      "urllib"
+    ]
+  },
+  {
+    "token_id": "MS_D02A07FF",
+    "name": "SearchEngineMS",
+    "path": "_SearchEngineMS.py",
+    "description": "The Oracle: Performs Hybrid Search (Vector Similarity + Keyword Matching).\n\nArchitecture:\n1. Vector Search: Uses sqlite-vec (vec0) for fast nearest neighbor search.\n2. Keyword Search: Uses SQLite FTS5 for BM25-style text matching.\n3. Reranking: Combines scores using Reciprocal Rank Fusion (RRF).",
+    "methods": {
+      "search": {
+        "args": [
+          "db_path",
+          "query",
+          "limit"
+        ],
+        "doc": "Main entry point. Returns a list of results sorted by relevance."
+      }
+    },
+    "dependencies": [
+      "importlib",
+      "json",
+      "logging",
+      "microservice_std_lib",
+      "os",
+      "requests",
+      "sqlite3",
+      "sqlite_vec",
+      "struct",
+      "sys",
+      "typing"
+    ]
+  },
+  {
+    "token_id": "MS_9F825A66",
+    "name": "SemanticChunkerMS",
+    "path": "_SemanticChunkerMS.py",
+    "description": "Intelligent Code Splitter.\nParses source code into logical units (Classes, Functions) \nrather than arbitrary text windows.",
+    "methods": {
+      "chunk_file": {
+        "args": [
+          "content",
+          "filename"
+        ],
+        "doc": "Splits file content into chunks.\nReturns a list of dictionaries suitable for JSON response."
+      }
+    },
+    "dependencies": [
+      "ast",
+      "dataclasses",
+      "microservice_std_lib",
+      "typing"
+    ]
+  },
+  {
+    "token_id": "MS_0A156562",
+    "name": "ServiceRegistryMS",
+    "path": "_ServiceRegistryMS.py",
+    "description": "The Tokenizer (v2): Scans a library of Python microservices and generates\nstandardized JSON 'Service Tokens'.\nFeature: Hybrid AST/Regex parsing for maximum robustness.",
+    "methods": {
+      "scan": {
+        "args": [
+          "save_to"
+        ],
+        "doc": ""
+      }
+    },
+    "dependencies": [
+      "ast",
+      "json",
+      "logging",
+      "microservice_std_lib",
+      "os",
+      "pathlib",
+      "re",
+      "typing",
+      "uuid"
+    ]
+  },
+  {
+    "token_id": "MS_02781C0A",
+    "name": "SpinnerThingyMaBobberMS",
+    "path": "_SpinnerThingyMaBobberMS.py",
+    "description": "The Visualizer: An interactive spinner widget.\nUseful for \"Processing...\" screens or OBS overlays.",
+    "methods": {
+      "launch": {
+        "args": [],
+        "doc": "Starts the Tkinter main event loop."
+      },
+      "handle_keypress": {
+        "args": [
+          "event"
+        ],
+        "doc": ""
+      },
+      "get_neon_color": {
+        "args": [
+          "offset"
+        ],
+        "doc": ""
+      },
+      "draw_arc": {
+        "args": [
+          "cx",
+          "cy",
+          "radius",
+          "width",
+          "start",
+          "extent",
+          "color"
+        ],
+        "doc": ""
+      },
+      "animate": {
+        "args": [],
+        "doc": ""
+      }
+    },
+    "dependencies": [
+      "colorsys",
+      "math",
+      "microservice_std_lib",
+      "time",
+      "tkinter",
+      "typing"
+    ]
+  },
+  {
+    "token_id": "MS_E3D913D6",
+    "name": "SysInspectorMS",
+    "path": "_SysInspectorMS.py",
+    "description": "The Auditor: Gathers hardware and environment statistics.\nSupports: Windows (WMIC), Linux (lscpu/lspci), and macOS (sysctl/system_profiler).",
+    "methods": {
+      "generate_report": {
+        "args": [],
+        "doc": "Runs the full audit and returns a formatted string report."
+      }
+    },
+    "dependencies": [
+      "datetime",
+      "logging",
+      "microservice_std_lib",
+      "platform",
+      "subprocess",
+      "sys",
+      "typing"
+    ]
+  },
+  {
+    "token_id": "MS_2668E502",
+    "name": "TasklistVaultMS",
+    "path": "_TasklistVaultMS.py",
+    "description": "The Taskmaster: A persistent SQLite engine for hierarchical task management.\nSupports infinite nesting of sub-tasks and status tracking.",
+    "methods": {
+      "create_list": {
+        "args": [
+          "name"
+        ],
+        "doc": "Creates a new task list and returns its ID."
+      },
+      "get_lists": {
+        "args": [],
+        "doc": "Returns metadata for all task lists."
+      },
+      "add_task": {
+        "args": [
+          "list_id",
+          "content",
+          "parent_id"
+        ],
+        "doc": "Adds a task (or sub-task) to a list."
+      },
+      "update_task": {
+        "args": [
+          "task_id",
+          "content",
+          "status",
+          "result"
+        ],
+        "doc": "Updates a task's details."
+      },
+      "get_full_tree": {
+        "args": [
+          "list_id"
+        ],
+        "doc": "Fetches a list and reconstructs the full hierarchy of tasks."
+      },
+      "delete_list": {
+        "args": [
+          "list_id"
+        ],
+        "doc": ""
+      }
+    },
+    "dependencies": [
+      "datetime",
+      "json",
+      "logging",
+      "microservice_std_lib",
+      "os",
+      "pathlib",
+      "sqlite3",
+      "typing",
+      "uuid"
+    ]
+  },
+  {
+    "token_id": "MS_76AAA88C",
+    "name": "TelemetryServiceMS",
+    "path": "_TelemetryServiceMS.py",
+    "description": "The Nervous System.\nWatches the thread-safe LogQueue and updates the GUI Panels.",
+    "methods": {
+      "get_health": {
+        "args": [],
+        "doc": "Returns the operational status of the TelemetryServiceMS."
+      },
+      "start": {
+        "args": [],
+        "doc": "Begins the GUI update loop."
+      },
+      "ping": {
+        "args": [],
+        "doc": "Allows an agent to verify the pulse of the UI loop."
+      }
+    },
+    "dependencies": [
+      "logging",
+      "microservice_std_lib",
+      "queue",
+      "time",
+      "typing"
+    ]
+  },
+  {
+    "token_id": "MS_33756201",
+    "name": "TextChunkerMS",
+    "path": "_TextChunkerMS.py",
+    "description": "The Butcher: A unified service for splitting text into digestible chunks\nfor RAG (Retrieval Augmented Generation).",
+    "methods": {
+      "chunk_by_chars": {
+        "args": [
+          "text",
+          "chunk_size",
+          "chunk_overlap"
+        ],
+        "doc": "Standard Sliding Window. Best for prose/documentation.\nSplits purely by character count."
+      },
+      "chunk_by_lines": {
+        "args": [
+          "text",
+          "max_lines",
+          "max_chars"
+        ],
+        "doc": "Line-Preserving Chunker. Best for Code.\nRespects line boundaries and returns metadata about line numbers."
+      }
+    },
+    "dependencies": [
+      "logging",
+      "microservice_std_lib",
+      "typing"
+    ]
+  },
+  {
+    "token_id": "MS_7E985AE0",
+    "name": "ThoughtStreamMS",
+    "path": "_ThoughtStreamMS.py",
+    "description": "The Neural Inspector: A UI widget for displaying a stream of AI thoughts/logs\nvisualized as 'bubbles' with sparklines.",
+    "methods": {
+      "add_thought_bubble": {
+        "args": [
+          "filename",
+          "chunk_id",
+          "content",
+          "vector_preview",
+          "color"
+        ],
+        "doc": "Mimics the 'InspectorFrame' from your React code."
+      }
+    },
+    "dependencies": [
+      "datetime",
+      "microservice_std_lib",
+      "random",
+      "tkinter",
+      "typing"
+    ]
+  },
+  {
+    "token_id": "MS_42A8CBA5",
+    "name": "TkinterAppShellMS",
+    "path": "_TkinterAppShellMS.py",
+    "description": "The Mother Ship.\nOwns the Tkinter Root. All other UI microservices dock into this.",
+    "methods": {
+      "launch": {
+        "args": [],
+        "doc": "Ignition sequence start."
+      },
+      "get_main_container": {
+        "args": [],
+        "doc": "Other services call this to know where to .pack() themselves."
+      },
+      "shutdown": {
+        "args": [],
+        "doc": ""
+      }
+    },
+    "dependencies": [
+      "_TkinterThemeManagerMS",
+      "logging",
+      "microservice_std_lib",
+      "tkinter",
+      "typing"
+    ]
+  },
+  {
+    "token_id": "MS_BC4CE5A9",
+    "name": "TkinterSmartExplorerMS",
+    "path": "_TkinterSmartExplorerMS.py",
+    "description": "The Navigator.\nA TreeView widget that expects standard 'Node' dictionaries (name, type, children).",
+    "methods": {
+      "load_data": {
+        "args": [
+          "data"
+        ],
+        "doc": "Ingests a dictionary tree (like from _ScoutMS or _TreeMapperMS)."
+      }
+    },
+    "dependencies": [
+      "microservice_std_lib",
+      "tkinter",
+      "typing"
+    ]
+  },
+  {
+    "token_id": "MS_A266E0EB",
+    "name": "TkinterThemeManagerMS",
+    "path": "_TkinterThemeManagerMS.py",
+    "description": "The Stylist: Holds the color palette and font settings.\nAll UI components query this service to decide how to draw themselves.",
+    "methods": {
+      "get_theme": {
+        "args": [],
+        "doc": ""
+      },
+      "update_key": {
+        "args": [
+          "key",
+          "value"
+        ],
+        "doc": ""
+      }
+    },
+    "dependencies": [
+      "microservice_std_lib",
+      "typing"
+    ]
+  },
+  {
+    "token_id": "MS_BA633F4B",
+    "name": "TkinterUniButtonMS",
+    "path": "_TkinterUniButtonMS.py",
+    "description": "A generic button group that can merge ANY two actions.\nPass the visual/functional definitions in via the config objects.",
+    "methods": {},
+    "dependencies": [
+      "dataclasses",
+      "microservice_std_lib",
+      "tkinter",
+      "typing"
+    ]
+  },
+  {
+    "token_id": "MS_B77D7064",
+    "name": "TreeMapperMS",
+    "path": "_TreeMapperMS.py",
+    "description": "The Cartographer: Generates ASCII-art style directory maps.\nUseful for creating context snapshots for LLMs.",
+    "methods": {
+      "generate_tree": {
+        "args": [
+          "root_path",
+          "additional_exclusions",
+          "use_default_exclusions"
+        ],
+        "doc": ""
+      }
+    },
+    "dependencies": [
+      "datetime",
+      "logging",
+      "microservice_std_lib",
+      "os",
+      "pathlib",
+      "typing"
+    ]
+  },
+  {
+    "token_id": "MS_D493B241",
+    "name": "VectorFactoryMS",
+    "path": "_VectorFactoryMS.py",
+    "description": "The Switchboard: Returns the appropriate VectorStore implementation\nbased on configuration.",
+    "methods": {
+      "create": {
+        "args": [
+          "backend",
+          "config"
+        ],
+        "doc": ":param backend: 'faiss' or 'chroma'\n:param config: Dict containing 'path', 'dim' (for FAISS), or 'collection' (for Chroma)"
+      }
+    },
+    "dependencies": [
+      "chromadb",
+      "faiss",
+      "importlib",
+      "json",
+      "logging",
+      "microservice_std_lib",
+      "numpy",
+      "os",
+      "pathlib",
+      "shutil",
+      "sys",
+      "typing",
+      "uuid"
+    ]
+  },
+  {
+    "token_id": "MS_8D71E176",
+    "name": "WebScraperMS",
+    "path": "_WebScraperMS.py",
+    "description": "The Reader: Fetches URLs and extracts the main content using Readability.\nStrips ads, navbars, and boilerplate to return clean text for LLMs.",
+    "methods": {
+      "scrape": {
+        "args": [
+          "url"
+        ],
+        "doc": "Synchronous wrapper for fetching and cleaning a URL.\nReturns: {\n    \"url\": str,\n    \"title\": str,\n    \"content\": str (The main body text),\n    \"html\": str (The raw HTML of the main content area)\n}"
+      }
+    },
+    "dependencies": [
+      "asyncio",
+      "httpx",
+      "importlib",
+      "logging",
+      "microservice_std_lib",
+      "re",
+      "readability",
+      "sys",
+      "typing"
+    ]
+  }
+]

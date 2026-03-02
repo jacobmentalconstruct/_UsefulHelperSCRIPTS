@@ -1,0 +1,7 @@
+
+        Project: Project Necromancy.
+        Objective: To resurrect dead code using AI patches.
+        Lead Engineer: Jacob Lambert.
+        Tools: _RagFORGE, _TokenizingPATCHER.
+        Status: ACTIVE.
+        

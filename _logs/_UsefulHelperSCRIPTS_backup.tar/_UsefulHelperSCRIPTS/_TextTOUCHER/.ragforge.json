@@ -1,0 +1,15 @@
+{
+  ".": true,
+  "_logs": false,
+  "_logs/_BoilerPlatePythonTEMPLATE_filedump.txt": false,
+  "_logs/_BoilerPlatePythonTEMPLATE_project_folder_tree.txt": false,
+  "_logs/_project_mapper_config.json": false,
+  "_logs/AI_AGENT_BOILERPLATE_INSTRUCTIONS.md": false,
+  "src": true,
+  "src/__init__.py": true,
+  "src/app.py": true,
+  "LICENSE.md": true,
+  "README.md": true,
+  "requirements.txt": true,
+  "setup_env.bat": true
+}

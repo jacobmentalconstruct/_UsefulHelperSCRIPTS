@@ -1,0 +1,24 @@
+I will first constrain our scope to an achievable prototype application. 
+
+Abstractly an application which exposes the lifecycle below to the user should suite our purposes.
+
+Lifecycle of the application ( in terms of the humans experience of using it ):
+1.) The app loads up and I see a splash/startup window appear. It should say the name of the app and have a description. Building this in here gives us an opportunity later to save/load/manage projects as we can interject that UI structure here. For now it should just have new/exit buttons ( which both give us a place to at any point add project creation as well as gracefull app shutdown ).
+
+1.5) At this point we need to decide how the app displays the different steps of the total lifecycle. 
+
+2) After the user starts up a new project/idea they first need a UI window or panel to type the idea into. They should have a button to clear the window if needed. The user types the idea in and hits submit. We can ultimately constrain how much the user can type in here based on the model being chosen to process this step. Somewhere in this step it should have a dropdown to pick a model from ollama and eventually we can add options/levers to tweak inference.
+
+3) The chosen model generates a summary of the idea and a modal or some UX element asks the user if the summary is good. they can accept/reject/cancel. This is a moment we must take advantage of. The entire inference can be saved for training data and later we can build in a user rating system ). I think we may just work out how to save stuff like this to sqlite db so we don't get HUGE json files all over.
+
+3.1) If the user accepts the summary we present options to export the summary to clipboard/file/log/db/file_dump/python_parsable_object/etc before continuing the lifecycle. 
+
+3.2) If the user rejects we then CAN expose a set of dials/levers/knobs to tweak the summary AND THEN re-summarize and repeat til the summary is accepted or the workflow canceled.
+
+.......................Section 4 and beyond are TBD.
+
+If this makes sense I will need your help finishing the lifecycle in these terms. A big part of this is to produce an artifact at each step. I imagine that a small AI will work for many of the steps to summarize, create verbs/nouns, and other things. I am hoping to be able to test out 7b or so size models in place of talking to a huge GPT agent like yourself...........BUT I imagine that I will be neeeding to continue taking the products of each step to you or other gpt and asking for you to generate some of this content. SO at each step I would like to be able to choose if the local ai performs the action ( summary, generate intents, etc ) AND I would like to be able to manually insert those if I just ask you. If this makes sense. 
+
+What are your thoughts on this. We just make the ui......run the inference cycles.....and save off text files OR to clipboard. I think it boils down to just this at its essence.
+
+NOTE that I have created a boiler plate with enough microservices baked in that I think we need to delete some of them. Let me know what to keep or reject on that account. See the file  dump and folder tree for the current boiler plate we can build into.

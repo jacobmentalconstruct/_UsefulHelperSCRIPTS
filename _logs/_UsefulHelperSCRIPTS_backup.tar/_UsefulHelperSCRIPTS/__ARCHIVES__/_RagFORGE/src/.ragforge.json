@@ -1,0 +1,20 @@
+{
+  ".": true,
+  "microservices": true,
+  "microservices/__init__.py": false,
+  "microservices/base_service.py": true,
+  "microservices/cartridge_service.py": true,
+  "microservices/document_utils.py": true,
+  "microservices/graph_engine.py": true,
+  "microservices/graph_view.py": true,
+  "microservices/intake_service.py": true,
+  "microservices/neural_service.py": true,
+  "microservices/panels.py": true,
+  "microservices/refinery_service.py": true,
+  "microservices/scanner.py": true,
+  "microservices/semantic_chunker.py": true,
+  "microservices/telemetry_service.py": true,
+  "microservices/thought_stream.py": true,
+  "__init__.py": false,
+  "app.py": true
+}

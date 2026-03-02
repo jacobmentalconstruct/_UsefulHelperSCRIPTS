@@ -1,0 +1,7 @@
+# --- Core Network & AI ---
+# Required for Ollama API communication
+requests>=2.31.0
+
+# --- Database & Search ---
+# Optional: Only if using SearchEngine/LexicalSearch features
+sqlite-vec>=0.1.6
