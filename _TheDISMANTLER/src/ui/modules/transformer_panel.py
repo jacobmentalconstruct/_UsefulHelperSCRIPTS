@@ -174,6 +174,7 @@ class TransformerPanel(tk.Toplevel):
 
         AccentButton(frame, text="Analyze", command=self._analyze).pack(side="right", padx=(4, 0))
         AccentButton(frame, text="Extract", command=self._execute_extraction).pack(side="right", padx=4)
+        AccentButton(frame, text="Refine with AI", command=self._open_refinement).pack(side="right", padx=4)
 
     # ── handlers ────────────────────────────────────────────
 
@@ -283,3 +284,23 @@ class TransformerPanel(tk.Toplevel):
                 )
         except Exception as e:
             self.after(0, lambda: self._update_plan_display(f"Failed: {str(e)}"))
+
+    def _open_refinement(self):
+        """Launch the AI refinement panel with the current extraction plan."""
+        if not self._extraction_plan:
+            messagebox.showwarning(
+                "No Plan",
+                "Run Analyze first to generate an extraction plan.",
+            )
+            return
+        if not self._selected_file:
+            messagebox.showwarning("No File", "Please select a file first.")
+            return
+
+        from ui.modules.refinement_panel import RefinementPanel
+        RefinementPanel(
+            self,
+            backend=self.backend,
+            file_path=self._selected_file,
+            initial_plan=self._extraction_plan,
+        )

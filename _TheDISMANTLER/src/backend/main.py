@@ -9,6 +9,8 @@ import inspect
 from backend.file_controller import FileController
 from backend.ai_controller import AIController
 from backend.transformer_controller import TransformerController
+from backend.curate_controller import CurateController
+from backend.export_controller import ExportController
 from backend.modules.sliding_window import SlidingWindow
 from backend.modules.db_schema import init_db
 from backend.tools.base_tool import BaseTool
@@ -42,11 +44,21 @@ class BackendEngine:
         self.log("Registering TransformerController...")
         self.controllers["transformer"] = TransformerController(self.project_root, self.log)
 
+        self.log("Registering CurateController...")
+        self.controllers["curate"] = CurateController(self.project_root, self.log)
+
+        self.log("Registering ExportController...")
+        self.controllers["export"] = ExportController(self.project_root, self.log)
+
         self.log("Auto-discovering tools...")
         self._discover_and_load_tools()
 
         self.log("Initializing SlidingWindow context module...")
         self.sliding_window = SlidingWindow()
+
+        # Late-bind cross-controller references
+        self.controllers["transformer"].bind_engine(self)
+        self.controllers["curate"].bind_engine(self)
 
         self.log("Backend Ready.")
 

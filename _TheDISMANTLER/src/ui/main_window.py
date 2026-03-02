@@ -7,7 +7,6 @@ from tkinter import ttk, filedialog, messagebox
 from theme import THEME
 from ui.workspace_tab import WorkspaceTab
 from ui.modules.transformer_panel import TransformerPanel
-from backend.modules.ast_lens import format_tree
 
 
 class WelcomePanel(tk.Frame):
@@ -126,6 +125,21 @@ class MainWindow(tk.Toplevel):
             foreground=[("selected", THEME["accent"])],
         )
 
+        # Inner notebook style (EditorNotebook's 4 tabs inside each workspace)
+        style.configure("Inner.TNotebook", background=THEME["bg"], borderwidth=0)
+        style.configure(
+            "Inner.TNotebook.Tab",
+            background=THEME["bg3"],
+            foreground=THEME["fg_dim"],
+            padding=[8, 2],
+            font=THEME["font_interface_small"],
+        )
+        style.map(
+            "Inner.TNotebook.Tab",
+            background=[("selected", THEME["bg2"])],
+            foreground=[("selected", THEME["fg"])],
+        )
+
     # ── menu bar ────────────────────────────────────────────
 
     def _build_menu(self):
@@ -163,6 +177,8 @@ class MainWindow(tk.Toplevel):
         tools_menu = tk.Menu(menubar, tearoff=0, bg=THEME["bg2"], fg=THEME["fg"])
         tools_menu.add_command(label="AST Lens", command=self._open_ast_lens)
         tools_menu.add_command(label="Transformer Engine", command=self._open_transformer)
+        tools_menu.add_command(label="AI Plan Refinement", command=self._open_refinement)
+        tools_menu.add_command(label="Run Default Workflow", command=self._run_default_workflow)
         tools_menu.add_separator()
         tools_menu.add_command(label="Refresh Models", command=self._refresh_models)
         menubar.add_cascade(label="Tools", menu=tools_menu)
@@ -322,22 +338,60 @@ class MainWindow(tk.Toplevel):
             tab.chat.clear_history()
 
     def _open_ast_lens(self):
-        """Open an AST Lens view of the current file in a new tab."""
+        """Show AST hierarchy in the Context tab of the current workspace."""
         tab = self._get_current_tab()
         if not tab or not isinstance(tab, WorkspaceTab) or not tab.file_path:
             self.set_status("AST Lens requires an open file.")
             return
 
-        tree_text = format_tree(tab.file_path)
-        lens_tab = WorkspaceTab(self.notebook, backend=self.backend)
-        lens_tab.editor.set_content(tree_text)
-        lens_tab.editor.text.config(state="disabled")  # read-only
-        self.notebook.add(lens_tab, text=f"  AST: {tab.get_tab_title()}  ")
-        self.notebook.select(lens_tab)
+        from backend.modules.ast_lens import get_hierarchy_flat
+        hierarchy = get_hierarchy_flat(tab.file_path)
+        tab.editor.load_context_ast(hierarchy)
+        self.set_status(f"AST: {len(hierarchy)} nodes")
 
     def _open_transformer(self):
         """Open the Modular Transformation Engine UI."""
         TransformerPanel(self, backend=self.backend)
+
+    def _open_refinement(self):
+        """Open the AI Plan Refinement panel for the current file."""
+        tab = self._get_current_tab()
+        if not tab or not isinstance(tab, WorkspaceTab) or not tab.file_path:
+            self.set_status("AI Plan Refinement requires an open file.")
+            return
+
+        # Generate extraction guide for the current file first
+        result = self.backend.execute_task({
+            "system": "transformer",
+            "action": "guide",
+            "file": tab.file_path,
+        })
+
+        if result.get("status") == "ok":
+            from ui.modules.refinement_panel import RefinementPanel
+            RefinementPanel(
+                self,
+                backend=self.backend,
+                file_path=tab.file_path,
+                initial_plan=result["guide"],
+            )
+        else:
+            self.set_status(
+                f"Failed to generate extraction guide: {result.get('message', 'Unknown error')}"
+            )
+
+    def _run_default_workflow(self):
+        """Run the default curation workflow on the current file."""
+        tab = self._get_current_tab()
+        if not tab or not isinstance(tab, WorkspaceTab) or not tab.file_path:
+            self.set_status("Workflow requires an open file.")
+            return
+        model = tab.chat.get_selected_model()
+        tab.run_workflow(
+            {"name": "Default Curation", "steps": ["curate", "code_metrics"]},
+            model=model,
+        )
+        self.set_status("Workflow started...")
 
     def _refresh_models(self):
         """Tell all workspace tabs to refresh their model selectors."""

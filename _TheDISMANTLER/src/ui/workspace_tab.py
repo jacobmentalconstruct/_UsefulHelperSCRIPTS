@@ -1,18 +1,19 @@
 """
-WorkspaceTab – An isolated workspace instance containing a text editor
-scratchpad and a chat panel sidebar, arranged in a PanedWindow.
+WorkspaceTab – An isolated workspace instance containing a 4-tab
+editor notebook and a chat panel sidebar, arranged in a PanedWindow.
 Each tab tracks its own file path and sync state.
 """
 import tkinter as tk
+import threading
 from theme import THEME
-from ui.modules.text_editor import TextEditor
+from ui.modules.editor_notebook import EditorNotebook
 from ui.modules.chat_panel import ChatPanel
 
 
 class WorkspaceTab(tk.Frame):
     """
-    A single workspace tab for the ttk.Notebook.
-    Left side:  TextEditor (scratchpad with line numbers)
+    A single workspace tab for the main ttk.Notebook.
+    Left side:  EditorNotebook (Original | Current | Diff | Context)
     Right side: ChatPanel (message history + model selector)
     """
 
@@ -20,8 +21,9 @@ class WorkspaceTab(tk.Frame):
         super().__init__(parent, bg=THEME["bg"], **kwargs)
         self.backend = backend
         self._file_path = None
+        self._workflow_running = False
 
-        # Horizontal PanedWindow splits editor and chat
+        # Horizontal PanedWindow splits editor notebook and chat
         self.paned = tk.PanedWindow(
             self,
             orient="horizontal",
@@ -31,8 +33,8 @@ class WorkspaceTab(tk.Frame):
         )
         self.paned.pack(fill="both", expand=True)
 
-        # Left: Text editor
-        self.editor = TextEditor(self.paned)
+        # Left: 4-tab editor notebook
+        self.editor = EditorNotebook(self.paned)
         self.paned.add(self.editor, stretch="always")
 
         # Right: Chat panel
@@ -46,7 +48,7 @@ class WorkspaceTab(tk.Frame):
         return self._file_path
 
     def load_file(self, path):
-        """Load a file into the editor scratchpad."""
+        """Load a file into both Original (read-only) and Current (editable) tabs."""
         if not self.backend:
             return
         result = self.backend.execute_task({
@@ -58,7 +60,7 @@ class WorkspaceTab(tk.Frame):
             self.editor.set_content(result["content"])
 
     def save_file(self):
-        """Save the current editor content back to disk (with auto-archive)."""
+        """Save the Current tab content back to disk (with auto-archive)."""
         if not self.backend or not self._file_path:
             return
         content = self.editor.get_content()
@@ -69,7 +71,7 @@ class WorkspaceTab(tk.Frame):
             "content": content,
         })
         self.editor.text.edit_modified(False)
-        self.editor._modified = False
+        self.editor.current_editor._modified = False
         self.editor._refresh_status()
 
     def get_tab_title(self):
@@ -77,6 +79,72 @@ class WorkspaceTab(tk.Frame):
         if self._file_path:
             return self._file_path.rsplit("/", 1)[-1].rsplit("\\", 1)[-1]
         return "Untitled"
+
+    # ── workflow execution ─────────────────────────────────
+
+    def run_workflow(self, workflow_schema, model=None):
+        """
+        Launch a workflow in a background thread.
+        workflow_schema: {"name": "...", "steps": [...]}
+        """
+        if self._workflow_running or not self.backend or not self._file_path:
+            return
+
+        self._workflow_running = True
+        initial_context = {
+            "file": self._file_path,
+            "content": self.editor.get_content(),
+        }
+        if model:
+            initial_context["model"] = model
+
+        def status_cb(info):
+            self.after(0, lambda i=info: self._on_workflow_status(i))
+
+        def run():
+            from backend.modules.workflow_engine import WorkflowEngine
+            engine = WorkflowEngine(
+                execute_fn=self.backend.execute_task,
+                log=self.backend.log,
+            )
+            result = engine.run(
+                workflow_schema, initial_context, status_callback=status_cb,
+            )
+            self.after(0, lambda: self._on_workflow_complete(result))
+
+        threading.Thread(target=run, daemon=True).start()
+
+    def _on_workflow_status(self, info):
+        """Update chat panel with workflow progress."""
+        step = info.get("step", 0)
+        total = info.get("total", 0)
+        status = info.get("status", "")
+        self.chat.append_message("system", f"[{step}/{total}] {status}")
+
+    def _on_workflow_complete(self, result):
+        """Route workflow results to the appropriate editor tabs."""
+        self._workflow_running = False
+        ctx = result.get("context", {})
+
+        # Route diff/patch data to Tab 3
+        if "diff" in ctx:
+            self.editor.load_diff(ctx["diff"])
+        elif "previews" in ctx:
+            # From export controller preview action
+            for p in ctx["previews"]:
+                if p.get("diff"):
+                    self.editor.load_diff(p["diff"])
+                    break
+
+        # Route diagnostic data to Tab 4 (last populated view wins focus)
+        if "chunks" in ctx:
+            self.editor.load_context_chunks(ctx["chunks"])
+        if "hierarchy" in ctx:
+            self.editor.load_context_ast(ctx["hierarchy"])
+        if "metrics" in ctx:
+            self.editor.load_context_metrics(ctx["metrics"])
+
+        self.chat.append_message("system", "Workflow complete.")
 
     # ── internal ────────────────────────────────────────────
 

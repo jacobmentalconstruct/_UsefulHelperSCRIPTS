@@ -20,6 +20,25 @@ class TransformerController:
         self.log = log or (lambda msg: None)
         self.transformer = MonolithTransformer(project_root, log)
         self.analysis_cache = None
+        self._backend = None
+        self._refinement_engine = None
+
+    def bind_engine(self, backend_engine):
+        """Late-bind reference to the parent BackendEngine for cross-controller access."""
+        self._backend = backend_engine
+
+    def _get_refinement_engine(self):
+        """Lazy-initialize the RefinementEngine with AI and SlidingWindow refs."""
+        if self._refinement_engine is None:
+            if not self._backend:
+                raise RuntimeError("bind_engine() must be called before using refinement")
+            from backend.modules.refinement_engine import RefinementEngine
+            self._refinement_engine = RefinementEngine(
+                self._backend.controllers["ai"],
+                self._backend.sliding_window,
+                self.log,
+            )
+        return self._refinement_engine
 
     # ── step 1: analysis ────────────────────────────────────
 
@@ -162,5 +181,48 @@ class TransformerController:
             return {"status": "ok", "checks": self.verify_integrity()}
         elif action == "guide":
             return {"status": "ok", "guide": self.generate_extraction_guide(schema.get("file"))}
+
+        # ── refinement actions ─────────────────────────────
+        elif action == "refine_create":
+            engine = self._get_refinement_engine()
+            sid = engine.create_session(
+                file_path=schema.get("file"),
+                initial_plan=schema.get("plan", ""),
+                model=schema.get("model", ""),
+                max_passes=schema.get("max_passes", 5),
+            )
+            return {"status": "ok", "session_id": sid}
+
+        elif action == "refine_pass":
+            engine = self._get_refinement_engine()
+            result = engine.execute_pass(
+                schema.get("session_id"),
+                stream_callback=schema.get("stream_callback"),
+            )
+            if "error" in result:
+                return {"status": "error", "message": result["error"]}
+            return {"status": "ok", "pass_result": result}
+
+        elif action == "refine_retry":
+            engine = self._get_refinement_engine()
+            result = engine.retry_pass(
+                schema.get("session_id"),
+                stream_callback=schema.get("stream_callback"),
+            )
+            if "error" in result:
+                return {"status": "error", "message": result["error"]}
+            return {"status": "ok", "pass_result": result}
+
+        elif action == "refine_status":
+            engine = self._get_refinement_engine()
+            state = engine.get_session(schema.get("session_id"))
+            if state:
+                return {"status": "ok", "session": state}
+            return {"status": "error", "message": "Session not found"}
+
+        elif action == "refine_cancel":
+            engine = self._get_refinement_engine()
+            engine.cancel_session(schema.get("session_id"))
+            return {"status": "ok", "message": "Session cancelled"}
 
         return {"status": "error", "message": f"Unknown transformer action: {action}"}
