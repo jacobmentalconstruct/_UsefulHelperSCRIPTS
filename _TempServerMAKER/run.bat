@@ -1,9 +1,9 @@
 @echo off
 setlocal
-title _theDISMANTLER Launcher
+title _TempServerMAKER Launcher
 
 echo =============================================
-echo          Launching The DISMANTLER v2.1
+echo          Launching The _TempServerMAKER v1.0
 echo =============================================
 
 :: 1. Check if the virtual environment exists
@@ -19,7 +19,7 @@ echo [1/2] Activating virtual environment...
 call .venv\Scripts\activate.bat
 
 :: 3. Run the application
-echo [2/2] Starting the _theDISMANTLER...
+echo [2/2] Starting the _TempServerMAKER...
 python -m src.app
 
 :: 4. Handle exit

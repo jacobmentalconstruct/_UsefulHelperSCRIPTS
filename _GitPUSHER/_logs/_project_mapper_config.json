@@ -1,0 +1,21 @@
+{
+  "folder_states": {
+    ".": "checked",
+    "assets": "checked",
+    "assets\\icons": "checked",
+    "assets\\icons\\_GitPUSHER.ico": "checked",
+    "kb": "unchecked",
+    "kb\\_GitPUSHER_neuralCART.db": "unchecked",
+    "src": "checked",
+    "src\\__init__.py": "checked",
+    "src\\app.py": "checked",
+    ".gitignore": "checked",
+    "_GitPUSHER.spec": "checked",
+    "developer_cert.pfx": "checked",
+    "LICENSE.md": "checked",
+    "README.md": "checked",
+    "requirements.txt": "checked",
+    "setup_env.bat": "checked"
+  },
+  "dynamic_exclusions": []
+}

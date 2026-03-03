@@ -39,6 +39,22 @@ def get_hierarchy_flat(file_path):
     return flat
 
 
+def get_hierarchy_flat_from_source(source, ext=".py"):
+    """
+    Same as get_hierarchy_flat but operates on in-memory source content
+    instead of reading from disk. Avoids double-read when content is
+    already available (e.g. from the editor buffer).
+    """
+    if ext == ".py":
+        nodes = _parse_python(source)
+    else:
+        nodes = _parse_generic(source, ext)
+    flat = []
+    _flatten(nodes, flat)
+    flat.sort(key=lambda n: n["start_line"])
+    return flat
+
+
 # ── Python AST parsing ──────────────────────────────────────
 
 def _parse_python(source):

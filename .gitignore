@@ -72,6 +72,9 @@ token.json
 models/
 model_cache/
 
+.claude/
+.claude
+
 # ===========================
 # 🖼️ Generated Media
 # ===========================

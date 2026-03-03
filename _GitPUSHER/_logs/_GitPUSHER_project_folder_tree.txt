@@ -1,0 +1,15 @@
+Project Tree: C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_GitPUSHER
+Generated: 2026-03-02 19:25:34.615715
+
+├── 📁 assets/
+│   └── 📁 icons/
+│       └── 📄 _GitPUSHER.ico
+├── 📁 src/
+│   ├── 📄 __init__.py
+│   └── 📄 app.py
+├── 📄 .gitignore
+├── 📄 _GitPUSHER.spec
+├── 📄 LICENSE.md
+├── 📄 README.md
+├── 📄 requirements.txt
+└── 📄 setup_env.bat

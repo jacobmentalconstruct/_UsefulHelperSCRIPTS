@@ -156,16 +156,18 @@ class MainWindow(tk.Toplevel):
         file_menu.add_command(label="New Tab", command=self.add_workspace_tab, accelerator="Ctrl+N")
         file_menu.add_command(label="Open File...", command=self._open_file, accelerator="Ctrl+O")
         file_menu.add_command(label="Save", command=self._save_file, accelerator="Ctrl+S")
+        file_menu.add_command(label="Save As...", command=self._save_current_file_as, accelerator="Ctrl+Shift+S")
         file_menu.add_separator()
         file_menu.add_command(label="Close File", command=self._close_current_tab, accelerator="Ctrl+W")
         menubar.add_cascade(label="File", menu=file_menu)
+        self.file_menu = file_menu
 
         # Edit
         edit_menu = tk.Menu(menubar, tearoff=0, bg=THEME["bg2"], fg=THEME["fg"])
-        edit_menu.add_command(label="Undo", accelerator="Ctrl+Z")
-        edit_menu.add_command(label="Redo", accelerator="Ctrl+Y")
+        edit_menu.add_command(label="Undo", command=self._undo, accelerator="Ctrl+Z")
+        edit_menu.add_command(label="Redo", command=self._redo, accelerator="Ctrl+Y")
         edit_menu.add_separator()
-        edit_menu.add_command(label="Find...", accelerator="Ctrl+F")
+        edit_menu.add_command(label="Find...", command=self._open_find_replace, accelerator="Ctrl+F")
         menubar.add_cascade(label="Edit", menu=edit_menu)
 
         # Chat
@@ -185,7 +187,7 @@ class MainWindow(tk.Toplevel):
 
         # Settings
         settings_menu = tk.Menu(menubar, tearoff=0, bg=THEME["bg2"], fg=THEME["fg"])
-        settings_menu.add_command(label="Preferences")
+        settings_menu.add_command(label="Preferences...", command=self._open_preferences)
         menubar.add_cascade(label="Settings", menu=settings_menu)
 
         self.config(menu=menubar)
@@ -194,7 +196,11 @@ class MainWindow(tk.Toplevel):
         self.bind_all("<Control-n>", lambda e: self.add_workspace_tab())
         self.bind_all("<Control-o>", lambda e: self._open_file())
         self.bind_all("<Control-s>", lambda e: self._save_file())
+        self.bind_all("<Control-Shift-s>", lambda e: self._save_current_file_as())
         self.bind_all("<Control-w>", lambda e: self._close_current_tab())
+        self.bind_all("<Control-z>", lambda e: self._undo())
+        self.bind_all("<Control-y>", lambda e: self._redo())
+        self.bind_all("<Control-f>", lambda e: self._open_find_replace())
 
     # ── notebook ────────────────────────────────────────────
 
@@ -202,6 +208,9 @@ class MainWindow(tk.Toplevel):
         self.notebook = ttk.Notebook(self)
         self.notebook.pack(fill="both", expand=True)
         self.welcome_tab_id = None
+
+        # Right-click context menu for tab closing
+        self.notebook.bind("<Button-3>", self._on_notebook_right_click)
 
     def _show_welcome(self):
         """Display the welcome panel when no workspace tabs are open."""
@@ -275,6 +284,12 @@ class MainWindow(tk.Toplevel):
             else:
                 self._save_file_as(tab)
 
+    def _save_current_file_as(self):
+        """Save As for the current tab (menu action wrapper)."""
+        tab = self._get_current_tab()
+        if tab and isinstance(tab, WorkspaceTab):
+            self._save_file_as(tab)
+
     def _save_file_as(self, tab):
         path = filedialog.asksaveasfilename(
             defaultextension=".py",
@@ -332,22 +347,93 @@ class MainWindow(tk.Toplevel):
             if not workspace_tabs:
                 self._show_welcome()
 
+    def _on_notebook_right_click(self, event):
+        """Handle right-click on notebook tabs to show context menu."""
+        # ttk.Notebook.index("@x,y") returns the tab index under the cursor
+        # and raises TclError if no tab is there.
+        try:
+            clicked_idx = self.notebook.index(f"@{event.x},{event.y}")
+        except tk.TclError:
+            return  # Click was not on any tab
+
+        # Get the actual widget for this tab
+        try:
+            tab_id = self.notebook.tabs()[clicked_idx]
+            tab = self.notebook.nametowidget(tab_id)
+        except (IndexError, tk.TclError):
+            return
+
+        # Only allow closing WorkspaceTabs, not the Welcome panel
+        if not isinstance(tab, WorkspaceTab):
+            return
+
+        # Create context menu
+        context_menu = tk.Menu(self, tearoff=0, bg=THEME["bg2"], fg=THEME["fg"])
+        context_menu.add_command(
+            label="Close Tab",
+            command=lambda t=tab: self._close_tab(t)
+        )
+
+        # Show menu at click location
+        try:
+            context_menu.tk_popup(event.x_root, event.y_root)
+        finally:
+            context_menu.grab_release()
+
+    def _undo(self):
+        """Undo the last edit in the current tab's editor."""
+        tab = self._get_current_tab()
+        if tab and isinstance(tab, WorkspaceTab):
+            try:
+                tab.editor.current_editor.text.edit_undo()
+                self.set_status("Undo")
+            except tk.TclError:
+                # Undo stack is empty
+                self.set_status("Nothing to undo")
+
+    def _redo(self):
+        """Redo the last undone edit in the current tab's editor."""
+        tab = self._get_current_tab()
+        if tab and isinstance(tab, WorkspaceTab):
+            try:
+                tab.editor.current_editor.text.edit_redo()
+                self.set_status("Redo")
+            except tk.TclError:
+                # Redo stack is empty
+                self.set_status("Nothing to redo")
+
+    def _open_find_replace(self):
+        """Open/focus the Find/Replace explorer panel."""
+        tab = self._get_current_tab()
+        if tab and isinstance(tab, WorkspaceTab):
+            tab.explorer.focus_find_replace()
+            self.set_status("Find/Replace ready")
+
     def _clear_chat(self):
         tab = self._get_current_tab()
         if tab and isinstance(tab, WorkspaceTab):
             tab.chat.clear_history()
 
     def _open_ast_lens(self):
-        """Show AST hierarchy in the Context tab of the current workspace."""
+        """Show AST hierarchy in the Outline explorer tab of the current workspace."""
         tab = self._get_current_tab()
         if not tab or not isinstance(tab, WorkspaceTab) or not tab.file_path:
             self.set_status("AST Lens requires an open file.")
             return
 
-        from backend.modules.ast_lens import get_hierarchy_flat
-        hierarchy = get_hierarchy_flat(tab.file_path)
-        tab.editor.load_context_ast(hierarchy)
-        self.set_status(f"AST: {len(hierarchy)} nodes")
+        result = self.backend.execute_task({
+            "system": "curate",
+            "action": "get_hierarchy_flat",
+            "file": tab.file_path,
+            "content": tab.editor.get_content(),
+        })
+        if result.get("status") == "ok":
+            hierarchy = result["hierarchy"]
+            tab.explorer.load_hierarchy(hierarchy)
+            tab.explorer.focus_outline()
+            self.set_status(f"AST: {len(hierarchy)} nodes")
+        else:
+            self.set_status(f"AST Lens: {result.get('message', 'failed')}")
 
     def _open_transformer(self):
         """Open the Modular Transformation Engine UI."""
@@ -400,6 +486,124 @@ class MainWindow(tk.Toplevel):
             if isinstance(tab, WorkspaceTab):
                 tab.chat.model_selector.refresh()
         self.set_status("Model list refreshed.")
+
+    def _open_preferences(self):
+        """Open the Preferences dialog (modal)."""
+        # Prevent duplicate windows
+        if hasattr(self, "_prefs_win") and self._prefs_win.winfo_exists():
+            self._prefs_win.lift()
+            self._prefs_win.focus_force()
+            return
+
+        console = self.master  # AppBootstrapper instance
+
+        win = tk.Toplevel(self)
+        win.title("Preferences")
+        win.geometry("420x220")
+        win.configure(bg=THEME["bg"])
+        win.resizable(False, False)
+        win.transient(self)   # stays on top of MainWindow
+        win.grab_set()        # modal
+        self._prefs_win = win
+
+        # ── Section: System Console ──────────────────────────
+        section_label = tk.Label(
+            win,
+            text="System Console",
+            bg=THEME["bg"],
+            fg=THEME["accent"],
+            font=THEME["font_interface_bold"],
+            anchor="w",
+            padx=16,
+        )
+        section_label.pack(fill="x", pady=(16, 0))
+
+        sep = tk.Frame(win, bg=THEME["bg2"], height=1)
+        sep.pack(fill="x", padx=16, pady=(4, 10))
+
+        # Checkbox bound directly to the console's BoolVar — changes flow
+        # through AppBootstrapper._on_keep_open_changed (trace) automatically.
+        check = tk.Checkbutton(
+            win,
+            text="Show console on startup",
+            variable=console.keep_open,
+            bg=THEME["bg"],
+            fg=THEME["fg"],
+            selectcolor=THEME["bg2"],
+            activebackground=THEME["bg"],
+            activeforeground=THEME["fg"],
+            font=THEME["font_interface"],
+        )
+        check.pack(anchor="w", padx=24)
+
+        desc = tk.Label(
+            win,
+            text="The backend log window shown during startup.\n"
+                 "Uncheck to hide it automatically once the app loads.",
+            bg=THEME["bg"],
+            fg=THEME["fg_dim"],
+            font=THEME["font_interface_small"],
+            justify="left",
+            anchor="w",
+            padx=24,
+        )
+        desc.pack(fill="x", pady=(4, 0))
+
+        # Open / Close convenience buttons
+        btn_row = tk.Frame(win, bg=THEME["bg"])
+        btn_row.pack(fill="x", padx=24, pady=(14, 0))
+
+        def _show_console():
+            console.keep_open.set(True)   # trace handles deiconify + save
+
+        def _hide_console():
+            console.keep_open.set(False)  # trace handles withdraw + save
+
+        tk.Button(
+            btn_row,
+            text="Open Console",
+            command=_show_console,
+            bg=THEME["bg2"],
+            fg=THEME["fg"],
+            activebackground=THEME["accent"],
+            activeforeground="#ffffff",
+            font=THEME["font_interface_small"],
+            relief="flat",
+            padx=12,
+            pady=4,
+            cursor="hand2",
+        ).pack(side="left", padx=(0, 8))
+
+        tk.Button(
+            btn_row,
+            text="Close Console",
+            command=_hide_console,
+            bg=THEME["bg2"],
+            fg=THEME["fg"],
+            activebackground=THEME["error"],
+            activeforeground="#ffffff",
+            font=THEME["font_interface_small"],
+            relief="flat",
+            padx=12,
+            pady=4,
+            cursor="hand2",
+        ).pack(side="left")
+
+        # ── Close button ─────────────────────────────────────
+        tk.Button(
+            win,
+            text="Done",
+            command=win.destroy,
+            bg=THEME["accent"],
+            fg="#ffffff",
+            activebackground=THEME["accent"],
+            activeforeground="#ffffff",
+            font=THEME["font_interface"],
+            relief="flat",
+            padx=20,
+            pady=5,
+            cursor="hand2",
+        ).pack(side="bottom", pady=16)
 
     # ── lifecycle ───────────────────────────────────────────
 

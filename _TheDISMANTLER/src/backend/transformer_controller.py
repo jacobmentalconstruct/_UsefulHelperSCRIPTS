@@ -3,6 +3,8 @@ Transformer Controller – Orchestrates the monolith extraction pipeline.
 Handles the full workflow: analysis → tagging → extraction → integrity checks.
 """
 import os
+import ast
+import re
 from backend.modules.transformer import MonolithTransformer
 
 
@@ -108,22 +110,158 @@ class TransformerController:
         return checks
 
     def _check_circular_dependencies(self) -> dict:
-        """Verify no circular imports between modules."""
-        # This would require building a full dependency graph
-        # For now, return a placeholder
-        return {"status": "ok", "circular_refs": []}
+        """Build an import graph from src/ and detect circular references."""
+        src_dir = os.path.join(self.project_root, "src")
+        if not os.path.isdir(src_dir):
+            src_dir = self.project_root
+
+        graph = {}
+        py_files = self._collect_py_files(src_dir)
+
+        for fpath in py_files:
+            mod_name = self._path_to_module(fpath, src_dir)
+            graph[mod_name] = self._extract_imports(fpath)
+
+        cycles = []
+        visited = set()
+        stack = set()
+
+        def dfs(node, path):
+            if node in stack:
+                idx = path.index(node)
+                cycles.append(path[idx:] + [node])
+                return
+            if node in visited:
+                return
+            visited.add(node)
+            stack.add(node)
+            path.append(node)
+            for neighbor in graph.get(node, set()):
+                if neighbor in graph:
+                    dfs(neighbor, path)
+            path.pop()
+            stack.discard(node)
+
+        for mod in graph:
+            if mod not in visited:
+                dfs(mod, [])
+
+        status = "ok" if not cycles else "warning"
+        return {"status": status, "circular_refs": cycles[:10]}
 
     def _check_imports(self) -> dict:
-        """Verify all imports in extracted blocks can be resolved."""
-        return {"status": "ok", "unresolved": []}
+        """Verify local imports in src/ resolve to existing files."""
+        src_dir = os.path.join(self.project_root, "src")
+        if not os.path.isdir(src_dir):
+            src_dir = self.project_root
+
+        py_files = self._collect_py_files(src_dir)
+        known = set()
+        for fpath in py_files:
+            known.add(self._path_to_module(fpath, src_dir))
+
+        unresolved = []
+        for fpath in py_files:
+            mod_name = self._path_to_module(fpath, src_dir)
+            for imp in self._extract_imports(fpath):
+                if imp.startswith(("backend", "ui", "theme")):
+                    if imp not in known:
+                        unresolved.append({"module": mod_name, "import": imp})
+
+        status = "ok" if not unresolved else "warning"
+        return {"status": status, "unresolved": unresolved[:20]}
 
     def _check_ui_database_mixing(self) -> dict:
-        """Ensure UI modules don't contain database logic."""
-        return {"status": "ok", "violations": []}
+        """Scan UI modules for database logic."""
+        src_dir = os.path.join(self.project_root, "src")
+        ui_dir = os.path.join(src_dir, "ui")
+        if not os.path.isdir(ui_dir):
+            return {"status": "ok", "violations": []}
+
+        db_pat = re.compile(
+            r"(?:import\s+sqlite3|from\s+.*db_schema|"
+            r"\.execute\s*\(|\.cursor\s*\(|get_connection)"
+        )
+
+        violations = []
+        for fpath in self._collect_py_files(ui_dir):
+            try:
+                with open(fpath, "r", encoding="utf-8") as f:
+                    for i, line in enumerate(f, 1):
+                        if db_pat.search(line):
+                            rel = os.path.relpath(fpath, src_dir)
+                            violations.append({"file": rel, "line": i, "text": line.strip()})
+            except (OSError, UnicodeDecodeError):
+                continue
+
+        status = "ok" if not violations else "warning"
+        return {"status": status, "violations": violations[:20]}
 
     def _check_backend_purity(self) -> dict:
-        """Ensure backend modules don't import tkinter or UI libraries."""
-        return {"status": "ok", "violations": []}
+        """Scan backend modules for tkinter or UI library imports."""
+        src_dir = os.path.join(self.project_root, "src")
+        be_dir = os.path.join(src_dir, "backend")
+        if not os.path.isdir(be_dir):
+            return {"status": "ok", "violations": []}
+
+        ui_pat = re.compile(
+            r"(?:import\s+tkinter|from\s+tkinter|"
+            r"from\s+ui\b|messagebox|filedialog)"
+        )
+
+        violations = []
+        for fpath in self._collect_py_files(be_dir):
+            try:
+                with open(fpath, "r", encoding="utf-8") as f:
+                    for i, line in enumerate(f, 1):
+                        if ui_pat.search(line):
+                            rel = os.path.relpath(fpath, src_dir)
+                            violations.append({"file": rel, "line": i, "text": line.strip()})
+            except (OSError, UnicodeDecodeError):
+                continue
+
+        status = "ok" if not violations else "warning"
+        return {"status": status, "violations": violations[:20]}
+
+    # ── integrity helpers ──────────────────────────────────
+
+    @staticmethod
+    def _collect_py_files(directory):
+        """Collect all .py files under a directory, skipping __pycache__."""
+        results = []
+        for root, dirs, files in os.walk(directory):
+            dirs[:] = [d for d in dirs if d != "__pycache__"]
+            for f in files:
+                if f.endswith(".py"):
+                    results.append(os.path.join(root, f))
+        return results
+
+    @staticmethod
+    def _path_to_module(fpath, src_dir):
+        """Convert a file path to a dotted module name."""
+        rel = os.path.relpath(fpath, src_dir).replace(os.sep, "/")
+        if rel.endswith("/__init__.py"):
+            return rel[:-12].replace("/", ".")
+        return rel[:-3].replace("/", ".")
+
+    @staticmethod
+    def _extract_imports(fpath):
+        """Extract imported module names from a Python file using AST."""
+        try:
+            with open(fpath, "r", encoding="utf-8") as f:
+                tree = ast.parse(f.read(), filename=fpath)
+        except (SyntaxError, OSError, UnicodeDecodeError):
+            return set()
+
+        imports = set()
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Import):
+                for alias in node.names:
+                    imports.add(alias.name)
+            elif isinstance(node, ast.ImportFrom):
+                if node.module:
+                    imports.add(node.module)
+        return imports
 
     # ── reporting & summary ────────────────────────────────
 

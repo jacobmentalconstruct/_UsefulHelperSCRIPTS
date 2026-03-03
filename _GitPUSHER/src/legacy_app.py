@@ -1,39 +1,11 @@
 import sys
 import os
 import subprocess
-import json
 import tkinter as tk
 from tkinter import ttk, messagebox, font, filedialog
 
 # ==============================================================================
-# 0. PERSISTENCE LAYER
-# ==============================================================================
-
-class SettingsManager:
-    """Handles saving and loading user preferences to a local JSON file."""
-    def __init__(self, filename="settings.json"):
-        self.filename = filename
-        self.defaults = {
-            "remote_base_url": "https://github.com/jacobplambert/"
-        }
-        self.data = self.load()
-
-    def load(self):
-        if os.path.exists(self.filename):
-            try:
-                with open(self.filename, 'r') as f:
-                    return {**self.defaults, **json.load(f)}
-            except Exception:
-                return self.defaults
-        return self.defaults
-
-    def save(self, new_data):
-        self.data.update(new_data)
-        with open(self.filename, 'w') as f:
-            json.dump(self.data, f, indent=4)
-
-# ==============================================================================
-# 1. CORE ENGINE
+# 1. CORE ENGINE (Now with Branching & Syncing)
 # ==============================================================================
 
 class GitOpsEngine:
@@ -91,23 +63,22 @@ class GitOpsEngine:
         return True, "\n".join(logs)
 
 # ==============================================================================
-# 2. UI LAYER
+# 2. UI LAYER (Hex-Perfect Style)
 # ==============================================================================
 
 class GitPusherUI:
     def __init__(self, root):
         self.root = root
-        self.settings = SettingsManager() # Initialize Settings
         self.engine = GitOpsEngine()
         
         # Color Palette
-        self.C_PRI = "#1E1E2F"
-        self.C_SEC = "#252526"
-        self.C_DEEP = "#151521"
-        self.C_INP = "#2A2A3F"
-        self.C_ACC = "#007ACC"
-        self.C_SUC = "#90EE90"
-        self.C_ERR = "#C23621"
+        self.C_PRI = "#1E1E2F"   # Primary Background
+        self.C_SEC = "#252526"   # Secondary Background
+        self.C_DEEP = "#151521"  # Console/Log Background
+        self.C_INP = "#2A2A3F"   # Input fields
+        self.C_ACC = "#007ACC"   # Active Blue Accent
+        self.C_SUC = "#90EE90"   # Success Green
+        self.C_ERR = "#C23621"   # Warning Red
 
         self.root.title("Git Pusher - Systems Thinker Edition")
         self.root.geometry("1000x750")
@@ -130,6 +101,7 @@ class GitPusherUI:
         style.configure("TFrame", background=self.C_PRI)
 
     def _build_ui(self):
+        # Header (Indigo-Grey)
         header = tk.Frame(self.root, bg=self.C_PRI, pady=10, padx=15)
         header.pack(fill=tk.X)
         
@@ -139,16 +111,10 @@ class GitPusherUI:
                               relief="flat", font=self.f_mono, insertbackground="white")
         path_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=15)
         
-        # Action Buttons (Choose & Settings Gear)
-        btn_frame = tk.Frame(header, bg=self.C_PRI)
-        btn_frame.pack(side=tk.RIGHT)
+        tk.Button(header, text="Choose...", bg=self.C_SEC, fg="#fff", relief="flat", padx=10,
+                  command=self._browse_folder).pack(side=tk.RIGHT)
 
-        tk.Button(btn_frame, text="Choose...", bg=self.C_SEC, fg="#fff", relief="flat", padx=10,
-                  command=self._browse_folder).pack(side=tk.LEFT, padx=2)
-        
-        tk.Button(btn_frame, text="⚙", bg=self.C_SEC, fg="#aaa", relief="flat", padx=8,
-                  command=self._open_settings, font=("Segoe UI", 12)).pack(side=tk.LEFT, padx=2)
-
+        # Tabs
         self.nb = ttk.Notebook(self.root)
         self.nb.pack(fill=tk.BOTH, expand=True, padx=15, pady=5)
 
@@ -159,6 +125,7 @@ class GitPusherUI:
         main_push_frame = tk.Frame(self.tab_push, bg=self.C_PRI, padx=20, pady=20)
         main_push_frame.pack(fill=tk.BOTH, expand=True)
 
+        # Top Section: Info & Branch Row
         info_row = tk.Frame(main_push_frame, bg=self.C_PRI)
         info_row.pack(fill=tk.X, pady=(0, 15))
         
@@ -171,10 +138,12 @@ class GitPusherUI:
         tk.Button(info_row, text="Refresh Status", bg=self.C_SEC, fg="#ccc", relief="flat", 
                   command=self.refresh_state, font=self.f_ui, padx=8).pack(side=tk.RIGHT)
 
+        # Commit Message
         tk.Label(main_push_frame, text="COMMIT MESSAGE:", bg=self.C_PRI, fg="#888", font=self.f_ui).pack(anchor="w")
         self.msg_entry = tk.Entry(main_push_frame, bg=self.C_INP, fg="#fff", font=self.f_mono, relief="flat", insertbackground="white")
         self.msg_entry.pack(fill=tk.X, pady=(5, 10))
 
+        # Action Row (Pull Toggle + Push Button)
         action_row = tk.Frame(main_push_frame, bg=self.C_PRI)
         action_row.pack(fill=tk.X, pady=(0, 15))
 
@@ -186,6 +155,7 @@ class GitPusherUI:
         tk.Button(action_row, text="Push Changes to Origin", bg=self.C_ACC, fg="#fff", font=self.f_bold,
                   relief="flat", pady=10, padx=20, command=self._on_quick_push).pack(side=tk.RIGHT)
 
+        # Viewpanel (Boxed with Scrollbar)
         tk.Label(main_push_frame, text="STAGED / MODIFIED FILES:", bg=self.C_PRI, fg="#888", font=self.f_ui).pack(anchor="w")
         view_frame = tk.Frame(main_push_frame, bg=self.C_DEEP, bd=1, relief="solid", highlightthickness=0)
         view_frame.pack(fill=tk.BOTH, expand=True, pady=5)
@@ -207,8 +177,7 @@ class GitPusherUI:
 
         tk.Label(init_container, text="GITHUB REMOTE URL:", bg=self.C_PRI, fg="#888", font=self.f_ui).pack(anchor="w")
         self.url_entry = tk.Entry(init_container, bg=self.C_INP, fg="#fff", font=self.f_mono, relief="flat", insertbackground="white")
-        # Load from settings
-        self.url_entry.insert(0, self.settings.data["remote_base_url"])
+        self.url_entry.insert(0, "https://github.com/jacobplambert/")
         self.url_entry.pack(fill=tk.X, pady=(5, 15))
 
         tk.Label(init_container, text="INITIAL COMMIT MESSAGE:", bg=self.C_PRI, fg="#888", font=self.f_ui).pack(anchor="w")
@@ -235,33 +204,6 @@ class GitPusherUI:
         self.status_bar.pack(fill=tk.X)
 
     # --- UI Helpers ---
-
-    def _open_settings(self):
-        """Builds and displays the Settings Modal."""
-        dlg = tk.Toplevel(self.root)
-        dlg.title("System Preferences")
-        dlg.geometry("500x200")
-        dlg.configure(bg=self.C_PRI)
-        dlg.transient(self.root)
-        dlg.grab_set()
-
-        tk.Label(dlg, text="DEFAULT GITHUB BASE URL:", bg=self.C_PRI, fg="#888", font=self.f_ui).pack(anchor="w", padx=20, pady=(20, 5))
-        
-        url_input = tk.Entry(dlg, bg=self.C_INP, fg="#fff", font=self.f_mono, relief="flat", insertbackground="white")
-        url_input.insert(0, self.settings.data["remote_base_url"])
-        url_input.pack(fill=tk.X, padx=20, pady=5)
-
-        def _save_and_close():
-            new_url = url_input.get().strip()
-            self.settings.save({"remote_base_url": new_url})
-            # Update the existing entry in the Init tab immediately
-            self.url_entry.delete(0, tk.END)
-            self.url_entry.insert(0, new_url)
-            self._log(f"[CONFIG] Updated default remote to: {new_url}")
-            dlg.destroy()
-
-        tk.Button(dlg, text="Apply & Persist", bg=self.C_ACC, fg="#fff", relief="flat", 
-                  command=_save_and_close, font=self.f_bold, pady=8).pack(fill=tk.X, padx=20, pady=20)
 
     def _log(self, msg, color="#aaa"):
         self.log_text.insert("end", f"{msg}\n")
@@ -359,6 +301,7 @@ class GitPusherUI:
 
         self.root.config(cursor="watch")
         
+        # 1. Handle Pull / Sync if checked
         if self.pull_var.get():
             self._log("[INFO] Pulling from origin...")
             code, out, err = self.engine.pull()
@@ -370,6 +313,7 @@ class GitPusherUI:
             else:
                 self._log("[SUCCESS] Pulled latest changes.")
 
+        # 2. Add, Commit, Push
         self._log(f"[INFO] Staging and Committing: {msg}")
         self.engine._run(["add", "."])
         code, out, err = self.engine._run(["commit", "-m", msg])

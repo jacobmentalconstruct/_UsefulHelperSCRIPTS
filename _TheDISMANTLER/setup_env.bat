@@ -9,7 +9,7 @@ if %errorlevel% neq 0 (
     exit /b
 )
 
-echo [STATUS] Setting up _theCELL Environment with Python 3.10...
+echo [STATUS] Setting up The DISMANTLER environment with Python 3.10...
 if not exist .venv (
     py -3.10 -m venv .venv
 )
@@ -22,7 +22,7 @@ python -m pip install -r requirements.txt
 
 echo [STATUS] Setup Complete.
 echo ----------------------------------------------------------------------
-echo  Starting _TheDISMANTLER Idea Ingestor...
+echo  Starting The DISMANTLER v2.1...
 echo ----------------------------------------------------------------------
 python -m src.app
 pause

@@ -34,6 +34,7 @@ def init_db(db_path=None):
         source_files  – tracked files with content hashes
         chunks        – semantic code chunks tied to files
         context_log   – query history for the sliding window
+        file_manifest – compact structural manifest per file (Surgeon-Agent)
     """
     conn = get_connection(db_path)
     cur = conn.cursor()
@@ -71,8 +72,17 @@ def init_db(db_path=None):
             timestamp   TEXT    DEFAULT (datetime('now'))
         );
 
+        CREATE TABLE IF NOT EXISTS file_manifest (
+            manifest_id  INTEGER PRIMARY KEY AUTOINCREMENT,
+            file_id      INTEGER NOT NULL REFERENCES source_files(file_id) ON DELETE CASCADE,
+            manifest_text TEXT   NOT NULL,
+            built_at     TEXT    DEFAULT (datetime('now')),
+            UNIQUE(file_id)
+        );
+
         CREATE INDEX IF NOT EXISTS idx_chunks_file ON chunks(file_id);
         CREATE INDEX IF NOT EXISTS idx_chunks_lines ON chunks(file_id, start_line, end_line);
+        CREATE INDEX IF NOT EXISTS idx_manifest_file ON file_manifest(file_id);
     """)
 
     conn.commit()

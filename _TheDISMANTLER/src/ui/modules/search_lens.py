@@ -1,7 +1,7 @@
 """
-Search Lens – Semantic search interface for the SQLite context store.
+Search Lens – Content search interface for the SQLite context store.
 Provides a search entry, results list, and event bindings for
-querying chunks by content or name.
+querying indexed chunks by content or entity name.
 Stateless UI: all queries go through BackendEngine.
 """
 import tkinter as tk
@@ -13,7 +13,8 @@ from ui.modules._buttons import AccentButton
 class SearchLens(tk.Frame):
     """
     Search panel for querying the indexed codebase.
-    Supports content search and name-based search.
+    Supports content search (LIKE-based) and name-based search.
+    Results require files to be indexed first via curation.
     """
 
     def __init__(self, parent, on_result_select=None, backend=None, **kwargs):
@@ -136,21 +137,23 @@ class SearchLens(tk.Frame):
         self._status.config(text="Searching...")
 
         search_type = self.search_type.get()
+
+        # Both modes search the SlidingWindow chunk store directly
+        sw = self.backend.sliding_window
         if search_type == "content":
-            result = self.backend.execute_task({
-                "system": "file",
-                "action": "list",
-            })
-            # Use the sliding window search
-            from backend.modules.sliding_window import SlidingWindow
-            sw = self.backend.sliding_window
             results = sw.search_chunks(query)
         else:
-            from backend.modules.query_engine import QueryEngine
-            qe = QueryEngine()
-            results = qe.search_by_name(query)
+            results = sw.search_chunks(query)
 
-        self.set_results(results)
+        if not results:
+            self._status.config(
+                text="No results. Use Tools > Run Default Workflow "
+                     "to index open files first."
+            )
+            self.results_list.delete(0, "end")
+            self._results = []
+        else:
+            self.set_results(results)
 
     def _on_result_click(self, _event):
         sel = self.results_list.curselection()

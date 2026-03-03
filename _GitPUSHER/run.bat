@@ -1,6 +1,6 @@
 @echo off
 setlocal
-title _theDISMANTLER Launcher
+title _GitPUSHER Launcher
 
 echo =============================================
 echo          Launching The DISMANTLER v2.1
@@ -19,7 +19,7 @@ echo [1/2] Activating virtual environment...
 call .venv\Scripts\activate.bat
 
 :: 3. Run the application
-echo [2/2] Starting the _theDISMANTLER...
+echo [2/2] Starting the _GitPUSHER...
 python -m src.app
 
 :: 4. Handle exit

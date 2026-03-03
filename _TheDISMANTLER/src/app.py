@@ -14,6 +14,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from theme import THEME
 from backend.main import BackendEngine
 from ui.main_window import MainWindow
+import config
 
 
 class AppBootstrapper(tk.Tk):
@@ -30,10 +31,17 @@ class AppBootstrapper(tk.Tk):
         self.geometry("700x420")
         self.configure(bg=THEME["bg"])
 
-        self.keep_open = tk.BooleanVar(value=True)
+        # Load saved preference (defaults to True if no prefs file yet)
+        self.keep_open = tk.BooleanVar(value=config.get("show_console"))
         self.main_app = None
 
         self._build_console()
+
+        # Trace fires on every future change to keep_open — from the checkbox
+        # in this console OR from the Preferences dialog in MainWindow.
+        # Important: trace is added AFTER the initial value is set above so it
+        # does NOT fire at construction time.
+        self.keep_open.trace_add("write", self._on_keep_open_changed)
 
         self.backend = BackendEngine(self.log)
 
@@ -75,7 +83,7 @@ class AppBootstrapper(tk.Tk):
 
         tk.Checkbutton(
             ctrl_frame,
-            text="Keep console open after load",
+            text="Show console on startup",
             variable=self.keep_open,
             bg=THEME["bg"],
             fg=THEME["fg"],
@@ -119,6 +127,23 @@ class AppBootstrapper(tk.Tk):
 
         self.log("Launching User Interface Framework...")
         self.after(0, self._open_main_window)
+
+    def _on_keep_open_changed(self, *_args):
+        """
+        Trace callback — fires whenever keep_open changes from any source
+        (the checkbox in this console, the Preferences dialog, etc.).
+        Immediately shows or hides the console and persists the preference.
+        """
+        show = self.keep_open.get()
+        config.set_pref("show_console", show)
+        # Only touch window visibility after the main app has launched;
+        # before that, _open_main_window handles the initial hide.
+        if self.main_app:
+            if show:
+                self.deiconify()
+                self.lift()
+            else:
+                self.withdraw()
 
     def _open_main_window(self):
         self.main_app = MainWindow(self.backend, master=self)

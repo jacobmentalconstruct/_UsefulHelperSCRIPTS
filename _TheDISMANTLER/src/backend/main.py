@@ -16,6 +16,10 @@ from backend.modules.db_schema import init_db
 from backend.tools.base_tool import BaseTool
 
 
+    # Core controller keys that tools must not overwrite
+_RESERVED_KEYS = {"file", "ai", "transformer", "curate", "export"}
+
+
 class BackendEngine:
     """
     Central orchestrator for all backend operations.
@@ -26,8 +30,9 @@ class BackendEngine:
     def __init__(self, log_callback=None):
         self.log = log_callback or (lambda msg: None)
         self.controllers = {}
+        # Repo root: __file__ is src/backend/main.py -> 3 levels up
         self.project_root = os.path.dirname(
-            os.path.dirname(os.path.abspath(__file__))
+            os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         )
 
     def boot(self):
@@ -78,8 +83,21 @@ class BackendEngine:
         return {"status": "error", "message": f"Unknown controller: {target}"}
 
     def get_context_for_cursor(self, file_path, cursor_line, budget=None):
-        """Convenience method: get sliding-window context for the AI."""
+        """Legacy convenience method: cursor-proximity context (kept for back-compat)."""
         return self.sliding_window.get_context(file_path, cursor_line, budget)
+
+    def get_context_for_query(self, file_path, query, cursor_line=1, budget=None):
+        """
+        Intent-driven convenience method: select the best chunks for the query.
+        Uses ContextSelector scoring (name + content overlap + cursor proximity).
+        """
+        return self.sliding_window.get_context_for_query(
+            file_path, query, cursor_line, budget
+        )
+
+    def get_manifest(self, file_path):
+        """Return the stored structural manifest for a file, or None if not curated."""
+        return self.sliding_window.get_manifest(file_path)
 
     # ── Tool Auto-Discovery ────────────────────────────────
 
@@ -133,6 +151,12 @@ class BackendEngine:
 
                         # Register by tool name (lowercase, no spaces)
                         tool_key = tool.name.lower().replace(" ", "_")
+                        if tool_key in _RESERVED_KEYS:
+                            self.log(
+                                f"  ✗ {tool.name}: key '{tool_key}' is "
+                                f"reserved for a core controller"
+                            )
+                            continue
                         self.controllers[tool_key] = tool
                         self.log(f"  ✓ Loaded: {tool.name} (v{tool.version})")
 

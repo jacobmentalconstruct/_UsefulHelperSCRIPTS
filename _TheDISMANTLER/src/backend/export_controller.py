@@ -66,13 +66,14 @@ class ExportController:
 
             abs_path = self._abs(path)
 
-            # Check parent directory exists or can be created
+            # Check parent directory exists or could be created (read-only check)
             parent = os.path.dirname(abs_path)
             if not os.path.isdir(parent):
+                # Verify path is valid without creating it
                 try:
-                    os.makedirs(parent, exist_ok=True)
-                except OSError as e:
-                    errors.append(f"Cannot create directory for {path}: {e}")
+                    os.path.abspath(parent)
+                except (ValueError, OSError) as e:
+                    errors.append(f"Invalid path for {path}: {e}")
 
             # Check for overwrites
             if os.path.isfile(abs_path):
@@ -165,8 +166,15 @@ class ExportController:
                 failed.append({"path": path, "error": str(e)})
                 self.log(f"Export failed: {path} - {e}")
 
+        if failed and not written:
+            status = "error"
+        elif failed:
+            status = "error"
+        else:
+            status = "ok"
+
         return {
-            "status": "ok" if not failed else "partial",
+            "status": status,
             "written": written,
             "failed": failed,
         }
@@ -213,8 +221,10 @@ class ExportController:
 
         success_count = sum(1 for r in results if r["success"])
 
-        # Optionally write
-        if write and success_count > 0:
+        # Write only if all patches succeeded (or allow_partial is set)
+        allow_partial = schema.get("allow_partial", False)
+        all_ok = success_count == len(patches)
+        if write and (all_ok or (allow_partial and success_count > 0)):
             self._backup(abs_path)
             with open(abs_path, "w", encoding="utf-8") as f:
                 f.write(patched)

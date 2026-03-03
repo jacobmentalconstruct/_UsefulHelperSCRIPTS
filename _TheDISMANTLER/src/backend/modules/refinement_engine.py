@@ -180,8 +180,10 @@ class RefinementEngine:
                 parts.append(f"[SOURCE_FILE]\n{source}\n[/SOURCE_FILE]")
 
         # 3. Sliding window context (related code from the project)
+        # Anchor at the midpoint of the file for broader coverage
+        mid_line = max(1, len(source.splitlines()) // 2) if source else 1
         context_chunks = self.sliding_window.get_context(
-            session.file_path, cursor_line=1, budget=2048
+            session.file_path, cursor_line=mid_line, budget=2048
         )
         if context_chunks:
             ctx_text = "\n---\n".join(ch["content"] for ch in context_chunks)

@@ -2,9 +2,14 @@
 Sliding-window context module.
 Provides the AI with focused code context based on the user's active cursor
 position, backed by the SQLite chunk store.
+
+Extended with Surgeon-Agent capabilities:
+  - index_manifest / get_manifest  — per-file structural manifest storage
+  - get_context_for_query          — intent-driven chunk selection via ContextSelector
 """
 import hashlib
 from backend.modules.db_schema import get_connection, init_db
+from backend.modules.context_selector import ContextSelector, DEFAULT_BUDGET as _QUERY_BUDGET
 
 
 class SlidingWindow:
@@ -55,7 +60,7 @@ class SlidingWindow:
 
         if chunks:
             for ch in chunks:
-                token_est = len(ch["content"].split())
+                token_est = max(1, len(ch["content"]) // 4)
                 cur.execute(
                     """
                     INSERT INTO chunks (file_id, chunk_type, name, start_line, end_line, content, token_est, depth)
@@ -74,7 +79,7 @@ class SlidingWindow:
                 )
         else:
             # Store the whole file as one chunk
-            token_est = len(content.split())
+            token_est = max(1, len(content) // 4)
             cur.execute(
                 """
                 INSERT INTO chunks (file_id, chunk_type, name, start_line, end_line, content, token_est)
@@ -130,13 +135,26 @@ class SlidingWindow:
             )
             conn.commit()
 
-        # Collect chunks within budget
+        # Collect chunks within budget.
+        # Always include the nearest chunk even if it exceeds budget,
+        # trimming it to fit if necessary.
         result = []
         spent = 0
-        for ch in chunks:
-            if spent + ch["token_est"] > budget:
+        for i, ch in enumerate(chunks):
+            est = ch["token_est"]
+            if spent + est > budget:
+                if i == 0:
+                    # Force-include nearest chunk; trim if very large
+                    entry = dict(ch)
+                    if est > budget:
+                        char_budget = budget * 4
+                        entry["content"] = entry["content"][:char_budget]
+                        entry["token_est"] = budget
+                        entry["trimmed"] = True
+                    result.append(entry)
+                    spent += entry["token_est"]
                 continue
-            spent += ch["token_est"]
+            spent += est
             result.append(dict(ch))
 
         # Return in file order
@@ -144,6 +162,98 @@ class SlidingWindow:
 
         conn.close()
         return result
+
+    # ── manifest storage ─────────────────────────────────────
+
+    def index_manifest(self, file_id: int, manifest_text: str):
+        """
+        Upsert the structural manifest for a file.
+        Called by CurateController immediately after index_file().
+        """
+        conn = get_connection(self.db_path)
+        conn.execute(
+            """
+            INSERT INTO file_manifest (file_id, manifest_text, built_at)
+            VALUES (?, ?, datetime('now'))
+            ON CONFLICT(file_id) DO UPDATE SET
+                manifest_text = excluded.manifest_text,
+                built_at      = excluded.built_at
+            """,
+            (file_id, manifest_text),
+        )
+        conn.commit()
+        conn.close()
+
+    def get_manifest(self, file_path: str) -> str | None:
+        """
+        Retrieve the stored manifest text for a file path.
+        Returns None if the file has not been curated yet.
+        """
+        conn = get_connection(self.db_path)
+        row = conn.execute(
+            """
+            SELECT fm.manifest_text
+            FROM file_manifest fm
+            JOIN source_files sf ON fm.file_id = sf.file_id
+            WHERE sf.path = ?
+            """,
+            (file_path,),
+        ).fetchone()
+        conn.close()
+        return row["manifest_text"] if row else None
+
+    # ── intent-driven context retrieval ─────────────────────
+
+    def get_context_for_query(
+        self,
+        file_path: str,
+        query: str,
+        cursor_line: int = 1,
+        budget: int = None,
+    ) -> list:
+        """
+        Select the best chunks for the user's query using ContextSelector.
+
+        Falls back gracefully to cursor-proximity if no chunks are indexed.
+        The budget defaults to 8 192 tokens (4× the old DEFAULT_BUDGET).
+
+        Args:
+            file_path:   Absolute path to the open file.
+            query:       The user's chat message (used for intent scoring).
+            cursor_line: Current cursor line (tiebreaker in scoring).
+            budget:      Max token_est to include.
+
+        Returns:
+            List of chunk dicts sorted by start_line (file order).
+        """
+        budget = budget or _QUERY_BUDGET
+        conn = get_connection(self.db_path)
+
+        row = conn.execute(
+            "SELECT file_id FROM source_files WHERE path=?", (file_path,)
+        ).fetchone()
+        if not row:
+            conn.close()
+            return []
+
+        file_id = row["file_id"]
+        chunks = conn.execute(
+            """
+            SELECT chunk_id, chunk_type, name, start_line, end_line,
+                   content, token_est, depth
+            FROM chunks
+            WHERE file_id=?
+            ORDER BY start_line
+            """,
+            (file_id,),
+        ).fetchall()
+        conn.close()
+
+        if not chunks:
+            return []
+
+        chunks_list = [dict(c) for c in chunks]
+        return ContextSelector.score_and_select(query, chunks_list, cursor_line, budget)
 
     def search_chunks(self, query, limit=10):
         """Simple LIKE-based chunk search across all files."""

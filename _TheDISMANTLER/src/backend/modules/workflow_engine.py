@@ -72,6 +72,7 @@ class WorkflowEngine:
         total = len(steps)
         context = dict(initial_context)
         results = []
+        had_failure = False
 
         self.log(f"Workflow '{name}' starting ({total} steps)")
         start = datetime.now()
@@ -87,13 +88,30 @@ class WorkflowEngine:
                     "status": f"Running {step_name}...",
                 })
 
+            # Fail fast on unknown steps
             if step_name not in self._STEP_REGISTRY:
-                error_msg = f"Unknown step: {step_name}"
+                error_msg = (
+                    f"Unknown step: '{step_name}' "
+                    f"(available: {', '.join(self._STEP_REGISTRY)})"
+                )
                 self.log(f"  Step {step_num}: {error_msg}")
                 results.append({
                     "step": step_name, "status": "error", "message": error_msg
                 })
-                continue
+                if status_callback:
+                    status_callback({
+                        "step": step_num, "total": total,
+                        "step_name": step_name,
+                        "status": f"FAILED: {error_msg}",
+                    })
+                elapsed = (datetime.now() - start).total_seconds()
+                return {
+                    "status": "error",
+                    "message": error_msg,
+                    "context": context,
+                    "results": results,
+                    "elapsed": elapsed,
+                }
 
             system, action, defaults = self._STEP_REGISTRY[step_name]
             schema = {"system": system, "action": action}
@@ -104,38 +122,59 @@ class WorkflowEngine:
 
             try:
                 result = self.execute(schema)
+                step_status = result.get("status", "error")
                 results.append({
                     "step": step_name,
-                    "status": result.get("status", "error"),
+                    "status": step_status,
                     "data": result,
                 })
 
-                if result.get("status") == "ok":
-                    # Merge result into running context (skip meta keys)
+                if step_status == "ok":
+                    # Merge into context with collision warnings
                     for k, v in result.items():
-                        if k not in ("status", "message"):
-                            context[k] = v
+                        if k in ("status", "message"):
+                            continue
+                        if k in context and k not in initial_context:
+                            self.log(
+                                f"    Warning: key '{k}' overwritten "
+                                f"by step '{step_name}'"
+                            )
+                        context[k] = v
+                    # Also store namespaced copy for debugging
+                    context[f"_step_{step_name}"] = result
                 else:
+                    had_failure = True
                     self.log(f"  Step {step_num} failed: {result.get('message')}")
 
             except Exception as e:
+                had_failure = True
                 self.log(f"  Step {step_num} exception: {e}")
                 results.append({
                     "step": step_name, "status": "error", "message": str(e),
                 })
 
         elapsed = (datetime.now() - start).total_seconds()
+        overall_status = "error" if had_failure else "ok"
+
+        status_msg = f"Workflow '{name}' finished ({elapsed:.1f}s)."
+        if had_failure:
+            status_msg += " Some steps had errors."
 
         if status_callback:
             status_callback({
                 "step": total,
                 "total": total,
                 "step_name": "complete",
-                "status": f"Workflow '{name}' finished ({elapsed:.1f}s).",
+                "status": status_msg,
             })
 
-        self.log(f"Workflow '{name}' complete in {elapsed:.1f}s")
-        return {"status": "ok", "context": context, "results": results}
+        self.log(f"Workflow '{name}' {overall_status} in {elapsed:.1f}s")
+        return {
+            "status": overall_status,
+            "context": context,
+            "results": results,
+            "elapsed": elapsed,
+        }
 
     # ── context mapping ────────────────────────────────────
 
@@ -150,6 +189,10 @@ class WorkflowEngine:
         if "file" in context:
             mapped["file"] = context["file"]
             mapped["path"] = context["file"]
+
+        # Universal: pass buffer content if available
+        if "content" in context:
+            mapped["content"] = context["content"]
 
         # For patch_preview: build the files list
         if step_name == "patch_preview" and "content" in context:

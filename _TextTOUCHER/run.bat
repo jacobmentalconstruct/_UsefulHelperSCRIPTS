@@ -1,9 +1,9 @@
 @echo off
 setlocal
-title _theDISMANTLER Launcher
+title _TextTOUCHER Launcher
 
 echo =============================================
-echo          Launching The DISMANTLER v2.1
+echo          Launching The _TextTOUCHER 
 echo =============================================
 
 :: 1. Check if the virtual environment exists
@@ -19,7 +19,7 @@ echo [1/2] Activating virtual environment...
 call .venv\Scripts\activate.bat
 
 :: 3. Run the application
-echo [2/2] Starting the _theDISMANTLER...
+echo [2/2] Starting the _TextTOUCHER...
 python -m src.app
 
 :: 4. Handle exit

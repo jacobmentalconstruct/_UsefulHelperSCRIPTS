@@ -14,11 +14,12 @@ class TextEditor(tk.Frame):
     - Cursor position reporting
     """
 
-    def __init__(self, parent, **kwargs):
+    def __init__(self, parent, change_callback=None, **kwargs):
         super().__init__(parent, bg=THEME["bg"], **kwargs)
 
         self._modified = False
         self._file_path = None
+        self.change_callback = change_callback
 
         # --- status bar ---
         self._status = tk.Label(
@@ -115,6 +116,8 @@ class TextEditor(tk.Frame):
     def _on_change(self, _event=None):
         self._update_gutter()
         self._refresh_status()
+        if self.change_callback:
+            self.change_callback()
 
     def _on_modified_flag(self, _event=None):
         if self.text.edit_modified():

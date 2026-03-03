@@ -1,11 +1,11 @@
 """
-EditorNotebook – 4-tab notebook replacing the single TextEditor
+EditorNotebook – 3-tab notebook replacing the single TextEditor
 in WorkspaceTab.
 Tab 1: Original  (read-only baseline as loaded from disk)
 Tab 2: Current   (editable scratchpad)
 Tab 3: Diff      (read-only colored diff preview)
-Tab 4: Context   (diagnostic: AST nodes, chunks, metrics)
 Stateless UI: all data comes through WorkspaceTab / BackendEngine.
+AST Outline and Chunks browsing live in the left ExplorerPanel.
 """
 import tkinter as tk
 from tkinter import ttk
@@ -106,133 +106,36 @@ class DiffView(tk.Frame):
         self._status.config(text="No diff loaded")
 
 
-# ── ContextView ────────────────────────────────────────────
-
-
-class ContextView(tk.Frame):
-    """
-    Read-only diagnostic panel showing sliding window chunks,
-    AST hierarchy, or code metrics.
-    """
-
-    def __init__(self, parent, **kwargs):
-        super().__init__(parent, bg=THEME["bg"], **kwargs)
-
-        # Mode toolbar
-        toolbar = tk.Frame(self, bg=THEME["bg2"])
-        toolbar.pack(fill="x")
-
-        self._mode_var = tk.StringVar(value="chunks")
-        for label, val in [("Chunks", "chunks"), ("AST", "ast"), ("Metrics", "metrics")]:
-            tk.Radiobutton(
-                toolbar,
-                text=label,
-                variable=self._mode_var,
-                value=val,
-                bg=THEME["bg2"],
-                fg=THEME["fg"],
-                selectcolor=THEME["accent"],
-                activebackground=THEME["bg2"],
-                font=THEME["font_interface_small"],
-                indicatoron=0,
-                padx=10,
-                pady=2,
-            ).pack(side="left", padx=2, pady=2)
-
-        self.text = tk.Text(
-            self,
-            bg=THEME["bg3"],
-            fg=THEME["fg"],
-            font=THEME["font_code_small"],
-            state="disabled",
-            relief="flat",
-            wrap="none",
-            padx=6,
-            pady=4,
-        )
-        self.text.pack(fill="both", expand=True)
-
-        # Tags
-        self.text.tag_config("heading", foreground=THEME["accent"], font=THEME["font_interface_bold"])
-        self.text.tag_config("key", foreground=THEME["warning"])
-        self.text.tag_config("value", foreground=THEME["fg"])
-        self.text.tag_config("dim", foreground=THEME["fg_dim"])
-
-    def load_chunks(self, chunks):
-        """Display sliding window chunks."""
-        self._mode_var.set("chunks")
-        self._clear()
-        self.text.config(state="normal")
-        self.text.insert("end", f"CHUNKS ({len(chunks)})\n", "heading")
-        self.text.insert("end", "=" * 50 + "\n\n", "dim")
-        for ch in chunks:
-            self.text.insert("end", f"{ch.get('name', '?')}", "key")
-            self.text.insert("end", f"  [{ch.get('chunk_type', '?')}]", "dim")
-            self.text.insert(
-                "end",
-                f"  L{ch.get('start_line', '?')}-{ch.get('end_line', '?')}\n",
-                "dim",
-            )
-            preview = ch.get("content", "")[:200]
-            self.text.insert("end", f"  {preview}\n\n", "value")
-        self.text.config(state="disabled")
-
-    def load_ast(self, hierarchy):
-        """Display AST hierarchy nodes."""
-        self._mode_var.set("ast")
-        self._clear()
-        self.text.config(state="normal")
-        self.text.insert("end", f"AST HIERARCHY ({len(hierarchy)} nodes)\n", "heading")
-        self.text.insert("end", "=" * 50 + "\n\n", "dim")
-        for node in hierarchy:
-            indent = "  " * node.get("depth", 0)
-            self.text.insert("end", f"{indent}{node.get('kind', '?')} ", "dim")
-            self.text.insert("end", f"{node.get('name', '?')}", "key")
-            self.text.insert(
-                "end",
-                f"  L{node.get('start_line', '?')}-{node.get('end_line', '?')}\n",
-                "dim",
-            )
-        self.text.config(state="disabled")
-
-    def load_metrics(self, metrics):
-        """Display code metrics."""
-        self._mode_var.set("metrics")
-        self._clear()
-        self.text.config(state="normal")
-        self.text.insert("end", "CODE METRICS\n", "heading")
-        self.text.insert("end", "=" * 50 + "\n\n", "dim")
-        for k, v in metrics.items():
-            self.text.insert("end", f"  {k}: ", "key")
-            self.text.insert("end", f"{v}\n", "value")
-        self.text.config(state="disabled")
-
-    def clear(self):
-        self._clear()
-
-    def _clear(self):
-        self.text.config(state="normal")
-        self.text.delete("1.0", "end")
-        self.text.config(state="disabled")
-
-
 # ── EditorNotebook ─────────────────────────────────────────
 
 
 class EditorNotebook(tk.Frame):
     """
-    4-tab notebook container that replaces the single TextEditor.
+    3-tab notebook container that replaces the single TextEditor.
     Exposes a compatibility API so WorkspaceTab can treat it
     as a drop-in replacement for TextEditor.
+    AST Outline and Chunks browsing live in the left ExplorerPanel.
     """
 
     TAB_ORIGINAL = 0
     TAB_CURRENT = 1
     TAB_DIFF = 2
-    TAB_CONTEXT = 3
 
-    def __init__(self, parent, **kwargs):
+    # Maps internal tab index → key used by WorkspaceTab / SplitColumnFrame
+    _TAB_KEYS = {0: "original", 1: "current", 2: "diff"}
+
+    # Reverse mapping: key → index (for hide/show operations)
+    _TAB_INDICES = {"original": 0, "current": 1, "diff": 2}
+
+    def __init__(self, parent, on_split_request=None, **kwargs):
+        """
+        Args:
+            on_split_request: optional callable(tab_key) invoked when the user
+                              chooses "Open in Column" from the inner-tab
+                              right-click menu.  WorkspaceTab wires this up.
+        """
         super().__init__(parent, bg=THEME["bg"], **kwargs)
+        self.on_split_request = on_split_request
 
         self.notebook = ttk.Notebook(self, style="Inner.TNotebook")
         self.notebook.pack(fill="both", expand=True)
@@ -250,12 +153,11 @@ class EditorNotebook(tk.Frame):
         self.diff_view = DiffView(self.notebook)
         self.notebook.add(self.diff_view, text="  Diff  ")
 
-        # Tab 4: Context
-        self.context_view = ContextView(self.notebook)
-        self.notebook.add(self.context_view, text="  Context  ")
-
         # Default to Current tab
         self.notebook.select(self.TAB_CURRENT)
+
+        # Right-click on inner tabs → "Open in Column" context menu
+        self.notebook.bind("<Button-3>", self._on_inner_tab_right_click)
 
     # ── compatibility API (delegates to current_editor) ────
 
@@ -309,21 +211,64 @@ class EditorNotebook(tk.Frame):
         self.diff_view.load_side_by_side(original, patched)
         self.notebook.select(self.TAB_DIFF)
 
-    def load_context_chunks(self, chunks):
-        """Load chunk data into the Context tab and switch to it."""
-        self.context_view.load_chunks(chunks)
-        self.notebook.select(self.TAB_CONTEXT)
-
-    def load_context_ast(self, hierarchy):
-        """Load AST hierarchy into the Context tab and switch to it."""
-        self.context_view.load_ast(hierarchy)
-        self.notebook.select(self.TAB_CONTEXT)
-
-    def load_context_metrics(self, metrics):
-        """Load code metrics into the Context tab and switch to it."""
-        self.context_view.load_metrics(metrics)
-        self.notebook.select(self.TAB_CONTEXT)
-
     def select_tab(self, index):
         """Programmatically switch to a tab by index."""
         self.notebook.select(index)
+
+    def hide_tab(self, tab_key: str):
+        """
+        Hide a tab from the inner notebook header (move-to-column semantics).
+        If the hidden tab is currently selected, fall back to Current.
+        """
+        idx = self._TAB_INDICES.get(tab_key)
+        if idx is None:
+            return
+        # Guard: never hide Current — it's the primary editing surface
+        if tab_key == "current":
+            return
+        # If this tab is currently active, switch away first
+        try:
+            if self.notebook.index("current") == idx:
+                self.notebook.select(self.TAB_CURRENT)
+        except tk.TclError:
+            pass
+        self.notebook.tab(idx, state="hidden")
+
+    def show_tab(self, tab_key: str):
+        """Restore a previously hidden tab back to the inner notebook header."""
+        idx = self._TAB_INDICES.get(tab_key)
+        if idx is not None:
+            self.notebook.tab(idx, state="normal")
+
+    def _on_inner_tab_right_click(self, event):
+        """Show context menu on right-click over an inner tab label."""
+        # ttk.Notebook.index("@x,y") gives the tab index under the cursor
+        # and raises TclError if the click lands outside any tab label.
+        try:
+            clicked_idx = self.notebook.index(f"@{event.x},{event.y}")
+        except tk.TclError:
+            return  # Click was not on any tab label
+
+        tab_key = self._TAB_KEYS.get(clicked_idx)
+        if tab_key is None:
+            return
+
+        label = self._TAB_KEYS[clicked_idx].title()
+        # Check if this tab is already in a column (toggled off label)
+        currently_split = self.notebook.tab(clicked_idx, "state") == "hidden"
+        action = "Restore" if currently_split else "Move to Column"
+
+        menu = tk.Menu(self, tearoff=0, bg=THEME["bg2"], fg=THEME["fg"])
+        menu.add_command(
+            label=f"{action}:  {label}",
+            command=lambda k=tab_key: self._request_split(k),
+        )
+        try:
+            menu.tk_popup(event.x_root, event.y_root)
+        finally:
+            menu.grab_release()
+
+    def _request_split(self, tab_key: str):
+        """Notify WorkspaceTab (via callback) that the user wants a split."""
+        if self.on_split_request:
+            self.on_split_request(tab_key)
