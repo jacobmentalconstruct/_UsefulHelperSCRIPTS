@@ -1,0 +1,1 @@
+# llm package — Ollama API client with VRAM-aware model management

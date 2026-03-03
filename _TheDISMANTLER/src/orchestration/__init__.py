@@ -1,0 +1,1 @@
+# orchestration package — query routing pipeline (Scout/Surgeon MoE)
