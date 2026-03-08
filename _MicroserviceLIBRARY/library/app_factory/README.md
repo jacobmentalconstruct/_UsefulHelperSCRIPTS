@@ -87,19 +87,19 @@ python -m library.app_factory sandbox-stamp --run-id demo_case --template-id ui_
 Apply one or more multi-file patch manifests:
 
 ```powershell
-python -m library.app_factory sandbox-apply _sanbox\apps\demo_case path\to\patch_manifest.json
+python -m library.app_factory sandbox-apply _sandbox\apps\demo_case path\to\patch_manifest.json
 ```
 
 Validate the transformed workspace:
 
 ```powershell
-python -m library.app_factory sandbox-validate _sanbox\apps\demo_case
+python -m library.app_factory sandbox-validate _sandbox\apps\demo_case
 ```
 
 Promote the validated working app into a final destination:
 
 ```powershell
-python -m library.app_factory sandbox-promote _sanbox\apps\demo_case --destination _sanbox\promoted\demo_case --force
+python -m library.app_factory sandbox-promote _sandbox\apps\demo_case --destination _sandbox\promoted\demo_case --force
 ```
 
 The sandbox workflow writes `.transform_lock.json` after patch application. That lock extends the original stamp lock to include transformed Python files, runtime config, and copied patch manifests.
@@ -138,12 +138,12 @@ The service list also supports a right-click menu for contextual actions such as
 
 ## Pipeline Runner UI
 
-The runner UI is a separate Tk surface for demo and operator workflows. It builds a queue of real sandbox commands, renders them into a terminal-style pane, streams stdout/stderr live, and writes JSONL replay logs under `_sanbox/runs/`.
+The runner UI is a separate Tk surface for demo and operator workflows. It builds a queue of real sandbox commands, renders them into a terminal-style pane, streams stdout/stderr live, and writes JSONL replay logs under `_sandbox/runs/`. Legacy `_sanbox` paths are still accepted by the CLI and workflow loader.
 
 It now supports two execution backends:
 
 - `local`: runs commands on the host, but redacts displayed paths in the queue and terminal
-- `docker`: runs stamp/apply/validate in a container, forces `static` vendoring, mounts the repo read-only at `/repo`, mounts `_sanbox` writable at `/workspace`, and leaves host promotion as a separate approval-gated step when the target is outside `_sanbox`
+- `docker`: runs stamp/apply/validate in a container, forces `static` vendoring, mounts the repo read-only at `/repo`, mounts `_sandbox` writable at `/workspace`, and leaves host promotion as a separate approval-gated step when the target is outside `_sandbox`
 
 If Docker is missing or the daemon is not running, the runner surfaces a clear remediation message instead of a raw subprocess failure.
 

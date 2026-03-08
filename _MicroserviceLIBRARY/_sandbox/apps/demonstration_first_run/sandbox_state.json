@@ -1,0 +1,14 @@
+{
+  "version": "0.1.0",
+  "run_id": "demonstration_first_run",
+  "workspace_root": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_sanbox\\apps\\demonstration_first_run",
+  "base_app_dir": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_sanbox\\apps\\demonstration_first_run\\base",
+  "working_app_dir": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_sanbox\\apps\\demonstration_first_run\\working",
+  "workspace_patch_dir": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_sanbox\\apps\\demonstration_first_run\\patches",
+  "workspace_report_dir": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_sanbox\\apps\\demonstration_first_run\\reports",
+  "app_patch_dir": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_sanbox\\apps\\demonstration_first_run\\working\\.app_factory\\patches",
+  "app_report_dir": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_sanbox\\apps\\demonstration_first_run\\working\\.app_factory\\reports",
+  "template_id": "ui_explorer_workbench",
+  "source_manifest_path": "",
+  "last_promotion_destination": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_sanbox\\promoted\\demonstration_first_run"
+}

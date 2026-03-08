@@ -1,0 +1,287 @@
+{
+  "workspace_root": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_sanbox\\apps\\demonstration_first_run",
+  "working_app_dir": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_sanbox\\apps\\demonstration_first_run\\working",
+  "compile_results": {
+    "compiled": [
+      "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_sanbox\\apps\\demonstration_first_run\\working\\app.py",
+      "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_sanbox\\apps\\demonstration_first_run\\working\\backend.py",
+      "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_sanbox\\apps\\demonstration_first_run\\working\\ui.py"
+    ],
+    "errors": []
+  },
+  "health_result": {
+    "ok": true,
+    "returncode": 0,
+    "command": [
+      "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\.venv\\Scripts\\python.exe",
+      "app.py",
+      "--health"
+    ],
+    "payload": {
+      "instantiated": {},
+      "deferred": [
+        "ExplorerWidgetMS",
+        "TkinterAppShellMS",
+        "TkinterThemeManagerMS",
+        "WorkbenchLayoutMS"
+      ],
+      "manager_hub_error": ""
+    },
+    "stderr": ""
+  },
+  "no_ui_result": {
+    "ok": true,
+    "returncode": 0,
+    "command": [
+      "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\.venv\\Scripts\\python.exe",
+      "app.py",
+      "--no-ui"
+    ],
+    "payload": {
+      "status": "headless",
+      "health": {
+        "instantiated": {},
+        "deferred": [
+          "ExplorerWidgetMS",
+          "TkinterAppShellMS",
+          "TkinterThemeManagerMS",
+          "WorkbenchLayoutMS"
+        ],
+        "manager_hub_error": ""
+      },
+      "services": [
+        {
+          "service_id": "service_6970158b116a0e1d8301d2ed",
+          "class_name": "ExplorerWidgetMS",
+          "service_name": "ExplorerWidgetMS",
+          "module_import": "library.microservices.ui._ExplorerWidgetMS",
+          "description": "A standalone file system tree viewer widget.",
+          "tags": [
+            "ui",
+            "filesystem",
+            "widget"
+          ],
+          "capabilities": [
+            "ui:gui",
+            "filesystem:read"
+          ],
+          "manager_layer": "",
+          "registry_name": "ExplorerWidgetMS",
+          "is_ui": true,
+          "endpoints": [
+            {
+              "method_name": "get_health",
+              "inputs_json": "{}",
+              "outputs_json": "{\"status\": \"str\", \"uptime\": \"float\"}",
+              "description": "Standardized health check for service status.",
+              "tags_json": "[\"diagnostic\", \"health\"]",
+              "mode": "sync"
+            },
+            {
+              "method_name": "get_selected_paths",
+              "inputs_json": "{}",
+              "outputs_json": "{\"selected_paths\": \"List[str]\"}",
+              "description": "Returns a list of currently checked folder paths.",
+              "tags_json": "[\"ui\", \"read\"]",
+              "mode": "sync"
+            },
+            {
+              "method_name": "refresh_tree",
+              "inputs_json": "{}",
+              "outputs_json": "{}",
+              "description": "Rescans the directory and refreshes the tree view.",
+              "tags_json": "[\"ui\", \"refresh\"]",
+              "mode": "sync"
+            }
+          ]
+        },
+        {
+          "service_id": "service_ddb133b7bba8558c2087a2e6",
+          "class_name": "TkinterAppShellMS",
+          "service_name": "TkinterAppShell",
+          "module_import": "library.microservices.ui._TkinterAppShellMS",
+          "description": "The Application Container. Manages the root window, main loop, and global layout.",
+          "tags": [
+            "ui",
+            "core",
+            "lifecycle"
+          ],
+          "capabilities": [
+            "ui:root",
+            "ui:gui"
+          ],
+          "manager_layer": "",
+          "registry_name": "TkinterAppShell",
+          "is_ui": true,
+          "endpoints": [
+            {
+              "method_name": "get_health",
+              "inputs_json": "{}",
+              "outputs_json": "{\"status\": \"str\", \"uptime\": \"float\"}",
+              "description": "Standardized health check for service status.",
+              "tags_json": "[\"diagnostic\", \"health\"]",
+              "mode": "sync"
+            },
+            {
+              "method_name": "get_main_container",
+              "inputs_json": "{}",
+              "outputs_json": "{\"container\": \"tk.Frame\"}",
+              "description": "Returns the main content area for other services to dock into.",
+              "tags_json": "[\"ui\", \"layout\"]",
+              "mode": "sync"
+            },
+            {
+              "method_name": "launch",
+              "inputs_json": "{}",
+              "outputs_json": "{}",
+              "description": "Starts the GUI Main Loop.",
+              "tags_json": "[\"lifecycle\", \"start\"]",
+              "mode": "sync"
+            },
+            {
+              "method_name": "shutdown",
+              "inputs_json": "{}",
+              "outputs_json": "{}",
+              "description": "Gracefully shuts down the application.",
+              "tags_json": "[\"lifecycle\", \"stop\"]",
+              "mode": "sync"
+            }
+          ]
+        },
+        {
+          "service_id": "service_932c0f5222f07ed1f934841e",
+          "class_name": "TkinterThemeManagerMS",
+          "service_name": "TkinterThemeManager",
+          "module_import": "library.microservices.ui._TkinterThemeManagerMS",
+          "description": "Centralized modern Tkinter theme tokens and icon maps used by UI microservices.",
+          "tags": [
+            "ui",
+            "config",
+            "theme"
+          ],
+          "capabilities": [
+            "ui:style"
+          ],
+          "manager_layer": "",
+          "registry_name": "TkinterThemeManager",
+          "is_ui": true,
+          "endpoints": [
+            {
+              "method_name": "get_health",
+              "inputs_json": "{}",
+              "outputs_json": "{\"icon_count\": \"int\", \"status\": \"str\", \"token_count\": \"int\", \"uptime\": \"float\"}",
+              "description": "Standardized health check for theme manager state.",
+              "tags_json": "[\"diagnostic\", \"health\"]",
+              "mode": "sync"
+            },
+            {
+              "method_name": "get_legacy_aliases",
+              "inputs_json": "{}",
+              "outputs_json": "{\"aliases\": \"dict\"}",
+              "description": "Return legacy theme alias map for compatibility with older Tkinter components.",
+              "tags_json": "[\"ui\", \"read\", \"compat\"]",
+              "mode": "sync"
+            },
+            {
+              "method_name": "get_node_icons",
+              "inputs_json": "{}",
+              "outputs_json": "{\"icons\": \"dict\"}",
+              "description": "Return active node icon map.",
+              "tags_json": "[\"ui\", \"read\"]",
+              "mode": "sync"
+            },
+            {
+              "method_name": "get_theme",
+              "inputs_json": "{}",
+              "outputs_json": "{\"theme\": \"dict\"}",
+              "description": "Return active theme token dictionary.",
+              "tags_json": "[\"ui\", \"read\"]",
+              "mode": "sync"
+            },
+            {
+              "method_name": "update_icon",
+              "inputs_json": "{\"icon\": \"str\", \"node_type\": \"str\"}",
+              "outputs_json": "{\"ok\": \"bool\"}",
+              "description": "Update or add icon mapping for a node type.",
+              "tags_json": "[\"ui\", \"write\"]",
+              "mode": "sync"
+            },
+            {
+              "method_name": "update_key",
+              "inputs_json": "{\"key\": \"str\", \"value\": \"Any\"}",
+              "outputs_json": "{\"ok\": \"bool\"}",
+              "description": "Update a single theme token at runtime.",
+              "tags_json": "[\"ui\", \"write\"]",
+              "mode": "sync"
+            }
+          ]
+        },
+        {
+          "service_id": "service_56079e96662212cbe7567482",
+          "class_name": "WorkbenchLayoutMS",
+          "service_name": "WorkbenchLayout",
+          "module_import": "library.microservices.ui._WorkbenchLayoutMS",
+          "description": "A declarative layout engine that builds resizable, nested Workbenches (Rows/Cols) from a config dictionary.",
+          "tags": [
+            "ui",
+            "layout",
+            "framework"
+          ],
+          "capabilities": [
+            "ui:construct"
+          ],
+          "manager_layer": "",
+          "registry_name": "WorkbenchLayout",
+          "is_ui": true,
+          "endpoints": [
+            {
+              "method_name": "build_from_manifest",
+              "inputs_json": "{\"manifest\": \"Dict\"}",
+              "outputs_json": "{}",
+              "description": "Builds the UI structure based on the provided dictionary layout.",
+              "tags_json": "[\"ui\", \"build\"]",
+              "mode": "sync"
+            },
+            {
+              "method_name": "get_health",
+              "inputs_json": "{}",
+              "outputs_json": "{\"status\": \"str\", \"uptime\": \"float\"}",
+              "description": "Standardized health check for service status.",
+              "tags_json": "[\"diagnostic\", \"health\"]",
+              "mode": "sync"
+            }
+          ]
+        }
+      ],
+      "app_title": "Stamped App"
+    },
+    "stderr": ""
+  },
+  "stamp_integrity": {
+    "ok": true,
+    "checked": [
+      "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_sanbox\\apps\\demonstration_first_run\\working\\app.py",
+      "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_sanbox\\apps\\demonstration_first_run\\working\\backend.py",
+      "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_sanbox\\apps\\demonstration_first_run\\working\\ui.py",
+      "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_sanbox\\apps\\demonstration_first_run\\working\\requirements.txt",
+      "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_sanbox\\apps\\demonstration_first_run\\working\\pyrightconfig.json",
+      "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_sanbox\\apps\\demonstration_first_run\\working\\.env",
+      "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservices\\ui\\_ExplorerWidgetMS.py",
+      "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\base_service.py",
+      "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservice_std_lib.py",
+      "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservices\\ui\\_TkinterAppShellMS.py",
+      "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservices\\ui\\_TkinterThemeManagerMS.py",
+      "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservices\\ui\\_WorkbenchLayoutMS.py"
+    ],
+    "errors": [],
+    "missing_generated_python_files": [],
+    "generated_python_file_drift": [],
+    "missing_generated_support_files": [],
+    "generated_support_file_drift": [],
+    "missing_library_artifacts": [],
+    "library_artifact_drift": []
+  },
+  "transform_integrity": null,
+  "active_integrity": "stamp",
+  "ok": true
+}

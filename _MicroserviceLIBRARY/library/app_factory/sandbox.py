@@ -11,12 +11,12 @@ import sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence
 
-from .constants import APP_FACTORY_VERSION, WORKSPACE_ROOT
+from .constants import APP_FACTORY_VERSION, WORKSPACE_ROOT, canonicalize_sandbox_path, sandbox_path
 from .models import AppBlueprintManifest
 from .query import LibraryQueryService
 from .stamper import AppStamper
 
-DEFAULT_SANDBOX_ROOT = Path(WORKSPACE_ROOT).resolve() / "_sanbox" / "apps"
+DEFAULT_SANDBOX_ROOT = sandbox_path("apps")
 PATCHER_SCRIPT = Path(WORKSPACE_ROOT).resolve() / "_curationTOOLS" / "tokenizing_patcher_with_cli.py"
 STATE_FILE_NAME = "sandbox_state.json"
 TRANSFORM_LOCK_NAME = ".transform_lock.json"
@@ -34,7 +34,7 @@ class SandboxWorkflow:
     ):
         self.query_service = query_service or LibraryQueryService()
         self.stamper = AppStamper(self.query_service)
-        self.sandbox_root = Path(sandbox_root).resolve() if sandbox_root else DEFAULT_SANDBOX_ROOT
+        self.sandbox_root = canonicalize_sandbox_path(sandbox_root) if sandbox_root else DEFAULT_SANDBOX_ROOT
         self.patcher_script = Path(patcher_script).resolve() if patcher_script else PATCHER_SCRIPT
 
     def sandbox_stamp(
@@ -338,7 +338,7 @@ class SandboxWorkflow:
         return inspection
 
     def _workspace_root(self, run_id: str, sandbox_root: Optional[Path | str]) -> Path:
-        root = Path(sandbox_root).resolve() if sandbox_root else self.sandbox_root
+        root = canonicalize_sandbox_path(sandbox_root) if sandbox_root else self.sandbox_root
         return root / self._sanitize_run_id(run_id)
 
     def _sanitize_run_id(self, run_id: str) -> str:
@@ -377,7 +377,7 @@ class SandboxWorkflow:
         return AppBlueprintManifest.from_dict(payload)
 
     def _load_state(self, workspace: Path | str) -> Dict[str, Any]:
-        workspace_root = Path(workspace).resolve()
+        workspace_root = canonicalize_sandbox_path(workspace)
         state_path = workspace_root / STATE_FILE_NAME
         if not state_path.exists():
             raise FileNotFoundError(state_path)
@@ -401,7 +401,7 @@ class SandboxWorkflow:
             return fallback.resolve()
         if raw == '.':
             return workspace_root.resolve()
-        candidate = Path(raw)
+        candidate = canonicalize_sandbox_path(raw)
         if not candidate.is_absolute():
             return (workspace_root / candidate).resolve()
         try:

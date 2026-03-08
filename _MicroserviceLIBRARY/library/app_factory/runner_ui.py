@@ -6,7 +6,7 @@ import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 from typing import Any
 
-from .constants import WORKSPACE_ROOT
+from .constants import sandbox_path
 from .pipeline_runner import DEFAULT_DOCKER_IMAGE, SandboxRunConfig, build_sandbox_command_queue, docker_preflight, execute_command_queue
 from .query import LibraryQueryService
 
@@ -24,6 +24,9 @@ THEME = {
     'terminal_system': '#7DD3FC',
     'terminal_error': '#F87171',
     'terminal_success': '#86EFAC',
+    'combo_bg': '#F4EDE3',
+    'combo_fg': '#1F2933',
+    'combo_select_bg': '#DCCDBD',
 }
 
 
@@ -50,8 +53,8 @@ class PipelineRunnerApp:
         self.template_var = tk.StringVar(value='ui_explorer_workbench')
         self.manifest_var = tk.StringVar(value='')
         self.name_var = tk.StringVar(value='Demo App')
-        self.sandbox_root_var = tk.StringVar(value=str((WORKSPACE_ROOT / '_sanbox' / 'apps').resolve()))
-        self.promote_destination_var = tk.StringVar(value=str((WORKSPACE_ROOT / '_sanbox' / 'promoted' / 'demo_run').resolve()))
+        self.sandbox_root_var = tk.StringVar(value=str(sandbox_path('apps').resolve()))
+        self.promote_destination_var = tk.StringVar(value=str(sandbox_path('promoted', 'demo_run').resolve()))
         self.execution_backend_var = tk.StringVar(value='local')
         self.vendor_mode_var = tk.StringVar(value='module_ref')
         self.resolution_profile_var = tk.StringVar(value='app_ready')
@@ -91,7 +94,27 @@ class PipelineRunnerApp:
         self._style.map('Secondary.TButton', background=[('active', '#3997A2')])
         self._style.configure('TCheckbutton', background=THEME['bg'], foreground=THEME['fg'])
         self._style.configure('TEntry', fieldbackground=THEME['panel'], foreground=THEME['fg'], insertcolor=THEME['fg'])
+        self.root.option_add('*TCombobox*Listbox*Background', THEME['combo_bg'])
+        self.root.option_add('*TCombobox*Listbox*Foreground', THEME['combo_fg'])
+        self.root.option_add('*TCombobox*Listbox*selectBackground', THEME['accent'])
+        self.root.option_add('*TCombobox*Listbox*selectForeground', THEME['fg'])
         self._style.configure('TCombobox', fieldbackground=THEME['panel'], foreground=THEME['fg'])
+        self._style.configure(
+            'Runner.TCombobox',
+            fieldbackground=THEME['combo_bg'],
+            background=THEME['combo_bg'],
+            foreground=THEME['combo_fg'],
+            arrowcolor=THEME['combo_fg'],
+            bordercolor=THEME['border'],
+        )
+        self._style.map(
+            'Runner.TCombobox',
+            fieldbackground=[('readonly', THEME['combo_bg'])],
+            foreground=[('readonly', THEME['combo_fg'])],
+            selectbackground=[('readonly', THEME['combo_select_bg'])],
+            selectforeground=[('readonly', THEME['combo_fg'])],
+            arrowcolor=[('readonly', THEME['combo_fg'])],
+        )
         self._style.configure('TLabelframe', background=THEME['bg'], foreground=THEME['fg'])
         self._style.configure('TLabelframe.Label', background=THEME['bg'], foreground=THEME['fg'])
         self._style.configure('TProgressbar', troughcolor=THEME['panel'], background=THEME['accent'])
@@ -139,7 +162,7 @@ class PipelineRunnerApp:
         ttk.Checkbutton(options, text='Force stamp workspace', variable=self.force_stamp_var).pack(anchor='w')
         ttk.Checkbutton(options, text='Create .bak files during patch apply', variable=self.backup_patches_var).pack(anchor='w')
         ttk.Checkbutton(options, text='Promote after validate', variable=self.promote_after_var).pack(anchor='w')
-        ttk.Checkbutton(options, text='Approve host writes outside _sanbox', variable=self.allow_host_writes_var).pack(anchor='w')
+        ttk.Checkbutton(options, text='Approve host writes outside _sandbox', variable=self.allow_host_writes_var).pack(anchor='w')
         ttk.Label(options, textvariable=self.backend_status_var, style='Muted.TLabel', wraplength=400, justify='left').pack(anchor='w', pady=(6, 0))
         speed_row = ttk.Frame(parent, style='Panel.TFrame')
         speed_row.pack(fill='x', pady=(0, 8))
@@ -225,7 +248,7 @@ class PipelineRunnerApp:
 
     def _labeled_combo(self, parent: ttk.Frame, row: int, label: str, variable: tk.StringVar, values: list[str]) -> None:
         ttk.Label(parent, text=label, style='Panel.TLabel').grid(row=row, column=0, sticky='w', pady=3)
-        ttk.Combobox(parent, textvariable=variable, values=values, state='readonly').grid(row=row, column=1, sticky='ew', pady=3, padx=(8, 8))
+        ttk.Combobox(parent, textvariable=variable, values=values, state='readonly', style='Runner.TCombobox').grid(row=row, column=1, sticky='ew', pady=3, padx=(8, 8))
 
     def _sync_defaults(self, *_args) -> None:
         run_id = self.run_id_var.get().strip() or 'demo_run'
@@ -233,7 +256,7 @@ class PipelineRunnerApp:
             template_id = self.template_var.get().strip()
             template_name = self.templates.get(template_id, {}).get('name', 'Demo App')
             self.name_var.set(f'{template_name} Demo')
-        default_promote = (WORKSPACE_ROOT / '_sanbox' / 'promoted' / run_id).resolve()
+        default_promote = sandbox_path('promoted', run_id).resolve()
         self.promote_destination_var.set(str(default_promote))
 
     def _sync_backend_defaults(self, *_args) -> None:

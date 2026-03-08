@@ -11,6 +11,10 @@ WORKSPACE_ROOT = LIBRARY_ROOT.parent
 CATALOG_DIR = LIBRARY_ROOT / "catalog"
 DEFAULT_CATALOG_DB_PATH = CATALOG_DIR / "catalog.db"
 DEFAULT_MAPPING_REPORT_PATH = CATALOG_DIR / "canonical_mapping_report.json"
+SANDBOX_DIRNAME = "_sandbox"
+LEGACY_SANDBOX_DIRNAME = "_sanbox"
+CANONICAL_SANDBOX_ROOT = (WORKSPACE_ROOT / SANDBOX_DIRNAME).resolve()
+LEGACY_SANDBOX_ROOT = (WORKSPACE_ROOT / LEGACY_SANDBOX_DIRNAME).resolve()
 
 CATALOG_BUILD_TABLE = "catalog_builds"
 
@@ -18,6 +22,25 @@ VALID_VENDOR_MODES = {"module_ref", "static"}
 VALID_RESOLUTION_PROFILES = {"app_ready", "strict", "explicit_pack"}
 SPECIAL_UI_PACKS = {"explicit"}
 IGNORED_EXTERNAL_DEPENDENCIES = {"ttk", "tkinter", "tk"}
+
+
+def sandbox_path(*parts: str) -> Path:
+    return CANONICAL_SANDBOX_ROOT.joinpath(*parts)
+
+
+def canonicalize_sandbox_path(path: Path | str | None) -> Path:
+    if path is None or not str(path).strip():
+        return CANONICAL_SANDBOX_ROOT
+    candidate = Path(path).expanduser().resolve()
+    if candidate.exists():
+        return candidate
+    if LEGACY_SANDBOX_DIRNAME in candidate.parts:
+        remapped = Path(*(
+            SANDBOX_DIRNAME if part == LEGACY_SANDBOX_DIRNAME else part
+            for part in candidate.parts
+        ))
+        return remapped.resolve()
+    return candidate
 
 FOUNDRY_THEME = {
     "background": "#14181D",

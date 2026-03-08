@@ -11,11 +11,11 @@ from pathlib import Path, PurePosixPath
 from threading import Event
 from typing import Callable, Iterable, Optional
 
-from .constants import WORKSPACE_ROOT
+from .constants import CANONICAL_SANDBOX_ROOT, LEGACY_SANDBOX_ROOT, SANDBOX_DIRNAME, WORKSPACE_ROOT, canonicalize_sandbox_path, sandbox_path
 
 HOST_REPO_ROOT = Path(WORKSPACE_ROOT).resolve()
-HOST_SANDBOX_ROOT = (HOST_REPO_ROOT / '_sanbox').resolve()
-HOST_SANDBOX_APPS_ROOT = (HOST_SANDBOX_ROOT / 'apps').resolve()
+HOST_SANDBOX_ROOT = CANONICAL_SANDBOX_ROOT.resolve()
+HOST_SANDBOX_APPS_ROOT = sandbox_path('apps').resolve()
 CONTAINER_REPO_ROOT = PurePosixPath('/repo')
 CONTAINER_WORKSPACE_ROOT = PurePosixPath('/workspace')
 CONTAINER_SANDBOX_APPS_ROOT = CONTAINER_WORKSPACE_ROOT / 'apps'
@@ -68,7 +68,7 @@ class SandboxRunConfig:
     allow_host_writes: bool = False
 
     def resolved_sandbox_root(self) -> Path:
-        return Path(self.sandbox_root).resolve() if self.sandbox_root else HOST_SANDBOX_APPS_ROOT
+        return canonicalize_sandbox_path(self.sandbox_root) if self.sandbox_root else HOST_SANDBOX_APPS_ROOT
 
     def resolved_workspace_root(self) -> Path:
         return self.resolved_sandbox_root() / self.run_id
@@ -78,7 +78,7 @@ class SandboxRunConfig:
 
     def resolved_promote_destination(self) -> Path:
         if self.promote_destination:
-            return Path(self.promote_destination).resolve()
+            return canonicalize_sandbox_path(self.promote_destination)
         return (HOST_SANDBOX_ROOT / 'promoted' / self.run_id).resolve()
 
 
@@ -152,7 +152,7 @@ def build_sandbox_command_queue(config: SandboxRunConfig) -> dict:
         if not _is_relative_to(sandbox_root, HOST_SANDBOX_APPS_ROOT):
             raise ValueError(f'Docker backend requires sandbox_root under {HOST_SANDBOX_APPS_ROOT}.')
         if config.promote_after and not _is_relative_to(promote_destination, HOST_SANDBOX_ROOT) and not config.allow_host_writes:
-            raise ValueError('Promotion outside _sanbox requires explicit host-write approval. Enable approval in the runner UI before building the queue.')
+            raise ValueError('Promotion outside _sandbox requires explicit host-write approval. Enable approval in the runner UI before building the queue.')
         container_plan = _build_docker_commands(config, workspace_root, patch_paths, redactions)
         commands.extend(container_plan['commands'])
         notices.extend(container_plan['notices'])
@@ -173,11 +173,11 @@ def build_sandbox_command_queue(config: SandboxRunConfig) -> dict:
                 redactions=redactions,
             ))
         if not _is_relative_to(promote_destination, HOST_SANDBOX_ROOT):
-            notices.append('Host promotion is queued as a separate approved step because the destination is outside _sanbox.')
+            notices.append('Host promotion is queued as a separate approved step because the destination is outside _sandbox.')
     else:
         commands.extend(_build_local_commands(config, workspace_root, patch_paths, promote_destination, redactions))
         if not _is_relative_to(promote_destination, HOST_SANDBOX_ROOT) and config.promote_after:
-            notices.append('Host promotion target is outside _sanbox. Terminal output is redacted, but files will be written to the approved host destination.')
+            notices.append('Host promotion target is outside _sandbox. Terminal output is redacted, but files will be written to the approved host destination.')
 
     return {
         'workspace_root': str(workspace_root),
@@ -416,7 +416,9 @@ def _build_redactions(config: SandboxRunConfig, workspace_root: Path, promote_de
     mappings: list[tuple[str, str]] = []
     mappings.append((str(HOST_REPO_ROOT), '/repo'))
     mappings.append((str(HOST_SANDBOX_ROOT), '/workspace'))
+    mappings.append((str(LEGACY_SANDBOX_ROOT), '/workspace'))
     mappings.append((str(HOST_SANDBOX_APPS_ROOT), '/workspace/apps'))
+    mappings.append((str(LEGACY_SANDBOX_ROOT / 'apps'), '/workspace/apps'))
     mappings.append((str(workspace_root), f'/workspace/apps/{config.run_id}'))
     if _is_relative_to(promote_destination, HOST_SANDBOX_ROOT):
         relative = promote_destination.relative_to(HOST_SANDBOX_ROOT).as_posix()

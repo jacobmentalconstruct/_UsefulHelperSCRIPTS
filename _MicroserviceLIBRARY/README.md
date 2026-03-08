@@ -37,7 +37,7 @@ run.bat
 3. Launch the sandbox runner UI:
 
 ```bat
-run_sanboxer.bat
+run_sandboxer.bat
 ```
 
 4. Or use the CLI directly:
@@ -81,10 +81,10 @@ python -m library.app_factory stamp-template headless_scanner --destination _des
 Run the sandbox workflow end to end:
 
 ```powershell
-python -m library.app_factory sandbox-stamp --run-id foundry_project_lens_20260307 --manifest _sanbox\manifests\foundry_project_lens_20260307.json --force
-python -m library.app_factory sandbox-apply _sanbox\apps\foundry_project_lens_20260307 _sanbox\apps\foundry_project_lens_20260307\patches\project_lens_transform.json
-python -m library.app_factory sandbox-validate _sanbox\apps\foundry_project_lens_20260307
-python -m library.app_factory sandbox-promote _sanbox\apps\foundry_project_lens_20260307 --destination _sanbox\promoted\foundry_project_lens_20260307 --force
+python -m library.app_factory sandbox-stamp --run-id foundry_project_lens_20260307 --manifest _sandbox\manifests\foundry_project_lens_20260307.json --force
+python -m library.app_factory sandbox-apply _sandbox\apps\foundry_project_lens_20260307 _sandbox\apps\foundry_project_lens_20260307\patches\project_lens_transform.json
+python -m library.app_factory sandbox-validate _sandbox\apps\foundry_project_lens_20260307
+python -m library.app_factory sandbox-promote _sandbox\apps\foundry_project_lens_20260307 --destination _sandbox\promoted\foundry_project_lens_20260307 --force
 ```
 
 ## Notes
@@ -94,7 +94,7 @@ python -m library.app_factory sandbox-promote _sanbox\apps\foundry_project_lens_
 - The core librarian/catalog/stamper flow does not require third-party Python packages beyond a standard Python installation with Tkinter.
 - Ollama is optional and only used for assistant features.
 - Newly stamped Tk apps now default to the foundry palette in `ui_schema.json`.
-- The pipeline runner supports `local` and `docker` backends. Docker mode forces `static` vendoring, redacts displayed paths to logical `/repo` and `/workspace` roots, and requires explicit approval before promoting outside `_sanbox`.
+- The pipeline runner supports `local` and `docker` backends. Docker mode forces `static` vendoring, redacts displayed paths to logical `/repo` and `/workspace` roots, and requires explicit approval before promoting outside `_sandbox`. Legacy `_sanbox` paths are still accepted by the tooling.
 - If Docker is not installed or the daemon is not running, the runner shows clear remediation text instead of failing with a raw subprocess error.
 - Some microservices import optional third-party packages for specialized workflows. Those are documented in `requirements.txt` but are not required for launching the librarian UI.
 

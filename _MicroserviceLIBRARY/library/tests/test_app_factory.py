@@ -9,6 +9,7 @@ from unittest import mock
 from pathlib import Path
 
 from library.app_factory.catalog import CatalogBuilder, stable_id
+from library.app_factory.constants import canonicalize_sandbox_path
 from library.app_factory.models import AppBlueprintManifest
 from library.app_factory.packs import InstallPackManager
 from library.app_factory.pipeline_runner import SandboxRunConfig, build_sandbox_command_queue
@@ -454,7 +455,7 @@ class AppFactoryIntegrationTests(unittest.TestCase):
     def test_build_docker_sandbox_command_queue(self):
         patch_manifest = self.temp_root / 'docker_runner_patch.json'
         patch_manifest.write_text('{}', encoding='utf-8')
-        docker_sandbox_root = self.repo_root / '_sanbox' / 'apps'
+        docker_sandbox_root = self.repo_root / '_sandbox' / 'apps'
         with mock.patch('library.app_factory.pipeline_runner.docker_preflight', return_value={
             'available': True,
             'binary_path': 'docker',
@@ -467,7 +468,7 @@ class AppFactoryIntegrationTests(unittest.TestCase):
                 name='Docker Runner Case',
                 sandbox_root=str(docker_sandbox_root),
                 patch_manifests=[str(patch_manifest)],
-                promote_destination=str(self.repo_root / '_sanbox' / 'promoted' / 'docker_runner_case'),
+                promote_destination=str(self.repo_root / '_sandbox' / 'promoted' / 'docker_runner_case'),
                 vendor_mode='static',
                 execution_backend='docker',
             )
@@ -490,7 +491,7 @@ class AppFactoryIntegrationTests(unittest.TestCase):
             config = SandboxRunConfig(
                 run_id='docker_runner_case',
                 template_id='ui_explorer_workbench',
-                sandbox_root=str(self.repo_root / '_sanbox' / 'apps'),
+                sandbox_root=str(self.repo_root / '_sandbox' / 'apps'),
                 promote_destination=str(self.temp_root / 'outside' / 'app'),
                 vendor_mode='static',
                 execution_backend='docker',
@@ -498,6 +499,28 @@ class AppFactoryIntegrationTests(unittest.TestCase):
             )
             with self.assertRaises(ValueError):
                 build_sandbox_command_queue(config)
+
+    def test_legacy_sanbox_paths_remap_to_canonical_sandbox(self):
+        legacy_apps_root = self.repo_root / '_sanbox' / 'apps'
+        legacy_promoted_root = self.repo_root / '_sanbox' / 'promoted'
+        config = SandboxRunConfig(
+            run_id='legacy_case',
+            template_id='ui_explorer_workbench',
+            sandbox_root=str(legacy_apps_root),
+            promote_destination=str(legacy_promoted_root / 'legacy_case'),
+        )
+        self.assertEqual(
+            config.resolved_sandbox_root(),
+            (self.repo_root / '_sandbox' / 'apps').resolve(),
+        )
+        self.assertEqual(
+            config.resolved_promote_destination(),
+            (self.repo_root / '_sandbox' / 'promoted' / 'legacy_case').resolve(),
+        )
+        self.assertEqual(
+            canonicalize_sandbox_path(legacy_apps_root / 'legacy_case'),
+            (self.repo_root / '_sandbox' / 'apps' / 'legacy_case').resolve(),
+        )
 
     def test_query_service_uses_catalog_env_override(self):
         custom_catalog = self.temp_root / 'env_catalog.db'

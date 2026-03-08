@@ -1,0 +1,1297 @@
+{"timestamp": "2026-03-08T08:50:47", "type": "run_started", "step_count": 3, "run_log_path": "/workspace\\runs\\demonstration_first_run_20260308T085047.jsonl"}
+{"timestamp": "2026-03-08T08:50:47", "type": "step_started", "step_index": 1, "label": "Stamp sandbox workspace", "command": "/repo\\.venv\\Scripts\\python.exe -m library.app_factory sandbox-stamp --run-id demonstration_first_run --template-id ui_explorer_workbench --sandbox-root /workspace/apps --name \"Demo App v1.0\" --vendor-mode module_ref --resolution-profile app_ready --force"}
+{"timestamp": "2026-03-08T08:50:47", "type": "command_char", "text": "/", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:47", "type": "command_char", "text": "r", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:47", "type": "command_char", "text": "e", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:47", "type": "command_char", "text": "p", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:47", "type": "command_char", "text": "o", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:47", "type": "command_char", "text": ">", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:47", "type": "command_char", "text": " ", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:47", "type": "command_char", "text": "/", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:47", "type": "command_char", "text": "r", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:47", "type": "command_char", "text": "e", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:47", "type": "command_char", "text": "p", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:47", "type": "command_char", "text": "o", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:47", "type": "command_char", "text": "\\", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:47", "type": "command_char", "text": ".", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:47", "type": "command_char", "text": "v", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:47", "type": "command_char", "text": "e", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:47", "type": "command_char", "text": "n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:47", "type": "command_char", "text": "v", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:47", "type": "command_char", "text": "\\", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:47", "type": "command_char", "text": "S", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:47", "type": "command_char", "text": "c", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:47", "type": "command_char", "text": "r", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:47", "type": "command_char", "text": "i", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:47", "type": "command_char", "text": "p", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:47", "type": "command_char", "text": "t", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:47", "type": "command_char", "text": "s", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:47", "type": "command_char", "text": "\\", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:47", "type": "command_char", "text": "p", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:47", "type": "command_char", "text": "y", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:47", "type": "command_char", "text": "t", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:47", "type": "command_char", "text": "h", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:47", "type": "command_char", "text": "o", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:47", "type": "command_char", "text": "n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:47", "type": "command_char", "text": ".", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:47", "type": "command_char", "text": "e", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:47", "type": "command_char", "text": "x", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:47", "type": "command_char", "text": "e", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:47", "type": "command_char", "text": " ", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:47", "type": "command_char", "text": "-", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:47", "type": "command_char", "text": "m", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:47", "type": "command_char", "text": " ", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:47", "type": "command_char", "text": "l", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:47", "type": "command_char", "text": "i", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:47", "type": "command_char", "text": "b", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:47", "type": "command_char", "text": "r", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:47", "type": "command_char", "text": "a", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:47", "type": "command_char", "text": "r", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:47", "type": "command_char", "text": "y", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:47", "type": "command_char", "text": ".", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:47", "type": "command_char", "text": "a", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:47", "type": "command_char", "text": "p", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:47", "type": "command_char", "text": "p", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:47", "type": "command_char", "text": "_", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:47", "type": "command_char", "text": "f", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:47", "type": "command_char", "text": "a", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:47", "type": "command_char", "text": "c", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:47", "type": "command_char", "text": "t", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:47", "type": "command_char", "text": "o", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:47", "type": "command_char", "text": "r", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:47", "type": "command_char", "text": "y", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:47", "type": "command_char", "text": " ", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:47", "type": "command_char", "text": "s", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:47", "type": "command_char", "text": "a", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:47", "type": "command_char", "text": "n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:48", "type": "command_char", "text": "d", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:48", "type": "command_char", "text": "b", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:48", "type": "command_char", "text": "o", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:48", "type": "command_char", "text": "x", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:48", "type": "command_char", "text": "-", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:48", "type": "command_char", "text": "s", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:48", "type": "command_char", "text": "t", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:48", "type": "command_char", "text": "a", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:48", "type": "command_char", "text": "m", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:48", "type": "command_char", "text": "p", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:48", "type": "command_char", "text": " ", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:48", "type": "command_char", "text": "-", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:48", "type": "command_char", "text": "-", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:48", "type": "command_char", "text": "r", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:48", "type": "command_char", "text": "u", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:48", "type": "command_char", "text": "n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:48", "type": "command_char", "text": "-", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:48", "type": "command_char", "text": "i", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:48", "type": "command_char", "text": "d", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:48", "type": "command_char", "text": " ", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:48", "type": "command_char", "text": "d", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:48", "type": "command_char", "text": "e", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:48", "type": "command_char", "text": "m", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:48", "type": "command_char", "text": "o", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:48", "type": "command_char", "text": "n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:48", "type": "command_char", "text": "s", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:48", "type": "command_char", "text": "t", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:48", "type": "command_char", "text": "r", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:48", "type": "command_char", "text": "a", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:48", "type": "command_char", "text": "t", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:48", "type": "command_char", "text": "i", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:48", "type": "command_char", "text": "o", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:48", "type": "command_char", "text": "n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:48", "type": "command_char", "text": "_", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:48", "type": "command_char", "text": "f", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:48", "type": "command_char", "text": "i", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:48", "type": "command_char", "text": "r", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:48", "type": "command_char", "text": "s", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:48", "type": "command_char", "text": "t", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:48", "type": "command_char", "text": "_", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:48", "type": "command_char", "text": "r", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:48", "type": "command_char", "text": "u", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:48", "type": "command_char", "text": "n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:48", "type": "command_char", "text": " ", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:48", "type": "command_char", "text": "-", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:48", "type": "command_char", "text": "-", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:48", "type": "command_char", "text": "t", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:48", "type": "command_char", "text": "e", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:48", "type": "command_char", "text": "m", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:48", "type": "command_char", "text": "p", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:48", "type": "command_char", "text": "l", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:48", "type": "command_char", "text": "a", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:48", "type": "command_char", "text": "t", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:48", "type": "command_char", "text": "e", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:48", "type": "command_char", "text": "-", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:48", "type": "command_char", "text": "i", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:48", "type": "command_char", "text": "d", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:48", "type": "command_char", "text": " ", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:48", "type": "command_char", "text": "u", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:48", "type": "command_char", "text": "i", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:48", "type": "command_char", "text": "_", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:48", "type": "command_char", "text": "e", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:48", "type": "command_char", "text": "x", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:48", "type": "command_char", "text": "p", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:48", "type": "command_char", "text": "l", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:48", "type": "command_char", "text": "o", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:48", "type": "command_char", "text": "r", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:48", "type": "command_char", "text": "e", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:48", "type": "command_char", "text": "r", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:48", "type": "command_char", "text": "_", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:48", "type": "command_char", "text": "w", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:48", "type": "command_char", "text": "o", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:48", "type": "command_char", "text": "r", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:48", "type": "command_char", "text": "k", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:48", "type": "command_char", "text": "b", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:48", "type": "command_char", "text": "e", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:48", "type": "command_char", "text": "n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:48", "type": "command_char", "text": "c", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:48", "type": "command_char", "text": "h", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:48", "type": "command_char", "text": " ", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:48", "type": "command_char", "text": "-", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:48", "type": "command_char", "text": "-", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:48", "type": "command_char", "text": "s", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:48", "type": "command_char", "text": "a", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:48", "type": "command_char", "text": "n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:48", "type": "command_char", "text": "d", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:48", "type": "command_char", "text": "b", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:48", "type": "command_char", "text": "o", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:48", "type": "command_char", "text": "x", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:48", "type": "command_char", "text": "-", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:48", "type": "command_char", "text": "r", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:48", "type": "command_char", "text": "o", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:48", "type": "command_char", "text": "o", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:48", "type": "command_char", "text": "t", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:48", "type": "command_char", "text": " ", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:48", "type": "command_char", "text": "/", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:48", "type": "command_char", "text": "w", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:48", "type": "command_char", "text": "o", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:48", "type": "command_char", "text": "r", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:48", "type": "command_char", "text": "k", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:48", "type": "command_char", "text": "s", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:48", "type": "command_char", "text": "p", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:48", "type": "command_char", "text": "a", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:48", "type": "command_char", "text": "c", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:48", "type": "command_char", "text": "e", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:48", "type": "command_char", "text": "/", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:48", "type": "command_char", "text": "a", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:48", "type": "command_char", "text": "p", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:48", "type": "command_char", "text": "p", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:48", "type": "command_char", "text": "s", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:48", "type": "command_char", "text": " ", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:48", "type": "command_char", "text": "-", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:48", "type": "command_char", "text": "-", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:49", "type": "command_char", "text": "n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:49", "type": "command_char", "text": "a", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:49", "type": "command_char", "text": "m", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:49", "type": "command_char", "text": "e", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:49", "type": "command_char", "text": " ", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:49", "type": "command_char", "text": "\"", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:49", "type": "command_char", "text": "D", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:49", "type": "command_char", "text": "e", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:49", "type": "command_char", "text": "m", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:49", "type": "command_char", "text": "o", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:49", "type": "command_char", "text": " ", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:49", "type": "command_char", "text": "A", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:49", "type": "command_char", "text": "p", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:49", "type": "command_char", "text": "p", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:49", "type": "command_char", "text": " ", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:49", "type": "command_char", "text": "v", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:49", "type": "command_char", "text": "1", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:49", "type": "command_char", "text": ".", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:49", "type": "command_char", "text": "0", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:49", "type": "command_char", "text": "\"", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:49", "type": "command_char", "text": " ", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:49", "type": "command_char", "text": "-", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:49", "type": "command_char", "text": "-", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:49", "type": "command_char", "text": "v", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:49", "type": "command_char", "text": "e", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:49", "type": "command_char", "text": "n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:49", "type": "command_char", "text": "d", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:49", "type": "command_char", "text": "o", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:49", "type": "command_char", "text": "r", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:49", "type": "command_char", "text": "-", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:49", "type": "command_char", "text": "m", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:49", "type": "command_char", "text": "o", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:49", "type": "command_char", "text": "d", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:49", "type": "command_char", "text": "e", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:49", "type": "command_char", "text": " ", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:49", "type": "command_char", "text": "m", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:49", "type": "command_char", "text": "o", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:49", "type": "command_char", "text": "d", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:49", "type": "command_char", "text": "u", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:49", "type": "command_char", "text": "l", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:49", "type": "command_char", "text": "e", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:49", "type": "command_char", "text": "_", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:49", "type": "command_char", "text": "r", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:49", "type": "command_char", "text": "e", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:49", "type": "command_char", "text": "f", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:49", "type": "command_char", "text": " ", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:49", "type": "command_char", "text": "-", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:49", "type": "command_char", "text": "-", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:49", "type": "command_char", "text": "r", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:49", "type": "command_char", "text": "e", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:49", "type": "command_char", "text": "s", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:49", "type": "command_char", "text": "o", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:49", "type": "command_char", "text": "l", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:49", "type": "command_char", "text": "u", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:49", "type": "command_char", "text": "t", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:49", "type": "command_char", "text": "i", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:49", "type": "command_char", "text": "o", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:49", "type": "command_char", "text": "n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:49", "type": "command_char", "text": "-", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:49", "type": "command_char", "text": "p", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:49", "type": "command_char", "text": "r", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:49", "type": "command_char", "text": "o", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:49", "type": "command_char", "text": "f", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:49", "type": "command_char", "text": "i", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:49", "type": "command_char", "text": "l", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:49", "type": "command_char", "text": "e", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:49", "type": "command_char", "text": " ", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:49", "type": "command_char", "text": "a", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:49", "type": "command_char", "text": "p", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:49", "type": "command_char", "text": "p", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:49", "type": "command_char", "text": "_", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:49", "type": "command_char", "text": "r", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:49", "type": "command_char", "text": "e", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:49", "type": "command_char", "text": "a", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:49", "type": "command_char", "text": "d", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:49", "type": "command_char", "text": "y", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:49", "type": "command_char", "text": " ", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:49", "type": "command_char", "text": "-", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:49", "type": "command_char", "text": "-", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:49", "type": "command_char", "text": "f", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:49", "type": "command_char", "text": "o", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:49", "type": "command_char", "text": "r", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:49", "type": "command_char", "text": "c", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:49", "type": "command_char", "text": "e", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:49", "type": "command_char", "text": "\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "{\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "  \"workspace_root\": \"C:\\\\Users\\\\jacob\\\\Documents\\\\_UsefulHelperSCRIPTS\\\\_MicroserviceLIBRARY\\\\_sanbox\\\\apps\\\\demonstration_first_run\",\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "  \"base_app_dir\": \"C:\\\\Users\\\\jacob\\\\Documents\\\\_UsefulHelperSCRIPTS\\\\_MicroserviceLIBRARY\\\\_sanbox\\\\apps\\\\demonstration_first_run\\\\base\",\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "  \"working_app_dir\": \"C:\\\\Users\\\\jacob\\\\Documents\\\\_UsefulHelperSCRIPTS\\\\_MicroserviceLIBRARY\\\\_sanbox\\\\apps\\\\demonstration_first_run\\\\working\",\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "  \"state_path\": \"C:\\\\Users\\\\jacob\\\\Documents\\\\_UsefulHelperSCRIPTS\\\\_MicroserviceLIBRARY\\\\_sanbox\\\\apps\\\\demonstration_first_run\\\\sandbox_state.json\",\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "  \"stamp_report\": {\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "    \"app_dir\": \"C:\\\\Users\\\\jacob\\\\Documents\\\\_UsefulHelperSCRIPTS\\\\_MicroserviceLIBRARY\\\\_sanbox\\\\apps\\\\demonstration_first_run\\\\base\",\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "    \"written_files\": [\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "      \"C:\\\\Users\\\\jacob\\\\Documents\\\\_UsefulHelperSCRIPTS\\\\_MicroserviceLIBRARY\\\\_sanbox\\\\apps\\\\demonstration_first_run\\\\base\\\\app_manifest.json\",\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "      \"C:\\\\Users\\\\jacob\\\\Documents\\\\_UsefulHelperSCRIPTS\\\\_MicroserviceLIBRARY\\\\_sanbox\\\\apps\\\\demonstration_first_run\\\\base\\\\settings.json\",\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "      \"C:\\\\Users\\\\jacob\\\\Documents\\\\_UsefulHelperSCRIPTS\\\\_MicroserviceLIBRARY\\\\_sanbox\\\\apps\\\\demonstration_first_run\\\\base\\\\requirements.txt\",\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "      \"C:\\\\Users\\\\jacob\\\\Documents\\\\_UsefulHelperSCRIPTS\\\\_MicroserviceLIBRARY\\\\_sanbox\\\\apps\\\\demonstration_first_run\\\\base\\\\pyrightconfig.json\",\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "      \"C:\\\\Users\\\\jacob\\\\Documents\\\\_UsefulHelperSCRIPTS\\\\_MicroserviceLIBRARY\\\\_sanbox\\\\apps\\\\demonstration_first_run\\\\base\\\\.env\",\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "      \"C:\\\\Users\\\\jacob\\\\Documents\\\\_UsefulHelperSCRIPTS\\\\_MicroserviceLIBRARY\\\\_sanbox\\\\apps\\\\demonstration_first_run\\\\base\\\\backend.py\",\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "      \"C:\\\\Users\\\\jacob\\\\Documents\\\\_UsefulHelperSCRIPTS\\\\_MicroserviceLIBRARY\\\\_sanbox\\\\apps\\\\demonstration_first_run\\\\base\\\\ui.py\",\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "      \"C:\\\\Users\\\\jacob\\\\Documents\\\\_UsefulHelperSCRIPTS\\\\_MicroserviceLIBRARY\\\\_sanbox\\\\apps\\\\demonstration_first_run\\\\base\\\\app.py\",\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "      \"C:\\\\Users\\\\jacob\\\\Documents\\\\_UsefulHelperSCRIPTS\\\\_MicroserviceLIBRARY\\\\_sanbox\\\\apps\\\\demonstration_first_run\\\\base\\\\ui_schema.json\",\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "      \"C:\\\\Users\\\\jacob\\\\Documents\\\\_UsefulHelperSCRIPTS\\\\_MicroserviceLIBRARY\\\\_sanbox\\\\apps\\\\demonstration_first_run\\\\base\\\\.stamper_lock.json\"\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "    ],\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "    \"validation\": {\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "      \"warnings\": [],\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "      \"errors\": [],\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "      \"cycle_warnings\": [],\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "      \"missing_dependencies\": [],\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "      \"compile_results\": {\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "        \"compiled\": [\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "          \"C:\\\\Users\\\\jacob\\\\Documents\\\\_UsefulHelperSCRIPTS\\\\_MicroserviceLIBRARY\\\\_sanbox\\\\apps\\\\demonstration_first_run\\\\base\\\\app.py\",\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "          \"C:\\\\Users\\\\jacob\\\\Documents\\\\_UsefulHelperSCRIPTS\\\\_MicroserviceLIBRARY\\\\_sanbox\\\\apps\\\\demonstration_first_run\\\\base\\\\backend.py\",\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "          \"C:\\\\Users\\\\jacob\\\\Documents\\\\_UsefulHelperSCRIPTS\\\\_MicroserviceLIBRARY\\\\_sanbox\\\\apps\\\\demonstration_first_run\\\\base\\\\ui.py\"\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "        ],\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "        \"errors\": []\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "      },\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "      \"ok\": true\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "    },\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "    \"external_dependencies\": [],\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "    \"resolved_artifacts\": [\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "      {\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "        \"artifact_id\": \"artifact_e97d77e2c31a6782aafe14a2\",\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "        \"source_path\": \"C:\\\\Users\\\\jacob\\\\Documents\\\\_UsefulHelperSCRIPTS\\\\_MicroserviceLIBRARY\\\\library\\\\microservices\\\\ui\\\\_ExplorerWidgetMS.py\",\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "        \"target_path\": \"\",\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "        \"file_cid\": \"6d929a2a3d2cc8a276fa9abb183124f7b528185fedcb061b488e4694c2af3038\",\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "        \"materialization_mode\": \"module_ref\",\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "        \"import_key\": \"library.microservices.ui._ExplorerWidgetMS\",\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "        \"class_name\": \"ExplorerWidgetMS\",\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "        \"service_name\": \"ExplorerWidgetMS\"\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "      },\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "      {\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "        \"artifact_id\": \"artifact_f5951d0b8846bd2b752543cf\",\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "        \"source_path\": \"C:\\\\Users\\\\jacob\\\\Documents\\\\_UsefulHelperSCRIPTS\\\\_MicroserviceLIBRARY\\\\library\\\\base_service.py\",\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "        \"target_path\": \"\",\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "        \"file_cid\": \"34d390f2aae13c2889526353f9b8e0e7bb90dcc77b11615aa3e83e5ae4d72b68\",\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "        \"materialization_mode\": \"module_ref\",\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "        \"import_key\": \"library.base_service\",\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "        \"class_name\": \"\",\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "        \"service_name\": \"\"\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "      },\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "      {\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "        \"artifact_id\": \"artifact_948d48e299f0eef72582d59c\",\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "        \"source_path\": \"C:\\\\Users\\\\jacob\\\\Documents\\\\_UsefulHelperSCRIPTS\\\\_MicroserviceLIBRARY\\\\library\\\\microservice_std_lib.py\",\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "        \"target_path\": \"\",\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "        \"file_cid\": \"b78a392838eda00a11a3ae26cfb090a52ace554493627f7493e5d2e4de47861c\",\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "        \"materialization_mode\": \"module_ref\",\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "        \"import_key\": \"library.microservice_std_lib\",\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "        \"class_name\": \"\",\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "        \"service_name\": \"\"\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "      },\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "      {\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "        \"artifact_id\": \"artifact_5185031658569baf5f30c29d\",\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "        \"source_path\": \"C:\\\\Users\\\\jacob\\\\Documents\\\\_UsefulHelperSCRIPTS\\\\_MicroserviceLIBRARY\\\\library\\\\microservices\\\\ui\\\\_TkinterAppShellMS.py\",\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "        \"target_path\": \"\",\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "        \"file_cid\": \"11f7001e086e6343ad35babafdb2aebc0b648784dc01558c9242ffede39beb38\",\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "        \"materialization_mode\": \"module_ref\",\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "        \"import_key\": \"library.microservices.ui._TkinterAppShellMS\",\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "        \"class_name\": \"TkinterAppShellMS\",\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "        \"service_name\": \"TkinterAppShell\"\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "      },\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "      {\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "        \"artifact_id\": \"artifact_38e475ce7f8e59e90ba8fd7d\",\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "        \"source_path\": \"C:\\\\Users\\\\jacob\\\\Documents\\\\_UsefulHelperSCRIPTS\\\\_MicroserviceLIBRARY\\\\library\\\\microservices\\\\ui\\\\_TkinterThemeManagerMS.py\",\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "        \"target_path\": \"\",\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "        \"file_cid\": \"4271705029891a2e438fe179e92e3c83f17b406b02257f0b883f0c751b48dfbe\",\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "        \"materialization_mode\": \"module_ref\",\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "        \"import_key\": \"library.microservices.ui._TkinterThemeManagerMS\",\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "        \"class_name\": \"\",\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "        \"service_name\": \"\"\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "      },\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "      {\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "        \"artifact_id\": \"artifact_c82521756047b742aa945837\",\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "        \"source_path\": \"C:\\\\Users\\\\jacob\\\\Documents\\\\_UsefulHelperSCRIPTS\\\\_MicroserviceLIBRARY\\\\library\\\\microservices\\\\ui\\\\_WorkbenchLayoutMS.py\",\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "        \"target_path\": \"\",\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "        \"file_cid\": \"ca7861c2f5858a54e3688271115b06bfbddfa333980f27819037bf69f89d60c2\",\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "        \"materialization_mode\": \"module_ref\",\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "        \"import_key\": \"library.microservices.ui._WorkbenchLayoutMS\",\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "        \"class_name\": \"WorkbenchLayoutMS\",\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "        \"service_name\": \"WorkbenchLayout\"\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "      }\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "    ],\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "    \"lockfile_path\": \"C:\\\\Users\\\\jacob\\\\Documents\\\\_UsefulHelperSCRIPTS\\\\_MicroserviceLIBRARY\\\\_sanbox\\\\apps\\\\demonstration_first_run\\\\base\\\\.stamper_lock.json\",\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "    \"manifest_validation\": {\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "      \"ok\": true,\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "      \"errors\": [],\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "      \"warnings\": [],\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "      \"normalized_manifest\": {\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "        \"app_id\": \"app_074096e81bbaa478dcb05978\",\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "        \"name\": \"Demo App v1.0\",\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "        \"destination\": \"C:\\\\Users\\\\jacob\\\\Documents\\\\_UsefulHelperSCRIPTS\\\\_MicroserviceLIBRARY\\\\_sanbox\\\\apps\\\\demonstration_first_run\\\\base\",\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "        \"vendor_mode\": \"module_ref\",\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "        \"resolution_profile\": \"app_ready\",\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "        \"ui_pack\": \"tkinter_base_pack\",\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "        \"orchestrator\": \"tkinter_shell_orchestrator\",\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "        \"manager_layers\": [],\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "        \"microservices\": [\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "          \"ExplorerWidgetMS\"\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "        ],\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "        \"modules\": [],\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "        \"settings_defaults\": {\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "          \"app_title\": \"Demo App v1.0\",\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "          \"assistant_enabled\": false\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "        },\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "        \"hooks\": {}\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "      }\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "    }\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "  },\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "  \"working_stamp_integrity\": {\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "    \"ok\": true,\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "    \"checked\": [\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "      \"C:\\\\Users\\\\jacob\\\\Documents\\\\_UsefulHelperSCRIPTS\\\\_MicroserviceLIBRARY\\\\_sanbox\\\\apps\\\\demonstration_first_run\\\\working\\\\app.py\",\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "      \"C:\\\\Users\\\\jacob\\\\Documents\\\\_UsefulHelperSCRIPTS\\\\_MicroserviceLIBRARY\\\\_sanbox\\\\apps\\\\demonstration_first_run\\\\working\\\\backend.py\",\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "      \"C:\\\\Users\\\\jacob\\\\Documents\\\\_UsefulHelperSCRIPTS\\\\_MicroserviceLIBRARY\\\\_sanbox\\\\apps\\\\demonstration_first_run\\\\working\\\\ui.py\",\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "      \"C:\\\\Users\\\\jacob\\\\Documents\\\\_UsefulHelperSCRIPTS\\\\_MicroserviceLIBRARY\\\\_sanbox\\\\apps\\\\demonstration_first_run\\\\working\\\\requirements.txt\",\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "      \"C:\\\\Users\\\\jacob\\\\Documents\\\\_UsefulHelperSCRIPTS\\\\_MicroserviceLIBRARY\\\\_sanbox\\\\apps\\\\demonstration_first_run\\\\working\\\\pyrightconfig.json\",\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "      \"C:\\\\Users\\\\jacob\\\\Documents\\\\_UsefulHelperSCRIPTS\\\\_MicroserviceLIBRARY\\\\_sanbox\\\\apps\\\\demonstration_first_run\\\\working\\\\.env\",\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "      \"C:\\\\Users\\\\jacob\\\\Documents\\\\_UsefulHelperSCRIPTS\\\\_MicroserviceLIBRARY\\\\library\\\\microservices\\\\ui\\\\_ExplorerWidgetMS.py\",\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "      \"C:\\\\Users\\\\jacob\\\\Documents\\\\_UsefulHelperSCRIPTS\\\\_MicroserviceLIBRARY\\\\library\\\\base_service.py\",\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "      \"C:\\\\Users\\\\jacob\\\\Documents\\\\_UsefulHelperSCRIPTS\\\\_MicroserviceLIBRARY\\\\library\\\\microservice_std_lib.py\",\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "      \"C:\\\\Users\\\\jacob\\\\Documents\\\\_UsefulHelperSCRIPTS\\\\_MicroserviceLIBRARY\\\\library\\\\microservices\\\\ui\\\\_TkinterAppShellMS.py\",\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "      \"C:\\\\Users\\\\jacob\\\\Documents\\\\_UsefulHelperSCRIPTS\\\\_MicroserviceLIBRARY\\\\library\\\\microservices\\\\ui\\\\_TkinterThemeManagerMS.py\",\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "      \"C:\\\\Users\\\\jacob\\\\Documents\\\\_UsefulHelperSCRIPTS\\\\_MicroserviceLIBRARY\\\\library\\\\microservices\\\\ui\\\\_WorkbenchLayoutMS.py\"\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "    ],\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "    \"errors\": [],\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "    \"missing_generated_python_files\": [],\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "    \"generated_python_file_drift\": [],\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "    \"missing_generated_support_files\": [],\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "    \"generated_support_file_drift\": [],\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "    \"missing_library_artifacts\": [],\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "    \"library_artifact_drift\": []\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "  },\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "  \"ok\": true\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "stdout", "text": "}\n", "step_index": 1}
+{"timestamp": "2026-03-08T08:50:50", "type": "step_finished", "step_index": 1, "label": "Stamp sandbox workspace", "returncode": 0}
+{"timestamp": "2026-03-08T08:50:50", "type": "step_started", "step_index": 2, "label": "Validate transformed app", "command": "/repo\\.venv\\Scripts\\python.exe -m library.app_factory sandbox-validate /workspace/apps/demonstration_first_run"}
+{"timestamp": "2026-03-08T08:50:50", "type": "command_char", "text": "/", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:50", "type": "command_char", "text": "r", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:50", "type": "command_char", "text": "e", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:50", "type": "command_char", "text": "p", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:50", "type": "command_char", "text": "o", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:50", "type": "command_char", "text": ">", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:50", "type": "command_char", "text": " ", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:50", "type": "command_char", "text": "/", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:50", "type": "command_char", "text": "r", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:50", "type": "command_char", "text": "e", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:50", "type": "command_char", "text": "p", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:50", "type": "command_char", "text": "o", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:50", "type": "command_char", "text": "\\", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:50", "type": "command_char", "text": ".", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:50", "type": "command_char", "text": "v", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:50", "type": "command_char", "text": "e", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:50", "type": "command_char", "text": "n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:50", "type": "command_char", "text": "v", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:50", "type": "command_char", "text": "\\", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:50", "type": "command_char", "text": "S", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:50", "type": "command_char", "text": "c", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:50", "type": "command_char", "text": "r", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:50", "type": "command_char", "text": "i", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:50", "type": "command_char", "text": "p", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:50", "type": "command_char", "text": "t", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:50", "type": "command_char", "text": "s", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:50", "type": "command_char", "text": "\\", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:50", "type": "command_char", "text": "p", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:50", "type": "command_char", "text": "y", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:50", "type": "command_char", "text": "t", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:50", "type": "command_char", "text": "h", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:50", "type": "command_char", "text": "o", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:50", "type": "command_char", "text": "n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:50", "type": "command_char", "text": ".", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:50", "type": "command_char", "text": "e", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:50", "type": "command_char", "text": "x", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:50", "type": "command_char", "text": "e", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:50", "type": "command_char", "text": " ", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:50", "type": "command_char", "text": "-", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:50", "type": "command_char", "text": "m", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:50", "type": "command_char", "text": " ", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:50", "type": "command_char", "text": "l", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:50", "type": "command_char", "text": "i", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:50", "type": "command_char", "text": "b", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:50", "type": "command_char", "text": "r", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:50", "type": "command_char", "text": "a", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:50", "type": "command_char", "text": "r", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:50", "type": "command_char", "text": "y", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:50", "type": "command_char", "text": ".", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:50", "type": "command_char", "text": "a", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:50", "type": "command_char", "text": "p", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:50", "type": "command_char", "text": "p", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:50", "type": "command_char", "text": "_", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:50", "type": "command_char", "text": "f", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:50", "type": "command_char", "text": "a", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:50", "type": "command_char", "text": "c", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:50", "type": "command_char", "text": "t", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:50", "type": "command_char", "text": "o", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "command_char", "text": "r", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "command_char", "text": "y", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "command_char", "text": " ", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "command_char", "text": "s", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "command_char", "text": "a", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "command_char", "text": "n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "command_char", "text": "d", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "command_char", "text": "b", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "command_char", "text": "o", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "command_char", "text": "x", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "command_char", "text": "-", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "command_char", "text": "v", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "command_char", "text": "a", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "command_char", "text": "l", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "command_char", "text": "i", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "command_char", "text": "d", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "command_char", "text": "a", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "command_char", "text": "t", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "command_char", "text": "e", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "command_char", "text": " ", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "command_char", "text": "/", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "command_char", "text": "w", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "command_char", "text": "o", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "command_char", "text": "r", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "command_char", "text": "k", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "command_char", "text": "s", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "command_char", "text": "p", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "command_char", "text": "a", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "command_char", "text": "c", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "command_char", "text": "e", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "command_char", "text": "/", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "command_char", "text": "a", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "command_char", "text": "p", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "command_char", "text": "p", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "command_char", "text": "s", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "command_char", "text": "/", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "command_char", "text": "d", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "command_char", "text": "e", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "command_char", "text": "m", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "command_char", "text": "o", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "command_char", "text": "n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "command_char", "text": "s", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "command_char", "text": "t", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "command_char", "text": "r", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "command_char", "text": "a", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "command_char", "text": "t", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "command_char", "text": "i", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "command_char", "text": "o", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "command_char", "text": "n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "command_char", "text": "_", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "command_char", "text": "f", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "command_char", "text": "i", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "command_char", "text": "r", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "command_char", "text": "s", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "command_char", "text": "t", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "command_char", "text": "_", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "command_char", "text": "r", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "command_char", "text": "u", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "command_char", "text": "n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "command_char", "text": "\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "{\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "  \"workspace_root\": \"C:\\\\Users\\\\jacob\\\\Documents\\\\_UsefulHelperSCRIPTS\\\\_MicroserviceLIBRARY\\\\_sanbox\\\\apps\\\\demonstration_first_run\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "  \"working_app_dir\": \"C:\\\\Users\\\\jacob\\\\Documents\\\\_UsefulHelperSCRIPTS\\\\_MicroserviceLIBRARY\\\\_sanbox\\\\apps\\\\demonstration_first_run\\\\working\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "  \"compile_results\": {\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "    \"compiled\": [\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "      \"C:\\\\Users\\\\jacob\\\\Documents\\\\_UsefulHelperSCRIPTS\\\\_MicroserviceLIBRARY\\\\_sanbox\\\\apps\\\\demonstration_first_run\\\\working\\\\app.py\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "      \"C:\\\\Users\\\\jacob\\\\Documents\\\\_UsefulHelperSCRIPTS\\\\_MicroserviceLIBRARY\\\\_sanbox\\\\apps\\\\demonstration_first_run\\\\working\\\\backend.py\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "      \"C:\\\\Users\\\\jacob\\\\Documents\\\\_UsefulHelperSCRIPTS\\\\_MicroserviceLIBRARY\\\\_sanbox\\\\apps\\\\demonstration_first_run\\\\working\\\\ui.py\"\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "    ],\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "    \"errors\": []\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "  },\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "  \"health_result\": {\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "    \"ok\": true,\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "    \"returncode\": 0,\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "    \"command\": [\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "      \"C:\\\\Users\\\\jacob\\\\Documents\\\\_UsefulHelperSCRIPTS\\\\_MicroserviceLIBRARY\\\\.venv\\\\Scripts\\\\python.exe\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "      \"app.py\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "      \"--health\"\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "    ],\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "    \"payload\": {\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "      \"instantiated\": {},\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "      \"deferred\": [\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "        \"ExplorerWidgetMS\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "        \"TkinterAppShellMS\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "        \"TkinterThemeManagerMS\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "        \"WorkbenchLayoutMS\"\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "      ],\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "      \"manager_hub_error\": \"\"\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "    },\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "    \"stderr\": \"\"\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "  },\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "  \"no_ui_result\": {\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "    \"ok\": true,\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "    \"returncode\": 0,\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "    \"command\": [\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "      \"C:\\\\Users\\\\jacob\\\\Documents\\\\_UsefulHelperSCRIPTS\\\\_MicroserviceLIBRARY\\\\.venv\\\\Scripts\\\\python.exe\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "      \"app.py\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "      \"--no-ui\"\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "    ],\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "    \"payload\": {\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "      \"status\": \"headless\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "      \"health\": {\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "        \"instantiated\": {},\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "        \"deferred\": [\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "          \"ExplorerWidgetMS\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "          \"TkinterAppShellMS\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "          \"TkinterThemeManagerMS\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "          \"WorkbenchLayoutMS\"\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "        ],\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "        \"manager_hub_error\": \"\"\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "      },\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "      \"services\": [\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "        {\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "          \"service_id\": \"service_6970158b116a0e1d8301d2ed\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "          \"class_name\": \"ExplorerWidgetMS\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "          \"service_name\": \"ExplorerWidgetMS\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "          \"module_import\": \"library.microservices.ui._ExplorerWidgetMS\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "          \"description\": \"A standalone file system tree viewer widget.\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "          \"tags\": [\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "            \"ui\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "            \"filesystem\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "            \"widget\"\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "          ],\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "          \"capabilities\": [\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "            \"ui:gui\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "            \"filesystem:read\"\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "          ],\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "          \"manager_layer\": \"\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "          \"registry_name\": \"ExplorerWidgetMS\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "          \"is_ui\": true,\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "          \"endpoints\": [\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "            {\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "              \"method_name\": \"get_health\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "              \"inputs_json\": \"{}\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "              \"outputs_json\": \"{\\\"status\\\": \\\"str\\\", \\\"uptime\\\": \\\"float\\\"}\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "              \"description\": \"Standardized health check for service status.\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "              \"tags_json\": \"[\\\"diagnostic\\\", \\\"health\\\"]\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "              \"mode\": \"sync\"\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "            },\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "            {\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "              \"method_name\": \"get_selected_paths\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "              \"inputs_json\": \"{}\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "              \"outputs_json\": \"{\\\"selected_paths\\\": \\\"List[str]\\\"}\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "              \"description\": \"Returns a list of currently checked folder paths.\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "              \"tags_json\": \"[\\\"ui\\\", \\\"read\\\"]\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "              \"mode\": \"sync\"\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "            },\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "            {\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "              \"method_name\": \"refresh_tree\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "              \"inputs_json\": \"{}\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "              \"outputs_json\": \"{}\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "              \"description\": \"Rescans the directory and refreshes the tree view.\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "              \"tags_json\": \"[\\\"ui\\\", \\\"refresh\\\"]\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "              \"mode\": \"sync\"\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "            }\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "          ]\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "        },\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "        {\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "          \"service_id\": \"service_ddb133b7bba8558c2087a2e6\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "          \"class_name\": \"TkinterAppShellMS\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "          \"service_name\": \"TkinterAppShell\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "          \"module_import\": \"library.microservices.ui._TkinterAppShellMS\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "          \"description\": \"The Application Container. Manages the root window, main loop, and global layout.\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "          \"tags\": [\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "            \"ui\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "            \"core\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "            \"lifecycle\"\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "          ],\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "          \"capabilities\": [\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "            \"ui:root\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "            \"ui:gui\"\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "          ],\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "          \"manager_layer\": \"\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "          \"registry_name\": \"TkinterAppShell\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "          \"is_ui\": true,\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "          \"endpoints\": [\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "            {\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "              \"method_name\": \"get_health\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "              \"inputs_json\": \"{}\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "              \"outputs_json\": \"{\\\"status\\\": \\\"str\\\", \\\"uptime\\\": \\\"float\\\"}\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "              \"description\": \"Standardized health check for service status.\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "              \"tags_json\": \"[\\\"diagnostic\\\", \\\"health\\\"]\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "              \"mode\": \"sync\"\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "            },\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "            {\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "              \"method_name\": \"get_main_container\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "              \"inputs_json\": \"{}\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "              \"outputs_json\": \"{\\\"container\\\": \\\"tk.Frame\\\"}\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "              \"description\": \"Returns the main content area for other services to dock into.\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "              \"tags_json\": \"[\\\"ui\\\", \\\"layout\\\"]\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "              \"mode\": \"sync\"\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "            },\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "            {\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "              \"method_name\": \"launch\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "              \"inputs_json\": \"{}\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "              \"outputs_json\": \"{}\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "              \"description\": \"Starts the GUI Main Loop.\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "              \"tags_json\": \"[\\\"lifecycle\\\", \\\"start\\\"]\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "              \"mode\": \"sync\"\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "            },\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "            {\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "              \"method_name\": \"shutdown\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "              \"inputs_json\": \"{}\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "              \"outputs_json\": \"{}\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "              \"description\": \"Gracefully shuts down the application.\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "              \"tags_json\": \"[\\\"lifecycle\\\", \\\"stop\\\"]\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "              \"mode\": \"sync\"\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "            }\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "          ]\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "        },\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "        {\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "          \"service_id\": \"service_932c0f5222f07ed1f934841e\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "          \"class_name\": \"TkinterThemeManagerMS\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "          \"service_name\": \"TkinterThemeManager\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "          \"module_import\": \"library.microservices.ui._TkinterThemeManagerMS\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "          \"description\": \"Centralized modern Tkinter theme tokens and icon maps used by UI microservices.\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "          \"tags\": [\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "            \"ui\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "            \"config\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "            \"theme\"\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "          ],\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "          \"capabilities\": [\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "            \"ui:style\"\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "          ],\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "          \"manager_layer\": \"\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "          \"registry_name\": \"TkinterThemeManager\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "          \"is_ui\": true,\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "          \"endpoints\": [\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "            {\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "              \"method_name\": \"get_health\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "              \"inputs_json\": \"{}\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "              \"outputs_json\": \"{\\\"icon_count\\\": \\\"int\\\", \\\"status\\\": \\\"str\\\", \\\"token_count\\\": \\\"int\\\", \\\"uptime\\\": \\\"float\\\"}\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "              \"description\": \"Standardized health check for theme manager state.\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "              \"tags_json\": \"[\\\"diagnostic\\\", \\\"health\\\"]\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "              \"mode\": \"sync\"\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "            },\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "            {\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "              \"method_name\": \"get_legacy_aliases\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "              \"inputs_json\": \"{}\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "              \"outputs_json\": \"{\\\"aliases\\\": \\\"dict\\\"}\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "              \"description\": \"Return legacy theme alias map for compatibility with older Tkinter components.\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "              \"tags_json\": \"[\\\"ui\\\", \\\"read\\\", \\\"compat\\\"]\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "              \"mode\": \"sync\"\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "            },\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "            {\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "              \"method_name\": \"get_node_icons\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "              \"inputs_json\": \"{}\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "              \"outputs_json\": \"{\\\"icons\\\": \\\"dict\\\"}\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "              \"description\": \"Return active node icon map.\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "              \"tags_json\": \"[\\\"ui\\\", \\\"read\\\"]\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "              \"mode\": \"sync\"\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:51", "type": "stdout", "text": "            },\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:52", "type": "stdout", "text": "            {\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:52", "type": "stdout", "text": "              \"method_name\": \"get_theme\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:52", "type": "stdout", "text": "              \"inputs_json\": \"{}\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:52", "type": "stdout", "text": "              \"outputs_json\": \"{\\\"theme\\\": \\\"dict\\\"}\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:52", "type": "stdout", "text": "              \"description\": \"Return active theme token dictionary.\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:52", "type": "stdout", "text": "              \"tags_json\": \"[\\\"ui\\\", \\\"read\\\"]\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:52", "type": "stdout", "text": "              \"mode\": \"sync\"\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:52", "type": "stdout", "text": "            },\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:52", "type": "stdout", "text": "            {\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:52", "type": "stdout", "text": "              \"method_name\": \"update_icon\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:52", "type": "stdout", "text": "              \"inputs_json\": \"{\\\"icon\\\": \\\"str\\\", \\\"node_type\\\": \\\"str\\\"}\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:52", "type": "stdout", "text": "              \"outputs_json\": \"{\\\"ok\\\": \\\"bool\\\"}\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:52", "type": "stdout", "text": "              \"description\": \"Update or add icon mapping for a node type.\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:52", "type": "stdout", "text": "              \"tags_json\": \"[\\\"ui\\\", \\\"write\\\"]\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:52", "type": "stdout", "text": "              \"mode\": \"sync\"\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:52", "type": "stdout", "text": "            },\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:52", "type": "stdout", "text": "            {\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:52", "type": "stdout", "text": "              \"method_name\": \"update_key\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:52", "type": "stdout", "text": "              \"inputs_json\": \"{\\\"key\\\": \\\"str\\\", \\\"value\\\": \\\"Any\\\"}\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:52", "type": "stdout", "text": "              \"outputs_json\": \"{\\\"ok\\\": \\\"bool\\\"}\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:52", "type": "stdout", "text": "              \"description\": \"Update a single theme token at runtime.\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:52", "type": "stdout", "text": "              \"tags_json\": \"[\\\"ui\\\", \\\"write\\\"]\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:52", "type": "stdout", "text": "              \"mode\": \"sync\"\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:52", "type": "stdout", "text": "            }\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:52", "type": "stdout", "text": "          ]\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:52", "type": "stdout", "text": "        },\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:52", "type": "stdout", "text": "        {\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:52", "type": "stdout", "text": "          \"service_id\": \"service_56079e96662212cbe7567482\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:52", "type": "stdout", "text": "          \"class_name\": \"WorkbenchLayoutMS\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:52", "type": "stdout", "text": "          \"service_name\": \"WorkbenchLayout\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:52", "type": "stdout", "text": "          \"module_import\": \"library.microservices.ui._WorkbenchLayoutMS\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:52", "type": "stdout", "text": "          \"description\": \"A declarative layout engine that builds resizable, nested Workbenches (Rows/Cols) from a config dictionary.\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:52", "type": "stdout", "text": "          \"tags\": [\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:52", "type": "stdout", "text": "            \"ui\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:52", "type": "stdout", "text": "            \"layout\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:52", "type": "stdout", "text": "            \"framework\"\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:52", "type": "stdout", "text": "          ],\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:52", "type": "stdout", "text": "          \"capabilities\": [\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:52", "type": "stdout", "text": "            \"ui:construct\"\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:52", "type": "stdout", "text": "          ],\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:52", "type": "stdout", "text": "          \"manager_layer\": \"\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:52", "type": "stdout", "text": "          \"registry_name\": \"WorkbenchLayout\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:52", "type": "stdout", "text": "          \"is_ui\": true,\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:52", "type": "stdout", "text": "          \"endpoints\": [\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:52", "type": "stdout", "text": "            {\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:52", "type": "stdout", "text": "              \"method_name\": \"build_from_manifest\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:52", "type": "stdout", "text": "              \"inputs_json\": \"{\\\"manifest\\\": \\\"Dict\\\"}\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:52", "type": "stdout", "text": "              \"outputs_json\": \"{}\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:52", "type": "stdout", "text": "              \"description\": \"Builds the UI structure based on the provided dictionary layout.\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:52", "type": "stdout", "text": "              \"tags_json\": \"[\\\"ui\\\", \\\"build\\\"]\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:52", "type": "stdout", "text": "              \"mode\": \"sync\"\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:52", "type": "stdout", "text": "            },\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:52", "type": "stdout", "text": "            {\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:52", "type": "stdout", "text": "              \"method_name\": \"get_health\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:52", "type": "stdout", "text": "              \"inputs_json\": \"{}\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:52", "type": "stdout", "text": "              \"outputs_json\": \"{\\\"status\\\": \\\"str\\\", \\\"uptime\\\": \\\"float\\\"}\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:52", "type": "stdout", "text": "              \"description\": \"Standardized health check for service status.\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:52", "type": "stdout", "text": "              \"tags_json\": \"[\\\"diagnostic\\\", \\\"health\\\"]\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:52", "type": "stdout", "text": "              \"mode\": \"sync\"\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:52", "type": "stdout", "text": "            }\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:52", "type": "stdout", "text": "          ]\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:52", "type": "stdout", "text": "        }\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:52", "type": "stdout", "text": "      ],\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:52", "type": "stdout", "text": "      \"app_title\": \"Stamped App\"\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:52", "type": "stdout", "text": "    },\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:52", "type": "stdout", "text": "    \"stderr\": \"\"\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:52", "type": "stdout", "text": "  },\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:52", "type": "stdout", "text": "  \"stamp_integrity\": {\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:52", "type": "stdout", "text": "    \"ok\": true,\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:52", "type": "stdout", "text": "    \"checked\": [\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:52", "type": "stdout", "text": "      \"C:\\\\Users\\\\jacob\\\\Documents\\\\_UsefulHelperSCRIPTS\\\\_MicroserviceLIBRARY\\\\_sanbox\\\\apps\\\\demonstration_first_run\\\\working\\\\app.py\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:52", "type": "stdout", "text": "      \"C:\\\\Users\\\\jacob\\\\Documents\\\\_UsefulHelperSCRIPTS\\\\_MicroserviceLIBRARY\\\\_sanbox\\\\apps\\\\demonstration_first_run\\\\working\\\\backend.py\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:52", "type": "stdout", "text": "      \"C:\\\\Users\\\\jacob\\\\Documents\\\\_UsefulHelperSCRIPTS\\\\_MicroserviceLIBRARY\\\\_sanbox\\\\apps\\\\demonstration_first_run\\\\working\\\\ui.py\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:52", "type": "stdout", "text": "      \"C:\\\\Users\\\\jacob\\\\Documents\\\\_UsefulHelperSCRIPTS\\\\_MicroserviceLIBRARY\\\\_sanbox\\\\apps\\\\demonstration_first_run\\\\working\\\\requirements.txt\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:52", "type": "stdout", "text": "      \"C:\\\\Users\\\\jacob\\\\Documents\\\\_UsefulHelperSCRIPTS\\\\_MicroserviceLIBRARY\\\\_sanbox\\\\apps\\\\demonstration_first_run\\\\working\\\\pyrightconfig.json\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:52", "type": "stdout", "text": "      \"C:\\\\Users\\\\jacob\\\\Documents\\\\_UsefulHelperSCRIPTS\\\\_MicroserviceLIBRARY\\\\_sanbox\\\\apps\\\\demonstration_first_run\\\\working\\\\.env\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:52", "type": "stdout", "text": "      \"C:\\\\Users\\\\jacob\\\\Documents\\\\_UsefulHelperSCRIPTS\\\\_MicroserviceLIBRARY\\\\library\\\\microservices\\\\ui\\\\_ExplorerWidgetMS.py\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:52", "type": "stdout", "text": "      \"C:\\\\Users\\\\jacob\\\\Documents\\\\_UsefulHelperSCRIPTS\\\\_MicroserviceLIBRARY\\\\library\\\\base_service.py\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:52", "type": "stdout", "text": "      \"C:\\\\Users\\\\jacob\\\\Documents\\\\_UsefulHelperSCRIPTS\\\\_MicroserviceLIBRARY\\\\library\\\\microservice_std_lib.py\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:52", "type": "stdout", "text": "      \"C:\\\\Users\\\\jacob\\\\Documents\\\\_UsefulHelperSCRIPTS\\\\_MicroserviceLIBRARY\\\\library\\\\microservices\\\\ui\\\\_TkinterAppShellMS.py\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:52", "type": "stdout", "text": "      \"C:\\\\Users\\\\jacob\\\\Documents\\\\_UsefulHelperSCRIPTS\\\\_MicroserviceLIBRARY\\\\library\\\\microservices\\\\ui\\\\_TkinterThemeManagerMS.py\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:52", "type": "stdout", "text": "      \"C:\\\\Users\\\\jacob\\\\Documents\\\\_UsefulHelperSCRIPTS\\\\_MicroserviceLIBRARY\\\\library\\\\microservices\\\\ui\\\\_WorkbenchLayoutMS.py\"\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:52", "type": "stdout", "text": "    ],\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:52", "type": "stdout", "text": "    \"errors\": [],\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:52", "type": "stdout", "text": "    \"missing_generated_python_files\": [],\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:52", "type": "stdout", "text": "    \"generated_python_file_drift\": [],\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:52", "type": "stdout", "text": "    \"missing_generated_support_files\": [],\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:52", "type": "stdout", "text": "    \"generated_support_file_drift\": [],\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:52", "type": "stdout", "text": "    \"missing_library_artifacts\": [],\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:52", "type": "stdout", "text": "    \"library_artifact_drift\": []\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:52", "type": "stdout", "text": "  },\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:52", "type": "stdout", "text": "  \"transform_integrity\": null,\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:52", "type": "stdout", "text": "  \"active_integrity\": \"stamp\",\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:52", "type": "stdout", "text": "  \"ok\": true\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:52", "type": "stdout", "text": "}\n", "step_index": 2}
+{"timestamp": "2026-03-08T08:50:52", "type": "step_finished", "step_index": 2, "label": "Validate transformed app", "returncode": 0}
+{"timestamp": "2026-03-08T08:50:52", "type": "step_started", "step_index": 3, "label": "Promote validated app", "command": "/repo\\.venv\\Scripts\\python.exe -m library.app_factory sandbox-promote /workspace/apps/demonstration_first_run --destination /workspace/promoted/demonstration_first_run --force"}
+{"timestamp": "2026-03-08T08:50:52", "type": "command_char", "text": "/", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:52", "type": "command_char", "text": "r", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:52", "type": "command_char", "text": "e", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:52", "type": "command_char", "text": "p", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:52", "type": "command_char", "text": "o", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:52", "type": "command_char", "text": ">", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:52", "type": "command_char", "text": " ", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:52", "type": "command_char", "text": "/", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:52", "type": "command_char", "text": "r", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:52", "type": "command_char", "text": "e", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:52", "type": "command_char", "text": "p", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:52", "type": "command_char", "text": "o", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:52", "type": "command_char", "text": "\\", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:52", "type": "command_char", "text": ".", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:52", "type": "command_char", "text": "v", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:52", "type": "command_char", "text": "e", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:52", "type": "command_char", "text": "n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:52", "type": "command_char", "text": "v", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:52", "type": "command_char", "text": "\\", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:52", "type": "command_char", "text": "S", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:52", "type": "command_char", "text": "c", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:52", "type": "command_char", "text": "r", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:52", "type": "command_char", "text": "i", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:52", "type": "command_char", "text": "p", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:52", "type": "command_char", "text": "t", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:52", "type": "command_char", "text": "s", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:52", "type": "command_char", "text": "\\", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:52", "type": "command_char", "text": "p", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:52", "type": "command_char", "text": "y", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:52", "type": "command_char", "text": "t", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:52", "type": "command_char", "text": "h", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:52", "type": "command_char", "text": "o", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:52", "type": "command_char", "text": "n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:52", "type": "command_char", "text": ".", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:52", "type": "command_char", "text": "e", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:52", "type": "command_char", "text": "x", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:52", "type": "command_char", "text": "e", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:52", "type": "command_char", "text": " ", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:52", "type": "command_char", "text": "-", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:52", "type": "command_char", "text": "m", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:52", "type": "command_char", "text": " ", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:52", "type": "command_char", "text": "l", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:52", "type": "command_char", "text": "i", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:52", "type": "command_char", "text": "b", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:52", "type": "command_char", "text": "r", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:52", "type": "command_char", "text": "a", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:52", "type": "command_char", "text": "r", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:52", "type": "command_char", "text": "y", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:52", "type": "command_char", "text": ".", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:52", "type": "command_char", "text": "a", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:52", "type": "command_char", "text": "p", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:52", "type": "command_char", "text": "p", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:52", "type": "command_char", "text": "_", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:52", "type": "command_char", "text": "f", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:52", "type": "command_char", "text": "a", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:52", "type": "command_char", "text": "c", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:52", "type": "command_char", "text": "t", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:52", "type": "command_char", "text": "o", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:52", "type": "command_char", "text": "r", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:52", "type": "command_char", "text": "y", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:52", "type": "command_char", "text": " ", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:52", "type": "command_char", "text": "s", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:52", "type": "command_char", "text": "a", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:52", "type": "command_char", "text": "n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:52", "type": "command_char", "text": "d", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:52", "type": "command_char", "text": "b", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:52", "type": "command_char", "text": "o", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:52", "type": "command_char", "text": "x", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:52", "type": "command_char", "text": "-", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:52", "type": "command_char", "text": "p", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:52", "type": "command_char", "text": "r", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:52", "type": "command_char", "text": "o", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:52", "type": "command_char", "text": "m", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:52", "type": "command_char", "text": "o", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:52", "type": "command_char", "text": "t", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:52", "type": "command_char", "text": "e", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:52", "type": "command_char", "text": " ", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:52", "type": "command_char", "text": "/", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:52", "type": "command_char", "text": "w", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:52", "type": "command_char", "text": "o", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:52", "type": "command_char", "text": "r", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:52", "type": "command_char", "text": "k", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:52", "type": "command_char", "text": "s", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:52", "type": "command_char", "text": "p", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:52", "type": "command_char", "text": "a", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:52", "type": "command_char", "text": "c", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:52", "type": "command_char", "text": "e", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:52", "type": "command_char", "text": "/", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:52", "type": "command_char", "text": "a", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:52", "type": "command_char", "text": "p", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:52", "type": "command_char", "text": "p", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:52", "type": "command_char", "text": "s", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:52", "type": "command_char", "text": "/", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:52", "type": "command_char", "text": "d", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:52", "type": "command_char", "text": "e", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:52", "type": "command_char", "text": "m", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:52", "type": "command_char", "text": "o", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:52", "type": "command_char", "text": "n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:52", "type": "command_char", "text": "s", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:52", "type": "command_char", "text": "t", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:52", "type": "command_char", "text": "r", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:52", "type": "command_char", "text": "a", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:52", "type": "command_char", "text": "t", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:52", "type": "command_char", "text": "i", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:52", "type": "command_char", "text": "o", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:52", "type": "command_char", "text": "n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:52", "type": "command_char", "text": "_", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:52", "type": "command_char", "text": "f", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:52", "type": "command_char", "text": "i", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:52", "type": "command_char", "text": "r", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:52", "type": "command_char", "text": "s", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:53", "type": "command_char", "text": "t", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:53", "type": "command_char", "text": "_", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:53", "type": "command_char", "text": "r", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:53", "type": "command_char", "text": "u", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:53", "type": "command_char", "text": "n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:53", "type": "command_char", "text": " ", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:53", "type": "command_char", "text": "-", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:53", "type": "command_char", "text": "-", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:53", "type": "command_char", "text": "d", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:53", "type": "command_char", "text": "e", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:53", "type": "command_char", "text": "s", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:53", "type": "command_char", "text": "t", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:53", "type": "command_char", "text": "i", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:53", "type": "command_char", "text": "n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:53", "type": "command_char", "text": "a", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:53", "type": "command_char", "text": "t", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:53", "type": "command_char", "text": "i", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:53", "type": "command_char", "text": "o", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:53", "type": "command_char", "text": "n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:53", "type": "command_char", "text": " ", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:53", "type": "command_char", "text": "/", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:53", "type": "command_char", "text": "w", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:53", "type": "command_char", "text": "o", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:53", "type": "command_char", "text": "r", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:53", "type": "command_char", "text": "k", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:53", "type": "command_char", "text": "s", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:53", "type": "command_char", "text": "p", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:53", "type": "command_char", "text": "a", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:53", "type": "command_char", "text": "c", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:53", "type": "command_char", "text": "e", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:53", "type": "command_char", "text": "/", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:53", "type": "command_char", "text": "p", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:53", "type": "command_char", "text": "r", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:53", "type": "command_char", "text": "o", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:53", "type": "command_char", "text": "m", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:53", "type": "command_char", "text": "o", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:53", "type": "command_char", "text": "t", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:53", "type": "command_char", "text": "e", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:53", "type": "command_char", "text": "d", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:53", "type": "command_char", "text": "/", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:53", "type": "command_char", "text": "d", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:53", "type": "command_char", "text": "e", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:53", "type": "command_char", "text": "m", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:53", "type": "command_char", "text": "o", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:53", "type": "command_char", "text": "n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:53", "type": "command_char", "text": "s", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:53", "type": "command_char", "text": "t", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:53", "type": "command_char", "text": "r", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:53", "type": "command_char", "text": "a", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:53", "type": "command_char", "text": "t", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:53", "type": "command_char", "text": "i", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:53", "type": "command_char", "text": "o", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:53", "type": "command_char", "text": "n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:53", "type": "command_char", "text": "_", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:53", "type": "command_char", "text": "f", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:53", "type": "command_char", "text": "i", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:53", "type": "command_char", "text": "r", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:53", "type": "command_char", "text": "s", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:53", "type": "command_char", "text": "t", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:53", "type": "command_char", "text": "_", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:53", "type": "command_char", "text": "r", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:53", "type": "command_char", "text": "u", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:53", "type": "command_char", "text": "n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:53", "type": "command_char", "text": " ", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:53", "type": "command_char", "text": "-", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:53", "type": "command_char", "text": "-", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:53", "type": "command_char", "text": "f", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:53", "type": "command_char", "text": "o", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:53", "type": "command_char", "text": "r", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:53", "type": "command_char", "text": "c", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:53", "type": "command_char", "text": "e", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:53", "type": "command_char", "text": "\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "{\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "  \"workspace_root\": \"C:\\\\Users\\\\jacob\\\\Documents\\\\_UsefulHelperSCRIPTS\\\\_MicroserviceLIBRARY\\\\_sanbox\\\\apps\\\\demonstration_first_run\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "  \"working_app_dir\": \"C:\\\\Users\\\\jacob\\\\Documents\\\\_UsefulHelperSCRIPTS\\\\_MicroserviceLIBRARY\\\\_sanbox\\\\apps\\\\demonstration_first_run\\\\working\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "  \"destination_app_dir\": \"C:\\\\Users\\\\jacob\\\\Documents\\\\_UsefulHelperSCRIPTS\\\\_MicroserviceLIBRARY\\\\_sanbox\\\\promoted\\\\demonstration_first_run\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "  \"validation\": {\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "    \"compile_results\": {\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "      \"compiled\": [\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "        \"C:\\\\Users\\\\jacob\\\\Documents\\\\_UsefulHelperSCRIPTS\\\\_MicroserviceLIBRARY\\\\_sanbox\\\\promoted\\\\demonstration_first_run\\\\app.py\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "        \"C:\\\\Users\\\\jacob\\\\Documents\\\\_UsefulHelperSCRIPTS\\\\_MicroserviceLIBRARY\\\\_sanbox\\\\promoted\\\\demonstration_first_run\\\\backend.py\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "        \"C:\\\\Users\\\\jacob\\\\Documents\\\\_UsefulHelperSCRIPTS\\\\_MicroserviceLIBRARY\\\\_sanbox\\\\promoted\\\\demonstration_first_run\\\\ui.py\"\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "      ],\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "      \"errors\": []\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "    },\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "    \"health_result\": {\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "      \"ok\": true,\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "      \"returncode\": 0,\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "      \"command\": [\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "        \"C:\\\\Users\\\\jacob\\\\Documents\\\\_UsefulHelperSCRIPTS\\\\_MicroserviceLIBRARY\\\\.venv\\\\Scripts\\\\python.exe\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "        \"app.py\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "        \"--health\"\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "      ],\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "      \"payload\": {\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "        \"instantiated\": {},\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "        \"deferred\": [\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "          \"ExplorerWidgetMS\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "          \"TkinterAppShellMS\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "          \"TkinterThemeManagerMS\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "          \"WorkbenchLayoutMS\"\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "        ],\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "        \"manager_hub_error\": \"\"\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "      },\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "      \"stderr\": \"\"\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "    },\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "    \"no_ui_result\": {\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "      \"ok\": true,\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "      \"returncode\": 0,\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "      \"command\": [\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "        \"C:\\\\Users\\\\jacob\\\\Documents\\\\_UsefulHelperSCRIPTS\\\\_MicroserviceLIBRARY\\\\.venv\\\\Scripts\\\\python.exe\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "        \"app.py\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "        \"--no-ui\"\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "      ],\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "      \"payload\": {\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "        \"status\": \"headless\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "        \"health\": {\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "          \"instantiated\": {},\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "          \"deferred\": [\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "            \"ExplorerWidgetMS\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "            \"TkinterAppShellMS\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "            \"TkinterThemeManagerMS\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "            \"WorkbenchLayoutMS\"\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "          ],\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "          \"manager_hub_error\": \"\"\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "        },\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "        \"services\": [\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "          {\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "            \"service_id\": \"service_6970158b116a0e1d8301d2ed\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "            \"class_name\": \"ExplorerWidgetMS\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "            \"service_name\": \"ExplorerWidgetMS\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "            \"module_import\": \"library.microservices.ui._ExplorerWidgetMS\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "            \"description\": \"A standalone file system tree viewer widget.\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "            \"tags\": [\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "              \"ui\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "              \"filesystem\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "              \"widget\"\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "            ],\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "            \"capabilities\": [\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "              \"ui:gui\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "              \"filesystem:read\"\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "            ],\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "            \"manager_layer\": \"\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "            \"registry_name\": \"ExplorerWidgetMS\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "            \"is_ui\": true,\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "            \"endpoints\": [\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "              {\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "                \"method_name\": \"get_health\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "                \"inputs_json\": \"{}\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "                \"outputs_json\": \"{\\\"status\\\": \\\"str\\\", \\\"uptime\\\": \\\"float\\\"}\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "                \"description\": \"Standardized health check for service status.\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "                \"tags_json\": \"[\\\"diagnostic\\\", \\\"health\\\"]\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "                \"mode\": \"sync\"\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "              },\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "              {\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "                \"method_name\": \"get_selected_paths\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "                \"inputs_json\": \"{}\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "                \"outputs_json\": \"{\\\"selected_paths\\\": \\\"List[str]\\\"}\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "                \"description\": \"Returns a list of currently checked folder paths.\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "                \"tags_json\": \"[\\\"ui\\\", \\\"read\\\"]\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "                \"mode\": \"sync\"\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "              },\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "              {\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "                \"method_name\": \"refresh_tree\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "                \"inputs_json\": \"{}\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "                \"outputs_json\": \"{}\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "                \"description\": \"Rescans the directory and refreshes the tree view.\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "                \"tags_json\": \"[\\\"ui\\\", \\\"refresh\\\"]\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "                \"mode\": \"sync\"\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "              }\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "            ]\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "          },\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "          {\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "            \"service_id\": \"service_ddb133b7bba8558c2087a2e6\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "            \"class_name\": \"TkinterAppShellMS\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "            \"service_name\": \"TkinterAppShell\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "            \"module_import\": \"library.microservices.ui._TkinterAppShellMS\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "            \"description\": \"The Application Container. Manages the root window, main loop, and global layout.\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "            \"tags\": [\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "              \"ui\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "              \"core\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "              \"lifecycle\"\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "            ],\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "            \"capabilities\": [\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "              \"ui:root\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "              \"ui:gui\"\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "            ],\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "            \"manager_layer\": \"\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "            \"registry_name\": \"TkinterAppShell\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "            \"is_ui\": true,\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "            \"endpoints\": [\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "              {\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "                \"method_name\": \"get_health\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "                \"inputs_json\": \"{}\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "                \"outputs_json\": \"{\\\"status\\\": \\\"str\\\", \\\"uptime\\\": \\\"float\\\"}\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "                \"description\": \"Standardized health check for service status.\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "                \"tags_json\": \"[\\\"diagnostic\\\", \\\"health\\\"]\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "                \"mode\": \"sync\"\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "              },\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "              {\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "                \"method_name\": \"get_main_container\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "                \"inputs_json\": \"{}\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "                \"outputs_json\": \"{\\\"container\\\": \\\"tk.Frame\\\"}\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "                \"description\": \"Returns the main content area for other services to dock into.\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "                \"tags_json\": \"[\\\"ui\\\", \\\"layout\\\"]\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "                \"mode\": \"sync\"\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "              },\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "              {\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "                \"method_name\": \"launch\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "                \"inputs_json\": \"{}\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "                \"outputs_json\": \"{}\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "                \"description\": \"Starts the GUI Main Loop.\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "                \"tags_json\": \"[\\\"lifecycle\\\", \\\"start\\\"]\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "                \"mode\": \"sync\"\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "              },\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "              {\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "                \"method_name\": \"shutdown\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "                \"inputs_json\": \"{}\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "                \"outputs_json\": \"{}\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "                \"description\": \"Gracefully shuts down the application.\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "                \"tags_json\": \"[\\\"lifecycle\\\", \\\"stop\\\"]\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "                \"mode\": \"sync\"\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "              }\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "            ]\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "          },\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "          {\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "            \"service_id\": \"service_932c0f5222f07ed1f934841e\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "            \"class_name\": \"TkinterThemeManagerMS\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "            \"service_name\": \"TkinterThemeManager\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "            \"module_import\": \"library.microservices.ui._TkinterThemeManagerMS\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "            \"description\": \"Centralized modern Tkinter theme tokens and icon maps used by UI microservices.\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "            \"tags\": [\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "              \"ui\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "              \"config\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "              \"theme\"\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "            ],\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "            \"capabilities\": [\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "              \"ui:style\"\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "            ],\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "            \"manager_layer\": \"\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "            \"registry_name\": \"TkinterThemeManager\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "            \"is_ui\": true,\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "            \"endpoints\": [\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "              {\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "                \"method_name\": \"get_health\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "                \"inputs_json\": \"{}\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "                \"outputs_json\": \"{\\\"icon_count\\\": \\\"int\\\", \\\"status\\\": \\\"str\\\", \\\"token_count\\\": \\\"int\\\", \\\"uptime\\\": \\\"float\\\"}\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "                \"description\": \"Standardized health check for theme manager state.\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "                \"tags_json\": \"[\\\"diagnostic\\\", \\\"health\\\"]\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "                \"mode\": \"sync\"\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "              },\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "              {\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "                \"method_name\": \"get_legacy_aliases\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "                \"inputs_json\": \"{}\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "                \"outputs_json\": \"{\\\"aliases\\\": \\\"dict\\\"}\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "                \"description\": \"Return legacy theme alias map for compatibility with older Tkinter components.\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "                \"tags_json\": \"[\\\"ui\\\", \\\"read\\\", \\\"compat\\\"]\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "                \"mode\": \"sync\"\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "              },\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "              {\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "                \"method_name\": \"get_node_icons\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "                \"inputs_json\": \"{}\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "                \"outputs_json\": \"{\\\"icons\\\": \\\"dict\\\"}\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "                \"description\": \"Return active node icon map.\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "                \"tags_json\": \"[\\\"ui\\\", \\\"read\\\"]\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "                \"mode\": \"sync\"\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "              },\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "              {\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "                \"method_name\": \"get_theme\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "                \"inputs_json\": \"{}\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "                \"outputs_json\": \"{\\\"theme\\\": \\\"dict\\\"}\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "                \"description\": \"Return active theme token dictionary.\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "                \"tags_json\": \"[\\\"ui\\\", \\\"read\\\"]\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "                \"mode\": \"sync\"\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "              },\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "              {\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "                \"method_name\": \"update_icon\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "                \"inputs_json\": \"{\\\"icon\\\": \\\"str\\\", \\\"node_type\\\": \\\"str\\\"}\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "                \"outputs_json\": \"{\\\"ok\\\": \\\"bool\\\"}\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "                \"description\": \"Update or add icon mapping for a node type.\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "                \"tags_json\": \"[\\\"ui\\\", \\\"write\\\"]\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "                \"mode\": \"sync\"\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "              },\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "              {\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "                \"method_name\": \"update_key\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "                \"inputs_json\": \"{\\\"key\\\": \\\"str\\\", \\\"value\\\": \\\"Any\\\"}\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "                \"outputs_json\": \"{\\\"ok\\\": \\\"bool\\\"}\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "                \"description\": \"Update a single theme token at runtime.\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "                \"tags_json\": \"[\\\"ui\\\", \\\"write\\\"]\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "                \"mode\": \"sync\"\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "              }\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "            ]\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "          },\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "          {\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "            \"service_id\": \"service_56079e96662212cbe7567482\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "            \"class_name\": \"WorkbenchLayoutMS\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "            \"service_name\": \"WorkbenchLayout\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "            \"module_import\": \"library.microservices.ui._WorkbenchLayoutMS\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "            \"description\": \"A declarative layout engine that builds resizable, nested Workbenches (Rows/Cols) from a config dictionary.\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "            \"tags\": [\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "              \"ui\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "              \"layout\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "              \"framework\"\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "            ],\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "            \"capabilities\": [\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "              \"ui:construct\"\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "            ],\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "            \"manager_layer\": \"\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "            \"registry_name\": \"WorkbenchLayout\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "            \"is_ui\": true,\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "            \"endpoints\": [\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "              {\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "                \"method_name\": \"build_from_manifest\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "                \"inputs_json\": \"{\\\"manifest\\\": \\\"Dict\\\"}\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "                \"outputs_json\": \"{}\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "                \"description\": \"Builds the UI structure based on the provided dictionary layout.\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "                \"tags_json\": \"[\\\"ui\\\", \\\"build\\\"]\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "                \"mode\": \"sync\"\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "              },\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "              {\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "                \"method_name\": \"get_health\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "                \"inputs_json\": \"{}\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "                \"outputs_json\": \"{\\\"status\\\": \\\"str\\\", \\\"uptime\\\": \\\"float\\\"}\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "                \"description\": \"Standardized health check for service status.\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "                \"tags_json\": \"[\\\"diagnostic\\\", \\\"health\\\"]\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "                \"mode\": \"sync\"\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "              }\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "            ]\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "          }\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "        ],\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "        \"app_title\": \"Stamped App\"\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "      },\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "      \"stderr\": \"\"\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "    },\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "    \"integrity\": {\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "      \"ok\": true,\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "      \"checked\": [\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "        \"C:\\\\Users\\\\jacob\\\\Documents\\\\_UsefulHelperSCRIPTS\\\\_MicroserviceLIBRARY\\\\_sanbox\\\\promoted\\\\demonstration_first_run\\\\app.py\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "        \"C:\\\\Users\\\\jacob\\\\Documents\\\\_UsefulHelperSCRIPTS\\\\_MicroserviceLIBRARY\\\\_sanbox\\\\promoted\\\\demonstration_first_run\\\\backend.py\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "        \"C:\\\\Users\\\\jacob\\\\Documents\\\\_UsefulHelperSCRIPTS\\\\_MicroserviceLIBRARY\\\\_sanbox\\\\promoted\\\\demonstration_first_run\\\\ui.py\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "        \"C:\\\\Users\\\\jacob\\\\Documents\\\\_UsefulHelperSCRIPTS\\\\_MicroserviceLIBRARY\\\\_sanbox\\\\promoted\\\\demonstration_first_run\\\\requirements.txt\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "        \"C:\\\\Users\\\\jacob\\\\Documents\\\\_UsefulHelperSCRIPTS\\\\_MicroserviceLIBRARY\\\\_sanbox\\\\promoted\\\\demonstration_first_run\\\\pyrightconfig.json\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "        \"C:\\\\Users\\\\jacob\\\\Documents\\\\_UsefulHelperSCRIPTS\\\\_MicroserviceLIBRARY\\\\_sanbox\\\\promoted\\\\demonstration_first_run\\\\.env\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "        \"C:\\\\Users\\\\jacob\\\\Documents\\\\_UsefulHelperSCRIPTS\\\\_MicroserviceLIBRARY\\\\library\\\\microservices\\\\ui\\\\_ExplorerWidgetMS.py\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "        \"C:\\\\Users\\\\jacob\\\\Documents\\\\_UsefulHelperSCRIPTS\\\\_MicroserviceLIBRARY\\\\library\\\\base_service.py\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "        \"C:\\\\Users\\\\jacob\\\\Documents\\\\_UsefulHelperSCRIPTS\\\\_MicroserviceLIBRARY\\\\library\\\\microservice_std_lib.py\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "        \"C:\\\\Users\\\\jacob\\\\Documents\\\\_UsefulHelperSCRIPTS\\\\_MicroserviceLIBRARY\\\\library\\\\microservices\\\\ui\\\\_TkinterAppShellMS.py\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "        \"C:\\\\Users\\\\jacob\\\\Documents\\\\_UsefulHelperSCRIPTS\\\\_MicroserviceLIBRARY\\\\library\\\\microservices\\\\ui\\\\_TkinterThemeManagerMS.py\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "        \"C:\\\\Users\\\\jacob\\\\Documents\\\\_UsefulHelperSCRIPTS\\\\_MicroserviceLIBRARY\\\\library\\\\microservices\\\\ui\\\\_WorkbenchLayoutMS.py\"\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "      ],\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "      \"errors\": [],\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "      \"missing_generated_python_files\": [],\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "      \"generated_python_file_drift\": [],\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "      \"missing_generated_support_files\": [],\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "      \"generated_support_file_drift\": [],\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "      \"missing_library_artifacts\": [],\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "      \"library_artifact_drift\": []\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "    },\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "    \"active_integrity\": \"stamp\",\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "    \"ok\": true\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "  },\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "  \"ok\": true\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "stdout", "text": "}\n", "step_index": 3}
+{"timestamp": "2026-03-08T08:50:54", "type": "step_finished", "step_index": 3, "label": "Promote validated app", "returncode": 0}
+{"timestamp": "2026-03-08T08:50:54", "type": "run_finished", "ok": true, "completed_steps": 3}

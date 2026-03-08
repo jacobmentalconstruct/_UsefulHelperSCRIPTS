@@ -64,7 +64,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     sandbox_stamp_parser = subparsers.add_parser("sandbox-stamp", help="Create a sandbox workspace and stamp a base app into base/working.")
     sandbox_stamp_parser.add_argument("--run-id", required=True, help="Sandbox workspace name.")
-    sandbox_stamp_parser.add_argument("--sandbox-root", default="", help="Optional sandbox root directory. Defaults to _sanbox/apps.")
+    sandbox_stamp_parser.add_argument("--sandbox-root", default="", help="Optional sandbox root directory. Defaults to _sandbox/apps. Legacy _sanbox paths are still accepted.")
     stamp_source = sandbox_stamp_parser.add_mutually_exclusive_group(required=True)
     stamp_source.add_argument("--template-id", default="", help="Built-in template identifier to stamp into the sandbox.")
     stamp_source.add_argument("--manifest", default="", help="Path to a manifest JSON file to stamp into the sandbox.")

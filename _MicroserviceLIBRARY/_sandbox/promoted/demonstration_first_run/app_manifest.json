@@ -1,0 +1,19 @@
+{
+  "app_id": "app_074096e81bbaa478dcb05978",
+  "name": "Demo App v1.0",
+  "destination": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_sanbox\\promoted\\demonstration_first_run",
+  "vendor_mode": "module_ref",
+  "resolution_profile": "app_ready",
+  "ui_pack": "tkinter_base_pack",
+  "orchestrator": "tkinter_shell_orchestrator",
+  "manager_layers": [],
+  "microservices": [
+    "ExplorerWidgetMS"
+  ],
+  "modules": [],
+  "settings_defaults": {
+    "app_title": "Demo App v1.0",
+    "assistant_enabled": false
+  },
+  "hooks": {}
+}
