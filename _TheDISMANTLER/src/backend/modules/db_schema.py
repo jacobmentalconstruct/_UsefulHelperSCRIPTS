@@ -33,6 +33,8 @@ def init_db(db_path=None):
     Tables:
         source_files  – tracked files with content hashes
         chunks        – semantic code chunks tied to files
+        chunk_meta    – enriched per-chunk metadata (decorators, signatures,
+                        call targets, raises, ref counts) for Scout triage
         context_log   – query history for the sliding window
         file_manifest – compact structural manifest per file (Surgeon-Agent)
     """
@@ -78,6 +80,16 @@ def init_db(db_path=None):
             manifest_text TEXT   NOT NULL,
             built_at     TEXT    DEFAULT (datetime('now')),
             UNIQUE(file_id)
+        );
+
+        CREATE TABLE IF NOT EXISTS chunk_meta (
+            chunk_id    INTEGER PRIMARY KEY REFERENCES chunks(chunk_id) ON DELETE CASCADE,
+            decorators  TEXT,
+            signature   TEXT,
+            return_type TEXT,
+            calls       TEXT,
+            raises      TEXT,
+            ref_count   INTEGER DEFAULT 0
         );
 
         CREATE INDEX IF NOT EXISTS idx_chunks_file ON chunks(file_id);

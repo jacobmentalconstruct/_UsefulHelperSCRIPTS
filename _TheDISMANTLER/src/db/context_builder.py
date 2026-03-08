@@ -200,16 +200,25 @@ class ContextBuilder:
     @staticmethod
     def get_chunk_index(file_path: str, db_path: str = None) -> list:
         """
-        Lightweight index: returns chunk metadata WITHOUT the content field.
-        Designed for the Scout model to decide which chunks to request.
+        Enriched chunk index: metadata WITHOUT content, but WITH
+        decorators, signatures, call targets, raises, and ref counts
+        from the chunk_meta table.
+
+        Designed for the Scout model to make informed triage decisions.
 
         Returns:
-            [{chunk_id, name, chunk_type, start_line, end_line, token_est, depth}, ...]
+            [{chunk_id, name, chunk_type, start_line, end_line, token_est,
+              depth, decorators, signature, return_type, calls, raises,
+              ref_count}, ...]
+
+        Missing chunk_meta entries gracefully fall back to empty values.
 
         Args:
             file_path: Absolute path to the source file.
             db_path:   Optional database path override.
         """
+        import json as _json
+
         conn = get_connection(db_path)
         try:
             file_row = conn.execute(
@@ -221,15 +230,31 @@ class ContextBuilder:
 
             rows = conn.execute(
                 """
-                SELECT chunk_id, chunk_type, name, start_line, end_line,
-                       token_est, depth
-                FROM chunks
-                WHERE file_id = ?
-                ORDER BY start_line
+                SELECT c.chunk_id, c.chunk_type, c.name,
+                       c.start_line, c.end_line, c.token_est, c.depth,
+                       cm.decorators, cm.signature, cm.return_type,
+                       cm.calls, cm.raises, cm.ref_count
+                FROM chunks c
+                LEFT JOIN chunk_meta cm ON c.chunk_id = cm.chunk_id
+                WHERE c.file_id = ?
+                ORDER BY c.start_line
                 """,
                 (file_row["file_id"],),
             ).fetchall()
-            return [dict(r) for r in rows]
+
+            result = []
+            for r in rows:
+                entry = dict(r)
+                # Parse JSON fields, defaulting gracefully
+                entry["decorators"] = _safe_json_list(entry.get("decorators"))
+                entry["calls"]      = _safe_json_list(entry.get("calls"))
+                entry["raises"]     = _safe_json_list(entry.get("raises"))
+                entry["signature"]  = entry.get("signature") or ""
+                entry["return_type"] = entry.get("return_type") or ""
+                entry["ref_count"]  = entry.get("ref_count") or 0
+                result.append(entry)
+
+            return result
 
         finally:
             conn.close()
@@ -375,3 +400,17 @@ _KIND_MAP = {
 def _kind_label(chunk_type: str) -> str:
     """Map a chunk_type to its display label."""
     return _KIND_MAP.get(chunk_type, chunk_type or "?")
+
+
+def _safe_json_list(value) -> list:
+    """Parse a JSON string to a list, returning [] on any failure."""
+    if not value:
+        return []
+    if isinstance(value, list):
+        return value
+    try:
+        import json as _json
+        parsed = _json.loads(value)
+        return parsed if isinstance(parsed, list) else []
+    except (ValueError, TypeError):
+        return []

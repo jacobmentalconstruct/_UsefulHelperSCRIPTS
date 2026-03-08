@@ -1,0 +1,68 @@
+{
+  "locked_blueprint_hash": "d5ec3040fb0b3dc6c920f506ea2b79ae2f6cc39b8abe1c80a0848fc186cf3bb5",
+  "catalog_build_id": "build_6bcd1396fe8f032fa53013bb",
+  "vendor_mode": "static",
+  "resolved_library_artifacts": [
+    {
+      "artifact_id": "artifact_c46b8b25ac18e53b139054c4",
+      "source_path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservices\\core\\_FingerprintScannerMS.py",
+      "target_path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_design-docs\\stamped_static_smoke\\vendor\\library\\microservices\\core\\_FingerprintScannerMS.py",
+      "file_cid": "2e5f7e1a67d6fb52bcbb3f2a608001a195b8e1de5dbd00620bb32fd860e85440",
+      "materialization_mode": "static",
+      "import_key": "library.microservices.core._FingerprintScannerMS",
+      "class_name": "FingerprintScannerMS",
+      "service_name": "FingerprintScannerMS"
+    },
+    {
+      "artifact_id": "artifact_948d48e299f0eef72582d59c",
+      "source_path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservice_std_lib.py",
+      "target_path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_design-docs\\stamped_static_smoke\\vendor\\library\\microservice_std_lib.py",
+      "file_cid": "b78a392838eda00a11a3ae26cfb090a52ace554493627f7493e5d2e4de47861c",
+      "materialization_mode": "static",
+      "import_key": "library.microservice_std_lib",
+      "class_name": "",
+      "service_name": ""
+    }
+  ],
+  "generated_python_files": [
+    {
+      "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_design-docs\\stamped_static_smoke\\app.py",
+      "sha256": "7430b7dde805c304cd0a88e750bc3ca06f793fa8728cb351ecd78487627bb4e7"
+    },
+    {
+      "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_design-docs\\stamped_static_smoke\\backend.py",
+      "sha256": "beb684bf53d80a60ff38ba6fca4478f1838cb5e4460a6c23efb64b7323b6bc55"
+    },
+    {
+      "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_design-docs\\stamped_static_smoke\\ui.py",
+      "sha256": "59c123c93f49368c7ed48326c11ee4ad3e7c383787b26b9f00dacd2b9ba43d41"
+    }
+  ],
+  "generated_support_files": [
+    {
+      "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_design-docs\\stamped_static_smoke\\requirements.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_design-docs\\stamped_static_smoke\\pyrightconfig.json",
+      "sha256": "41e76d25e18a052ee18e01d50991db85735859372e86f2de5b9792802a335c90"
+    },
+    {
+      "path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_design-docs\\stamped_static_smoke\\.env",
+      "sha256": "22fb67fb0dd40f29e1b5611f1de1d0243d93466f12af9f4357c718d42196fbff"
+    }
+  ],
+  "external_dependencies": [],
+  "integrity_scope": {
+    "included": [
+      "generated_python_files",
+      "generated_support_files",
+      "resolved_library_artifacts"
+    ],
+    "excluded": [
+      "ui_schema.json",
+      "settings.json"
+    ]
+  },
+  "ui_schema_snapshot_hash": "2dc39ce5e8aab9ea996f16571b96baebc309b13d5e8c2564e852aa3f5938ec69"
+}

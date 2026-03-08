@@ -26,6 +26,30 @@ from db.context_builder import ContextBuilder
 from llm.swarm_client import SwarmClient
 
 
+# ── Intent Classifier patterns ────────────────────────────────
+# Heuristic keyword matching for pre-flight intent classification.
+# Order matters: first match wins.
+_INTENT_PATTERNS = {
+    "bug_hunt": re.compile(
+        r"\b(bug|error|issue|fix|fail|crash|wrong|broken|exception|traceback|raise)\b",
+        re.IGNORECASE,
+    ),
+    "refactor": re.compile(
+        r"\b(refactor|clean|simplify|improve|optimize|rename|extract|restructure|rewrite)\b",
+        re.IGNORECASE,
+    ),
+    "structural_analysis": re.compile(
+        r"\b(explain|describe|summarize|overview|understand|how does|architecture|structure|walk me through)\b",
+        re.IGNORECASE,
+    ),
+}
+
+_FILE_WIDE_PATTERN = re.compile(
+    r"\b(entire|whole|all|every|file|codebase|throughout|global)\b",
+    re.IGNORECASE,
+)
+
+
 # ── Scout prompt template ─────────────────────────────────────
 # The Scout receives the structural manifest and the user query.
 # It must return ONLY a JSON array of chunk_id integers.
@@ -88,9 +112,51 @@ class QueryRouter:
         self.log = log or (lambda msg: None)
         self.db_path = db_path
 
+    # ── Intent Classification ──────────────────────────────────
+
+    def classify_intent(self, query: str, file_name: str = None) -> dict:
+        """
+        Pre-flight heuristic intent classification.
+
+        Produces a structured IntentResult dict that drives the Surgeon's
+        system prompt (identity anchor) and provides telemetry labels.
+
+        Args:
+            query:     The user's chat message.
+            file_name: Basename of the open file (e.g. "datastore.py").
+
+        Returns:
+            {
+                "intent":   "structural_analysis" | "bug_hunt" | "refactor" | "general",
+                "focus":    "file_wide" | "local_chunk",
+                "persona":  str,   # Ollama system field — Surgeon's identity
+                "strategy": "scout_triage",
+            }
+        """
+        intent = next(
+            (name for name, pat in _INTENT_PATTERNS.items() if pat.search(query)),
+            "general",
+        )
+        focus = "file_wide" if _FILE_WIDE_PATTERN.search(query) else "local_chunk"
+
+        fn = file_name or "(unknown file)"
+        persona = (
+            f"You are an expert code analyst and software architect. "
+            f"You are examining the source file '{fn}'. "
+            f"When referencing code, always cite exact line numbers (e.g. L42, L66-71)."
+        )
+
+        return {
+            "intent":   intent,
+            "focus":    focus,
+            "persona":  persona,
+            "strategy": "scout_triage",
+        }
+
     # ── Main Pipeline ─────────────────────────────────────────
 
-    def route(self, file_path: str, query: str, stream_callback=None) -> dict:
+    def route(self, file_path: str, query: str, stream_callback=None,
+              file_name: str = None, telemetry_callback=None) -> dict:
         """
         Execute the full Scout → Surgeon pipeline for a user query.
 
@@ -117,7 +183,12 @@ class QueryRouter:
                 "manifest_len": int,        # chars in the manifest
             }
         """
-        self.log(f"Pipeline start: {query[:80]}...")
+        _tel = telemetry_callback or (lambda m: None)
+
+        # ── Pre-flight: classify intent ───────────────────────
+        intent = self.classify_intent(query, file_name)
+        _tel(f"INTENT: {intent['intent']} / {intent['focus']}")
+        self.log(f"Pipeline start: [{intent['intent']}] {query[:60]}...")
 
         # ── Step 1: Get manifest ──────────────────────────────
         manifest = ContextBuilder.get_manifest(file_path, self.db_path)
@@ -139,6 +210,7 @@ class QueryRouter:
         self.log(f"  Chunk index: {len(chunk_index)} entries")
 
         # ── Step 3: Scout triage ──────────────────────────────
+        _tel(f"SCOUT: Triaging {len(chunk_index)} chunk(s)…")
         scout_prompt = self._build_scout_prompt(manifest, chunk_index, query)
         scout_response = self.swarm.scout(scout_prompt)
         self.log(f"  Scout raw response: {scout_response[:200]}")
@@ -146,6 +218,7 @@ class QueryRouter:
         # ── Step 4: Parse Scout → chunk IDs ───────────────────
         selected_ids = self._parse_scout_response(scout_response, chunk_index)
         self.log(f"  Scout selected {len(selected_ids)} chunk(s): {selected_ids}")
+        _tel(f"SCOUT: Selected {len(selected_ids)} chunk(s)")
 
         # ── Step 5: Fetch + anchor selected chunks ────────────
         selected_chunks = ContextBuilder.get_chunks_by_ids(selected_ids, self.db_path)
@@ -158,9 +231,15 @@ class QueryRouter:
         self.log(f"  Fetched {len(selected_chunks)} chunk(s), applying spatial anchoring")
 
         # ── Step 6: Surgeon analysis ──────────────────────────
+        _tel("SURGEON: Analyzing selected chunks…")
         surgeon_prompt = self._build_surgeon_prompt(manifest, selected_chunks, query)
-        surgeon_response = self.swarm.surgeon(surgeon_prompt, stream_callback=stream_callback)
+        surgeon_response = self.swarm.surgeon(
+            surgeon_prompt,
+            stream_callback=stream_callback,
+            system_prompt=intent["persona"],
+        )
         self.log(f"  Surgeon responded: {len(surgeon_response)} chars")
+        _tel(f"SURGEON: Done ({len(surgeon_response)} chars)")
 
         # ── Step 7: Return ────────────────────────────────────
         if surgeon_response.startswith("ERROR:"):
@@ -234,13 +313,18 @@ class QueryRouter:
     @staticmethod
     def _build_scout_prompt(manifest: str, chunk_index: list, query: str) -> str:
         """
-        Build the Scout's triage prompt.
+        Build the Scout's triage prompt with enriched chunk metadata.
 
-        The chunk index is formatted as a compact table:
-          ID=3  [def]  load_file  L66-99  (~200 tokens)
+        Each chunk entry now includes (when available):
+          - Decorators (@staticmethod, @property, etc.)
+          - Function signature (parameter names + types)
+          - Return type
+          - Call targets (what this function calls)
+          - Exception types it can raise
+          - Reference count (how many other chunks reference it)
 
-        This fits easily within the Scout's 512-token context because
-        it contains NO code content — only structural metadata.
+        This gives the Scout dramatically better triage signals
+        while still fitting in 512 tokens (no code content included).
         """
         index_lines = []
         for ch in chunk_index:
@@ -249,9 +333,46 @@ class QueryRouter:
             s = ch["start_line"]
             e = ch["end_line"]
             tokens = ch.get("token_est", 0)
-            index_lines.append(
-                f"  ID={ch['chunk_id']}  [{kind}]  {name}  L{s}-{e}  (~{tokens} tokens)"
-            )
+
+            # Core line
+            line = f"  ID={ch['chunk_id']}  [{kind}]  {name}"
+
+            # Signature (compact)
+            sig = ch.get("signature", "")
+            ret = ch.get("return_type", "")
+            if sig and kind in ("function", "method", "def", "async"):
+                # Truncate long sigs for the Scout's tight budget
+                sig_short = sig if len(sig) <= 40 else sig[:37] + "..."
+                line += f"({sig_short})"
+            if ret:
+                line += f" \u2192 {ret}"
+
+            line += f"  L{s}-{e}"
+
+            # Reference count (gravity indicator)
+            rc = ch.get("ref_count", 0)
+            if rc > 0:
+                line += f"  refs={rc}"
+
+            # Decorators (compact)
+            decorators = ch.get("decorators", [])
+            if decorators:
+                line += "  " + " ".join(f"@{d}" for d in decorators[:3])
+
+            # Call targets (compact — only names)
+            calls = ch.get("calls", [])
+            if calls:
+                call_display = calls[:5]
+                suffix = f"+{len(calls)-5}" if len(calls) > 5 else ""
+                line += f"  calls:[{','.join(call_display)}{suffix}]"
+
+            # Raises
+            raises = ch.get("raises", [])
+            if raises:
+                line += f"  raises:[{','.join(raises)}]"
+
+            line += f"  (~{tokens}tok)"
+            index_lines.append(line)
 
         chunk_index_str = "\n".join(index_lines)
 

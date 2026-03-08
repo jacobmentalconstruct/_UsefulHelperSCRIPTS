@@ -19,6 +19,7 @@ class ASTNode:
     __slots__ = (
         "name", "kind", "start_line", "end_line", "depth",
         "parent", "children", "imports", "references", "decorators",
+        "signature", "return_type", "raises",
     )
 
     def __init__(self, name, kind, start_line, end_line, depth=0):
@@ -32,6 +33,9 @@ class ASTNode:
         self.imports: Set[str] = set()
         self.references: Set[str] = set()
         self.decorators: List[str] = []
+        self.signature: str = ""        # "self, path: str, validate=True"
+        self.return_type: str = ""      # "Dict[str, Any]" or ""
+        self.raises: List[str] = []     # ["FileNotFoundError", "ValueError"]
 
     def to_dict(self) -> Dict:
         return {
@@ -45,6 +49,9 @@ class ASTNode:
             "imports": list(self.imports),
             "references": list(self.references),
             "decorators": self.decorators,
+            "signature": self.signature,
+            "return_type": self.return_type,
+            "raises": self.raises,
         }
 
 
@@ -157,6 +164,9 @@ class ASTNodeWalker:
         ast_node.imports = module_imports.copy()
         ast_node.decorators = [self._decorator_name(d) for d in node.decorator_list]
         ast_node.references = self._extract_references(node)
+        ast_node.signature = self._extract_signature(node)
+        ast_node.return_type = self._extract_return_type(node)
+        ast_node.raises = self._extract_raises(node)
 
         self.entities.append({
             "name": node.name,
@@ -245,6 +255,112 @@ class ASTNodeWalker:
         elif isinstance(node, ast.Call):
             return ASTNodeWalker._decorator_name(node.func)
         return "unknown"
+
+    # ── signature / return / raises extraction ──────────────
+
+    @staticmethod
+    def _extract_signature(node) -> str:
+        """
+        Build a human-readable parameter string from a FunctionDef.
+        Example: "self, path: str, validate=True, *args, **kwargs"
+        """
+        args = node.args
+        parts = []
+
+        # Positional args (may have defaults for the tail end)
+        defaults_offset = len(args.args) - len(args.defaults)
+        for i, arg in enumerate(args.args):
+            name = arg.arg
+            ann = ASTNodeWalker._annotation_str(arg.annotation) if arg.annotation else ""
+            default_idx = i - defaults_offset
+            has_default = default_idx >= 0
+            if ann and has_default:
+                parts.append(f"{name}: {ann}=...")
+            elif ann:
+                parts.append(f"{name}: {ann}")
+            elif has_default:
+                parts.append(f"{name}=...")
+            else:
+                parts.append(name)
+
+        # *args
+        if args.vararg:
+            va = args.vararg.arg
+            ann = ASTNodeWalker._annotation_str(args.vararg.annotation) if args.vararg.annotation else ""
+            parts.append(f"*{va}: {ann}" if ann else f"*{va}")
+
+        # keyword-only args
+        kw_defaults = args.kw_defaults  # may contain None entries
+        for i, arg in enumerate(args.kwonlyargs):
+            name = arg.arg
+            ann = ASTNodeWalker._annotation_str(arg.annotation) if arg.annotation else ""
+            has_default = i < len(kw_defaults) and kw_defaults[i] is not None
+            if ann and has_default:
+                parts.append(f"{name}: {ann}=...")
+            elif ann:
+                parts.append(f"{name}: {ann}")
+            elif has_default:
+                parts.append(f"{name}=...")
+            else:
+                parts.append(name)
+
+        # **kwargs
+        if args.kwarg:
+            kw = args.kwarg.arg
+            ann = ASTNodeWalker._annotation_str(args.kwarg.annotation) if args.kwarg.annotation else ""
+            parts.append(f"**{kw}: {ann}" if ann else f"**{kw}")
+
+        return ", ".join(parts)
+
+    @staticmethod
+    def _extract_return_type(node) -> str:
+        """Extract the return type annotation as a readable string."""
+        if node.returns:
+            return ASTNodeWalker._annotation_str(node.returns)
+        return ""
+
+    @staticmethod
+    def _extract_raises(node) -> List[str]:
+        """
+        Walk the function body and collect exception types from raise statements.
+        Returns sorted, deduplicated list: ["FileNotFoundError", "ValueError"]
+        """
+        raised = set()
+        for child in ast.walk(node):
+            if isinstance(child, ast.Raise) and child.exc:
+                if isinstance(child.exc, ast.Call):
+                    name = ASTNodeWalker._node_name(child.exc.func)
+                    if name:
+                        raised.add(name)
+                elif isinstance(child.exc, ast.Name):
+                    raised.add(child.exc.id)
+        return sorted(raised)
+
+    @staticmethod
+    def _annotation_str(node) -> str:
+        """Convert a type annotation AST node to a human-readable string."""
+        if node is None:
+            return ""
+        if isinstance(node, ast.Name):
+            return node.id
+        if isinstance(node, ast.Attribute):
+            val = ASTNodeWalker._annotation_str(node.value)
+            return f"{val}.{node.attr}" if val else node.attr
+        if isinstance(node, ast.Subscript):
+            val = ASTNodeWalker._annotation_str(node.value)
+            sl = ASTNodeWalker._annotation_str(node.slice)
+            return f"{val}[{sl}]"
+        if isinstance(node, ast.Constant):
+            return repr(node.value)
+        if isinstance(node, ast.Tuple):
+            items = ", ".join(ASTNodeWalker._annotation_str(e) for e in node.elts)
+            return items
+        # ast.BinOp for X | Y union syntax (Python 3.10+)
+        if isinstance(node, ast.BinOp) and isinstance(node.op, ast.BitOr):
+            left = ASTNodeWalker._annotation_str(node.left)
+            right = ASTNodeWalker._annotation_str(node.right)
+            return f"{left} | {right}"
+        return "..."
 
     # ── output helpers ──────────────────────────────────────
 

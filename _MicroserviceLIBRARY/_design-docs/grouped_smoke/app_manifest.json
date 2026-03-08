@@ -1,0 +1,21 @@
+{
+  "app_id": "app_8e23943b82b30b9f92baf7a9",
+  "name": "Grouped Smoke",
+  "destination": "_design-docs\\grouped_smoke",
+  "vendor_mode": "module_ref",
+  "resolution_profile": "app_ready",
+  "ui_pack": "headless_pack",
+  "orchestrator": "headless_backend_orchestrator",
+  "manager_layers": [
+    "storage"
+  ],
+  "microservices": [
+    "Blake3HashMS"
+  ],
+  "modules": [],
+  "settings_defaults": {
+    "app_title": "Grouped Smoke",
+    "assistant_enabled": false
+  },
+  "hooks": {}
+}

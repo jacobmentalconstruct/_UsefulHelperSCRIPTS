@@ -1,0 +1,40 @@
+# Local assistant and archive state
+.claude/
+_archives/
+
+# Python environments
+.venv/
+venv/
+env/
+ENV/
+
+# Python cache and build output
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+build/
+dist/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Editor and OS files
+.vscode/
+.idea/
+*.swp
+*.swo
+Thumbs.db
+Desktop.ini
+
+# Derived catalog and runtime outputs
+library/catalog/catalog.db
+library/catalog/canonical_mapping_report.json
+stamped_app/
+
+# Local env files
+.env

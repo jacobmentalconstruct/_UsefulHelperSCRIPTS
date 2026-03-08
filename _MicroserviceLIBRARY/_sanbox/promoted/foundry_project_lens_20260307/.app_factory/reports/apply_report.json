@@ -1,0 +1,127 @@
+{
+  "workspace_root": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_sanbox\\apps\\foundry_project_lens_20260307",
+  "working_app_dir": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_sanbox\\apps\\foundry_project_lens_20260307\\working",
+  "validate_reports": [
+    {
+      "ok": true,
+      "returncode": 0,
+      "command": [
+        "C:\\Python313\\python.exe",
+        "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_curationTOOLS\\tokenizing_patcher_with_cli.py",
+        "validate",
+        "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_sanbox\\apps\\foundry_project_lens_20260307\\patches\\project_lens_transform.json",
+        "--root-dir",
+        "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_sanbox\\apps\\foundry_project_lens_20260307\\working"
+      ],
+      "payload": {
+        "status": "valid",
+        "mode": "manifest",
+        "target_count": 4,
+        "changed_count": 4,
+        "results": [
+          {
+            "status": "valid",
+            "target": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_sanbox\\apps\\foundry_project_lens_20260307\\working\\ui.py",
+            "changed": true,
+            "original_line_count": 100,
+            "patched_line_count": 180,
+            "hunk_count": 2
+          },
+          {
+            "status": "valid",
+            "target": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_sanbox\\apps\\foundry_project_lens_20260307\\working\\app.py",
+            "changed": true,
+            "original_line_count": 41,
+            "patched_line_count": 41,
+            "hunk_count": 1
+          },
+          {
+            "status": "valid",
+            "target": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_sanbox\\apps\\foundry_project_lens_20260307\\working\\settings.json",
+            "changed": true,
+            "original_line_count": 30,
+            "patched_line_count": 31,
+            "hunk_count": 1
+          },
+          {
+            "status": "valid",
+            "target": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_sanbox\\apps\\foundry_project_lens_20260307\\working\\ui_schema.json",
+            "changed": true,
+            "original_line_count": 35,
+            "patched_line_count": 35,
+            "hunk_count": 1
+          }
+        ]
+      }
+    }
+  ],
+  "apply_reports": [
+    {
+      "ok": true,
+      "returncode": 0,
+      "command": [
+        "C:\\Python313\\python.exe",
+        "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_curationTOOLS\\tokenizing_patcher_with_cli.py",
+        "apply",
+        "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_sanbox\\apps\\foundry_project_lens_20260307\\patches\\project_lens_transform.json",
+        "--root-dir",
+        "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_sanbox\\apps\\foundry_project_lens_20260307\\working",
+        "--backup"
+      ],
+      "payload": {
+        "status": "applied",
+        "mode": "manifest",
+        "target_count": 4,
+        "changed_count": 4,
+        "results": [
+          {
+            "status": "applied",
+            "target": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_sanbox\\apps\\foundry_project_lens_20260307\\working\\ui.py",
+            "output": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_sanbox\\apps\\foundry_project_lens_20260307\\working\\ui.py",
+            "changed": true,
+            "original_line_count": 100,
+            "patched_line_count": 180,
+            "hunk_count": 2
+          },
+          {
+            "status": "applied",
+            "target": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_sanbox\\apps\\foundry_project_lens_20260307\\working\\app.py",
+            "output": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_sanbox\\apps\\foundry_project_lens_20260307\\working\\app.py",
+            "changed": true,
+            "original_line_count": 41,
+            "patched_line_count": 41,
+            "hunk_count": 1
+          },
+          {
+            "status": "applied",
+            "target": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_sanbox\\apps\\foundry_project_lens_20260307\\working\\settings.json",
+            "output": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_sanbox\\apps\\foundry_project_lens_20260307\\working\\settings.json",
+            "changed": true,
+            "original_line_count": 30,
+            "patched_line_count": 31,
+            "hunk_count": 1
+          },
+          {
+            "status": "applied",
+            "target": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_sanbox\\apps\\foundry_project_lens_20260307\\working\\ui_schema.json",
+            "output": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_sanbox\\apps\\foundry_project_lens_20260307\\working\\ui_schema.json",
+            "changed": true,
+            "original_line_count": 35,
+            "patched_line_count": 35,
+            "hunk_count": 1
+          }
+        ]
+      }
+    }
+  ],
+  "copied_patch_records": [
+    {
+      "source_path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_sanbox\\apps\\foundry_project_lens_20260307\\patches\\project_lens_transform.json",
+      "workspace_path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_sanbox\\apps\\foundry_project_lens_20260307\\patches\\01_project_lens_transform.json",
+      "app_path": ".app_factory/patches/01_project_lens_transform.json",
+      "sha256": "090578ee06ec4272aa290f3cf00339d4f5f067e09c7f9643f38c463b64561869"
+    }
+  ],
+  "transform_lock_path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_sanbox\\apps\\foundry_project_lens_20260307\\working\\.transform_lock.json",
+  "ok": true
+}

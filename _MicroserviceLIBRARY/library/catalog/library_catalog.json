@@ -1,0 +1,1439 @@
+{
+  "generated_at_utc": "2026-03-07T13:41:51Z",
+  "root": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY",
+  "destination_root": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library",
+  "mode": "copy",
+  "applied": true,
+  "summary": {
+    "total_files": 102,
+    "by_source_type": {
+      "root_microservice": 93,
+      "support_module": 1,
+      "new_module": 8
+    },
+    "by_layer": {
+      "core": 26,
+      "storage": 1,
+      "ui": 13,
+      "structure": 4,
+      "relation": 4,
+      "db": 5,
+      "pipeline": 2,
+      "reference": 35,
+      "meaning": 2,
+      "observability": 1,
+      "support": 1,
+      "asset": 1,
+      "tooling": 1,
+      "manager": 1,
+      "grouped": 3,
+      "orchestrator": 1,
+      "module": 1
+    }
+  },
+  "plans": [
+    {
+      "source": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_ArchiveBotMS.py",
+      "destination": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservices\\core\\_ArchiveBotMS.py",
+      "source_type": "root_microservice",
+      "layer": "core",
+      "service_name": "ArchiveBotMS",
+      "class_name": "ArchiveBotMS",
+      "tags": [
+        "utility",
+        "backup",
+        "filesystem"
+      ],
+      "mode": "copy"
+    },
+    {
+      "source": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_AuthMS.py",
+      "destination": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservices\\core\\_AuthMS.py",
+      "source_type": "root_microservice",
+      "layer": "core",
+      "service_name": "Auth",
+      "class_name": "AuthMS",
+      "tags": [
+        "auth",
+        "security",
+        "crypto"
+      ],
+      "mode": "copy"
+    },
+    {
+      "source": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_CartridgeServiceMS.py",
+      "destination": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservices\\storage\\_CartridgeServiceMS.py",
+      "source_type": "root_microservice",
+      "layer": "storage",
+      "service_name": "CartridgeServiceMS",
+      "class_name": "CartridgeServiceMS",
+      "tags": [
+        "storage",
+        "database",
+        "RAG"
+      ],
+      "mode": "copy"
+    },
+    {
+      "source": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_ChalkBoardMS.py",
+      "destination": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservices\\ui\\_ChalkBoardMS.py",
+      "source_type": "root_microservice",
+      "layer": "ui",
+      "service_name": "ChalkboardWeb",
+      "class_name": "ChalkBoardMS",
+      "tags": [
+        "ui",
+        "webview",
+        "obs"
+      ],
+      "mode": "copy"
+    },
+    {
+      "source": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_ChunkingRouterMS.py",
+      "destination": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservices\\structure\\_ChunkingRouterMS.py",
+      "source_type": "root_microservice",
+      "layer": "structure",
+      "service_name": "ChunkingRouterMS",
+      "class_name": "ChunkingRouterMS",
+      "tags": [
+        "orchestration",
+        "chunking",
+        "nlp"
+      ],
+      "mode": "copy"
+    },
+    {
+      "source": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_CodeChunkerMS.py",
+      "destination": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservices\\structure\\_CodeChunkerMS.py",
+      "source_type": "root_microservice",
+      "layer": "structure",
+      "service_name": "CodeChunker",
+      "class_name": "CodeChunkerMS",
+      "tags": [
+        "parsing",
+        "chunking",
+        "code"
+      ],
+      "mode": "copy"
+    },
+    {
+      "source": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_CodeFormatterMS.py",
+      "destination": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservices\\core\\_CodeFormatterMS.py",
+      "source_type": "root_microservice",
+      "layer": "core",
+      "service_name": "CodeFormatter",
+      "class_name": "CodeFormatterMS",
+      "tags": [
+        "formatting",
+        "code",
+        "utility"
+      ],
+      "mode": "copy"
+    },
+    {
+      "source": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_CodeGrapherMS.py",
+      "destination": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservices\\relation\\_CodeGrapherMS.py",
+      "source_type": "root_microservice",
+      "layer": "relation",
+      "service_name": "CodeGrapher",
+      "class_name": "CodeGrapherMS",
+      "tags": [
+        "parsing",
+        "graph",
+        "analysis"
+      ],
+      "mode": "copy"
+    },
+    {
+      "source": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_CodeJanitorMS.py",
+      "destination": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservices\\core\\_CodeJanitorMS.py",
+      "source_type": "root_microservice",
+      "layer": "core",
+      "service_name": "CodeJanitor",
+      "class_name": "CodeJanitorMS",
+      "tags": [
+        "maintenance"
+      ],
+      "mode": "copy"
+    },
+    {
+      "source": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_CognitiveMemoryMS.py",
+      "destination": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservices\\core\\_CognitiveMemoryMS.py",
+      "source_type": "root_microservice",
+      "layer": "core",
+      "service_name": "CognitiveMemory",
+      "class_name": "CognitiveMemoryMS",
+      "tags": [
+        "memory",
+        "history",
+        "context"
+      ],
+      "mode": "copy"
+    },
+    {
+      "source": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_ContentExtractorMS.py",
+      "destination": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservices\\core\\_ContentExtractorMS.py",
+      "source_type": "root_microservice",
+      "layer": "core",
+      "service_name": "ContentExtractorMS",
+      "class_name": "ContentExtractorMS",
+      "tags": [
+        "utility",
+        "extraction",
+        "nlp"
+      ],
+      "mode": "copy"
+    },
+    {
+      "source": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_ContextAggregatorMS.py",
+      "destination": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservices\\core\\_ContextAggregatorMS.py",
+      "source_type": "root_microservice",
+      "layer": "core",
+      "service_name": "ContextAggregator",
+      "class_name": "ContextAggregatorMS",
+      "tags": [
+        "filesystem",
+        "context",
+        "compilation"
+      ],
+      "mode": "copy"
+    },
+    {
+      "source": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_ContextPackerMS.py",
+      "destination": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservices\\core\\_ContextPackerMS.py",
+      "source_type": "root_microservice",
+      "layer": "core",
+      "service_name": "ContextPacker",
+      "class_name": "ContextPackerMS",
+      "tags": [
+        "filesystem",
+        "export",
+        "utility"
+      ],
+      "mode": "copy"
+    },
+    {
+      "source": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_DiffEngineMS.py",
+      "destination": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservices\\db\\_DiffEngineMS.py",
+      "source_type": "root_microservice",
+      "layer": "db",
+      "service_name": "DiffEngineMS",
+      "class_name": "DiffEngineMS",
+      "tags": [
+        "version-control",
+        "diff",
+        "db"
+      ],
+      "mode": "copy"
+    },
+    {
+      "source": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_EnvironmentManagerMS.py",
+      "destination": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservices\\core\\_EnvironmentManagerMS.py",
+      "source_type": "root_microservice",
+      "layer": "core",
+      "service_name": "EnvironmentManager",
+      "class_name": "EnvironmentManagerMS",
+      "tags": [
+        "runtime",
+        "python",
+        "venv",
+        "process"
+      ],
+      "mode": "copy"
+    },
+    {
+      "source": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_ExplorerWidgetMS.py",
+      "destination": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservices\\ui\\_ExplorerWidgetMS.py",
+      "source_type": "root_microservice",
+      "layer": "ui",
+      "service_name": "ExplorerWidgetMS",
+      "class_name": "ExplorerWidgetMS",
+      "tags": [
+        "ui",
+        "filesystem",
+        "widget"
+      ],
+      "mode": "copy"
+    },
+    {
+      "source": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_FingerprintScannerMS.py",
+      "destination": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservices\\core\\_FingerprintScannerMS.py",
+      "source_type": "root_microservice",
+      "layer": "core",
+      "service_name": "FingerprintScannerMS",
+      "class_name": "FingerprintScannerMS",
+      "tags": [
+        "scanning",
+        "integrity",
+        "hashing"
+      ],
+      "mode": "copy"
+    },
+    {
+      "source": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_GitPilotMS.py",
+      "destination": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservices\\ui\\_GitPilotMS.py",
+      "source_type": "root_microservice",
+      "layer": "ui",
+      "service_name": "GitPilotMS",
+      "class_name": "GitPilotMS",
+      "tags": [
+        "ui",
+        "git",
+        "version-control",
+        "widget"
+      ],
+      "mode": "copy"
+    },
+    {
+      "source": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_HeuristicSumMS.py",
+      "destination": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservices\\core\\_HeuristicSumMS.py",
+      "source_type": "root_microservice",
+      "layer": "core",
+      "service_name": "HeuristicSum",
+      "class_name": "HeuristicSumMS",
+      "tags": [
+        "parsing",
+        "summary",
+        "heuristics"
+      ],
+      "mode": "copy"
+    },
+    {
+      "source": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_IngestEngineMS.py",
+      "destination": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservices\\pipeline\\_IngestEngineMS.py",
+      "source_type": "root_microservice",
+      "layer": "pipeline",
+      "service_name": "IngestEngine",
+      "class_name": "IngestEngineMS",
+      "tags": [
+        "ingest",
+        "rag",
+        "parsing",
+        "embedding"
+      ],
+      "mode": "copy"
+    },
+    {
+      "source": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_IntakeServiceMS.py",
+      "destination": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservices\\core\\_IntakeServiceMS.py",
+      "source_type": "root_microservice",
+      "layer": "core",
+      "service_name": "IntakeServiceMS",
+      "class_name": "IntakeServiceMS",
+      "tags": [
+        "ingestion",
+        "scanner",
+        "vfs"
+      ],
+      "mode": "copy"
+    },
+    {
+      "source": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_IsoProcessMS.py",
+      "destination": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservices\\core\\_IsoProcessMS.py",
+      "source_type": "root_microservice",
+      "layer": "core",
+      "service_name": "IsoProcess",
+      "class_name": "IsoProcessMS",
+      "tags": [
+        "process",
+        "isolation",
+        "safety"
+      ],
+      "mode": "copy"
+    },
+    {
+      "source": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_LexicalSearchMS.py",
+      "destination": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservices\\db\\_LexicalSearchMS.py",
+      "source_type": "root_microservice",
+      "layer": "db",
+      "service_name": "LexicalSearch",
+      "class_name": "LexicalSearchMS",
+      "tags": [
+        "search",
+        "index",
+        "sqlite"
+      ],
+      "mode": "copy"
+    },
+    {
+      "source": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_LibrarianMS.py",
+      "destination": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservices\\core\\_LibrarianMS.py",
+      "source_type": "root_microservice",
+      "layer": "core",
+      "service_name": "Librarian",
+      "class_name": "LibrarianMS",
+      "tags": [
+        "documentation",
+        "ai",
+        "catalog",
+        "swarm"
+      ],
+      "mode": "copy"
+    },
+    {
+      "source": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_LibrarianServiceMS.py",
+      "destination": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservices\\core\\_LibrarianServiceMS.py",
+      "source_type": "root_microservice",
+      "layer": "core",
+      "service_name": "Librarian",
+      "class_name": "LibrarianMS",
+      "tags": [
+        "documentation",
+        "ai",
+        "catalog",
+        "swarm"
+      ],
+      "mode": "copy"
+    },
+    {
+      "source": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_LogViewMS.py",
+      "destination": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservices\\ui\\_LogViewMS.py",
+      "source_type": "root_microservice",
+      "layer": "ui",
+      "service_name": "LogView",
+      "class_name": "LogViewMS",
+      "tags": [
+        "ui",
+        "logs",
+        "widget"
+      ],
+      "mode": "copy"
+    },
+    {
+      "source": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_MonacoHostMS.py",
+      "destination": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservices\\ui\\_MonacoHostMS.py",
+      "source_type": "root_microservice",
+      "layer": "ui",
+      "service_name": "MonacoHost",
+      "class_name": "MonacoHostMS",
+      "tags": [
+        "ui",
+        "editor",
+        "webview"
+      ],
+      "mode": "copy"
+    },
+    {
+      "source": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_NetworkLayoutMS.py",
+      "destination": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservices\\relation\\_NetworkLayoutMS.py",
+      "source_type": "root_microservice",
+      "layer": "relation",
+      "service_name": "NetworkLayout",
+      "class_name": "NetworkLayoutMS",
+      "tags": [
+        "graph",
+        "layout",
+        "visualization"
+      ],
+      "mode": "copy"
+    },
+    {
+      "source": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_NeuralGraphEngineMS.py",
+      "destination": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservices\\relation\\_NeuralGraphEngineMS.py",
+      "source_type": "root_microservice",
+      "layer": "relation",
+      "service_name": "NeuralGraphEngineMS",
+      "class_name": "NeuralGraphEngineMS",
+      "tags": [
+        "visualization",
+        "graph",
+        "pygame"
+      ],
+      "mode": "copy"
+    },
+    {
+      "source": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_NeuralGraphViewerMS.py",
+      "destination": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservices\\ui\\_NeuralGraphViewerMS.py",
+      "source_type": "root_microservice",
+      "layer": "ui",
+      "service_name": "NeuralGraphViewerMS",
+      "class_name": "NeuralGraphViewerMS",
+      "tags": [
+        "ui",
+        "visualization",
+        "tkinter"
+      ],
+      "mode": "copy"
+    },
+    {
+      "source": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_NeuralServiceMS.py",
+      "destination": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservices\\core\\_NeuralServiceMS.py",
+      "source_type": "root_microservice",
+      "layer": "core",
+      "service_name": "NeuralService",
+      "class_name": "NeuralServiceMS",
+      "tags": [
+        "ai",
+        "neural",
+        "inference",
+        "ollama"
+      ],
+      "mode": "copy"
+    },
+    {
+      "source": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_ProjectForgeMS.py",
+      "destination": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservices\\core\\_ProjectForgeMS.py",
+      "source_type": "root_microservice",
+      "layer": "core",
+      "service_name": "ProjectForge",
+      "class_name": "ProjectForgeMS",
+      "tags": [
+        "scaffolding",
+        "generator",
+        "filesystem"
+      ],
+      "mode": "copy"
+    },
+    {
+      "source": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_PromptOptimizerMS.py",
+      "destination": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservices\\core\\_PromptOptimizerMS.py",
+      "source_type": "root_microservice",
+      "layer": "core",
+      "service_name": "PromptOptimizer",
+      "class_name": "PromptOptimizerMS",
+      "tags": [
+        "llm",
+        "prompt-engineering",
+        "optimization"
+      ],
+      "mode": "copy"
+    },
+    {
+      "source": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_PromptVaultMS.py",
+      "destination": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservices\\core\\_PromptVaultMS.py",
+      "source_type": "root_microservice",
+      "layer": "core",
+      "service_name": "PromptVault",
+      "class_name": "PromptVaultMS",
+      "tags": [
+        "prompt",
+        "database",
+        "versioning",
+        "jinja"
+      ],
+      "mode": "copy"
+    },
+    {
+      "source": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_PythonChunkerMS.py",
+      "destination": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservices\\structure\\_PythonChunkerMS.py",
+      "source_type": "root_microservice",
+      "layer": "structure",
+      "service_name": "PythonChunker",
+      "class_name": "PythonChunkerMS",
+      "tags": [
+        "chunking",
+        "python",
+        "ast"
+      ],
+      "mode": "copy"
+    },
+    {
+      "source": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_ReferenceChunkViewerFormatMS.py",
+      "destination": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservices\\reference\\_ReferenceChunkViewerFormatMS.py",
+      "source_type": "root_microservice",
+      "layer": "reference",
+      "service_name": "ReferenceChunkViewerFormatMS",
+      "class_name": "ReferenceChunkViewerFormatMS",
+      "tags": [
+        "viewer",
+        "chunking",
+        "formatting"
+      ],
+      "mode": "copy"
+    },
+    {
+      "source": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_ReferenceCliPlannerMS.py",
+      "destination": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservices\\reference\\_ReferenceCliPlannerMS.py",
+      "source_type": "root_microservice",
+      "layer": "reference",
+      "service_name": "ReferenceCliPlannerMS",
+      "class_name": "ReferenceCliPlannerMS",
+      "tags": [
+        "cli",
+        "pipeline",
+        "planning"
+      ],
+      "mode": "copy"
+    },
+    {
+      "source": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_ReferenceCompoundDetectMS.py",
+      "destination": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservices\\reference\\_ReferenceCompoundDetectMS.py",
+      "source_type": "root_microservice",
+      "layer": "reference",
+      "service_name": "ReferenceCompoundDetectMS",
+      "class_name": "ReferenceCompoundDetectMS",
+      "tags": [
+        "chunking",
+        "compound",
+        "detection"
+      ],
+      "mode": "copy"
+    },
+    {
+      "source": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_ReferenceCompoundRoutingMS.py",
+      "destination": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservices\\reference\\_ReferenceCompoundRoutingMS.py",
+      "source_type": "root_microservice",
+      "layer": "reference",
+      "service_name": "ReferenceCompoundRoutingMS",
+      "class_name": "ReferenceCompoundRoutingMS",
+      "tags": [
+        "compound",
+        "chunking",
+        "routing"
+      ],
+      "mode": "copy"
+    },
+    {
+      "source": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_ReferenceConfigRegistryMS.py",
+      "destination": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservices\\reference\\_ReferenceConfigRegistryMS.py",
+      "source_type": "root_microservice",
+      "layer": "reference",
+      "service_name": "ReferenceConfigRegistryMS",
+      "class_name": "ReferenceConfigRegistryMS",
+      "tags": [
+        "config",
+        "models",
+        "pipeline",
+        "registry"
+      ],
+      "mode": "copy"
+    },
+    {
+      "source": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_ReferenceDbConnectionMS.py",
+      "destination": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservices\\reference\\_ReferenceDbConnectionMS.py",
+      "source_type": "root_microservice",
+      "layer": "reference",
+      "service_name": "ReferenceDbConnectionMS",
+      "class_name": "ReferenceDbConnectionMS",
+      "tags": [
+        "db",
+        "sqlite",
+        "connection"
+      ],
+      "mode": "copy"
+    },
+    {
+      "source": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_ReferenceDbQueryMS.py",
+      "destination": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservices\\reference\\_ReferenceDbQueryMS.py",
+      "source_type": "root_microservice",
+      "layer": "reference",
+      "service_name": "ReferenceDbQueryMS",
+      "class_name": "ReferenceDbQueryMS",
+      "tags": [
+        "db",
+        "query",
+        "search"
+      ],
+      "mode": "copy"
+    },
+    {
+      "source": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_ReferenceDbSchemaPolicyMS.py",
+      "destination": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservices\\reference\\_ReferenceDbSchemaPolicyMS.py",
+      "source_type": "root_microservice",
+      "layer": "reference",
+      "service_name": "ReferenceDbSchemaPolicyMS",
+      "class_name": "ReferenceDbSchemaPolicyMS",
+      "tags": [
+        "db",
+        "schema",
+        "policy",
+        "deploy"
+      ],
+      "mode": "copy"
+    },
+    {
+      "source": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_ReferenceDbSearchMS.py",
+      "destination": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservices\\reference\\_ReferenceDbSearchMS.py",
+      "source_type": "root_microservice",
+      "layer": "reference",
+      "service_name": "ReferenceDbSearchMS",
+      "class_name": "ReferenceDbSearchMS",
+      "tags": [
+        "db",
+        "search",
+        "fts"
+      ],
+      "mode": "copy"
+    },
+    {
+      "source": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_ReferenceDetectMS.py",
+      "destination": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservices\\reference\\_ReferenceDetectMS.py",
+      "source_type": "root_microservice",
+      "layer": "reference",
+      "service_name": "ReferenceDetectMS",
+      "class_name": "ReferenceDetectMS",
+      "tags": [
+        "pipeline",
+        "detect",
+        "ingest"
+      ],
+      "mode": "copy"
+    },
+    {
+      "source": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_ReferenceEmbedPipelineMS.py",
+      "destination": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservices\\reference\\_ReferenceEmbedPipelineMS.py",
+      "source_type": "root_microservice",
+      "layer": "reference",
+      "service_name": "ReferenceEmbedPipelineMS",
+      "class_name": "ReferenceEmbedPipelineMS",
+      "tags": [
+        "pipeline",
+        "embed",
+        "db"
+      ],
+      "mode": "copy"
+    },
+    {
+      "source": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_ReferenceEmbedUtilsMS.py",
+      "destination": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservices\\reference\\_ReferenceEmbedUtilsMS.py",
+      "source_type": "root_microservice",
+      "layer": "reference",
+      "service_name": "ReferenceEmbedUtilsMS",
+      "class_name": "ReferenceEmbedUtilsMS",
+      "tags": [
+        "pipeline",
+        "embed",
+        "vector"
+      ],
+      "mode": "copy"
+    },
+    {
+      "source": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_ReferenceExplorerModelMS.py",
+      "destination": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservices\\reference\\_ReferenceExplorerModelMS.py",
+      "source_type": "root_microservice",
+      "layer": "reference",
+      "service_name": "ReferenceExplorerModelMS",
+      "class_name": "ReferenceExplorerModelMS",
+      "tags": [
+        "explorer",
+        "tree",
+        "model"
+      ],
+      "mode": "copy"
+    },
+    {
+      "source": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_ReferenceExportMS.py",
+      "destination": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservices\\reference\\_ReferenceExportMS.py",
+      "source_type": "root_microservice",
+      "layer": "reference",
+      "service_name": "ReferenceExportMS",
+      "class_name": "ReferenceExportMS",
+      "tags": [
+        "export",
+        "db",
+        "filesystem"
+      ],
+      "mode": "copy"
+    },
+    {
+      "source": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_ReferenceGraphExtractMS.py",
+      "destination": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservices\\reference\\_ReferenceGraphExtractMS.py",
+      "source_type": "root_microservice",
+      "layer": "reference",
+      "service_name": "ReferenceGraphExtractMS",
+      "class_name": "ReferenceGraphExtractMS",
+      "tags": [
+        "pipeline",
+        "graph",
+        "extraction"
+      ],
+      "mode": "copy"
+    },
+    {
+      "source": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_ReferenceIngestRunnerMS.py",
+      "destination": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservices\\reference\\_ReferenceIngestRunnerMS.py",
+      "source_type": "root_microservice",
+      "layer": "reference",
+      "service_name": "ReferenceIngestRunnerMS",
+      "class_name": "ReferenceIngestRunnerMS",
+      "tags": [
+        "pipeline",
+        "ingest",
+        "orchestration"
+      ],
+      "mode": "copy"
+    },
+    {
+      "source": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_ReferenceLanguageTierMS.py",
+      "destination": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservices\\reference\\_ReferenceLanguageTierMS.py",
+      "source_type": "root_microservice",
+      "layer": "reference",
+      "service_name": "ReferenceLanguageTierMS",
+      "class_name": "ReferenceLanguageTierMS",
+      "tags": [
+        "chunking",
+        "language",
+        "tiers"
+      ],
+      "mode": "copy"
+    },
+    {
+      "source": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_ReferenceManifestMS.py",
+      "destination": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservices\\reference\\_ReferenceManifestMS.py",
+      "source_type": "root_microservice",
+      "layer": "reference",
+      "service_name": "ReferenceManifestMS",
+      "class_name": "ReferenceManifestMS",
+      "tags": [
+        "pipeline",
+        "manifest"
+      ],
+      "mode": "copy"
+    },
+    {
+      "source": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_ReferenceModelDownloadMS.py",
+      "destination": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservices\\reference\\_ReferenceModelDownloadMS.py",
+      "source_type": "root_microservice",
+      "layer": "reference",
+      "service_name": "ReferenceModelDownloadMS",
+      "class_name": "ReferenceModelDownloadMS",
+      "tags": [
+        "models",
+        "download",
+        "settings"
+      ],
+      "mode": "copy"
+    },
+    {
+      "source": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_ReferenceModelManagerRuntimeMS.py",
+      "destination": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservices\\reference\\_ReferenceModelManagerRuntimeMS.py",
+      "source_type": "root_microservice",
+      "layer": "reference",
+      "service_name": "ReferenceModelManagerRuntimeMS",
+      "class_name": "ReferenceModelManagerRuntimeMS",
+      "tags": [
+        "models",
+        "runtime",
+        "llama-cpp",
+        "settings"
+      ],
+      "mode": "copy"
+    },
+    {
+      "source": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_ReferenceProseChunkerMS.py",
+      "destination": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservices\\reference\\_ReferenceProseChunkerMS.py",
+      "source_type": "root_microservice",
+      "layer": "reference",
+      "service_name": "ReferenceProseChunkerMS",
+      "class_name": "ReferenceProseChunkerMS",
+      "tags": [
+        "chunking",
+        "prose",
+        "markdown"
+      ],
+      "mode": "copy"
+    },
+    {
+      "source": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_ReferencePythonAstChunkerMS.py",
+      "destination": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservices\\reference\\_ReferencePythonAstChunkerMS.py",
+      "source_type": "root_microservice",
+      "layer": "reference",
+      "service_name": "ReferencePythonAstChunkerMS",
+      "class_name": "ReferencePythonAstChunkerMS",
+      "tags": [
+        "chunking",
+        "python",
+        "ast"
+      ],
+      "mode": "copy"
+    },
+    {
+      "source": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_ReferenceReviewQueueMS.py",
+      "destination": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservices\\reference\\_ReferenceReviewQueueMS.py",
+      "source_type": "root_microservice",
+      "layer": "reference",
+      "service_name": "ReferenceReviewQueueMS",
+      "class_name": "ReferenceReviewQueueMS",
+      "tags": [
+        "hitl",
+        "review",
+        "workflow"
+      ],
+      "mode": "copy"
+    },
+    {
+      "source": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_ReferenceSemanticHunkSplitterMS.py",
+      "destination": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservices\\reference\\_ReferenceSemanticHunkSplitterMS.py",
+      "source_type": "root_microservice",
+      "layer": "reference",
+      "service_name": "ReferenceSemanticHunkSplitterMS",
+      "class_name": "ReferenceSemanticHunkSplitterMS",
+      "tags": [
+        "chunking",
+        "splitter",
+        "refactor"
+      ],
+      "mode": "copy"
+    },
+    {
+      "source": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_ReferenceSemanticSplitterMS.py",
+      "destination": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservices\\reference\\_ReferenceSemanticSplitterMS.py",
+      "source_type": "root_microservice",
+      "layer": "reference",
+      "service_name": "ReferenceSemanticSplitterMS",
+      "class_name": "ReferenceSemanticSplitterMS",
+      "tags": [
+        "splitter",
+        "refactor",
+        "filesystem"
+      ],
+      "mode": "copy"
+    },
+    {
+      "source": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_ReferenceSettingsDialogStateMS.py",
+      "destination": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservices\\reference\\_ReferenceSettingsDialogStateMS.py",
+      "source_type": "root_microservice",
+      "layer": "reference",
+      "service_name": "ReferenceSettingsDialogStateMS",
+      "class_name": "ReferenceSettingsDialogStateMS",
+      "tags": [
+        "settings",
+        "ui",
+        "state"
+      ],
+      "mode": "copy"
+    },
+    {
+      "source": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_ReferenceSettingsGuardMS.py",
+      "destination": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservices\\reference\\_ReferenceSettingsGuardMS.py",
+      "source_type": "root_microservice",
+      "layer": "reference",
+      "service_name": "ReferenceSettingsGuardMS",
+      "class_name": "ReferenceSettingsGuardMS",
+      "tags": [
+        "settings",
+        "db",
+        "guard"
+      ],
+      "mode": "copy"
+    },
+    {
+      "source": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_ReferenceSettingsStoreMS.py",
+      "destination": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservices\\reference\\_ReferenceSettingsStoreMS.py",
+      "source_type": "root_microservice",
+      "layer": "reference",
+      "service_name": "ReferenceSettingsStoreMS",
+      "class_name": "ReferenceSettingsStoreMS",
+      "tags": [
+        "settings",
+        "config",
+        "persistence"
+      ],
+      "mode": "copy"
+    },
+    {
+      "source": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_ReferenceShellActionsMS.py",
+      "destination": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservices\\reference\\_ReferenceShellActionsMS.py",
+      "source_type": "root_microservice",
+      "layer": "reference",
+      "service_name": "ReferenceShellActionsMS",
+      "class_name": "ReferenceShellActionsMS",
+      "tags": [
+        "shell",
+        "filesystem",
+        "desktop",
+        "tools"
+      ],
+      "mode": "copy"
+    },
+    {
+      "source": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_ReferenceStructuralDelimiterMS.py",
+      "destination": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservices\\reference\\_ReferenceStructuralDelimiterMS.py",
+      "source_type": "root_microservice",
+      "layer": "reference",
+      "service_name": "ReferenceStructuralDelimiterMS",
+      "class_name": "ReferenceStructuralDelimiterMS",
+      "tags": [
+        "compound",
+        "delimiter",
+        "analysis"
+      ],
+      "mode": "copy"
+    },
+    {
+      "source": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_ReferenceTreeItemModelMS.py",
+      "destination": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservices\\reference\\_ReferenceTreeItemModelMS.py",
+      "source_type": "root_microservice",
+      "layer": "reference",
+      "service_name": "ReferenceTreeItemModelMS",
+      "class_name": "ReferenceTreeItemModelMS",
+      "tags": [
+        "tree",
+        "model",
+        "explorer"
+      ],
+      "mode": "copy"
+    },
+    {
+      "source": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_ReferenceTreeSitterQueryRegistryMS.py",
+      "destination": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservices\\reference\\_ReferenceTreeSitterQueryRegistryMS.py",
+      "source_type": "root_microservice",
+      "layer": "reference",
+      "service_name": "ReferenceTreeSitterQueryRegistryMS",
+      "class_name": "ReferenceTreeSitterQueryRegistryMS",
+      "tags": [
+        "treesitter",
+        "chunking",
+        "registry"
+      ],
+      "mode": "copy"
+    },
+    {
+      "source": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_ReferenceTreeSitterStrategyMS.py",
+      "destination": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservices\\reference\\_ReferenceTreeSitterStrategyMS.py",
+      "source_type": "root_microservice",
+      "layer": "reference",
+      "service_name": "ReferenceTreeSitterStrategyMS",
+      "class_name": "ReferenceTreeSitterStrategyMS",
+      "tags": [
+        "treesitter",
+        "chunking",
+        "strategy"
+      ],
+      "mode": "copy"
+    },
+    {
+      "source": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_ReferenceVerbatimMS.py",
+      "destination": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservices\\reference\\_ReferenceVerbatimMS.py",
+      "source_type": "root_microservice",
+      "layer": "reference",
+      "service_name": "ReferenceVerbatimMS",
+      "class_name": "ReferenceVerbatimMS",
+      "tags": [
+        "pipeline",
+        "verbatim",
+        "db"
+      ],
+      "mode": "copy"
+    },
+    {
+      "source": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_ReferenceViewerContentMS.py",
+      "destination": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservices\\reference\\_ReferenceViewerContentMS.py",
+      "source_type": "root_microservice",
+      "layer": "reference",
+      "service_name": "ReferenceViewerContentMS",
+      "class_name": "ReferenceViewerContentMS",
+      "tags": [
+        "viewer",
+        "ui",
+        "formatting"
+      ],
+      "mode": "copy"
+    },
+    {
+      "source": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_RefineryServiceMS.py",
+      "destination": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservices\\relation\\_RefineryServiceMS.py",
+      "source_type": "root_microservice",
+      "layer": "relation",
+      "service_name": "RefineryService",
+      "class_name": "RefineryServiceMS",
+      "tags": [
+        "processing",
+        "refinery",
+        "graph",
+        "RAG"
+      ],
+      "mode": "copy"
+    },
+    {
+      "source": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_RegexWeaverMS.py",
+      "destination": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservices\\core\\_RegexWeaverMS.py",
+      "source_type": "root_microservice",
+      "layer": "core",
+      "service_name": "RegexWeaver",
+      "class_name": "RegexWeaverMS",
+      "tags": [
+        "parsing",
+        "dependencies",
+        "regex"
+      ],
+      "mode": "copy"
+    },
+    {
+      "source": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_RoleManagerMS.py",
+      "destination": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservices\\db\\_RoleManagerMS.py",
+      "source_type": "root_microservice",
+      "layer": "db",
+      "service_name": "RoleManager",
+      "class_name": "RoleManagerMS",
+      "tags": [
+        "roles",
+        "personas",
+        "db"
+      ],
+      "mode": "copy"
+    },
+    {
+      "source": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_SandboxManagerMS.py",
+      "destination": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservices\\db\\_SandboxManagerMS.py",
+      "source_type": "root_microservice",
+      "layer": "db",
+      "service_name": "SandboxManager",
+      "class_name": "SandboxManagerMS",
+      "tags": [
+        "filesystem",
+        "safety",
+        "versioning"
+      ],
+      "mode": "copy"
+    },
+    {
+      "source": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_ScannerMS.py",
+      "destination": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservices\\core\\_ScannerMS.py",
+      "source_type": "root_microservice",
+      "layer": "core",
+      "service_name": "ScannerMS",
+      "class_name": "ScannerMS",
+      "tags": [
+        "filesystem",
+        "scanner",
+        "tree"
+      ],
+      "mode": "copy"
+    },
+    {
+      "source": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_ScoutMS.py",
+      "destination": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservices\\core\\_ScoutMS.py",
+      "source_type": "root_microservice",
+      "layer": "core",
+      "service_name": "Scout",
+      "class_name": "ScoutMS",
+      "tags": [
+        "utility",
+        "scanner",
+        "crawler"
+      ],
+      "mode": "copy"
+    },
+    {
+      "source": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_SearchEngineMS.py",
+      "destination": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservices\\meaning\\_SearchEngineMS.py",
+      "source_type": "root_microservice",
+      "layer": "meaning",
+      "service_name": "SearchEngine",
+      "class_name": "SearchEngineMS",
+      "tags": [
+        "search",
+        "vector",
+        "hybrid",
+        "rag"
+      ],
+      "mode": "copy"
+    },
+    {
+      "source": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_SemanticChunkerMS.py",
+      "destination": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservices\\pipeline\\_SemanticChunkerMS.py",
+      "source_type": "root_microservice",
+      "layer": "pipeline",
+      "service_name": "SemanticChunker",
+      "class_name": "SemanticChunkerMS",
+      "tags": [
+        "utility",
+        "nlp",
+        "parser"
+      ],
+      "mode": "copy"
+    },
+    {
+      "source": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_ServiceRegistryMS.py",
+      "destination": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservices\\core\\_ServiceRegistryMS.py",
+      "source_type": "root_microservice",
+      "layer": "core",
+      "service_name": "ServiceRegistry",
+      "class_name": "ServiceRegistryMS",
+      "tags": [
+        "introspection",
+        "registry",
+        "parsing"
+      ],
+      "mode": "copy"
+    },
+    {
+      "source": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_SpinnerThingyMaBobberMS.py",
+      "destination": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservices\\ui\\_SpinnerThingyMaBobberMS.py",
+      "source_type": "root_microservice",
+      "layer": "ui",
+      "service_name": "SpinnerTHINGYMABOBBER",
+      "class_name": "SpinnerThingyMaBobberMS",
+      "tags": [
+        "ui",
+        "widget",
+        "visuals"
+      ],
+      "mode": "copy"
+    },
+    {
+      "source": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_SysInspectorMS.py",
+      "destination": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservices\\core\\_SysInspectorMS.py",
+      "source_type": "root_microservice",
+      "layer": "core",
+      "service_name": "SysInspector",
+      "class_name": "SysInspectorMS",
+      "tags": [
+        "system",
+        "audit",
+        "hardware"
+      ],
+      "mode": "copy"
+    },
+    {
+      "source": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_TasklistVaultMS.py",
+      "destination": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservices\\db\\_TasklistVaultMS.py",
+      "source_type": "root_microservice",
+      "layer": "db",
+      "service_name": "TaskVault",
+      "class_name": "TasklistVaultMS",
+      "tags": [
+        "tasks",
+        "db",
+        "project-management"
+      ],
+      "mode": "copy"
+    },
+    {
+      "source": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_TelemetryServiceMS.py",
+      "destination": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservices\\observability\\_TelemetryServiceMS.py",
+      "source_type": "root_microservice",
+      "layer": "observability",
+      "service_name": "TelemetryService",
+      "class_name": "TelemetryServiceMS",
+      "tags": [
+        "utility",
+        "logging",
+        "telemetry"
+      ],
+      "mode": "copy"
+    },
+    {
+      "source": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_TextChunkerMS.py",
+      "destination": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservices\\structure\\_TextChunkerMS.py",
+      "source_type": "root_microservice",
+      "layer": "structure",
+      "service_name": "TextChunker",
+      "class_name": "TextChunkerMS",
+      "tags": [
+        "chunking",
+        "nlp",
+        "rag"
+      ],
+      "mode": "copy"
+    },
+    {
+      "source": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_ThoughtStreamMS.py",
+      "destination": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservices\\ui\\_ThoughtStreamMS.py",
+      "source_type": "root_microservice",
+      "layer": "ui",
+      "service_name": "ThoughtStream",
+      "class_name": "ThoughtStreamMS",
+      "tags": [
+        "ui",
+        "stream",
+        "logs",
+        "widget"
+      ],
+      "mode": "copy"
+    },
+    {
+      "source": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_TkinterAppShellMS.py",
+      "destination": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservices\\ui\\_TkinterAppShellMS.py",
+      "source_type": "root_microservice",
+      "layer": "ui",
+      "service_name": "TkinterAppShell",
+      "class_name": "TkinterAppShellMS",
+      "tags": [
+        "ui",
+        "core",
+        "lifecycle"
+      ],
+      "mode": "copy"
+    },
+    {
+      "source": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_TkinterSmartExplorerMS.py",
+      "destination": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservices\\ui\\_TkinterSmartExplorerMS.py",
+      "source_type": "root_microservice",
+      "layer": "ui",
+      "service_name": "TkinterSmartExplorer",
+      "class_name": "TkinterSmartExplorerMS",
+      "tags": [
+        "ui",
+        "widget",
+        "explorer"
+      ],
+      "mode": "copy"
+    },
+    {
+      "source": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_TkinterThemeManagerMS.py",
+      "destination": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservices\\ui\\_TkinterThemeManagerMS.py",
+      "source_type": "root_microservice",
+      "layer": "ui",
+      "service_name": "TkinterThemeManager",
+      "class_name": "TkinterThemeManagerMS",
+      "tags": [
+        "ui",
+        "config",
+        "theme"
+      ],
+      "mode": "copy"
+    },
+    {
+      "source": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_TkinterUniButtonMS.py",
+      "destination": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservices\\ui\\_TkinterUniButtonMS.py",
+      "source_type": "root_microservice",
+      "layer": "ui",
+      "service_name": "LockingDualBtn",
+      "class_name": "TkinterUniButtonMS",
+      "tags": [
+        "ui",
+        "widget",
+        "button"
+      ],
+      "mode": "copy"
+    },
+    {
+      "source": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_TreeMapperMS.py",
+      "destination": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservices\\core\\_TreeMapperMS.py",
+      "source_type": "root_microservice",
+      "layer": "core",
+      "service_name": "TreeMapper",
+      "class_name": "TreeMapperMS",
+      "tags": [
+        "filesystem",
+        "map",
+        "visualization"
+      ],
+      "mode": "copy"
+    },
+    {
+      "source": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_VectorFactoryMS.py",
+      "destination": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservices\\meaning\\_VectorFactoryMS.py",
+      "source_type": "root_microservice",
+      "layer": "meaning",
+      "service_name": "VectorFactory",
+      "class_name": "VectorFactoryMS",
+      "tags": [
+        "vector",
+        "factory",
+        "db"
+      ],
+      "mode": "copy"
+    },
+    {
+      "source": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_WebScraperMS.py",
+      "destination": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservices\\core\\_WebScraperMS.py",
+      "source_type": "root_microservice",
+      "layer": "core",
+      "service_name": "WebScraper",
+      "class_name": "WebScraperMS",
+      "tags": [
+        "scraper",
+        "web",
+        "readability"
+      ],
+      "mode": "copy"
+    },
+    {
+      "source": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_WorkbenchLayoutMS.py",
+      "destination": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservices\\ui\\_WorkbenchLayoutMS.py",
+      "source_type": "root_microservice",
+      "layer": "ui",
+      "service_name": "WorkbenchLayout",
+      "class_name": "WorkbenchLayoutMS",
+      "tags": [
+        "ui",
+        "layout",
+        "framework"
+      ],
+      "mode": "copy"
+    },
+    {
+      "source": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\microservice_std_lib.py",
+      "destination": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservice_std_lib.py",
+      "source_type": "support_module",
+      "layer": "support",
+      "service_name": "microservice_std_lib",
+      "class_name": "",
+      "tags": [],
+      "mode": "copy"
+    },
+    {
+      "source": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\NEW MICROSERVICES AND MODULES\\files.zip",
+      "destination": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\assets\\files.zip",
+      "source_type": "new_module",
+      "layer": "asset",
+      "service_name": "files",
+      "class_name": "",
+      "tags": [],
+      "mode": "copy"
+    },
+    {
+      "source": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\NEW MICROSERVICES AND MODULES\\inject_register_hook.py",
+      "destination": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\tools\\inject_register_hook.py",
+      "source_type": "new_module",
+      "layer": "tooling",
+      "service_name": "inject_register_hook",
+      "class_name": "",
+      "tags": [],
+      "mode": "copy"
+    },
+    {
+      "source": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\NEW MICROSERVICES AND MODULES\\managers.py",
+      "destination": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\managers\\_source_managers.py",
+      "source_type": "new_module",
+      "layer": "manager",
+      "service_name": "managers",
+      "class_name": "",
+      "tags": [],
+      "mode": "copy"
+    },
+    {
+      "source": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\NEW MICROSERVICES AND MODULES\\meaning_relation_observability_manifold_groups.py",
+      "destination": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservices\\grouped\\meaning_relation_observability_manifold_groups.py",
+      "source_type": "new_module",
+      "layer": "grouped",
+      "service_name": "meaning_relation_observability_manifold_groups",
+      "class_name": "",
+      "tags": [],
+      "mode": "copy"
+    },
+    {
+      "source": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\NEW MICROSERVICES AND MODULES\\microservice_std_lib_registry.py",
+      "destination": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\orchestrators\\microservice_std_lib_registry.py",
+      "source_type": "new_module",
+      "layer": "orchestrator",
+      "service_name": "microservice_std_lib_registry",
+      "class_name": "",
+      "tags": [],
+      "mode": "copy"
+    },
+    {
+      "source": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\NEW MICROSERVICES AND MODULES\\storage_group.py",
+      "destination": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservices\\grouped\\storage_group.py",
+      "source_type": "new_module",
+      "layer": "grouped",
+      "service_name": "storage_group",
+      "class_name": "",
+      "tags": [],
+      "mode": "copy"
+    },
+    {
+      "source": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\NEW MICROSERVICES AND MODULES\\structure_group.py",
+      "destination": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservices\\grouped\\structure_group.py",
+      "source_type": "new_module",
+      "layer": "grouped",
+      "service_name": "structure_group",
+      "class_name": "",
+      "tags": [],
+      "mode": "copy"
+    },
+    {
+      "source": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\NEW MICROSERVICES AND MODULES\\wasm_modules_spec.py",
+      "destination": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\modules\\wasm_modules_spec.py",
+      "source_type": "new_module",
+      "layer": "module",
+      "service_name": "wasm_modules_spec",
+      "class_name": "",
+      "tags": [],
+      "mode": "copy"
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "workspace": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_sanbox\\apps\\ui_patch_demo_20260307",
+  "base_app_dir": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_sanbox\\apps\\ui_patch_demo_20260307\\base",
+  "working_app_dir": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_sanbox\\apps\\ui_patch_demo_20260307\\working",
+  "patch_manifests": [
+    "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_sanbox\\apps\\ui_patch_demo_20260307\\patches\\foundry_transform_manifest.json",
+    "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_sanbox\\apps\\ui_patch_demo_20260307\\patches\\foundry_transform_indent_fix.json"
+  ],
+  "outcome": {
+    "base_stamp_ok": true,
+    "working_compile_ok": true,
+    "working_health_ok": true,
+    "working_no_ui_ok": true
+  },
+  "transform_summary": {
+    "ui_changes": [
+      "schema-driven theme application added to ui.py",
+      "list and detail panes styled from ui_schema theme tokens",
+      "status line added to actions panel"
+    ],
+    "schema_changes": [
+      "foundry palette applied",
+      "selection color token added"
+    ],
+    "settings_changes": [
+      "app title marked as patched working copy"
+    ]
+  },
+  "known_limitations": [
+    "The copied .stamper_lock.json still references generated files in the base app directory.",
+    "verify on the working copy therefore validates the base-generated file paths rather than the transformed working files.",
+    "A real stamp->patch pipeline needs a transform lock or a lockfile rewrite step after patch application.",
+    "Top-level insertions with the tokenizing patcher should use use_patch_indent=true or a dedicated top-level repair hunk when inserting after indented blocks."
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "canonical_import_root": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_design-docs\\stamped_static_smoke\\vendor",
+  "compat_paths": [
+    "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_design-docs\\stamped_static_smoke\\vendor",
+    "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_design-docs\\stamped_static_smoke\\vendor\\library",
+    "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_design-docs\\stamped_static_smoke\\vendor\\library\\microservices\\core"
+  ],
+  "catalog_db_path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\catalog\\catalog.db",
+  "vendor_mode": "static",
+  "ui_pack": "headless_pack",
+  "app_title": "Stamped Static Smoke",
+  "assistant": {
+    "enabled": false,
+    "provider": "ollama",
+    "model_name": "",
+    "size_cap_b": 4.0
+  }
+}

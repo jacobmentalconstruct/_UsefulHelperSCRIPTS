@@ -1,0 +1,55 @@
+{
+  "files": [
+    {
+      "path": "ui.py",
+      "hunks": [
+        {
+          "description": "Add schema-driven theme application helper",
+          "search_block": "    for child in node.get(\"children\", []) or []:\n        _build_layout(pane, child, panels)\n    return pane\n\n\ndef run_headless(runtime):\n",
+          "replace_block": "    for child in node.get(\"children\", []) or []:\n        _build_layout(pane, child, panels)\n    return pane\n\n\ndef _apply_theme(root, theme):\n    theme = theme or {}\n    background = theme.get(\"background\", \"#202124\")\n    foreground = theme.get(\"foreground\", \"#f1f3f4\")\n    accent = theme.get(\"accent\", \"#4f8cff\")\n    panel_bg = theme.get(\"panel_bg\", \"#2b2f36\")\n    selection = theme.get(\"selection\", accent)\n    root.configure(bg=background)\n    root.option_add(\"*Listbox*Background\", panel_bg)\n    root.option_add(\"*Listbox*Foreground\", foreground)\n    root.option_add(\"*Listbox*selectBackground\", selection)\n    root.option_add(\"*Listbox*selectForeground\", foreground)\n    style = ttk.Style(root)\n    if \"clam\" in style.theme_names():\n        style.theme_use(\"clam\")\n    style.configure(\".\", background=panel_bg, foreground=foreground)\n    style.configure(\"TFrame\", background=panel_bg)\n    style.configure(\"TLabel\", background=panel_bg, foreground=foreground)\n    style.configure(\"TButton\", background=accent, foreground=foreground)\n    style.map(\"TButton\", background=[(\"active\", selection)])\n\n\ndef run_headless(runtime):\n",
+          "use_patch_indent": false
+        },
+        {
+          "description": "Apply schema theme during UI launch",
+          "search_block": "    root = tk.Tk()\n    root.title(settings.get(\"app_title\", \"Stamped App\"))\n    root.geometry(\"1100x760\")\n    panels = {}\n",
+          "replace_block": "    root = tk.Tk()\n    root.title(settings.get(\"app_title\", \"Stamped App\"))\n    root.geometry(\"1100x760\")\n    theme = schema.get(\"theme\", {})\n    _apply_theme(root, theme)\n    panels = {}\n",
+          "use_patch_indent": false
+        },
+        {
+          "description": "Style listbox and details pane from schema theme",
+          "search_block": "    listbox = tk.Listbox(services_panel)\n    listbox.pack(fill=\"both\", expand=True)\n    details = scrolledtext.ScrolledText(details_panel, wrap=\"word\")\n    details.pack(fill=\"both\", expand=True)\n",
+          "replace_block": "    listbox = tk.Listbox(\n        services_panel,\n        bg=theme.get(\"panel_bg\", \"#2b2f36\"),\n        fg=theme.get(\"foreground\", \"#f1f3f4\"),\n        selectbackground=theme.get(\"selection\", theme.get(\"accent\", \"#4f8cff\")),\n        selectforeground=theme.get(\"foreground\", \"#f1f3f4\"),\n        activestyle=\"none\",\n        relief=tk.FLAT,\n        borderwidth=0,\n    )\n    listbox.pack(fill=\"both\", expand=True)\n    details = scrolledtext.ScrolledText(\n        details_panel,\n        wrap=\"word\",\n        bg=theme.get(\"background\", \"#202124\"),\n        fg=theme.get(\"foreground\", \"#f1f3f4\"),\n        insertbackground=theme.get(\"foreground\", \"#f1f3f4\"),\n        selectbackground=theme.get(\"selection\", theme.get(\"accent\", \"#4f8cff\")),\n        relief=tk.FLAT,\n        borderwidth=0,\n    )\n    details.pack(fill=\"both\", expand=True)\n",
+          "use_patch_indent": false
+        },
+        {
+          "description": "Add action status line and status updates",
+          "search_block": "    specs = runtime.list_services()\n    for spec in specs:\n        listbox.insert(tk.END, spec[\"class_name\"])\n\n    def selected_spec():\n        if not listbox.curselection():\n            return None\n        return specs[listbox.curselection()[0]]\n\n    def show_spec():\n        spec = selected_spec()\n        if spec is None:\n            return\n        details.delete(\"1.0\", tk.END)\n        details.insert(tk.END, json.dumps(spec, indent=2))\n\n    def show_health():\n        details.delete(\"1.0\", tk.END)\n        details.insert(tk.END, json.dumps(runtime.health(), indent=2))\n\n    def mount_ui_service():\n        spec = selected_spec()\n        if spec is None:\n            return\n        if not spec.get(\"is_ui\"):\n            messagebox.showinfo(\"Mount UI\", f\"{spec['class_name']} is not tagged as a UI service.\")\n            return\n        for child in mount_frame.winfo_children():\n            child.destroy()\n        try:\n            service = runtime.get_service(spec[\"class_name\"], config={\"parent\": mount_frame})\n            packer = getattr(service, \"pack\", None)\n            if callable(packer):\n                service.pack(fill=\"both\", expand=True)\n            else:\n                ttk.Label(mount_frame, text=f\"Mounted {spec['class_name']} (no pack method)\").pack(fill=\"both\", expand=True)\n        except Exception as exc:\n            messagebox.showerror(\"Mount UI\", str(exc))\n\n    ttk.Button(actions_panel, text=\"Describe\", command=show_spec).pack(fill=\"x\", pady=4)\n    ttk.Button(actions_panel, text=\"Health\", command=show_health).pack(fill=\"x\", pady=4)\n    ttk.Button(actions_panel, text=\"Mount UI Service\", command=mount_ui_service).pack(fill=\"x\", pady=4)\n    ttk.Button(actions_panel, text=\"Quit\", command=root.destroy).pack(fill=\"x\", pady=4)\n    root.mainloop()\n",
+          "replace_block": "    specs = runtime.list_services()\n    for spec in specs:\n        listbox.insert(tk.END, spec[\"class_name\"])\n    status_var = tk.StringVar(value=f\"Loaded {len(specs)} services from the stamped app.\")\n    ttk.Label(actions_panel, textvariable=status_var, anchor=\"w\", justify=\"left\", wraplength=260).pack(fill=\"x\", pady=(0, 8))\n\n    def set_status(message):\n        status_var.set(message)\n\n    def selected_spec():\n        if not listbox.curselection():\n            return None\n        return specs[listbox.curselection()[0]]\n\n    def show_spec():\n        spec = selected_spec()\n        if spec is None:\n            set_status(\"Select a service to inspect.\")\n            return\n        details.delete(\"1.0\", tk.END)\n        details.insert(tk.END, json.dumps(spec, indent=2))\n        set_status(f\"Showing metadata for {spec['class_name']}.\")\n\n    def show_health():\n        details.delete(\"1.0\", tk.END)\n        details.insert(tk.END, json.dumps(runtime.health(), indent=2))\n        set_status(\"Rendered runtime health report.\")\n\n    def mount_ui_service():\n        spec = selected_spec()\n        if spec is None:\n            set_status(\"Select a UI service before mounting.\")\n            return\n        if not spec.get(\"is_ui\"):\n            set_status(f\"{spec['class_name']} is not marked as a UI service.\")\n            messagebox.showinfo(\"Mount UI\", f\"{spec['class_name']} is not tagged as a UI service.\")\n            return\n        for child in mount_frame.winfo_children():\n            child.destroy()\n        try:\n            service = runtime.get_service(spec[\"class_name\"], config={\"parent\": mount_frame})\n            packer = getattr(service, \"pack\", None)\n            if callable(packer):\n                service.pack(fill=\"both\", expand=True)\n                set_status(f\"Mounted {spec['class_name']} into the details pane.\")\n            else:\n                ttk.Label(mount_frame, text=f\"Mounted {spec['class_name']} (no pack method)\").pack(fill=\"both\", expand=True)\n                set_status(f\"Mounted {spec['class_name']} without a pack() hook.\")\n        except Exception as exc:\n            set_status(f\"Mount failed for {spec['class_name']}: {exc}\")\n            messagebox.showerror(\"Mount UI\", str(exc))\n\n    ttk.Button(actions_panel, text=\"Describe\", command=show_spec).pack(fill=\"x\", pady=4)\n    ttk.Button(actions_panel, text=\"Health\", command=show_health).pack(fill=\"x\", pady=4)\n    ttk.Button(actions_panel, text=\"Mount UI Service\", command=mount_ui_service).pack(fill=\"x\", pady=4)\n    ttk.Button(actions_panel, text=\"Quit\", command=root.destroy).pack(fill=\"x\", pady=4)\n    root.mainloop()\n",
+          "use_patch_indent": false
+        }
+      ]
+    },
+    {
+      "path": "ui_schema.json",
+      "hunks": [
+        {
+          "description": "Switch schema theme to foundry palette and add selection color",
+          "search_block": "  \"theme\": {\n    \"background\": \"#202124\",\n    \"foreground\": \"#f1f3f4\",\n    \"accent\": \"#4f8cff\",\n    \"panel_bg\": \"#2b2f36\"\n  }\n",
+          "replace_block": "  \"theme\": {\n    \"background\": \"#14181D\",\n    \"foreground\": \"#E7EDF3\",\n    \"accent\": \"#C56D3A\",\n    \"panel_bg\": \"#1B222B\",\n    \"selection\": \"#35566C\"\n  }\n",
+          "use_patch_indent": false
+        }
+      ]
+    },
+    {
+      "path": "settings.json",
+      "hunks": [
+        {
+          "description": "Mark working copy title as transformed",
+          "search_block": "  \"app_title\": \"Sandbox UI Patch Demo\",\n",
+          "replace_block": "  \"app_title\": \"Sandbox UI Patch Demo (Patched Working Copy)\",\n",
+          "use_patch_indent": false
+        }
+      ]
+    }
+  ]
+}

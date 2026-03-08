@@ -1,18 +1,27 @@
-PIL
-beautifulsoup4
-bs4
-chromadb
-faiss
-git
-httpx
-jinja2
-networkx
-numpy
-pydantic
-pygame
-pypdf
-readability
-requests
-sqlite_vec
-ttk
-webview
+# Core librarian launch path:
+# - No mandatory third-party Python packages are required.
+# - A standard Python install with Tkinter is enough to run:
+#     python -m library.app_factory launch-ui
+#
+# Optional integrations used by some microservices and experiments are listed
+# below for posterity. They are commented out on purpose so setup stays light.
+#
+# Uncomment only what your selected services actually need.
+
+# blake3
+# beautifulsoup4
+# chromadb
+# faiss-cpu
+# httpx
+# Jinja2
+# networkx
+# numpy
+# Pillow
+# pydantic
+# pygame
+# pypdf
+# pywebview
+# readability-lxml
+# requests
+# sqlite-vec
+# tree-sitter-language-pack

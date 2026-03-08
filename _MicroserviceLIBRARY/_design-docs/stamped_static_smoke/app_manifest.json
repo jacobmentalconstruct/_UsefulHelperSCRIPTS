@@ -1,0 +1,19 @@
+{
+  "app_id": "app_7ddd67bd21df4eaa0f50ceb8",
+  "name": "Stamped Static Smoke",
+  "destination": "_design-docs\\stamped_static_smoke",
+  "vendor_mode": "static",
+  "resolution_profile": "app_ready",
+  "ui_pack": "headless_pack",
+  "orchestrator": "headless_backend_orchestrator",
+  "manager_layers": [],
+  "microservices": [
+    "FingerprintScannerMS"
+  ],
+  "modules": [],
+  "settings_defaults": {
+    "app_title": "Stamped Static Smoke",
+    "assistant_enabled": false
+  },
+  "hooks": {}
+}

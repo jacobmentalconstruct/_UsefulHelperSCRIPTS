@@ -5,6 +5,7 @@ WorkspaceTab – An isolated workspace instance containing:
 - ChatPanel (right sidebar)
 Arranged in a horizontal PanedWindow.
 """
+import os
 import tkinter as tk
 import threading
 from theme import THEME
@@ -98,6 +99,8 @@ class WorkspaceTab(tk.Frame):
             self._update_split_columns("original", content=result["content"])
             self._update_split_columns("current", content=result["content"])
             self._update_split_columns("diff", diff_text="")
+            # Notify parent (main_window) that a file is now loaded in this tab
+            self.event_generate("<<FileLoaded>>")
 
     def save_file(self):
         """Save the Current tab content back to disk (with auto-archive)."""
@@ -307,43 +310,35 @@ class WorkspaceTab(tk.Frame):
 
     def _on_chat_send(self, message, model):
         """
-        Handle a chat message using the Surgeon-Agent architecture.
+        Handle a chat message using the Warm Constrained Swarm pipeline.
 
-        1. Fetch the file manifest (structural map of the whole file).
-        2. Select the most relevant chunks via intent-driven scoring.
-        3. Detect holistic queries ("explain this", "find all X", …) and pass
-           the holistic flag so AIController enters accumulator mode.
-        4. Dispatch to the AI controller with manifest + chunks in schema.
+        Routes directly through QueryRouter (Scout → Surgeon) with:
+          - Intent classification (pre-flight): produces persona for Surgeon
+          - Telemetry callbacks: pipeline steps shown in chat as ▸ messages
+          - Spatial anchoring: line numbers prepended to all code chunks
         """
         if not self.backend or not model:
             self.chat.append_message("system", "No model selected.")
             return
 
-        # ── Gather context using the Surgeon-Agent flow ─────
-        context_chunks = []
-        manifest       = None
-        if self._file_path:
-            cursor_line    = self.editor.get_cursor_line()
-            context_chunks = self.backend.get_context_for_query(
-                self._file_path, message, cursor_line
-            )
-            manifest = self.backend.get_manifest(self._file_path)
+        from orchestration.query_router import QueryRouter
+        db_path   = self.backend.sliding_window.db_path
+        file_name = os.path.basename(self._file_path) if self._file_path else None
+        router    = QueryRouter(db_path=db_path)
 
-        from backend.ai_controller import AIController
-        holistic = AIController.is_holistic_query(message)
-        status_hint = "analysing full file…" if holistic else f"thinking… ({model})"
-        self.chat.append_message("system", status_hint)
+        def _tel(msg):
+            self.after(0, lambda m=msg: self.chat.append_message("system", f"▸ {m}"))
+
+        label = f"Analyzing {file_name}…" if file_name else "Thinking…"
+        self.chat.append_message("system", label)
 
         def run():
-            result = self.backend.execute_task({
-                "system":         "ai",
-                "action":         "generate",
-                "model":          model,
-                "prompt":         message,
-                "context_chunks": context_chunks,
-                "manifest":       manifest,
-                "holistic":       holistic,
-            })
+            result = router.route(
+                file_path=self._file_path or "",
+                query=message,
+                file_name=file_name,
+                telemetry_callback=_tel,
+            )
             response = result.get("response", result.get("message", "No response"))
             self.after(0, lambda: self.chat.append_message("assistant", response))
 

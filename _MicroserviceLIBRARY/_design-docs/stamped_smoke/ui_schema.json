@@ -1,0 +1,13 @@
+{
+  "layout": {
+    "type": "panel",
+    "id": "headless",
+    "weight": 1
+  },
+  "theme": {
+    "background": "#202124",
+    "foreground": "#f1f3f4",
+    "accent": "#4f8cff",
+    "panel_bg": "#2b2f36"
+  }
+}

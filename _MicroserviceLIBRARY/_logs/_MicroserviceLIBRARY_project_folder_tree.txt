@@ -1,0 +1,348 @@
+Project Tree: C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_MicroserviceLIBRARY
+Generated: 2026-03-08 05:54:39.157877
+
+├── 📁 _curationTOOLS/
+│   ├── 📁 _patches/
+│   │   ├── 📄 enrich_text_chunker_paragraphs.json
+│   │   ├── 📄 enrich_tkinter_theme_manager_tokens.json
+│   │   ├── 📄 fix_broken_health_tail_manifest.json
+│   │   ├── 📄 fix_migration_and_patcher_refs_manifest.json
+│   │   ├── 📄 fix_run_migration_indent.json
+│   │   ├── 📄 fix_text_chunker_paragraph_indent.json
+│   │   └── 📄 fix_tkinter_theme_alias_indent.json
+│   ├── 📄 cleanup_root_microservices_contract.py
+│   ├── 📄 organize_library_layers.py
+│   ├── 📄 tokenizing-patcher-readme.md
+│   └── 📄 tokenizing_patcher_with_cli.py
+├── 📁 _design-docs/
+│   ├── 📁 grouped_smoke/
+│   │   ├── 📄 .stamper_lock.json
+│   │   ├── 📄 app.py
+│   │   ├── 📄 app_manifest.json
+│   │   ├── 📄 backend.py
+│   │   ├── 📄 pyrightconfig.json
+│   │   ├── 📄 requirements.txt
+│   │   ├── 📄 settings.json
+│   │   ├── 📄 ui.py
+│   │   └── 📄 ui_schema.json
+│   ├── 📁 qa_headless/
+│   │   ├── 📄 .stamper_lock.json
+│   │   ├── 📄 app.py
+│   │   ├── 📄 app_manifest.json
+│   │   ├── 📄 backend.py
+│   │   ├── 📄 pyrightconfig.json
+│   │   ├── 📄 requirements.txt
+│   │   ├── 📄 settings.json
+│   │   ├── 📄 ui.py
+│   │   └── 📄 ui_schema.json
+│   ├── 📁 runner_theme_smoke/
+│   │   ├── 📄 .stamper_lock.json
+│   │   ├── 📄 app.py
+│   │   ├── 📄 app_manifest.json
+│   │   ├── 📄 backend.py
+│   │   ├── 📄 pyrightconfig.json
+│   │   ├── 📄 requirements.txt
+│   │   ├── 📄 settings.json
+│   │   ├── 📄 ui.py
+│   │   └── 📄 ui_schema.json
+│   ├── 📁 stamped_smoke/
+│   │   ├── 📄 .stamper_lock.json
+│   │   ├── 📄 app.py
+│   │   ├── 📄 app_manifest.json
+│   │   ├── 📄 backend.py
+│   │   ├── 📄 pyrightconfig.json
+│   │   ├── 📄 requirements.txt
+│   │   ├── 📄 settings.json
+│   │   ├── 📄 ui.py
+│   │   └── 📄 ui_schema.json
+│   ├── 📁 stamped_static_smoke/
+│   │   ├── 📁 vendor/
+│   │   │   └── 📁 library/
+│   │   │       ├── 📁 microservices/
+│   │   │       │   ├── 📁 core/
+│   │   │       │   │   └── 📄 _FingerprintScannerMS.py
+│   │   │       │   └── 📄 __init__.py
+│   │   │       ├── 📄 __init__.py
+│   │   │       ├── 📄 base_service.py
+│   │   │       ├── 📄 document_utils.py
+│   │   │       └── 📄 microservice_std_lib.py
+│   │   ├── 📄 .stamper_lock.json
+│   │   ├── 📄 app.py
+│   │   ├── 📄 app_manifest.json
+│   │   ├── 📄 backend.py
+│   │   ├── 📄 pyrightconfig.json
+│   │   ├── 📄 requirements.txt
+│   │   ├── 📄 settings.json
+│   │   ├── 📄 ui.py
+│   │   └── 📄 ui_schema.json
+│   ├── 📁 storage_template_smoke/
+│   │   ├── 📄 .stamper_lock.json
+│   │   ├── 📄 app.py
+│   │   ├── 📄 app_manifest.json
+│   │   ├── 📄 backend.py
+│   │   ├── 📄 pyrightconfig.json
+│   │   ├── 📄 requirements.txt
+│   │   ├── 📄 settings.json
+│   │   ├── 📄 ui.py
+│   │   └── 📄 ui_schema.json
+│   ├── 📁 template_stamp_smoke/
+│   │   ├── 📄 .stamper_lock.json
+│   │   ├── 📄 app.py
+│   │   ├── 📄 app_manifest.json
+│   │   ├── 📄 backend.py
+│   │   ├── 📄 pyrightconfig.json
+│   │   ├── 📄 requirements.txt
+│   │   ├── 📄 settings.json
+│   │   ├── 📄 ui.py
+│   │   └── 📄 ui_schema.json
+│   ├── 📄 PLAN.md
+│   └── 📄 TEST_PHASE_CHECKLIST.md
+├── 📁 _sanbox/
+│   ├── 📁 apps/
+│   │   ├── 📁 demo_run/
+│   │   │   ├── 📁 base/
+│   │   │   ├── 📁 patches/
+│   │   │   ├── 📁 reports/
+│   │   │   │   └── 📄 stamp_report.json
+│   │   │   └── 📁 working/
+│   │   │       └── 📁 .app_factory/
+│   │   │           ├── 📁 patches/
+│   │   │           └── 📁 reports/
+│   │   ├── 📁 foundry_project_lens_20260307/
+│   │   │   ├── 📁 base/
+│   │   │   │   ├── 📄 .stamper_lock.json
+│   │   │   │   ├── 📄 app.py
+│   │   │   │   ├── 📄 app_manifest.json
+│   │   │   │   ├── 📄 backend.py
+│   │   │   │   ├── 📄 pyrightconfig.json
+│   │   │   │   ├── 📄 requirements.txt
+│   │   │   │   ├── 📄 settings.json
+│   │   │   │   ├── 📄 ui.py
+│   │   │   │   └── 📄 ui_schema.json
+│   │   │   ├── 📁 patches/
+│   │   │   │   ├── 📄 01_project_lens_transform.json
+│   │   │   │   └── 📄 project_lens_transform.json
+│   │   │   ├── 📁 reports/
+│   │   │   │   ├── 📄 apply_report.json
+│   │   │   │   ├── 📄 promote_report.json
+│   │   │   │   ├── 📄 stamp_report.json
+│   │   │   │   └── 📄 validate_report.json
+│   │   │   ├── 📁 working/
+│   │   │   │   ├── 📁 .app_factory/
+│   │   │   │   │   ├── 📁 patches/
+│   │   │   │   │   │   └── 📄 01_project_lens_transform.json
+│   │   │   │   │   └── 📁 reports/
+│   │   │   │   │       ├── 📄 apply_report.json
+│   │   │   │   │       ├── 📄 stamp_report.json
+│   │   │   │   │       └── 📄 validate_report.json
+│   │   │   │   ├── 📄 .stamper_lock.json
+│   │   │   │   ├── 📄 .transform_lock.json
+│   │   │   │   ├── 📄 app.py
+│   │   │   │   ├── 📄 app.py.bak
+│   │   │   │   ├── 📄 app_manifest.json
+│   │   │   │   ├── 📄 backend.py
+│   │   │   │   ├── 📄 pyrightconfig.json
+│   │   │   │   ├── 📄 requirements.txt
+│   │   │   │   ├── 📄 settings.json
+│   │   │   │   ├── 📄 settings.json.bak
+│   │   │   │   ├── 📄 ui.py
+│   │   │   │   ├── 📄 ui.py.bak
+│   │   │   │   ├── 📄 ui_schema.json
+│   │   │   │   └── 📄 ui_schema.json.bak
+│   │   │   └── 📄 sandbox_state.json
+│   │   └── 📁 ui_patch_demo_20260307/
+│   │       ├── 📁 base/
+│   │       │   ├── 📄 .stamper_lock.json
+│   │       │   ├── 📄 app.py
+│   │       │   ├── 📄 app_manifest.json
+│   │       │   ├── 📄 backend.py
+│   │       │   ├── 📄 pyrightconfig.json
+│   │       │   ├── 📄 requirements.txt
+│   │       │   ├── 📄 settings.json
+│   │       │   ├── 📄 ui.py
+│   │       │   └── 📄 ui_schema.json
+│   │       ├── 📁 patches/
+│   │       │   ├── 📄 foundry_transform_indent_fix.json
+│   │       │   └── 📄 foundry_transform_manifest.json
+│   │       ├── 📁 reports/
+│   │       │   └── 📄 pipeline_summary.json
+│   │       └── 📁 working/
+│   │           ├── 📄 .stamper_lock.json
+│   │           ├── 📄 app.py
+│   │           ├── 📄 app_manifest.json
+│   │           ├── 📄 backend.py
+│   │           ├── 📄 pyrightconfig.json
+│   │           ├── 📄 requirements.txt
+│   │           ├── 📄 settings.json
+│   │           ├── 📄 settings.json.bak
+│   │           ├── 📄 ui.py
+│   │           ├── 📄 ui.py.bak
+│   │           ├── 📄 ui_schema.json
+│   │           └── 📄 ui_schema.json.bak
+│   ├── 📁 manifests/
+│   │   └── 📄 foundry_project_lens_20260307.json
+│   └── 📁 runs/
+│       └── 📄 demo_run_20260308T054111.jsonl
+├── 📁 library/
+│   ├── 📁 app_factory/
+│   │   ├── 📄 __init__.py
+│   │   ├── 📄 __main__.py
+│   │   ├── 📄 assistant.py
+│   │   ├── 📄 catalog.py
+│   │   ├── 📄 cli.py
+│   │   ├── 📄 constants.py
+│   │   ├── 📄 librarian_ui.py
+│   │   ├── 📄 models.py
+│   │   ├── 📄 packs.py
+│   │   ├── 📄 pipeline_runner.py
+│   │   ├── 📄 query.py
+│   │   ├── 📄 README.md
+│   │   ├── 📄 runner_ui.py
+│   │   ├── 📄 sandbox.py
+│   │   ├── 📄 stamper.py
+│   │   └── 📄 ui_schema.py
+│   ├── 📁 assets/
+│   │   └── 📄 files.zip
+│   ├── 📁 catalog/
+│   │   ├── 📄 LAYERING.md
+│   │   ├── 📄 library_catalog.json
+│   │   └── 📄 library_plan.md
+│   ├── 📁 managers/
+│   │   ├── 📄 __init__.py
+│   │   ├── 📄 _source_managers.py
+│   │   └── 📄 managers.py
+│   ├── 📁 microservices/
+│   │   ├── 📁 core/
+│   │   │   ├── 📄 _ArchiveBotMS.py
+│   │   │   ├── 📄 _AuthMS.py
+│   │   │   ├── 📄 _CodeFormatterMS.py
+│   │   │   ├── 📄 _CodeJanitorMS.py
+│   │   │   ├── 📄 _CognitiveMemoryMS.py
+│   │   │   ├── 📄 _ContentExtractorMS.py
+│   │   │   ├── 📄 _ContextAggregatorMS.py
+│   │   │   ├── 📄 _ContextPackerMS.py
+│   │   │   ├── 📄 _EnvironmentManagerMS.py
+│   │   │   ├── 📄 _FingerprintScannerMS.py
+│   │   │   ├── 📄 _HeuristicSumMS.py
+│   │   │   ├── 📄 _IntakeServiceMS.py
+│   │   │   ├── 📄 _IsoProcessMS.py
+│   │   │   ├── 📄 _LibrarianMS.py
+│   │   │   ├── 📄 _LibrarianServiceMS.py
+│   │   │   ├── 📄 _NeuralServiceMS.py
+│   │   │   ├── 📄 _ProjectForgeMS.py
+│   │   │   ├── 📄 _PromptOptimizerMS.py
+│   │   │   ├── 📄 _PromptVaultMS.py
+│   │   │   ├── 📄 _RegexWeaverMS.py
+│   │   │   ├── 📄 _ScannerMS.py
+│   │   │   ├── 📄 _ScoutMS.py
+│   │   │   ├── 📄 _ServiceRegistryMS.py
+│   │   │   ├── 📄 _SysInspectorMS.py
+│   │   │   ├── 📄 _TreeMapperMS.py
+│   │   │   └── 📄 _WebScraperMS.py
+│   │   ├── 📁 db/
+│   │   │   ├── 📄 _DiffEngineMS.py
+│   │   │   ├── 📄 _LexicalSearchMS.py
+│   │   │   ├── 📄 _RoleManagerMS.py
+│   │   │   ├── 📄 _SandboxManagerMS.py
+│   │   │   └── 📄 _TasklistVaultMS.py
+│   │   ├── 📁 grouped/
+│   │   │   ├── 📄 meaning_relation_observability_manifold_groups.py
+│   │   │   ├── 📄 storage_group.py
+│   │   │   └── 📄 structure_group.py
+│   │   ├── 📁 meaning/
+│   │   │   ├── 📄 _SearchEngineMS.py
+│   │   │   └── 📄 _VectorFactoryMS.py
+│   │   ├── 📁 observability/
+│   │   │   └── 📄 _TelemetryServiceMS.py
+│   │   ├── 📁 pipeline/
+│   │   │   ├── 📄 _IngestEngineMS.py
+│   │   │   └── 📄 _SemanticChunkerMS.py
+│   │   ├── 📁 reference/
+│   │   │   ├── 📄 _ReferenceChunkViewerFormatMS.py
+│   │   │   ├── 📄 _ReferenceCliPlannerMS.py
+│   │   │   ├── 📄 _ReferenceCompoundDetectMS.py
+│   │   │   ├── 📄 _ReferenceCompoundRoutingMS.py
+│   │   │   ├── 📄 _ReferenceConfigRegistryMS.py
+│   │   │   ├── 📄 _ReferenceDbConnectionMS.py
+│   │   │   ├── 📄 _ReferenceDbQueryMS.py
+│   │   │   ├── 📄 _ReferenceDbSchemaPolicyMS.py
+│   │   │   ├── 📄 _ReferenceDbSearchMS.py
+│   │   │   ├── 📄 _ReferenceDetectMS.py
+│   │   │   ├── 📄 _ReferenceEmbedPipelineMS.py
+│   │   │   ├── 📄 _ReferenceEmbedUtilsMS.py
+│   │   │   ├── 📄 _ReferenceExplorerModelMS.py
+│   │   │   ├── 📄 _ReferenceExportMS.py
+│   │   │   ├── 📄 _ReferenceGraphExtractMS.py
+│   │   │   ├── 📄 _ReferenceIngestRunnerMS.py
+│   │   │   ├── 📄 _ReferenceLanguageTierMS.py
+│   │   │   ├── 📄 _ReferenceManifestMS.py
+│   │   │   ├── 📄 _ReferenceModelDownloadMS.py
+│   │   │   ├── 📄 _ReferenceModelManagerRuntimeMS.py
+│   │   │   ├── 📄 _ReferenceProseChunkerMS.py
+│   │   │   ├── 📄 _ReferencePythonAstChunkerMS.py
+│   │   │   ├── 📄 _ReferenceReviewQueueMS.py
+│   │   │   ├── 📄 _ReferenceSemanticHunkSplitterMS.py
+│   │   │   ├── 📄 _ReferenceSemanticSplitterMS.py
+│   │   │   ├── 📄 _ReferenceSettingsDialogStateMS.py
+│   │   │   ├── 📄 _ReferenceSettingsGuardMS.py
+│   │   │   ├── 📄 _ReferenceSettingsStoreMS.py
+│   │   │   ├── 📄 _ReferenceShellActionsMS.py
+│   │   │   ├── 📄 _ReferenceStructuralDelimiterMS.py
+│   │   │   ├── 📄 _ReferenceTreeItemModelMS.py
+│   │   │   ├── 📄 _ReferenceTreeSitterQueryRegistryMS.py
+│   │   │   ├── 📄 _ReferenceTreeSitterStrategyMS.py
+│   │   │   ├── 📄 _ReferenceVerbatimMS.py
+│   │   │   └── 📄 _ReferenceViewerContentMS.py
+│   │   ├── 📁 relation/
+│   │   │   ├── 📄 _CodeGrapherMS.py
+│   │   │   ├── 📄 _NetworkLayoutMS.py
+│   │   │   ├── 📄 _NeuralGraphEngineMS.py
+│   │   │   └── 📄 _RefineryServiceMS.py
+│   │   ├── 📁 storage/
+│   │   │   └── 📄 _CartridgeServiceMS.py
+│   │   ├── 📁 structure/
+│   │   │   ├── 📄 _ChunkingRouterMS.py
+│   │   │   ├── 📄 _CodeChunkerMS.py
+│   │   │   ├── 📄 _PythonChunkerMS.py
+│   │   │   └── 📄 _TextChunkerMS.py
+│   │   ├── 📁 ui/
+│   │   │   ├── 📄 _ChalkBoardMS.py
+│   │   │   ├── 📄 _ExplorerWidgetMS.py
+│   │   │   ├── 📄 _GitPilotMS.py
+│   │   │   ├── 📄 _LogViewMS.py
+│   │   │   ├── 📄 _MonacoHostMS.py
+│   │   │   ├── 📄 _NeuralGraphViewerMS.py
+│   │   │   ├── 📄 _SpinnerThingyMaBobberMS.py
+│   │   │   ├── 📄 _ThoughtStreamMS.py
+│   │   │   ├── 📄 _TkinterAppShellMS.py
+│   │   │   ├── 📄 _TkinterSmartExplorerMS.py
+│   │   │   ├── 📄 _TkinterThemeManagerMS.py
+│   │   │   ├── 📄 _TkinterUniButtonMS.py
+│   │   │   └── 📄 _WorkbenchLayoutMS.py
+│   │   └── 📄 __init__.py
+│   ├── 📁 modules/
+│   │   ├── 📄 __init__.py
+│   │   └── 📄 wasm_modules_spec.py
+│   ├── 📁 orchestrators/
+│   │   ├── 📄 __init__.py
+│   │   ├── 📄 layer_hub.py
+│   │   └── 📄 microservice_std_lib_registry.py
+│   ├── 📁 tests/
+│   │   ├── 📄 __init__.py
+│   │   └── 📄 test_app_factory.py
+│   ├── 📁 tools/
+│   │   ├── 📄 __init__.py
+│   │   └── 📄 inject_register_hook.py
+│   ├── 📄 __init__.py
+│   ├── 📄 base_service.py
+│   ├── 📄 document_utils.py
+│   └── 📄 microservice_std_lib.py
+├── 📄 .gitignore
+├── 📄 base_service.py
+├── 📄 document_utils.py
+├── 📄 microservice_std_lib.py
+├── 📄 README.md
+├── 📄 requirements.txt
+├── 📄 run.bat
+├── 📄 run_sanboxer.bat
+└── 📄 setup_env.bat

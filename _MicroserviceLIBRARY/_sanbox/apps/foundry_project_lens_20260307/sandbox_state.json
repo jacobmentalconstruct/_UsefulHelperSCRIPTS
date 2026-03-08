@@ -1,0 +1,15 @@
+{
+  "version": "0.1.0",
+  "run_id": "foundry_project_lens_20260307",
+  "workspace_root": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_sanbox\\apps\\foundry_project_lens_20260307",
+  "base_app_dir": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_sanbox\\apps\\foundry_project_lens_20260307\\base",
+  "working_app_dir": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_sanbox\\apps\\foundry_project_lens_20260307\\working",
+  "workspace_patch_dir": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_sanbox\\apps\\foundry_project_lens_20260307\\patches",
+  "workspace_report_dir": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_sanbox\\apps\\foundry_project_lens_20260307\\reports",
+  "app_patch_dir": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_sanbox\\apps\\foundry_project_lens_20260307\\working\\.app_factory\\patches",
+  "app_report_dir": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_sanbox\\apps\\foundry_project_lens_20260307\\working\\.app_factory\\reports",
+  "template_id": "",
+  "source_manifest_path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_sanbox\\manifests\\foundry_project_lens_20260307.json",
+  "last_promotion_destination": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_sanbox\\promoted\\foundry_project_lens_20260307",
+  "transform_lock_path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_sanbox\\apps\\foundry_project_lens_20260307\\working\\.transform_lock.json"
+}

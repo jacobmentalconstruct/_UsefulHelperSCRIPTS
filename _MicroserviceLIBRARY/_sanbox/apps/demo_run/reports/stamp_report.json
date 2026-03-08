@@ -1,0 +1,44 @@
+{
+  "workspace_root": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_sanbox\\apps\\demo_run",
+  "base_app_dir": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_sanbox\\apps\\demo_run\\base",
+  "working_app_dir": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_sanbox\\apps\\demo_run\\working",
+  "stamp_report": {
+    "app_dir": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_sanbox\\apps\\demo_run\\base",
+    "written_files": [],
+    "validation": {
+      "warnings": [],
+      "errors": [
+        "Manifest must select at least one microservice or module."
+      ],
+      "cycle_warnings": [],
+      "missing_dependencies": [],
+      "compile_results": {},
+      "ok": false
+    },
+    "external_dependencies": [],
+    "resolved_artifacts": [],
+    "lockfile_path": "",
+    "manifest_validation": {
+      "ok": false,
+      "errors": [
+        "Manifest must select at least one microservice or module."
+      ],
+      "warnings": [],
+      "normalized_manifest": {
+        "app_id": "",
+        "name": "Demo App",
+        "destination": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_sanbox\\apps\\demo_run\\base",
+        "vendor_mode": "module_ref",
+        "resolution_profile": "app_ready",
+        "ui_pack": "headless_pack",
+        "orchestrator": "headless_backend_orchestrator",
+        "manager_layers": [],
+        "microservices": [],
+        "modules": [],
+        "settings_defaults": {},
+        "hooks": {}
+      }
+    }
+  },
+  "ok": false
+}

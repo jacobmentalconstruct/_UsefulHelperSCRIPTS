@@ -1,0 +1,21 @@
+{
+  "app_id": "app_e2fa8a063a3b71b28cdc3910",
+  "name": "Foundry Project Lens",
+  "destination": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_sanbox\\promoted\\foundry_project_lens_20260307",
+  "vendor_mode": "module_ref",
+  "resolution_profile": "app_ready",
+  "ui_pack": "tkinter_base_pack",
+  "orchestrator": "tkinter_shell_orchestrator",
+  "manager_layers": [],
+  "microservices": [
+    "ExplorerWidgetMS",
+    "FingerprintScannerMS",
+    "SysInspectorMS"
+  ],
+  "modules": [],
+  "settings_defaults": {
+    "app_title": "Foundry Project Lens",
+    "assistant_enabled": false
+  },
+  "hooks": {}
+}

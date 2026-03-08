@@ -1,0 +1,24 @@
+{
+  "app_id": "app_d6c190c1615f015c0e7cdaca",
+  "name": "Storage Template Smoke",
+  "destination": "_design-docs\\storage_template_smoke",
+  "vendor_mode": "module_ref",
+  "resolution_profile": "app_ready",
+  "ui_pack": "headless_pack",
+  "orchestrator": "headless_backend_orchestrator",
+  "manager_layers": [
+    "storage"
+  ],
+  "microservices": [
+    "Blake3HashMS",
+    "MerkleRootMS",
+    "TemporalChainMS",
+    "VerbatimStoreMS"
+  ],
+  "modules": [],
+  "settings_defaults": {
+    "app_title": "Storage Template Smoke",
+    "assistant_enabled": false
+  },
+  "hooks": {}
+}

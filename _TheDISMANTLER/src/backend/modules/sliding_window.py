@@ -255,6 +255,73 @@ class SlidingWindow:
         chunks_list = [dict(c) for c in chunks]
         return ContextSelector.score_and_select(query, chunks_list, cursor_line, budget)
 
+    # ── chunk metadata storage ─────────────────────────────
+
+    def index_chunk_meta(self, file_path: str, meta_list: list):
+        """
+        Store enriched per-chunk metadata (decorators, signatures, calls,
+        raises, ref_count) alongside existing chunks.
+
+        Each entry in meta_list must have:
+            name, start_line, end_line  — for matching to chunk_id
+            decorators (list), signature (str), return_type (str),
+            calls (list), raises (list), ref_count (int)
+
+        Matched against chunks by (file_id, start_line, end_line).
+        """
+        import json as _json
+
+        conn = get_connection(self.db_path)
+        cur = conn.cursor()
+
+        row = cur.execute(
+            "SELECT file_id FROM source_files WHERE path=?", (file_path,)
+        ).fetchone()
+        if not row:
+            conn.close()
+            return
+
+        file_id = row["file_id"]
+
+        # Delete existing metadata for this file's chunks
+        cur.execute(
+            "DELETE FROM chunk_meta WHERE chunk_id IN "
+            "(SELECT chunk_id FROM chunks WHERE file_id=?)",
+            (file_id,),
+        )
+
+        for m in meta_list:
+            # Find matching chunk by position
+            chunk_row = cur.execute(
+                """
+                SELECT chunk_id FROM chunks
+                WHERE file_id=? AND start_line=? AND end_line=?
+                """,
+                (file_id, m["start_line"], m["end_line"]),
+            ).fetchone()
+
+            if chunk_row:
+                cur.execute(
+                    """
+                    INSERT OR REPLACE INTO chunk_meta
+                        (chunk_id, decorators, signature, return_type,
+                         calls, raises, ref_count)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    (
+                        chunk_row["chunk_id"],
+                        _json.dumps(m.get("decorators", [])),
+                        m.get("signature", ""),
+                        m.get("return_type", ""),
+                        _json.dumps(m.get("calls", [])),
+                        _json.dumps(m.get("raises", [])),
+                        m.get("ref_count", 0),
+                    ),
+                )
+
+        conn.commit()
+        conn.close()
+
     def search_chunks(self, query, limit=10):
         """Simple LIKE-based chunk search across all files."""
         conn = get_connection(self.db_path)

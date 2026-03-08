@@ -64,6 +64,42 @@ PROJECT_CONFIG_FILENAME = "_project_mapper_config.json"
 S_CHECKED = "checked"
 S_UNCHECKED = "unchecked"
 
+# --- Theme ---
+THEME = {
+    "app_bg": "#161A1F",
+    "panel_bg": "#1E252D",
+    "panel_alt_bg": "#273241",
+    "field_bg": "#263140",
+    "field_bg_alt": "#2D3948",
+    "tree_bg": "#1A212B",
+    "tree_bg_disabled": "#313B48",
+    "log_bg": "#10161E",
+    "status_bg": "#0D1117",
+    "status_text": "#89D6A0",
+    "text": "#E7EDF4",
+    "muted_text": "#97A4B3",
+    "field_text": "#D6E2EE",
+    "heading_bg": "#2A3441",
+    "heading_text": "#F3F6F9",
+    "selection": "#3B7E8D",
+    "accent": "#C56F3D",
+    "accent_hover": "#D78251",
+    "accent_active": "#A65A31",
+    "secondary": "#2E7081",
+    "secondary_hover": "#3A8EA2",
+    "secondary_active": "#245867",
+    "success": "#2F8E6A",
+    "success_hover": "#3AA27C",
+    "success_active": "#256F54",
+    "danger": "#B75A4D",
+    "danger_hover": "#CB6B5E",
+    "danger_active": "#91473D",
+    "checkbox_checked": "#C56F3D",
+    "checkbox_border": "#728195",
+    "log_text": "#E1E7EE",
+    "log_accent": "#89D6A0",
+}
+
 # ==============================================================================
 # 2. HELPER FUNCTIONS (Pure Logic / Stateless)
 # ==============================================================================
@@ -112,7 +148,7 @@ class ProgressPopup:
         self.top = tk.Toplevel(parent)
         self.top.title(title)
         self.top.geometry("500x300")
-        self.top.configure(bg="#252526")
+        self.top.configure(bg=THEME["panel_bg"])
         self.top.transient(parent)
         self.top.grab_set()
         
@@ -122,17 +158,38 @@ class ProgressPopup:
         self.is_cancelled = False
 
         # UI Elements
-        lbl = tk.Label(self.top, text=f"{title}...", fg="white", bg="#252526", font=("Arial", 12, "bold"))
+        lbl = tk.Label(
+            self.top,
+            text=f"{title}...",
+            fg=THEME["text"],
+            bg=THEME["panel_bg"],
+            font=("Arial", 12, "bold"),
+        )
         lbl.pack(pady=10)
 
-        self.log_display = scrolledtext.ScrolledText(self.top, height=10, bg="#1e1e1e", fg="#00ff00", font=("Consolas", 9))
+        self.log_display = scrolledtext.ScrolledText(
+            self.top,
+            height=10,
+            bg=THEME["log_bg"],
+            fg=THEME["log_accent"],
+            insertbackground=THEME["log_text"],
+            font=("Consolas", 9),
+        )
         self.log_display.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
 
-        btn_frame = tk.Frame(self.top, bg="#252526")
+        btn_frame = tk.Frame(self.top, bg=THEME["panel_bg"])
         btn_frame.pack(fill=tk.X, pady=10)
 
-        self.cancel_btn = tk.Button(btn_frame, text="CANCEL OPERATION", bg="#c23621", fg="white", 
-                                    font=("Arial", 10, "bold"), command=self.trigger_cancel)
+        self.cancel_btn = tk.Button(
+            btn_frame,
+            text="CANCEL OPERATION",
+            bg=THEME["danger"],
+            fg=THEME["text"],
+            activebackground=THEME["danger_hover"],
+            activeforeground=THEME["text"],
+            font=("Arial", 10, "bold"),
+            command=self.trigger_cancel,
+        )
         self.cancel_btn.pack()
 
     def update_text(self, text):
@@ -185,15 +242,15 @@ class ProjectMapperApp:
 
         # 1. Unchecked Icon (Gray Border, Transparent Center)
         img_u = tk.PhotoImage(width=14, height=14)
-        img_u.put(("#808080",), to=(0, 0, 14, 1))    # Top border
-        img_u.put(("#808080",), to=(0, 13, 14, 14))  # Bottom border
-        img_u.put(("#808080",), to=(0, 0, 1, 14))    # Left border
-        img_u.put(("#808080",), to=(13, 0, 14, 14))  # Right border
+        img_u.put((THEME["checkbox_border"],), to=(0, 0, 14, 1))    # Top border
+        img_u.put((THEME["checkbox_border"],), to=(0, 13, 14, 14))  # Bottom border
+        img_u.put((THEME["checkbox_border"],), to=(0, 0, 1, 14))    # Left border
+        img_u.put((THEME["checkbox_border"],), to=(13, 0, 14, 14))  # Right border
         self.icon_imgs[S_UNCHECKED] = img_u
 
         # 2. Checked Icon (Blue Fill, White Checkmarkish shape)
         img_c = tk.PhotoImage(width=14, height=14)
-        img_c.put(("#007ACC",), to=(0, 0, 14, 14))   # Blue Background
+        img_c.put((THEME["checkbox_checked"],), to=(0, 0, 14, 14))   # Warm accent background
         # Simple white "check" pixels
         img_c.put(("#FFFFFF",), to=(3, 7, 6, 10))    # Short leg
         img_c.put(("#FFFFFF",), to=(6, 5, 11, 8))    # Long leg
@@ -218,9 +275,9 @@ class ProjectMapperApp:
         img_f.put(("#FFFFFF",), to=(11, 1, 12, 13)) # Right
         img_f.put(("#FFFFFF",), to=(2, 12, 12, 13)) # Bottom
         # Lines representing text
-        img_f.put(("#808080",), to=(4, 4, 10, 5))
-        img_f.put(("#808080",), to=(4, 7, 10, 8))
-        img_f.put(("#808080",), to=(4, 10, 8, 11))
+        img_f.put((THEME["muted_text"],), to=(4, 4, 10, 5))
+        img_f.put((THEME["muted_text"],), to=(4, 7, 10, 8))
+        img_f.put((THEME["muted_text"],), to=(4, 10, 8, 11))
         self.icon_imgs["file"] = img_f
 
     # --- UI Setup ---
@@ -233,43 +290,78 @@ class ProjectMapperApp:
 
         tree_font = tkFont.Font(family=self.default_ui_font, size=11)
         
-        self.widgets['tree_bg_normal'] = "#252526"
-        self.widgets['tree_bg_disabled'] = "#3a3a3a"
-        
+        self.widgets['tree_bg_normal'] = THEME["tree_bg"]
+        self.widgets['tree_bg_disabled'] = THEME["tree_bg_disabled"]
+
         style.configure("Treeview", background=self.widgets['tree_bg_normal'], 
-                        foreground="lightgray", fieldbackground=self.widgets['tree_bg_normal'],
+                        foreground=THEME["text"], fieldbackground=self.widgets['tree_bg_normal'],
                         borderwidth=0, font=tree_font, rowheight=24)
-        style.map("Treeview", background=[('selected', '#007ACC')], foreground=[('selected', 'white')])
-        style.configure("Treeview.Heading", background="#333333", foreground="white", relief=tk.FLAT)
+        style.map("Treeview", background=[('selected', THEME["selection"])], foreground=[('selected', THEME["heading_text"])])
+        style.configure("Treeview.Heading", background=THEME["heading_bg"], foreground=THEME["heading_text"], relief=tk.FLAT)
         
-        style.configure('TCombobox', fieldbackground='#2a2a3f', background='#4a4a5a', foreground='white')
+        style.configure(
+            'TCombobox',
+            fieldbackground=THEME["field_bg"],
+            background=THEME["panel_alt_bg"],
+            foreground=THEME["field_text"],
+            arrowcolor=THEME["heading_text"],
+        )
+        style.map(
+            'TCombobox',
+            fieldbackground=[('readonly', THEME["field_bg"])],
+            background=[('readonly', THEME["panel_alt_bg"])],
+            foreground=[('readonly', THEME["field_text"])],
+        )
 
     def _setup_ui(self):
         self.root.title("Project Mapper - Systems Thinker Edition")
-        self.root.configure(bg="#1e1e2f")
+        self.root.configure(bg=THEME["app_bg"])
         self.root.geometry("1200x850")
 
         # 1. Top Bar
-        top_frame = tk.Frame(self.root, bg="#1e1e2f")
+        top_frame = tk.Frame(self.root, bg=THEME["panel_bg"])
         top_frame.pack(fill=tk.X, padx=10, pady=8)
 
-        tk.Label(top_frame, text="Project Root:", bg="#1e1e2f", fg="white").pack(side=tk.LEFT)
+        tk.Label(top_frame, text="Project Root:", bg=THEME["panel_bg"], fg=THEME["text"]).pack(side=tk.LEFT)
         
         self.widgets['selected_root_var'] = tk.StringVar(value=str(DEFAULT_ROOT_DIR))
-        self.widgets['project_path_entry'] = tk.Entry(top_frame, textvariable=self.widgets['selected_root_var'], 
-                                                      bg="#2a2a3f", fg="lightblue", width=60)
+        self.widgets['project_path_entry'] = tk.Entry(
+            top_frame,
+            textvariable=self.widgets['selected_root_var'],
+            bg=THEME["field_bg"],
+            fg=THEME["field_text"],
+            insertbackground=THEME["field_text"],
+            width=60,
+            relief=tk.FLAT,
+        )
         self.widgets['project_path_entry'].pack(side=tk.LEFT, fill=tk.X, expand=True, padx=5)
         self.widgets['project_path_entry'].bind("<Return>", self._on_project_root_commit)
 
-        tk.Button(top_frame, text="Choose...", command=self._on_choose_project_directory, bg="#4a4a5a", fg="white").pack(side=tk.RIGHT)
-        tk.Button(top_frame, text="↑", command=self._on_click_up_dir, bg="#4a4a5a", fg="white").pack(side=tk.RIGHT, padx=5)
+        tk.Button(
+            top_frame,
+            text="Choose...",
+            command=self._on_choose_project_directory,
+            bg=THEME["secondary"],
+            fg=THEME["text"],
+            activebackground=THEME["secondary_hover"],
+            activeforeground=THEME["text"],
+        ).pack(side=tk.RIGHT)
+        tk.Button(
+            top_frame,
+            text="↑",
+            command=self._on_click_up_dir,
+            bg=THEME["panel_alt_bg"],
+            fg=THEME["text"],
+            activebackground=THEME["field_bg_alt"],
+            activeforeground=THEME["text"],
+        ).pack(side=tk.RIGHT, padx=5)
 
         # 2. Main Split (Changed to VERTICAL for pythonw layout stability)
         paned = ttk.PanedWindow(self.root, orient=tk.VERTICAL)
         paned.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
 
         # Top Pane: Tree
-        left_frame = tk.Frame(paned, bg="#1e1e2f")
+        left_frame = tk.Frame(paned, bg=THEME["panel_bg"])
         self.widgets['folder_tree'] = ttk.Treeview(left_frame, show="tree", columns=("size"), selectmode="none")
         self.widgets['folder_tree'].column("#0", width=800)
         self.widgets['folder_tree'].column("size", width=100, anchor="e")
@@ -285,10 +377,10 @@ class ProjectMapperApp:
         paned.add(left_frame, weight=3) # Give tree more initial weight
 
         # Bottom Pane: Actions & Logs
-        right_frame = tk.Frame(paned, bg="#1e1e2f")
-        
+        right_frame = tk.Frame(paned, bg=THEME["panel_bg"])
+
         # Action Buttons Grid
-        btn_grid = tk.Frame(right_frame, bg="#1e1e2f")
+        btn_grid = tk.Frame(right_frame, bg=THEME["panel_bg"])
         btn_grid.pack(fill=tk.X, pady=5)
         
         self.widgets['buttons'] = {}
@@ -301,7 +393,16 @@ class ProjectMapperApp:
 
         for idx, (lbl, func, save) in enumerate(actions):
             r, c = divmod(idx, 4) # Spread buttons horizontally
-            b = tk.Button(btn_grid, text=lbl, bg="#007ACC", fg="white", font=("Arial", 11, "bold"), pady=8)
+            b = tk.Button(
+                btn_grid,
+                text=lbl,
+                bg=THEME["accent"],
+                fg=THEME["text"],
+                activebackground=THEME["accent_hover"],
+                activeforeground=THEME["text"],
+                font=("Arial", 11, "bold"),
+                pady=8,
+            )
             task_id = lbl.split()[0].lower()
             b.config(command=lambda f=func, t=task_id, s=save: self.run_threaded_action(f, task_id=t, save_config_after=s, use_popup=True))
             b.grid(row=r, column=c, sticky="ew", padx=5, pady=5)
@@ -309,13 +410,21 @@ class ProjectMapperApp:
             self.widgets['buttons'][task_id] = b
 
         # Controls & Utility Section
-        util_frame = tk.Frame(right_frame, bg="#1e1e2f")
+        util_frame = tk.Frame(right_frame, bg=THEME["panel_bg"])
         util_frame.pack(fill=tk.X, pady=5)
 
         # -- Timestamp Checkbox --
         self.widgets['use_timestamps'] = tk.BooleanVar(value=False)
-        ts_chk = tk.Checkbutton(util_frame, text="Append Timestamps to Filenames", variable=self.widgets['use_timestamps'],
-                                bg="#1e1e2f", fg="white", selectcolor="#252526", activebackground="#1e1e2f")
+        ts_chk = tk.Checkbutton(
+            util_frame,
+            text="Append Timestamps to Filenames",
+            variable=self.widgets['use_timestamps'],
+            bg=THEME["panel_bg"],
+            fg=THEME["text"],
+            selectcolor=THEME["tree_bg"],
+            activebackground=THEME["panel_bg"],
+            activeforeground=THEME["text"],
+        )
         ts_chk.pack(side=tk.LEFT, padx=10)
 
         # -- Exclusion / .gitignore Toggle (default ON) --
@@ -324,54 +433,127 @@ class ProjectMapperApp:
             util_frame,
             text="Respect .gitignore + exclusions",
             variable=self.widgets['respect_exclusions'],
-            bg="#1e1e2f",
-            fg="white",
-            selectcolor="#252526",
-            activebackground="#1e1e2f"
+            bg=THEME["panel_bg"],
+            fg=THEME["text"],
+            selectcolor=THEME["tree_bg"],
+            activebackground=THEME["panel_bg"],
+            activeforeground=THEME["text"],
         )
         excl_chk.pack(side=tk.LEFT, padx=10)
 
         # -- Conda --
-        tk.Label(util_frame, text="| Env:", bg="#1e1e2f", fg="gray").pack(side=tk.LEFT)
+        tk.Label(util_frame, text="| Env:", bg=THEME["panel_bg"], fg=THEME["muted_text"]).pack(side=tk.LEFT)
         self.widgets['conda_env_var'] = tk.StringVar()
         self.widgets['conda_env_combo'] = ttk.Combobox(util_frame, textvariable=self.widgets['conda_env_var'], state="readonly", width=15)
         self.widgets['conda_env_combo'].pack(side=tk.LEFT, padx=5)
-        tk.Button(util_frame, text="Audit", bg="#4a4a5a", fg="white", font=("Arial", 8),
-                  command=lambda: self.run_threaded_action(self.audit_conda_impl, task_id='audit_conda', use_popup=True)).pack(side=tk.LEFT)
+        tk.Button(
+            util_frame,
+            text="Audit",
+            bg=THEME["panel_alt_bg"],
+            fg=THEME["text"],
+            activebackground=THEME["field_bg_alt"],
+            activeforeground=THEME["text"],
+            font=("Arial", 8),
+            command=lambda: self.run_threaded_action(self.audit_conda_impl, task_id='audit_conda', use_popup=True),
+        ).pack(side=tk.LEFT)
 
         # -- Utility --
-        tk.Button(util_frame, text="Open Logs", command=self.open_main_log_directory, bg="#4a4a5a", fg="white").pack(side=tk.RIGHT, padx=5)
-        tk.Button(util_frame, text="Exclusions", command=self.manage_dynamic_exclusions_popup, bg="#007a7a", fg="white").pack(side=tk.RIGHT, padx=5)
-        tk.Button(util_frame, text="All", command=lambda: self.set_global_selection(S_CHECKED), bg="#4a4a5a", fg="white", width=4).pack(side=tk.RIGHT, padx=2)
-        tk.Button(util_frame, text="None", command=lambda: self.set_global_selection(S_UNCHECKED), bg="#4a4a5a", fg="white", width=4).pack(side=tk.RIGHT, padx=2)
-        
+        tk.Button(
+            util_frame,
+            text="Open Logs",
+            command=self.open_main_log_directory,
+            bg=THEME["panel_alt_bg"],
+            fg=THEME["text"],
+            activebackground=THEME["field_bg_alt"],
+            activeforeground=THEME["text"],
+        ).pack(side=tk.RIGHT, padx=5)
+        tk.Button(
+            util_frame,
+            text="Exclusions",
+            command=self.manage_dynamic_exclusions_popup,
+            bg=THEME["success"],
+            fg=THEME["text"],
+            activebackground=THEME["success_hover"],
+            activeforeground=THEME["text"],
+        ).pack(side=tk.RIGHT, padx=5)
+        tk.Button(
+            util_frame,
+            text="All",
+            command=lambda: self.set_global_selection(S_CHECKED),
+            bg=THEME["panel_alt_bg"],
+            fg=THEME["text"],
+            activebackground=THEME["field_bg_alt"],
+            activeforeground=THEME["text"],
+            width=4,
+        ).pack(side=tk.RIGHT, padx=2)
+        tk.Button(
+            util_frame,
+            text="None",
+            command=lambda: self.set_global_selection(S_UNCHECKED),
+            bg=THEME["panel_alt_bg"],
+            fg=THEME["text"],
+            activebackground=THEME["field_bg_alt"],
+            activeforeground=THEME["text"],
+            width=4,
+        ).pack(side=tk.RIGHT, padx=2)
+
         # -- Quick Add Exclusion --
-        tk.Button(util_frame, text="Add", command=lambda: self.add_excluded_filename(self.exc_entry), bg="#007ACC", fg="white", font=("Arial", 8)).pack(side=tk.RIGHT, padx=5)
-        self.exc_entry = tk.Entry(util_frame, bg="#3a3a4a", fg="white", width=15)
+        tk.Button(
+            util_frame,
+            text="Add",
+            command=lambda: self.add_excluded_filename(self.exc_entry),
+            bg=THEME["accent"],
+            fg=THEME["text"],
+            activebackground=THEME["accent_hover"],
+            activeforeground=THEME["text"],
+            font=("Arial", 8),
+        ).pack(side=tk.RIGHT, padx=5)
+        self.exc_entry = tk.Entry(
+            util_frame,
+            bg=THEME["field_bg_alt"],
+            fg=THEME["field_text"],
+            insertbackground=THEME["field_text"],
+            width=15,
+            relief=tk.FLAT,
+        )
         self.exc_entry.pack(side=tk.RIGHT, padx=5)
-        tk.Label(util_frame, text="Excl. Pattern:", bg="#1e1e2f", fg="gray").pack(side=tk.RIGHT)
+        tk.Label(util_frame, text="Excl. Pattern:", bg=THEME["panel_bg"], fg=THEME["muted_text"]).pack(side=tk.RIGHT)
 
         # Log Box
-        self.widgets['log_box'] = scrolledtext.ScrolledText(right_frame, bg="#151521", fg="#E0E0E0", font=("Consolas", 9), state=tk.DISABLED, height=10)
+        self.widgets['log_box'] = scrolledtext.ScrolledText(
+            right_frame,
+            bg=THEME["log_bg"],
+            fg=THEME["log_text"],
+            insertbackground=THEME["log_text"],
+            font=("Consolas", 9),
+            state=tk.DISABLED,
+            height=10,
+        )
         self.widgets['log_box'].pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
 
         paned.add(right_frame, weight=1)
 
         # Status Bar
         self.widgets['status_var'] = tk.StringVar(value="Ready.")
-        self.widgets['status_bar'] = tk.Label(self.root, textvariable=self.widgets['status_var'], bg="#111111", fg="#90EE90", anchor="w")
+        self.widgets['status_bar'] = tk.Label(
+            self.root,
+            textvariable=self.widgets['status_var'],
+            bg=THEME["status_bg"],
+            fg=THEME["status_text"],
+            anchor="w",
+        )
         self.widgets['status_bar'].pack(fill=tk.X, side=tk.BOTTOM)
 
     # --- Threading & Activity Logic ---
     def _activity_blinker(self):
         if self.running_tasks:
             current_color = self.widgets['status_bar'].cget("bg")
-            next_color = "#333333" if current_color == "#111111" else "#111111"
+            next_color = THEME["panel_alt_bg"] if current_color == THEME["status_bg"] else THEME["status_bg"]
             self.widgets['status_bar'].config(bg=next_color)
             task_names = ", ".join(self.running_tasks)
             self.widgets['status_var'].set(f"[ACTIVE] Processing: {task_names}")
         else:
-            self.widgets['status_bar'].config(bg="#111111")
+            self.widgets['status_bar'].config(bg=THEME["status_bg"])
             
         self.root.after(500, self._activity_blinker)
 
@@ -984,7 +1166,14 @@ class ProjectMapperApp:
     def manage_dynamic_exclusions_popup(self):
         top = tk.Toplevel(self.root)
         top.title("Exclusions")
-        lb = tk.Listbox(top)
+        top.configure(bg=THEME["panel_bg"])
+        lb = tk.Listbox(
+            top,
+            bg=THEME["tree_bg"],
+            fg=THEME["text"],
+            selectbackground=THEME["selection"],
+            selectforeground=THEME["heading_text"],
+        )
         lb.pack(fill=tk.BOTH, expand=True)
         for x in self.dynamic_global_excluded_filenames: lb.insert(tk.END, x)
         def _rem():
@@ -994,7 +1183,15 @@ class ProjectMapperApp:
             self.dynamic_global_excluded_filenames.remove(val)
             top.destroy()
             self.manage_dynamic_exclusions_popup()
-        tk.Button(top, text="Remove Selected", command=_rem).pack()
+        tk.Button(
+            top,
+            text="Remove Selected",
+            command=_rem,
+            bg=THEME["danger"],
+            fg=THEME["text"],
+            activebackground=THEME["danger_hover"],
+            activeforeground=THEME["text"],
+        ).pack(pady=8)
 
     def open_main_log_directory(self):
         p = self._get_current_project_path()
@@ -1041,5 +1238,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-

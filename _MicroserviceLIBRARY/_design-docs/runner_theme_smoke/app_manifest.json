@@ -1,0 +1,19 @@
+{
+  "app_id": "app_c1a403261270c2fe7d92ef4c",
+  "name": "Runner Theme Smoke",
+  "destination": "_design-docs\\runner_theme_smoke",
+  "vendor_mode": "module_ref",
+  "resolution_profile": "app_ready",
+  "ui_pack": "tkinter_base_pack",
+  "orchestrator": "tkinter_shell_orchestrator",
+  "manager_layers": [],
+  "microservices": [
+    "ExplorerWidgetMS"
+  ],
+  "modules": [],
+  "settings_defaults": {
+    "app_title": "Runner Theme Smoke",
+    "assistant_enabled": false
+  },
+  "hooks": {}
+}

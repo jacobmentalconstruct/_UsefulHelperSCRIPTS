@@ -93,3 +93,8 @@ vectors/
 *_folder_tree.txt
 reports/
 output/
+
+# --wierd odds-n-ends
+_randomDOCS/
+_sanbox-area/
+_db/

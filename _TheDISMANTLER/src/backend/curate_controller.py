@@ -128,9 +128,13 @@ class CurateController:
             except Exception as e:
                 self.log(f"  SlidingWindow indexing failed: {e}")
 
-            # Step 5: Build and store the structural manifest (Surgeon-Agent)
+            # Step 5: Build and store the enriched structural manifest
             try:
-                manifest = ManifestEngine.build(file_path, language, content, hierarchy)
+                manifest = ManifestEngine.build(
+                    file_path, language, content, hierarchy,
+                    walker_nodes=self.walker.nodes if language == "python" else None,
+                    edges=edges or None,
+                )
                 # Retrieve the file_id from the DB to store the manifest
                 from backend.modules.db_schema import get_connection
                 conn = get_connection(sw.db_path)
@@ -143,6 +147,18 @@ class CurateController:
                     self.log(f"  Manifest built: {len(manifest)} chars")
             except Exception as e:
                 self.log(f"  Manifest build failed: {e}")
+
+            # Step 6: Persist per-chunk metadata for Scout enrichment
+            if language == "python" and self.walker.nodes:
+                try:
+                    ref_counts = self._compute_ref_counts(edges)
+                    meta_list = self._build_chunk_meta(
+                        self.walker.nodes, edges, ref_counts
+                    )
+                    sw.index_chunk_meta(file_path, meta_list)
+                    self.log(f"  Chunk metadata stored: {len(meta_list)} entries")
+                except Exception as e:
+                    self.log(f"  Chunk metadata storage failed: {e}")
 
         return {
             "status": "ok",
@@ -187,6 +203,48 @@ class CurateController:
             "files_curated": len(results),
             "results": results,
         }
+
+    # ── metadata helpers ─────────────────────────────────────
+
+    @staticmethod
+    def _compute_ref_counts(edges):
+        """Count incoming references per node name from edge list."""
+        counts = {}
+        for e in edges:
+            target = e.get("target", "")
+            if target:
+                base = target.rsplit(".", 1)[-1]
+                counts[base] = counts.get(base, 0) + 1
+        return counts
+
+    @staticmethod
+    def _build_chunk_meta(walker_nodes, edges, ref_counts):
+        """
+        Build a list of per-chunk metadata dicts from walker ASTNode objects.
+        Each dict has: name, start_line, end_line, decorators, signature,
+                       return_type, calls, raises, ref_count
+        """
+        # Build call targets grouped by source name
+        call_map = {}
+        for e in edges:
+            if e.get("kind") == "calls":
+                call_map.setdefault(e["source"], []).append(e["target"])
+
+        meta = []
+        for n in walker_nodes:
+            calls = sorted(set(call_map.get(n.name, [])))
+            meta.append({
+                "name":        n.name,
+                "start_line":  n.start_line,
+                "end_line":    n.end_line,
+                "decorators":  n.decorators,
+                "signature":   n.signature,
+                "return_type": n.return_type,
+                "calls":       calls,
+                "raises":      n.raises,
+                "ref_count":   ref_counts.get(n.name, 0),
+            })
+        return meta
 
     # ── entity access ───────────────────────────────────────
 

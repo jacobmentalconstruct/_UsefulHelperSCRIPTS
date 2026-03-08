@@ -1,0 +1,10 @@
+{
+  "hunks": [
+    {
+      "description": "Fix indentation in external dependency validation loop",
+      "search_block": "    for dep in parsed[\"external_dependencies\"] if isinstance(parsed[\"external_dependencies\"], list) else []:\n    if (\n    dep in LOCAL_MODULE_NAMES\n    or dep in REFERENCE_MODULE_NAMES\n    or dep in REFERENCE_PACKAGE_NAMES\n    or str(dep).startswith(\"_\")\n    ):\n    failures.append(f\"external_dep_looks_internal:{dep}\")\n",
+      "replace_block": "    for dep in parsed[\"external_dependencies\"] if isinstance(parsed[\"external_dependencies\"], list) else []:\n        if (\n            dep in LOCAL_MODULE_NAMES\n            or dep in REFERENCE_MODULE_NAMES\n            or dep in REFERENCE_PACKAGE_NAMES\n            or str(dep).startswith(\"_\")\n        ):\n            failures.append(f\"external_dep_looks_internal:{dep}\")\n",
+      "use_patch_indent": true
+    }
+  ]
+}

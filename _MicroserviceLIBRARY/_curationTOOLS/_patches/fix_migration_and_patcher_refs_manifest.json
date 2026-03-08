@@ -1,0 +1,67 @@
+{
+  "files": [
+    {
+      "path": "run_migration_phase.py",
+      "hunks": [
+        {
+          "description": "Fix get_ui_schema adapter field to avoid missing _service_info runtime bug",
+          "search_block": "            \"source_module\": self.source_rel_path,\n            \"adapter\": self._service_info.get(\"name\")\n        }\n",
+          "replace_block": "            \"source_module\": self.source_rel_path,\n            \"adapter\": self.__class__.__name__\n        }\n",
+          "use_patch_indent": false
+        },
+        {
+          "description": "Treat reference modules/packages as internal when validating external deps",
+          "search_block": "    for dep in parsed[\"external_dependencies\"] if isinstance(parsed[\"external_dependencies\"], list) else []:\n        if dep in LOCAL_MODULE_NAMES or str(dep).startswith(\"_\"):\n            failures.append(f\"external_dep_looks_internal:{dep}\")\n",
+          "replace_block": "    for dep in parsed[\"external_dependencies\"] if isinstance(parsed[\"external_dependencies\"], list) else []:\n        if (\n            dep in LOCAL_MODULE_NAMES\n            or dep in REFERENCE_MODULE_NAMES\n            or dep in REFERENCE_PACKAGE_NAMES\n            or str(dep).startswith(\"_\")\n        ):\n            failures.append(f\"external_dep_looks_internal:{dep}\")\n",
+          "use_patch_indent": false
+        }
+      ]
+    },
+    {
+      "path": "_curationTOOLS/tokenizing_patcher_with_cli.py",
+      "hunks": [
+        {
+          "description": "Update apply command usage to actual CLI filename",
+          "search_block": "            \"tokenizing_patcher_with_cli_v2.py apply PATCH TARGET [TARGET ...]\",\n            \"tokenizing_patcher_with_cli_v2.py apply PATCH\",\n",
+          "replace_block": "            \"tokenizing_patcher_with_cli.py apply PATCH TARGET [TARGET ...]\",\n            \"tokenizing_patcher_with_cli.py apply PATCH\",\n",
+          "use_patch_indent": false
+        },
+        {
+          "description": "Update validate command usage to actual CLI filename",
+          "search_block": "            \"tokenizing_patcher_with_cli_v2.py validate PATCH TARGET [TARGET ...]\",\n            \"tokenizing_patcher_with_cli_v2.py validate PATCH\",\n",
+          "replace_block": "            \"tokenizing_patcher_with_cli.py validate PATCH TARGET [TARGET ...]\",\n            \"tokenizing_patcher_with_cli.py validate PATCH\",\n",
+          "use_patch_indent": false
+        }
+      ]
+    },
+    {
+      "path": "_curationTOOLS/tokenizing-patcher-readme.md",
+      "hunks": [
+        {
+          "description": "Fix top-level tool filename mention",
+          "search_block": "`tokenizing_patcher_with_cli_v2.py` applies structured patch objects to files on disk.\n",
+          "replace_block": "`tokenizing_patcher_with_cli.py` applies structured patch objects to files on disk.\n",
+          "use_patch_indent": false
+        },
+        {
+          "description": "Fix command overview code blocks to actual CLI filename",
+          "search_block": "```bash\npython tokenizing_patcher_with_cli_v2.py --help\n```\n\n### Show schema\n\n```bash\npython tokenizing_patcher_with_cli_v2.py --schema\n```\n\n### Show command reference\n\n```bash\npython tokenizing_patcher_with_cli_v2.py --command\npython tokenizing_patcher_with_cli_v2.py --command apply\npython tokenizing_patcher_with_cli_v2.py --command validate\n```\n\n### Emit schema/command info as JSON\n\n```bash\npython tokenizing_patcher_with_cli_v2.py --schema --json\npython tokenizing_patcher_with_cli_v2.py --command apply --json\n```\n\n### Validate a patch against one or more files\n\n```bash\npython tokenizing_patcher_with_cli_v2.py validate patch.json file1.py\npython tokenizing_patcher_with_cli_v2.py validate patch.json file1.py file2.py file3.py\n```\n\n### Apply a patch to one or more files\n\n```bash\npython tokenizing_patcher_with_cli_v2.py apply patch.json file1.py\npython tokenizing_patcher_with_cli_v2.py apply patch.json file1.py file2.py\n```\n\n### Dry-run a patch\n\n```bash\npython tokenizing_patcher_with_cli_v2.py apply patch.json file1.py --dry-run\n```\n\n### Apply a multi-file manifest\n\n```bash\npython tokenizing_patcher_with_cli_v2.py apply patch_manifest.json\n```\n\n### Validate a multi-file manifest\n\n```bash\npython tokenizing_patcher_with_cli_v2.py validate patch_manifest.json\n```\n\n### Use a root directory for relative paths in a manifest\n\n```bash\npython tokenizing_patcher_with_cli_v2.py apply patch_manifest.json --root-dir /path/to/project\n```\n\n### Write outputs to a separate directory instead of overwriting originals\n\n```bash\npython tokenizing_patcher_with_cli_v2.py apply patch_manifest.json --root-dir /path/to/project --output-dir /tmp/patched_out\n```\n\n### Create backups when writing in place\n\n```bash\npython tokenizing_patcher_with_cli_v2.py apply patch_manifest.json --backup\n```\n",
+          "replace_block": "```bash\npython tokenizing_patcher_with_cli.py --help\n```\n\n### Show schema\n\n```bash\npython tokenizing_patcher_with_cli.py --schema\n```\n\n### Show command reference\n\n```bash\npython tokenizing_patcher_with_cli.py --command\npython tokenizing_patcher_with_cli.py --command apply\npython tokenizing_patcher_with_cli.py --command validate\n```\n\n### Emit schema/command info as JSON\n\n```bash\npython tokenizing_patcher_with_cli.py --schema --json\npython tokenizing_patcher_with_cli.py --command apply --json\n```\n\n### Validate a patch against one or more files\n\n```bash\npython tokenizing_patcher_with_cli.py validate patch.json file1.py\npython tokenizing_patcher_with_cli.py validate patch.json file1.py file2.py file3.py\n```\n\n### Apply a patch to one or more files\n\n```bash\npython tokenizing_patcher_with_cli.py apply patch.json file1.py\npython tokenizing_patcher_with_cli.py apply patch.json file1.py file2.py\n```\n\n### Dry-run a patch\n\n```bash\npython tokenizing_patcher_with_cli.py apply patch.json file1.py --dry-run\n```\n\n### Apply a multi-file manifest\n\n```bash\npython tokenizing_patcher_with_cli.py apply patch_manifest.json\n```\n\n### Validate a multi-file manifest\n\n```bash\npython tokenizing_patcher_with_cli.py validate patch_manifest.json\n```\n\n### Use a root directory for relative paths in a manifest\n\n```bash\npython tokenizing_patcher_with_cli.py apply patch_manifest.json --root-dir /path/to/project\n```\n\n### Write outputs to a separate directory instead of overwriting originals\n\n```bash\npython tokenizing_patcher_with_cli.py apply patch_manifest.json --root-dir /path/to/project --output-dir /tmp/patched_out\n```\n\n### Create backups when writing in place\n\n```bash\npython tokenizing_patcher_with_cli.py apply patch_manifest.json --backup\n```\n",
+          "use_patch_indent": false
+        },
+        {
+          "description": "Fix example workflow command snippets to actual CLI filename",
+          "search_block": "```bash\npython tokenizing_patcher_with_cli_v2.py validate add_import_patch.json src/tool.py\npython tokenizing_patcher_with_cli_v2.py apply add_import_patch.json src/tool.py --backup\n```\n\n### Example 2: patch many files with the same patch\n\n```bash\npython tokenizing_patcher_with_cli_v2.py validate rename_patch.json src/a.py src/b.py src/c.py\npython tokenizing_patcher_with_cli_v2.py apply rename_patch.json src/a.py src/b.py src/c.py --dry-run\n```\n\n### Example 3: patch many files from a manifest\n\n```bash\npython tokenizing_patcher_with_cli_v2.py validate migration_manifest.json --root-dir /repo/project\npython tokenizing_patcher_with_cli_v2.py apply migration_manifest.json --root-dir /repo/project --backup\n```\n\n### Example 4: stage patched outputs instead of overwriting originals\n\n```bash\npython tokenizing_patcher_with_cli_v2.py apply migration_manifest.json --root-dir /repo/project --output-dir /tmp/migration_stage\n```\n",
+          "replace_block": "```bash\npython tokenizing_patcher_with_cli.py validate add_import_patch.json src/tool.py\npython tokenizing_patcher_with_cli.py apply add_import_patch.json src/tool.py --backup\n```\n\n### Example 2: patch many files with the same patch\n\n```bash\npython tokenizing_patcher_with_cli.py validate rename_patch.json src/a.py src/b.py src/c.py\npython tokenizing_patcher_with_cli.py apply rename_patch.json src/a.py src/b.py src/c.py --dry-run\n```\n\n### Example 3: patch many files from a manifest\n\n```bash\npython tokenizing_patcher_with_cli.py validate migration_manifest.json --root-dir /repo/project\npython tokenizing_patcher_with_cli.py apply migration_manifest.json --root-dir /repo/project --backup\n```\n\n### Example 4: stage patched outputs instead of overwriting originals\n\n```bash\npython tokenizing_patcher_with_cli.py apply migration_manifest.json --root-dir /repo/project --output-dir /tmp/migration_stage\n```\n",
+          "use_patch_indent": false
+        },
+        {
+          "description": "Fix file naming suggestion example",
+          "search_block": "- `tokenizing_patcher_with_cli_v2.py`\n",
+          "replace_block": "- `tokenizing_patcher_with_cli.py`\n",
+          "use_patch_indent": false
+        }
+      ]
+    }
+  ]
+}

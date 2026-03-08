@@ -1,0 +1,133 @@
+# Library Grouping Plan
+
+- Applied: `True`
+- Mode: `copy`
+- Total files: `102`
+
+## By Source Type
+- `new_module`: `8`
+- `root_microservice`: `93`
+- `support_module`: `1`
+
+## By Layer
+- `asset`: `1`
+- `core`: `26`
+- `db`: `5`
+- `grouped`: `3`
+- `manager`: `1`
+- `meaning`: `2`
+- `module`: `1`
+- `observability`: `1`
+- `orchestrator`: `1`
+- `pipeline`: `2`
+- `reference`: `35`
+- `relation`: `4`
+- `storage`: `1`
+- `structure`: `4`
+- `support`: `1`
+- `tooling`: `1`
+- `ui`: `13`
+
+## Planned Moves/Copies
+- `root_microservice` `_ArchiveBotMS.py` -> `C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_MicroserviceLIBRARY\library\microservices\core\_ArchiveBotMS.py`
+- `root_microservice` `_AuthMS.py` -> `C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_MicroserviceLIBRARY\library\microservices\core\_AuthMS.py`
+- `root_microservice` `_CartridgeServiceMS.py` -> `C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_MicroserviceLIBRARY\library\microservices\storage\_CartridgeServiceMS.py`
+- `root_microservice` `_ChalkBoardMS.py` -> `C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_MicroserviceLIBRARY\library\microservices\ui\_ChalkBoardMS.py`
+- `root_microservice` `_ChunkingRouterMS.py` -> `C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_MicroserviceLIBRARY\library\microservices\structure\_ChunkingRouterMS.py`
+- `root_microservice` `_CodeChunkerMS.py` -> `C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_MicroserviceLIBRARY\library\microservices\structure\_CodeChunkerMS.py`
+- `root_microservice` `_CodeFormatterMS.py` -> `C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_MicroserviceLIBRARY\library\microservices\core\_CodeFormatterMS.py`
+- `root_microservice` `_CodeGrapherMS.py` -> `C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_MicroserviceLIBRARY\library\microservices\relation\_CodeGrapherMS.py`
+- `root_microservice` `_CodeJanitorMS.py` -> `C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_MicroserviceLIBRARY\library\microservices\core\_CodeJanitorMS.py`
+- `root_microservice` `_CognitiveMemoryMS.py` -> `C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_MicroserviceLIBRARY\library\microservices\core\_CognitiveMemoryMS.py`
+- `root_microservice` `_ContentExtractorMS.py` -> `C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_MicroserviceLIBRARY\library\microservices\core\_ContentExtractorMS.py`
+- `root_microservice` `_ContextAggregatorMS.py` -> `C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_MicroserviceLIBRARY\library\microservices\core\_ContextAggregatorMS.py`
+- `root_microservice` `_ContextPackerMS.py` -> `C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_MicroserviceLIBRARY\library\microservices\core\_ContextPackerMS.py`
+- `root_microservice` `_DiffEngineMS.py` -> `C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_MicroserviceLIBRARY\library\microservices\db\_DiffEngineMS.py`
+- `root_microservice` `_EnvironmentManagerMS.py` -> `C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_MicroserviceLIBRARY\library\microservices\core\_EnvironmentManagerMS.py`
+- `root_microservice` `_ExplorerWidgetMS.py` -> `C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_MicroserviceLIBRARY\library\microservices\ui\_ExplorerWidgetMS.py`
+- `root_microservice` `_FingerprintScannerMS.py` -> `C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_MicroserviceLIBRARY\library\microservices\core\_FingerprintScannerMS.py`
+- `root_microservice` `_GitPilotMS.py` -> `C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_MicroserviceLIBRARY\library\microservices\ui\_GitPilotMS.py`
+- `root_microservice` `_HeuristicSumMS.py` -> `C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_MicroserviceLIBRARY\library\microservices\core\_HeuristicSumMS.py`
+- `root_microservice` `_IngestEngineMS.py` -> `C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_MicroserviceLIBRARY\library\microservices\pipeline\_IngestEngineMS.py`
+- `root_microservice` `_IntakeServiceMS.py` -> `C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_MicroserviceLIBRARY\library\microservices\core\_IntakeServiceMS.py`
+- `root_microservice` `_IsoProcessMS.py` -> `C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_MicroserviceLIBRARY\library\microservices\core\_IsoProcessMS.py`
+- `root_microservice` `_LexicalSearchMS.py` -> `C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_MicroserviceLIBRARY\library\microservices\db\_LexicalSearchMS.py`
+- `root_microservice` `_LibrarianMS.py` -> `C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_MicroserviceLIBRARY\library\microservices\core\_LibrarianMS.py`
+- `root_microservice` `_LibrarianServiceMS.py` -> `C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_MicroserviceLIBRARY\library\microservices\core\_LibrarianServiceMS.py`
+- `root_microservice` `_LogViewMS.py` -> `C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_MicroserviceLIBRARY\library\microservices\ui\_LogViewMS.py`
+- `root_microservice` `_MonacoHostMS.py` -> `C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_MicroserviceLIBRARY\library\microservices\ui\_MonacoHostMS.py`
+- `root_microservice` `_NetworkLayoutMS.py` -> `C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_MicroserviceLIBRARY\library\microservices\relation\_NetworkLayoutMS.py`
+- `root_microservice` `_NeuralGraphEngineMS.py` -> `C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_MicroserviceLIBRARY\library\microservices\relation\_NeuralGraphEngineMS.py`
+- `root_microservice` `_NeuralGraphViewerMS.py` -> `C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_MicroserviceLIBRARY\library\microservices\ui\_NeuralGraphViewerMS.py`
+- `root_microservice` `_NeuralServiceMS.py` -> `C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_MicroserviceLIBRARY\library\microservices\core\_NeuralServiceMS.py`
+- `root_microservice` `_ProjectForgeMS.py` -> `C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_MicroserviceLIBRARY\library\microservices\core\_ProjectForgeMS.py`
+- `root_microservice` `_PromptOptimizerMS.py` -> `C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_MicroserviceLIBRARY\library\microservices\core\_PromptOptimizerMS.py`
+- `root_microservice` `_PromptVaultMS.py` -> `C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_MicroserviceLIBRARY\library\microservices\core\_PromptVaultMS.py`
+- `root_microservice` `_PythonChunkerMS.py` -> `C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_MicroserviceLIBRARY\library\microservices\structure\_PythonChunkerMS.py`
+- `root_microservice` `_ReferenceChunkViewerFormatMS.py` -> `C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_MicroserviceLIBRARY\library\microservices\reference\_ReferenceChunkViewerFormatMS.py`
+- `root_microservice` `_ReferenceCliPlannerMS.py` -> `C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_MicroserviceLIBRARY\library\microservices\reference\_ReferenceCliPlannerMS.py`
+- `root_microservice` `_ReferenceCompoundDetectMS.py` -> `C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_MicroserviceLIBRARY\library\microservices\reference\_ReferenceCompoundDetectMS.py`
+- `root_microservice` `_ReferenceCompoundRoutingMS.py` -> `C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_MicroserviceLIBRARY\library\microservices\reference\_ReferenceCompoundRoutingMS.py`
+- `root_microservice` `_ReferenceConfigRegistryMS.py` -> `C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_MicroserviceLIBRARY\library\microservices\reference\_ReferenceConfigRegistryMS.py`
+- `root_microservice` `_ReferenceDbConnectionMS.py` -> `C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_MicroserviceLIBRARY\library\microservices\reference\_ReferenceDbConnectionMS.py`
+- `root_microservice` `_ReferenceDbQueryMS.py` -> `C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_MicroserviceLIBRARY\library\microservices\reference\_ReferenceDbQueryMS.py`
+- `root_microservice` `_ReferenceDbSchemaPolicyMS.py` -> `C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_MicroserviceLIBRARY\library\microservices\reference\_ReferenceDbSchemaPolicyMS.py`
+- `root_microservice` `_ReferenceDbSearchMS.py` -> `C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_MicroserviceLIBRARY\library\microservices\reference\_ReferenceDbSearchMS.py`
+- `root_microservice` `_ReferenceDetectMS.py` -> `C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_MicroserviceLIBRARY\library\microservices\reference\_ReferenceDetectMS.py`
+- `root_microservice` `_ReferenceEmbedPipelineMS.py` -> `C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_MicroserviceLIBRARY\library\microservices\reference\_ReferenceEmbedPipelineMS.py`
+- `root_microservice` `_ReferenceEmbedUtilsMS.py` -> `C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_MicroserviceLIBRARY\library\microservices\reference\_ReferenceEmbedUtilsMS.py`
+- `root_microservice` `_ReferenceExplorerModelMS.py` -> `C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_MicroserviceLIBRARY\library\microservices\reference\_ReferenceExplorerModelMS.py`
+- `root_microservice` `_ReferenceExportMS.py` -> `C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_MicroserviceLIBRARY\library\microservices\reference\_ReferenceExportMS.py`
+- `root_microservice` `_ReferenceGraphExtractMS.py` -> `C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_MicroserviceLIBRARY\library\microservices\reference\_ReferenceGraphExtractMS.py`
+- `root_microservice` `_ReferenceIngestRunnerMS.py` -> `C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_MicroserviceLIBRARY\library\microservices\reference\_ReferenceIngestRunnerMS.py`
+- `root_microservice` `_ReferenceLanguageTierMS.py` -> `C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_MicroserviceLIBRARY\library\microservices\reference\_ReferenceLanguageTierMS.py`
+- `root_microservice` `_ReferenceManifestMS.py` -> `C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_MicroserviceLIBRARY\library\microservices\reference\_ReferenceManifestMS.py`
+- `root_microservice` `_ReferenceModelDownloadMS.py` -> `C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_MicroserviceLIBRARY\library\microservices\reference\_ReferenceModelDownloadMS.py`
+- `root_microservice` `_ReferenceModelManagerRuntimeMS.py` -> `C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_MicroserviceLIBRARY\library\microservices\reference\_ReferenceModelManagerRuntimeMS.py`
+- `root_microservice` `_ReferenceProseChunkerMS.py` -> `C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_MicroserviceLIBRARY\library\microservices\reference\_ReferenceProseChunkerMS.py`
+- `root_microservice` `_ReferencePythonAstChunkerMS.py` -> `C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_MicroserviceLIBRARY\library\microservices\reference\_ReferencePythonAstChunkerMS.py`
+- `root_microservice` `_ReferenceReviewQueueMS.py` -> `C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_MicroserviceLIBRARY\library\microservices\reference\_ReferenceReviewQueueMS.py`
+- `root_microservice` `_ReferenceSemanticHunkSplitterMS.py` -> `C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_MicroserviceLIBRARY\library\microservices\reference\_ReferenceSemanticHunkSplitterMS.py`
+- `root_microservice` `_ReferenceSemanticSplitterMS.py` -> `C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_MicroserviceLIBRARY\library\microservices\reference\_ReferenceSemanticSplitterMS.py`
+- `root_microservice` `_ReferenceSettingsDialogStateMS.py` -> `C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_MicroserviceLIBRARY\library\microservices\reference\_ReferenceSettingsDialogStateMS.py`
+- `root_microservice` `_ReferenceSettingsGuardMS.py` -> `C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_MicroserviceLIBRARY\library\microservices\reference\_ReferenceSettingsGuardMS.py`
+- `root_microservice` `_ReferenceSettingsStoreMS.py` -> `C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_MicroserviceLIBRARY\library\microservices\reference\_ReferenceSettingsStoreMS.py`
+- `root_microservice` `_ReferenceShellActionsMS.py` -> `C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_MicroserviceLIBRARY\library\microservices\reference\_ReferenceShellActionsMS.py`
+- `root_microservice` `_ReferenceStructuralDelimiterMS.py` -> `C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_MicroserviceLIBRARY\library\microservices\reference\_ReferenceStructuralDelimiterMS.py`
+- `root_microservice` `_ReferenceTreeItemModelMS.py` -> `C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_MicroserviceLIBRARY\library\microservices\reference\_ReferenceTreeItemModelMS.py`
+- `root_microservice` `_ReferenceTreeSitterQueryRegistryMS.py` -> `C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_MicroserviceLIBRARY\library\microservices\reference\_ReferenceTreeSitterQueryRegistryMS.py`
+- `root_microservice` `_ReferenceTreeSitterStrategyMS.py` -> `C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_MicroserviceLIBRARY\library\microservices\reference\_ReferenceTreeSitterStrategyMS.py`
+- `root_microservice` `_ReferenceVerbatimMS.py` -> `C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_MicroserviceLIBRARY\library\microservices\reference\_ReferenceVerbatimMS.py`
+- `root_microservice` `_ReferenceViewerContentMS.py` -> `C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_MicroserviceLIBRARY\library\microservices\reference\_ReferenceViewerContentMS.py`
+- `root_microservice` `_RefineryServiceMS.py` -> `C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_MicroserviceLIBRARY\library\microservices\relation\_RefineryServiceMS.py`
+- `root_microservice` `_RegexWeaverMS.py` -> `C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_MicroserviceLIBRARY\library\microservices\core\_RegexWeaverMS.py`
+- `root_microservice` `_RoleManagerMS.py` -> `C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_MicroserviceLIBRARY\library\microservices\db\_RoleManagerMS.py`
+- `root_microservice` `_SandboxManagerMS.py` -> `C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_MicroserviceLIBRARY\library\microservices\db\_SandboxManagerMS.py`
+- `root_microservice` `_ScannerMS.py` -> `C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_MicroserviceLIBRARY\library\microservices\core\_ScannerMS.py`
+- `root_microservice` `_ScoutMS.py` -> `C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_MicroserviceLIBRARY\library\microservices\core\_ScoutMS.py`
+- `root_microservice` `_SearchEngineMS.py` -> `C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_MicroserviceLIBRARY\library\microservices\meaning\_SearchEngineMS.py`
+- `root_microservice` `_SemanticChunkerMS.py` -> `C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_MicroserviceLIBRARY\library\microservices\pipeline\_SemanticChunkerMS.py`
+- `root_microservice` `_ServiceRegistryMS.py` -> `C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_MicroserviceLIBRARY\library\microservices\core\_ServiceRegistryMS.py`
+- `root_microservice` `_SpinnerThingyMaBobberMS.py` -> `C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_MicroserviceLIBRARY\library\microservices\ui\_SpinnerThingyMaBobberMS.py`
+- `root_microservice` `_SysInspectorMS.py` -> `C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_MicroserviceLIBRARY\library\microservices\core\_SysInspectorMS.py`
+- `root_microservice` `_TasklistVaultMS.py` -> `C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_MicroserviceLIBRARY\library\microservices\db\_TasklistVaultMS.py`
+- `root_microservice` `_TelemetryServiceMS.py` -> `C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_MicroserviceLIBRARY\library\microservices\observability\_TelemetryServiceMS.py`
+- `root_microservice` `_TextChunkerMS.py` -> `C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_MicroserviceLIBRARY\library\microservices\structure\_TextChunkerMS.py`
+- `root_microservice` `_ThoughtStreamMS.py` -> `C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_MicroserviceLIBRARY\library\microservices\ui\_ThoughtStreamMS.py`
+- `root_microservice` `_TkinterAppShellMS.py` -> `C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_MicroserviceLIBRARY\library\microservices\ui\_TkinterAppShellMS.py`
+- `root_microservice` `_TkinterSmartExplorerMS.py` -> `C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_MicroserviceLIBRARY\library\microservices\ui\_TkinterSmartExplorerMS.py`
+- `root_microservice` `_TkinterThemeManagerMS.py` -> `C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_MicroserviceLIBRARY\library\microservices\ui\_TkinterThemeManagerMS.py`
+- `root_microservice` `_TkinterUniButtonMS.py` -> `C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_MicroserviceLIBRARY\library\microservices\ui\_TkinterUniButtonMS.py`
+- `root_microservice` `_TreeMapperMS.py` -> `C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_MicroserviceLIBRARY\library\microservices\core\_TreeMapperMS.py`
+- `root_microservice` `_VectorFactoryMS.py` -> `C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_MicroserviceLIBRARY\library\microservices\meaning\_VectorFactoryMS.py`
+- `root_microservice` `_WebScraperMS.py` -> `C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_MicroserviceLIBRARY\library\microservices\core\_WebScraperMS.py`
+- `root_microservice` `_WorkbenchLayoutMS.py` -> `C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_MicroserviceLIBRARY\library\microservices\ui\_WorkbenchLayoutMS.py`
+- `support_module` `microservice_std_lib.py` -> `C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_MicroserviceLIBRARY\library\microservice_std_lib.py`
+- `new_module` `files.zip` -> `C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_MicroserviceLIBRARY\library\assets\files.zip`
+- `new_module` `inject_register_hook.py` -> `C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_MicroserviceLIBRARY\library\tools\inject_register_hook.py`
+- `new_module` `managers.py` -> `C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_MicroserviceLIBRARY\library\managers\_source_managers.py`
+- `new_module` `meaning_relation_observability_manifold_groups.py` -> `C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_MicroserviceLIBRARY\library\microservices\grouped\meaning_relation_observability_manifold_groups.py`
+- `new_module` `microservice_std_lib_registry.py` -> `C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_MicroserviceLIBRARY\library\orchestrators\microservice_std_lib_registry.py`
+- `new_module` `storage_group.py` -> `C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_MicroserviceLIBRARY\library\microservices\grouped\storage_group.py`
+- `new_module` `structure_group.py` -> `C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_MicroserviceLIBRARY\library\microservices\grouped\structure_group.py`
+- `new_module` `wasm_modules_spec.py` -> `C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_MicroserviceLIBRARY\library\modules\wasm_modules_spec.py`

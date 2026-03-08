@@ -1,0 +1,19 @@
+{
+  "app_id": "app_bb314da6577a39b758f210d7",
+  "name": "Stamped Smoke",
+  "destination": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_design-docs\\stamped_smoke",
+  "vendor_mode": "module_ref",
+  "resolution_profile": "app_ready",
+  "ui_pack": "headless_pack",
+  "orchestrator": "headless_backend_orchestrator",
+  "manager_layers": [],
+  "microservices": [
+    "FingerprintScannerMS"
+  ],
+  "modules": [],
+  "settings_defaults": {
+    "app_title": "Stamped Smoke",
+    "assistant_enabled": false
+  },
+  "hooks": {}
+}

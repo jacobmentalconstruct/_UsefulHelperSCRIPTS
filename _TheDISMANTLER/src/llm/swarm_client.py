@@ -86,7 +86,7 @@ class SwarmClient:
 
     # ── Surgeon (Analysis) ────────────────────────────────────
 
-    def surgeon(self, prompt: str, stream_callback=None) -> str:
+    def surgeon(self, prompt: str, stream_callback=None, system_prompt: str = None) -> str:
         """
         Send an analysis prompt to the Surgeon model (7b).
 
@@ -97,11 +97,18 @@ class SwarmClient:
             prompt:          Fully formatted analysis prompt string.
             stream_callback: Optional callback(str) invoked per token
                              for streaming output to the UI.
+            system_prompt:   Optional Ollama system field — used for the
+                             Surgeon's identity/persona anchor (tells the
+                             model which file it is analyzing).
 
         Returns:
             Full response string from the Surgeon model.
         """
-        payload = self._build_payload(SURGEON_PROFILE, prompt, stream=stream_callback is not None)
+        payload = self._build_payload(
+            SURGEON_PROFILE, prompt,
+            stream=stream_callback is not None,
+            system_prompt=system_prompt,
+        )
         self.log(f"Surgeon dispatch: {len(prompt)} chars, num_ctx={SURGEON_PROFILE['num_ctx']}")
         return self._post_generate(payload, stream_callback=stream_callback)
 
@@ -176,7 +183,8 @@ class SwarmClient:
     # ── Internal ──────────────────────────────────────────────
 
     @staticmethod
-    def _build_payload(profile: dict, prompt: str, stream: bool = False) -> dict:
+    def _build_payload(profile: dict, prompt: str, stream: bool = False,
+                       system_prompt: str = None) -> dict:
         """
         Construct the Ollama /api/generate JSON payload from a profile.
 
@@ -184,6 +192,7 @@ class SwarmClient:
         {
             "model":   "qwen2.5-coder:0.5b",
             "prompt":  "<the full prompt>",
+            "system":  "<optional identity anchor>",   ← top-level, separate from prompt
             "stream":  false,
             "options": {
                 "num_ctx":     512,
@@ -194,8 +203,10 @@ class SwarmClient:
 
         Note: 'keep_alive' is a top-level key (not inside 'options').
         'num_ctx' and 'temperature' go inside 'options'.
+        'system' is also top-level and acts as a persistent instruction distinct
+        from 'prompt' — used for the Surgeon's persona/file-identity anchor.
         """
-        return {
+        payload = {
             "model":      profile["model"],
             "prompt":     prompt,
             "stream":     stream,
@@ -205,6 +216,9 @@ class SwarmClient:
                 "temperature": profile["temperature"],
             },
         }
+        if system_prompt:
+            payload["system"] = system_prompt
+        return payload
 
     def _post_generate(self, payload: dict, stream_callback=None) -> str:
         """

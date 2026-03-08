@@ -1,0 +1,173 @@
+{
+  "workspace_root": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_sanbox\\apps\\foundry_project_lens_20260307",
+  "base_app_dir": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_sanbox\\apps\\foundry_project_lens_20260307\\base",
+  "working_app_dir": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_sanbox\\apps\\foundry_project_lens_20260307\\working",
+  "state_path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_sanbox\\apps\\foundry_project_lens_20260307\\sandbox_state.json",
+  "stamp_report": {
+    "app_dir": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_sanbox\\apps\\foundry_project_lens_20260307\\base",
+    "written_files": [
+      "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_sanbox\\apps\\foundry_project_lens_20260307\\base\\app_manifest.json",
+      "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_sanbox\\apps\\foundry_project_lens_20260307\\base\\settings.json",
+      "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_sanbox\\apps\\foundry_project_lens_20260307\\base\\requirements.txt",
+      "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_sanbox\\apps\\foundry_project_lens_20260307\\base\\pyrightconfig.json",
+      "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_sanbox\\apps\\foundry_project_lens_20260307\\base\\.env",
+      "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_sanbox\\apps\\foundry_project_lens_20260307\\base\\backend.py",
+      "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_sanbox\\apps\\foundry_project_lens_20260307\\base\\ui.py",
+      "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_sanbox\\apps\\foundry_project_lens_20260307\\base\\app.py",
+      "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_sanbox\\apps\\foundry_project_lens_20260307\\base\\ui_schema.json",
+      "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_sanbox\\apps\\foundry_project_lens_20260307\\base\\.stamper_lock.json"
+    ],
+    "validation": {
+      "warnings": [],
+      "errors": [],
+      "cycle_warnings": [],
+      "missing_dependencies": [],
+      "compile_results": {
+        "compiled": [
+          "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_sanbox\\apps\\foundry_project_lens_20260307\\base\\app.py",
+          "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_sanbox\\apps\\foundry_project_lens_20260307\\base\\backend.py",
+          "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_sanbox\\apps\\foundry_project_lens_20260307\\base\\ui.py"
+        ],
+        "errors": []
+      },
+      "ok": true
+    },
+    "external_dependencies": [],
+    "resolved_artifacts": [
+      {
+        "artifact_id": "artifact_e97d77e2c31a6782aafe14a2",
+        "source_path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservices\\ui\\_ExplorerWidgetMS.py",
+        "target_path": "",
+        "file_cid": "6d929a2a3d2cc8a276fa9abb183124f7b528185fedcb061b488e4694c2af3038",
+        "materialization_mode": "module_ref",
+        "import_key": "library.microservices.ui._ExplorerWidgetMS",
+        "class_name": "ExplorerWidgetMS",
+        "service_name": "ExplorerWidgetMS"
+      },
+      {
+        "artifact_id": "artifact_f5951d0b8846bd2b752543cf",
+        "source_path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\base_service.py",
+        "target_path": "",
+        "file_cid": "34d390f2aae13c2889526353f9b8e0e7bb90dcc77b11615aa3e83e5ae4d72b68",
+        "materialization_mode": "module_ref",
+        "import_key": "library.base_service",
+        "class_name": "",
+        "service_name": ""
+      },
+      {
+        "artifact_id": "artifact_948d48e299f0eef72582d59c",
+        "source_path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservice_std_lib.py",
+        "target_path": "",
+        "file_cid": "b78a392838eda00a11a3ae26cfb090a52ace554493627f7493e5d2e4de47861c",
+        "materialization_mode": "module_ref",
+        "import_key": "library.microservice_std_lib",
+        "class_name": "",
+        "service_name": ""
+      },
+      {
+        "artifact_id": "artifact_5185031658569baf5f30c29d",
+        "source_path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservices\\ui\\_TkinterAppShellMS.py",
+        "target_path": "",
+        "file_cid": "11f7001e086e6343ad35babafdb2aebc0b648784dc01558c9242ffede39beb38",
+        "materialization_mode": "module_ref",
+        "import_key": "library.microservices.ui._TkinterAppShellMS",
+        "class_name": "TkinterAppShellMS",
+        "service_name": "TkinterAppShell"
+      },
+      {
+        "artifact_id": "artifact_38e475ce7f8e59e90ba8fd7d",
+        "source_path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservices\\ui\\_TkinterThemeManagerMS.py",
+        "target_path": "",
+        "file_cid": "4271705029891a2e438fe179e92e3c83f17b406b02257f0b883f0c751b48dfbe",
+        "materialization_mode": "module_ref",
+        "import_key": "library.microservices.ui._TkinterThemeManagerMS",
+        "class_name": "",
+        "service_name": ""
+      },
+      {
+        "artifact_id": "artifact_c82521756047b742aa945837",
+        "source_path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservices\\ui\\_WorkbenchLayoutMS.py",
+        "target_path": "",
+        "file_cid": "ca7861c2f5858a54e3688271115b06bfbddfa333980f27819037bf69f89d60c2",
+        "materialization_mode": "module_ref",
+        "import_key": "library.microservices.ui._WorkbenchLayoutMS",
+        "class_name": "WorkbenchLayoutMS",
+        "service_name": "WorkbenchLayout"
+      },
+      {
+        "artifact_id": "artifact_c46b8b25ac18e53b139054c4",
+        "source_path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservices\\core\\_FingerprintScannerMS.py",
+        "target_path": "",
+        "file_cid": "2e5f7e1a67d6fb52bcbb3f2a608001a195b8e1de5dbd00620bb32fd860e85440",
+        "materialization_mode": "module_ref",
+        "import_key": "library.microservices.core._FingerprintScannerMS",
+        "class_name": "FingerprintScannerMS",
+        "service_name": "FingerprintScannerMS"
+      },
+      {
+        "artifact_id": "artifact_98af46146ff0af7ac82f12eb",
+        "source_path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservices\\core\\_SysInspectorMS.py",
+        "target_path": "",
+        "file_cid": "e6cd7ae09de527d979ec3cb053921c4a396539cd7df895baef7db789fa9dba94",
+        "materialization_mode": "module_ref",
+        "import_key": "library.microservices.core._SysInspectorMS",
+        "class_name": "SysInspectorMS",
+        "service_name": "SysInspector"
+      }
+    ],
+    "lockfile_path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_sanbox\\apps\\foundry_project_lens_20260307\\base\\.stamper_lock.json",
+    "manifest_validation": {
+      "ok": true,
+      "errors": [],
+      "warnings": [],
+      "normalized_manifest": {
+        "app_id": "app_e2fa8a063a3b71b28cdc3910",
+        "name": "Foundry Project Lens",
+        "destination": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_sanbox\\apps\\foundry_project_lens_20260307\\base",
+        "vendor_mode": "module_ref",
+        "resolution_profile": "app_ready",
+        "ui_pack": "tkinter_base_pack",
+        "orchestrator": "tkinter_shell_orchestrator",
+        "manager_layers": [],
+        "microservices": [
+          "ExplorerWidgetMS",
+          "FingerprintScannerMS",
+          "SysInspectorMS"
+        ],
+        "modules": [],
+        "settings_defaults": {
+          "app_title": "Foundry Project Lens",
+          "assistant_enabled": false
+        },
+        "hooks": {}
+      }
+    }
+  },
+  "working_stamp_integrity": {
+    "ok": true,
+    "checked": [
+      "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_sanbox\\apps\\foundry_project_lens_20260307\\working\\app.py",
+      "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_sanbox\\apps\\foundry_project_lens_20260307\\working\\backend.py",
+      "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_sanbox\\apps\\foundry_project_lens_20260307\\working\\ui.py",
+      "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_sanbox\\apps\\foundry_project_lens_20260307\\working\\requirements.txt",
+      "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_sanbox\\apps\\foundry_project_lens_20260307\\working\\pyrightconfig.json",
+      "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_sanbox\\apps\\foundry_project_lens_20260307\\working\\.env",
+      "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservices\\ui\\_ExplorerWidgetMS.py",
+      "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\base_service.py",
+      "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservice_std_lib.py",
+      "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservices\\ui\\_TkinterAppShellMS.py",
+      "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservices\\ui\\_TkinterThemeManagerMS.py",
+      "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservices\\ui\\_WorkbenchLayoutMS.py",
+      "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservices\\core\\_FingerprintScannerMS.py",
+      "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservices\\core\\_SysInspectorMS.py"
+    ],
+    "errors": [],
+    "missing_generated_python_files": [],
+    "generated_python_file_drift": [],
+    "missing_generated_support_files": [],
+    "generated_support_file_drift": [],
+    "missing_library_artifacts": [],
+    "library_artifact_drift": []
+  },
+  "ok": true
+}

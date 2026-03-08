@@ -1,0 +1,162 @@
+# Phase-0-First Catalog, Librarian, and App Stamper Plan
+
+## Summary
+- Treat `library/` as the canonical source for reusable code, but keep root-level `_*MS.py` files in place as legacy compatibility/reference for v1. They are not indexed for stamping and are not deleted in this phase.
+- Build the catalog, query layer, and dependency resolver from static file analysis of `library/`, not from live registry state.
+- Add a narrow Phase 0 first:
+  - fix the metadata contract mismatch (`_meta` vs `_service_info`)
+  - stabilize package/import topology for stamped apps
+  - define pack and recommendation rules
+- Reduce v1 vendor modes to `module_ref | static`. Drop `symlink` from v1.
+- In `module_ref`, stamped apps must inject the canonical import root before any library imports. Because the package is `library/...`, the stamped app should store and insert the parent import root, not the `library/` directory itself.
+- Keep `ui_schema.json` mutable and outside backend code-integrity enforcement.
+
+## Key Interfaces and Data Shape
+- `AppBlueprintManifest`
+  - `app_id`, `name`, `destination`
+  - `vendor_mode = module_ref | static`
+  - `resolution_profile = app_ready | strict | explicit_pack`
+  - `ui_pack = tkinter_base_pack | headless_pack | explicit`
+  - `orchestrator`
+  - `manager_layers`
+  - `microservices`
+  - `modules`
+  - `settings_defaults`
+  - `hooks`
+- `settings.json`
+  - `canonical_import_root`
+  - `catalog_db_path`
+  - app settings
+  - assistant settings
+- `.stamper_lock.json`
+  - `locked_blueprint_hash`
+  - `catalog_build_id`
+  - `vendor_mode`
+  - `resolved_library_artifacts`
+  - `generated_python_files`
+  - `external_dependencies`
+  - `integrity_scope`
+  - optional `ui_schema_snapshot_hash` as advisory only
+- Core SQLite schema
+  - `catalog_builds`
+    - build id, timestamp, source root, tool version
+  - `artifacts`
+    - `artifact_id`, `parent_artifact_id`, `source_path`, `kind`, `language`, `import_key`, `file_cid`, `size_bytes`, `mtime_ns`, `is_deleted`
+  - `services`
+    - `service_id`, `artifact_id`, `class_name`, `service_name`, `version`, `layer`, `description`, `tags_json`, `capabilities_json`, `side_effects_json`
+  - `endpoints`
+    - `endpoint_id`, `service_id`, `method_name`, `inputs_json`, `outputs_json`, `description`, `tags_json`, `mode`
+  - `relations`
+    - `src_artifact_id`, `dst_artifact_id`, `dst_ref`, `relation_type`, `evidence_type`, `evidence_json`, `is_resolved`
+    - `relation_type` includes `requires_code`, `requires_external`, `requires_runtime`, `hosted_by`, `packaged_with`
+  - `chunks`
+    - `chunk_id`, `artifact_id`, `chunk_kind`, `start_byte`, `end_byte`, `text_cid`, `content_hash`
+  - `packs`
+    - `pack_id`, `name`, `kind`, `version`, `manifest_json`, `status`
+- Incremental rebuild rule
+  - compare `file_cid` for each `source_path`
+  - unchanged files keep prior derived rows
+  - changed files rebuild their artifact, service, endpoint, relation, and chunk rows
+  - deleted files remove or tombstone dependent rows
+
+## Implementation Changes
+- Phase 0: foundation
+  - Fix grouped registration to read the same metadata key the decorator writes.
+  - Keep live registry work limited to grouped runtime services and later stamped-app boot flows.
+  - Do not require all `111` services to be manager-booted for cataloging or stamping.
+  - Keep root-level `_*MS.py` files untouched in v1 and generate a canonical path mapping report from root paths to `library/...` paths.
+  - Define initial UI packs:
+    - `tkinter_base_pack = TkinterAppShellMS + TkinterThemeManagerMS + WorkbenchLayoutMS`
+    - `headless_pack = no UI shell, backend only`
+- Phase 1: catalog builder
+  - Scan `library/` statically.
+  - Extract service metadata, endpoints, imports, and declared dependencies.
+  - Build typed relation rows from:
+    - declared `internal_dependencies`
+    - declared `external_dependencies`
+    - import analysis
+    - curated runtime/UI composition rules
+  - The catalog is the source for `LibraryQueryService` and `AppStamper`, not the live registry.
+- Phase 2: query service and recommendation rules
+  - Implement `list_layers`, `list_services`, `describe_service`, `show_dependencies`, `list_orchestrators`, `list_managers`, `show_ui_components`, `recommend_blueprint`.
+  - `show_dependencies` must return three buckets:
+    - code dependencies
+    - runtime/composition dependencies
+    - external package requirements
+  - `recommend_blueprint` rules:
+    - if any selected service has `ui` tag or `ui:*` capability, default to `tkinter_base_pack` under `app_ready`
+    - grouped layer services use their corresponding manager layer
+    - non-grouped services are vendored directly and wrapped by generated backend adapters
+    - if no UI service is selected, default to `headless_pack`
+    - user can edit the manifest before stamping
+- Phase 3: dependency resolver and stamper
+  - Resolution order:
+    1. start from selected artifacts
+    2. walk `requires_code` transitively
+    3. add `requires_runtime` and pack edges for `app_ready`
+    4. collect unique `requires_external`
+    5. validate import closure and compile output
+  - Use `resolved` plus `active_path` for cycle detection.
+  - Cycles generate warnings with the cycle path and do not recurse indefinitely.
+  - `module_ref` stamping
+    - write `settings.json` with `canonical_import_root`
+    - generated `app.py` reads `settings.json` using stdlib only
+    - generated `app.py` runs `sys.path.insert(0, canonical_import_root)` before importing `ui.py`, `backend.py`, or `library.*`
+    - fail fast if `canonical_import_root` is missing or invalid
+  - `static` stamping
+    - copy the resolved closure into the target app
+    - preserve lockfile provenance
+  - Lockfile scope
+    - include resolved library Python artifacts, generated Python files, and requirements output
+    - exclude `ui_schema.json` and mutable runtime settings
+- Phase 4: librarian UI and schema preview
+  - Build the standard librarian UI on `LibraryQueryService` only.
+  - Use menus/buttons/cards, not chat, for the normal flow.
+  - Add manifest review/edit before stamping.
+  - Add `ui_schema.json` preview/commit for layout and theme only.
+- Phase 5: install packs
+  - Local folder/zip import only.
+  - Stage, validate, hash, compare, then promote.
+  - Default collision policy is `skip`:
+    - same path + same `file_cid` => no-op
+    - same path + different `file_cid` => staged collision report, no overwrite
+- Phase 6: experimental assistant
+  - Ollama only.
+  - Separate panel from the standard librarian.
+  - Can summarize catalog artifacts and propose `ui_schema.json` edits only.
+  - Cannot mutate code or bypass manifest, dependency, or schema validation.
+
+## Test Plan
+- Foundation
+  - verify grouped `register()` reads valid metadata after the contract fix
+  - verify static cataloging works for services not wired into managers
+- Catalog and query
+  - full scan from `library/`
+  - incremental rebuild after file change
+  - verify `show_dependencies` returns code/runtime/external buckets correctly
+- End-to-end integration
+  - browse catalog -> select services -> generate manifest -> stamp app -> boot app
+  - select a UI service and verify `tkinter_base_pack` is added under `app_ready`
+  - stamp a headless app and verify no UI shell is added
+- Vendor modes and lockfile
+  - `module_ref` app boots from a different directory with only `canonical_import_root` configured
+  - invalid import root fails immediately with a clear error
+  - `static` app is self-contained
+  - modify `ui_schema.json` after stamping and verify integrity still passes for backend code
+  - modify a locked Python artifact and verify integrity reports code drift
+- Dependency resolution
+  - verify cycle detection emits warnings and terminates safely
+  - verify unresolved internal dependencies fail stamping
+- Install packs and assistant
+  - import folder/zip pack, confirm collisions are skipped and reported
+  - verify Ollama model discovery and size-cap selection
+  - verify assistant cannot bypass deterministic validation
+
+## Assumptions
+- `library/` is the only canonical source for new cataloging and stamping.
+- Root-level `_*MS.py` files remain in place in v1 for compatibility/reference and are excluded from catalog authority.
+- No in-repo consumers of root-level `_*MS.py` imports were found during this review; external consumers are treated as unknown and preserved by not deleting root files in v1.
+- The catalog, query service, and stamper are static-analysis driven and do not depend on complete manager wiring.
+- V1 vendor modes are `module_ref` and `static` only.
+- `ui_schema.json` is app-local runtime config and excluded from backend integrity enforcement.
+- Ollama is the only v1 assistant provider.

@@ -1,0 +1,522 @@
+{"timestamp": "2026-03-08T05:41:11", "type": "run_started", "step_count": 3, "run_log_path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_sanbox\\runs\\demo_run_20260308T054111.jsonl"}
+{"timestamp": "2026-03-08T05:41:11", "type": "step_started", "step_index": 1, "label": "Stamp sandbox workspace", "command": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\.venv\\Scripts\\python.exe -m library.app_factory sandbox-stamp --run-id demo_run --manifest C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_theCELL\\app_config.json --sandbox-root C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_sanbox\\apps --name \"Demo App\" --vendor-mode module_ref --resolution-profile app_ready --force"}
+{"timestamp": "2026-03-08T05:41:11", "type": "command_char", "text": "C", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:11", "type": "command_char", "text": ":", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:11", "type": "command_char", "text": "\\", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:11", "type": "command_char", "text": "U", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:11", "type": "command_char", "text": "s", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:11", "type": "command_char", "text": "e", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:11", "type": "command_char", "text": "r", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:11", "type": "command_char", "text": "s", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:11", "type": "command_char", "text": "\\", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:11", "type": "command_char", "text": "j", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:11", "type": "command_char", "text": "a", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:11", "type": "command_char", "text": "c", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:11", "type": "command_char", "text": "o", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:11", "type": "command_char", "text": "b", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:11", "type": "command_char", "text": "\\", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:11", "type": "command_char", "text": "D", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:11", "type": "command_char", "text": "o", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:11", "type": "command_char", "text": "c", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:11", "type": "command_char", "text": "u", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:11", "type": "command_char", "text": "m", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:11", "type": "command_char", "text": "e", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:11", "type": "command_char", "text": "n", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:11", "type": "command_char", "text": "t", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:11", "type": "command_char", "text": "s", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:11", "type": "command_char", "text": "\\", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:11", "type": "command_char", "text": "_", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:11", "type": "command_char", "text": "U", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:11", "type": "command_char", "text": "s", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:11", "type": "command_char", "text": "e", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:11", "type": "command_char", "text": "f", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:11", "type": "command_char", "text": "u", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:11", "type": "command_char", "text": "l", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:11", "type": "command_char", "text": "H", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:11", "type": "command_char", "text": "e", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:11", "type": "command_char", "text": "l", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:11", "type": "command_char", "text": "p", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:11", "type": "command_char", "text": "e", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:11", "type": "command_char", "text": "r", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:11", "type": "command_char", "text": "S", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:11", "type": "command_char", "text": "C", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:11", "type": "command_char", "text": "R", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:11", "type": "command_char", "text": "I", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:11", "type": "command_char", "text": "P", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:11", "type": "command_char", "text": "T", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:11", "type": "command_char", "text": "S", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:11", "type": "command_char", "text": "\\", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:11", "type": "command_char", "text": "_", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:11", "type": "command_char", "text": "M", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:11", "type": "command_char", "text": "i", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:11", "type": "command_char", "text": "c", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:11", "type": "command_char", "text": "r", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:11", "type": "command_char", "text": "o", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:11", "type": "command_char", "text": "s", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:11", "type": "command_char", "text": "e", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:11", "type": "command_char", "text": "r", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:11", "type": "command_char", "text": "v", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:11", "type": "command_char", "text": "i", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:11", "type": "command_char", "text": "c", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:11", "type": "command_char", "text": "e", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:11", "type": "command_char", "text": "L", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:11", "type": "command_char", "text": "I", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:11", "type": "command_char", "text": "B", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:11", "type": "command_char", "text": "R", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:11", "type": "command_char", "text": "A", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:11", "type": "command_char", "text": "R", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:11", "type": "command_char", "text": "Y", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:11", "type": "command_char", "text": ">", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:11", "type": "command_char", "text": " ", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:11", "type": "command_char", "text": "C", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:11", "type": "command_char", "text": ":", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:11", "type": "command_char", "text": "\\", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:11", "type": "command_char", "text": "U", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:11", "type": "command_char", "text": "s", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:11", "type": "command_char", "text": "e", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:11", "type": "command_char", "text": "r", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:11", "type": "command_char", "text": "s", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:11", "type": "command_char", "text": "\\", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:11", "type": "command_char", "text": "j", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:11", "type": "command_char", "text": "a", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:11", "type": "command_char", "text": "c", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:11", "type": "command_char", "text": "o", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:11", "type": "command_char", "text": "b", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:11", "type": "command_char", "text": "\\", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:11", "type": "command_char", "text": "D", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:12", "type": "command_char", "text": "o", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:12", "type": "command_char", "text": "c", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:12", "type": "command_char", "text": "u", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:12", "type": "command_char", "text": "m", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:12", "type": "command_char", "text": "e", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:12", "type": "command_char", "text": "n", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:12", "type": "command_char", "text": "t", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:12", "type": "command_char", "text": "s", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:12", "type": "command_char", "text": "\\", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:12", "type": "command_char", "text": "_", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:12", "type": "command_char", "text": "U", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:12", "type": "command_char", "text": "s", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:12", "type": "command_char", "text": "e", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:12", "type": "command_char", "text": "f", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:12", "type": "command_char", "text": "u", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:12", "type": "command_char", "text": "l", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:12", "type": "command_char", "text": "H", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:12", "type": "command_char", "text": "e", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:12", "type": "command_char", "text": "l", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:12", "type": "command_char", "text": "p", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:12", "type": "command_char", "text": "e", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:12", "type": "command_char", "text": "r", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:12", "type": "command_char", "text": "S", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:12", "type": "command_char", "text": "C", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:12", "type": "command_char", "text": "R", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:12", "type": "command_char", "text": "I", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:12", "type": "command_char", "text": "P", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:12", "type": "command_char", "text": "T", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:12", "type": "command_char", "text": "S", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:12", "type": "command_char", "text": "\\", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:12", "type": "command_char", "text": "_", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:12", "type": "command_char", "text": "M", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:12", "type": "command_char", "text": "i", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:12", "type": "command_char", "text": "c", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:12", "type": "command_char", "text": "r", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:12", "type": "command_char", "text": "o", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:12", "type": "command_char", "text": "s", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:12", "type": "command_char", "text": "e", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:12", "type": "command_char", "text": "r", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:12", "type": "command_char", "text": "v", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:12", "type": "command_char", "text": "i", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:12", "type": "command_char", "text": "c", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:12", "type": "command_char", "text": "e", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:12", "type": "command_char", "text": "L", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:12", "type": "command_char", "text": "I", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:12", "type": "command_char", "text": "B", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:12", "type": "command_char", "text": "R", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:12", "type": "command_char", "text": "A", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:12", "type": "command_char", "text": "R", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:12", "type": "command_char", "text": "Y", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:12", "type": "command_char", "text": "\\", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:12", "type": "command_char", "text": ".", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:12", "type": "command_char", "text": "v", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:12", "type": "command_char", "text": "e", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:12", "type": "command_char", "text": "n", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:12", "type": "command_char", "text": "v", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:12", "type": "command_char", "text": "\\", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:12", "type": "command_char", "text": "S", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:12", "type": "command_char", "text": "c", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:12", "type": "command_char", "text": "r", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:12", "type": "command_char", "text": "i", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:12", "type": "command_char", "text": "p", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:12", "type": "command_char", "text": "t", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:12", "type": "command_char", "text": "s", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:12", "type": "command_char", "text": "\\", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:12", "type": "command_char", "text": "p", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:12", "type": "command_char", "text": "y", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:12", "type": "command_char", "text": "t", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:12", "type": "command_char", "text": "h", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:12", "type": "command_char", "text": "o", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:12", "type": "command_char", "text": "n", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:12", "type": "command_char", "text": ".", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:12", "type": "command_char", "text": "e", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:12", "type": "command_char", "text": "x", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:12", "type": "command_char", "text": "e", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:12", "type": "command_char", "text": " ", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:12", "type": "command_char", "text": "-", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:12", "type": "command_char", "text": "m", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:12", "type": "command_char", "text": " ", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:12", "type": "command_char", "text": "l", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:12", "type": "command_char", "text": "i", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:12", "type": "command_char", "text": "b", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:12", "type": "command_char", "text": "r", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:12", "type": "command_char", "text": "a", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:12", "type": "command_char", "text": "r", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:12", "type": "command_char", "text": "y", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:12", "type": "command_char", "text": ".", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:12", "type": "command_char", "text": "a", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:12", "type": "command_char", "text": "p", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:12", "type": "command_char", "text": "p", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:12", "type": "command_char", "text": "_", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:12", "type": "command_char", "text": "f", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:12", "type": "command_char", "text": "a", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:12", "type": "command_char", "text": "c", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:12", "type": "command_char", "text": "t", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:12", "type": "command_char", "text": "o", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:12", "type": "command_char", "text": "r", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:12", "type": "command_char", "text": "y", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:12", "type": "command_char", "text": " ", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:12", "type": "command_char", "text": "s", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:12", "type": "command_char", "text": "a", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:12", "type": "command_char", "text": "n", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:12", "type": "command_char", "text": "d", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:12", "type": "command_char", "text": "b", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:12", "type": "command_char", "text": "o", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:12", "type": "command_char", "text": "x", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:12", "type": "command_char", "text": "-", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:12", "type": "command_char", "text": "s", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:12", "type": "command_char", "text": "t", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:12", "type": "command_char", "text": "a", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:12", "type": "command_char", "text": "m", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:12", "type": "command_char", "text": "p", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:13", "type": "command_char", "text": " ", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:13", "type": "command_char", "text": "-", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:13", "type": "command_char", "text": "-", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:13", "type": "command_char", "text": "r", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:13", "type": "command_char", "text": "u", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:13", "type": "command_char", "text": "n", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:13", "type": "command_char", "text": "-", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:13", "type": "command_char", "text": "i", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:13", "type": "command_char", "text": "d", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:13", "type": "command_char", "text": " ", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:13", "type": "command_char", "text": "d", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:13", "type": "command_char", "text": "e", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:13", "type": "command_char", "text": "m", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:13", "type": "command_char", "text": "o", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:13", "type": "command_char", "text": "_", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:13", "type": "command_char", "text": "r", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:13", "type": "command_char", "text": "u", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:13", "type": "command_char", "text": "n", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:13", "type": "command_char", "text": " ", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:13", "type": "command_char", "text": "-", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:13", "type": "command_char", "text": "-", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:13", "type": "command_char", "text": "m", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:13", "type": "command_char", "text": "a", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:13", "type": "command_char", "text": "n", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:13", "type": "command_char", "text": "i", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:13", "type": "command_char", "text": "f", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:13", "type": "command_char", "text": "e", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:13", "type": "command_char", "text": "s", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:13", "type": "command_char", "text": "t", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:13", "type": "command_char", "text": " ", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:13", "type": "command_char", "text": "C", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:13", "type": "command_char", "text": ":", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:13", "type": "command_char", "text": "\\", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:13", "type": "command_char", "text": "U", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:13", "type": "command_char", "text": "s", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:13", "type": "command_char", "text": "e", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:13", "type": "command_char", "text": "r", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:13", "type": "command_char", "text": "s", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:13", "type": "command_char", "text": "\\", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:13", "type": "command_char", "text": "j", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:13", "type": "command_char", "text": "a", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:13", "type": "command_char", "text": "c", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:13", "type": "command_char", "text": "o", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:13", "type": "command_char", "text": "b", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:13", "type": "command_char", "text": "\\", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:13", "type": "command_char", "text": "D", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:13", "type": "command_char", "text": "o", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:13", "type": "command_char", "text": "c", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:13", "type": "command_char", "text": "u", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:13", "type": "command_char", "text": "m", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:13", "type": "command_char", "text": "e", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:13", "type": "command_char", "text": "n", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:13", "type": "command_char", "text": "t", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:13", "type": "command_char", "text": "s", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:13", "type": "command_char", "text": "\\", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:13", "type": "command_char", "text": "_", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:13", "type": "command_char", "text": "U", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:13", "type": "command_char", "text": "s", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:13", "type": "command_char", "text": "e", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:13", "type": "command_char", "text": "f", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:13", "type": "command_char", "text": "u", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:13", "type": "command_char", "text": "l", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:13", "type": "command_char", "text": "H", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:13", "type": "command_char", "text": "e", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:13", "type": "command_char", "text": "l", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:13", "type": "command_char", "text": "p", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:13", "type": "command_char", "text": "e", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:13", "type": "command_char", "text": "r", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:13", "type": "command_char", "text": "S", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:13", "type": "command_char", "text": "C", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:13", "type": "command_char", "text": "R", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:13", "type": "command_char", "text": "I", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:13", "type": "command_char", "text": "P", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:13", "type": "command_char", "text": "T", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:13", "type": "command_char", "text": "S", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:13", "type": "command_char", "text": "\\", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:13", "type": "command_char", "text": "_", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:13", "type": "command_char", "text": "t", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:13", "type": "command_char", "text": "h", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:13", "type": "command_char", "text": "e", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:13", "type": "command_char", "text": "C", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:13", "type": "command_char", "text": "E", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:13", "type": "command_char", "text": "L", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:13", "type": "command_char", "text": "L", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:13", "type": "command_char", "text": "\\", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:13", "type": "command_char", "text": "a", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:13", "type": "command_char", "text": "p", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:13", "type": "command_char", "text": "p", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:13", "type": "command_char", "text": "_", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:13", "type": "command_char", "text": "c", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:13", "type": "command_char", "text": "o", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:13", "type": "command_char", "text": "n", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:13", "type": "command_char", "text": "f", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:13", "type": "command_char", "text": "i", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:13", "type": "command_char", "text": "g", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:13", "type": "command_char", "text": ".", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:13", "type": "command_char", "text": "j", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:13", "type": "command_char", "text": "s", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:13", "type": "command_char", "text": "o", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:13", "type": "command_char", "text": "n", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:13", "type": "command_char", "text": " ", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:13", "type": "command_char", "text": "-", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:13", "type": "command_char", "text": "-", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:13", "type": "command_char", "text": "s", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:13", "type": "command_char", "text": "a", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:13", "type": "command_char", "text": "n", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:13", "type": "command_char", "text": "d", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:13", "type": "command_char", "text": "b", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:13", "type": "command_char", "text": "o", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:13", "type": "command_char", "text": "x", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:13", "type": "command_char", "text": "-", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:13", "type": "command_char", "text": "r", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:13", "type": "command_char", "text": "o", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:14", "type": "command_char", "text": "o", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:14", "type": "command_char", "text": "t", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:14", "type": "command_char", "text": " ", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:14", "type": "command_char", "text": "C", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:14", "type": "command_char", "text": ":", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:14", "type": "command_char", "text": "\\", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:14", "type": "command_char", "text": "U", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:14", "type": "command_char", "text": "s", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:14", "type": "command_char", "text": "e", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:14", "type": "command_char", "text": "r", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:14", "type": "command_char", "text": "s", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:14", "type": "command_char", "text": "\\", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:14", "type": "command_char", "text": "j", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:14", "type": "command_char", "text": "a", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:14", "type": "command_char", "text": "c", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:14", "type": "command_char", "text": "o", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:14", "type": "command_char", "text": "b", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:14", "type": "command_char", "text": "\\", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:14", "type": "command_char", "text": "D", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:14", "type": "command_char", "text": "o", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:14", "type": "command_char", "text": "c", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:14", "type": "command_char", "text": "u", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:14", "type": "command_char", "text": "m", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:14", "type": "command_char", "text": "e", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:14", "type": "command_char", "text": "n", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:14", "type": "command_char", "text": "t", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:14", "type": "command_char", "text": "s", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:14", "type": "command_char", "text": "\\", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:14", "type": "command_char", "text": "_", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:14", "type": "command_char", "text": "U", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:14", "type": "command_char", "text": "s", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:14", "type": "command_char", "text": "e", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:14", "type": "command_char", "text": "f", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:14", "type": "command_char", "text": "u", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:14", "type": "command_char", "text": "l", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:14", "type": "command_char", "text": "H", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:14", "type": "command_char", "text": "e", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:14", "type": "command_char", "text": "l", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:14", "type": "command_char", "text": "p", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:14", "type": "command_char", "text": "e", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:14", "type": "command_char", "text": "r", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:14", "type": "command_char", "text": "S", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:14", "type": "command_char", "text": "C", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:14", "type": "command_char", "text": "R", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:14", "type": "command_char", "text": "I", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:14", "type": "command_char", "text": "P", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:14", "type": "command_char", "text": "T", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:14", "type": "command_char", "text": "S", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:14", "type": "command_char", "text": "\\", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:14", "type": "command_char", "text": "_", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:14", "type": "command_char", "text": "M", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:14", "type": "command_char", "text": "i", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:14", "type": "command_char", "text": "c", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:14", "type": "command_char", "text": "r", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:14", "type": "command_char", "text": "o", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:14", "type": "command_char", "text": "s", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:14", "type": "command_char", "text": "e", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:14", "type": "command_char", "text": "r", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:14", "type": "command_char", "text": "v", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:14", "type": "command_char", "text": "i", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:14", "type": "command_char", "text": "c", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:14", "type": "command_char", "text": "e", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:14", "type": "command_char", "text": "L", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:14", "type": "command_char", "text": "I", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:14", "type": "command_char", "text": "B", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:14", "type": "command_char", "text": "R", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:14", "type": "command_char", "text": "A", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:14", "type": "command_char", "text": "R", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:14", "type": "command_char", "text": "Y", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:14", "type": "command_char", "text": "\\", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:14", "type": "command_char", "text": "_", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:14", "type": "command_char", "text": "s", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:14", "type": "command_char", "text": "a", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:14", "type": "command_char", "text": "n", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:14", "type": "command_char", "text": "b", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:14", "type": "command_char", "text": "o", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:14", "type": "command_char", "text": "x", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:14", "type": "command_char", "text": "\\", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:14", "type": "command_char", "text": "a", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:14", "type": "command_char", "text": "p", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:14", "type": "command_char", "text": "p", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:14", "type": "command_char", "text": "s", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:14", "type": "command_char", "text": " ", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:14", "type": "command_char", "text": "-", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:14", "type": "command_char", "text": "-", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:14", "type": "command_char", "text": "n", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:14", "type": "command_char", "text": "a", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:14", "type": "command_char", "text": "m", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:14", "type": "command_char", "text": "e", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:14", "type": "command_char", "text": " ", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:14", "type": "command_char", "text": "\"", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:14", "type": "command_char", "text": "D", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:14", "type": "command_char", "text": "e", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:14", "type": "command_char", "text": "m", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:14", "type": "command_char", "text": "o", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:14", "type": "command_char", "text": " ", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:14", "type": "command_char", "text": "A", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:14", "type": "command_char", "text": "p", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:14", "type": "command_char", "text": "p", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:14", "type": "command_char", "text": "\"", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:14", "type": "command_char", "text": " ", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:14", "type": "command_char", "text": "-", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:14", "type": "command_char", "text": "-", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:14", "type": "command_char", "text": "v", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:14", "type": "command_char", "text": "e", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:14", "type": "command_char", "text": "n", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:14", "type": "command_char", "text": "d", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:14", "type": "command_char", "text": "o", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:14", "type": "command_char", "text": "r", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:14", "type": "command_char", "text": "-", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:14", "type": "command_char", "text": "m", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:14", "type": "command_char", "text": "o", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:15", "type": "command_char", "text": "d", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:15", "type": "command_char", "text": "e", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:15", "type": "command_char", "text": " ", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:15", "type": "command_char", "text": "m", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:15", "type": "command_char", "text": "o", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:15", "type": "command_char", "text": "d", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:15", "type": "command_char", "text": "u", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:15", "type": "command_char", "text": "l", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:15", "type": "command_char", "text": "e", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:15", "type": "command_char", "text": "_", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:15", "type": "command_char", "text": "r", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:15", "type": "command_char", "text": "e", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:15", "type": "command_char", "text": "f", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:15", "type": "command_char", "text": " ", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:15", "type": "command_char", "text": "-", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:15", "type": "command_char", "text": "-", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:15", "type": "command_char", "text": "r", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:15", "type": "command_char", "text": "e", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:15", "type": "command_char", "text": "s", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:15", "type": "command_char", "text": "o", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:15", "type": "command_char", "text": "l", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:15", "type": "command_char", "text": "u", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:15", "type": "command_char", "text": "t", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:15", "type": "command_char", "text": "i", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:15", "type": "command_char", "text": "o", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:15", "type": "command_char", "text": "n", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:15", "type": "command_char", "text": "-", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:15", "type": "command_char", "text": "p", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:15", "type": "command_char", "text": "r", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:15", "type": "command_char", "text": "o", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:15", "type": "command_char", "text": "f", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:15", "type": "command_char", "text": "i", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:15", "type": "command_char", "text": "l", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:15", "type": "command_char", "text": "e", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:15", "type": "command_char", "text": " ", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:15", "type": "command_char", "text": "a", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:15", "type": "command_char", "text": "p", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:15", "type": "command_char", "text": "p", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:15", "type": "command_char", "text": "_", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:15", "type": "command_char", "text": "r", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:15", "type": "command_char", "text": "e", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:15", "type": "command_char", "text": "a", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:15", "type": "command_char", "text": "d", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:15", "type": "command_char", "text": "y", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:15", "type": "command_char", "text": " ", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:15", "type": "command_char", "text": "-", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:15", "type": "command_char", "text": "-", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:15", "type": "command_char", "text": "f", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:15", "type": "command_char", "text": "o", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:15", "type": "command_char", "text": "r", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:15", "type": "command_char", "text": "c", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:15", "type": "command_char", "text": "e", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:15", "type": "command_char", "text": "\n", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:15", "type": "stdout", "text": "{\n", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:15", "type": "stdout", "text": "  \"workspace_root\": \"C:\\\\Users\\\\jacob\\\\Documents\\\\_UsefulHelperSCRIPTS\\\\_MicroserviceLIBRARY\\\\_sanbox\\\\apps\\\\demo_run\",\n", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:15", "type": "stdout", "text": "  \"base_app_dir\": \"C:\\\\Users\\\\jacob\\\\Documents\\\\_UsefulHelperSCRIPTS\\\\_MicroserviceLIBRARY\\\\_sanbox\\\\apps\\\\demo_run\\\\base\",\n", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:15", "type": "stdout", "text": "  \"working_app_dir\": \"C:\\\\Users\\\\jacob\\\\Documents\\\\_UsefulHelperSCRIPTS\\\\_MicroserviceLIBRARY\\\\_sanbox\\\\apps\\\\demo_run\\\\working\",\n", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:15", "type": "stdout", "text": "  \"stamp_report\": {\n", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:15", "type": "stdout", "text": "    \"app_dir\": \"C:\\\\Users\\\\jacob\\\\Documents\\\\_UsefulHelperSCRIPTS\\\\_MicroserviceLIBRARY\\\\_sanbox\\\\apps\\\\demo_run\\\\base\",\n", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:15", "type": "stdout", "text": "    \"written_files\": [],\n", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:15", "type": "stdout", "text": "    \"validation\": {\n", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:15", "type": "stdout", "text": "      \"warnings\": [],\n", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:15", "type": "stdout", "text": "      \"errors\": [\n", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:15", "type": "stdout", "text": "        \"Manifest must select at least one microservice or module.\"\n", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:15", "type": "stdout", "text": "      ],\n", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:15", "type": "stdout", "text": "      \"cycle_warnings\": [],\n", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:15", "type": "stdout", "text": "      \"missing_dependencies\": [],\n", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:15", "type": "stdout", "text": "      \"compile_results\": {},\n", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:15", "type": "stdout", "text": "      \"ok\": false\n", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:15", "type": "stdout", "text": "    },\n", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:15", "type": "stdout", "text": "    \"external_dependencies\": [],\n", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:15", "type": "stdout", "text": "    \"resolved_artifacts\": [],\n", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:15", "type": "stdout", "text": "    \"lockfile_path\": \"\",\n", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:15", "type": "stdout", "text": "    \"manifest_validation\": {\n", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:15", "type": "stdout", "text": "      \"ok\": false,\n", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:15", "type": "stdout", "text": "      \"errors\": [\n", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:15", "type": "stdout", "text": "        \"Manifest must select at least one microservice or module.\"\n", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:15", "type": "stdout", "text": "      ],\n", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:15", "type": "stdout", "text": "      \"warnings\": [],\n", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:15", "type": "stdout", "text": "      \"normalized_manifest\": {\n", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:15", "type": "stdout", "text": "        \"app_id\": \"\",\n", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:15", "type": "stdout", "text": "        \"name\": \"Demo App\",\n", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:15", "type": "stdout", "text": "        \"destination\": \"C:\\\\Users\\\\jacob\\\\Documents\\\\_UsefulHelperSCRIPTS\\\\_MicroserviceLIBRARY\\\\_sanbox\\\\apps\\\\demo_run\\\\base\",\n", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:15", "type": "stdout", "text": "        \"vendor_mode\": \"module_ref\",\n", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:15", "type": "stdout", "text": "        \"resolution_profile\": \"app_ready\",\n", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:15", "type": "stdout", "text": "        \"ui_pack\": \"headless_pack\",\n", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:15", "type": "stdout", "text": "        \"orchestrator\": \"headless_backend_orchestrator\",\n", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:15", "type": "stdout", "text": "        \"manager_layers\": [],\n", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:15", "type": "stdout", "text": "        \"microservices\": [],\n", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:15", "type": "stdout", "text": "        \"modules\": [],\n", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:15", "type": "stdout", "text": "        \"settings_defaults\": {},\n", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:15", "type": "stdout", "text": "        \"hooks\": {}\n", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:15", "type": "stdout", "text": "      }\n", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:15", "type": "stdout", "text": "    }\n", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:15", "type": "stdout", "text": "  },\n", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:15", "type": "stdout", "text": "  \"ok\": false\n", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:15", "type": "stdout", "text": "}\n", "step_index": 1}
+{"timestamp": "2026-03-08T05:41:15", "type": "step_finished", "step_index": 1, "label": "Stamp sandbox workspace", "returncode": 1}
+{"timestamp": "2026-03-08T05:41:15", "type": "run_finished", "ok": false, "failed_step": 1, "returncode": 1}

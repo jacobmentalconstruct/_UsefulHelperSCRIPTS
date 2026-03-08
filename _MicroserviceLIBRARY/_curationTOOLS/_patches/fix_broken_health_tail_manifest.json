@@ -1,0 +1,26 @@
+{
+  "files": [
+    {
+      "path": "_CodeJanitorMS.py",
+      "hunks": [
+        {
+          "description": "Fix misplaced get_health insertion and restore __main__ guard",
+          "search_block": "        print('\\n--- 🏁 JANITOR FINISHED ---')\nif\n    @service_endpoint(inputs={}, outputs={'status': 'str', 'uptime': 'float'}, description='Standardized health check for service status.', tags=['diagnostic', 'health'])\n    def get_health(self):\n        \"\"\"Returns the operational status of the service.\"\"\"\n        start = getattr(self, 'start_time', None)\n        if start is None:\n            start = time.time()\n            self.start_time = start\n        return {'status': 'online', 'uptime': time.time() - start}\n __name__ == '__main__':\n",
+          "replace_block": "        print('\\n--- 🏁 JANITOR FINISHED ---')\n\n    @service_endpoint(inputs={}, outputs={'status': 'str', 'uptime': 'float'}, description='Standardized health check for service status.', tags=['diagnostic', 'health'])\n    def get_health(self):\n        \"\"\"Returns the operational status of the service.\"\"\"\n        start = getattr(self, 'start_time', None)\n        if start is None:\n            start = time.time()\n            self.start_time = start\n        return {'status': 'online', 'uptime': time.time() - start}\n\nif __name__ == '__main__':\n",
+          "use_patch_indent": true
+        }
+      ]
+    },
+    {
+      "path": "_TreeMapperMS.py",
+      "hunks": [
+        {
+          "description": "Fix misplaced get_health insertion and restore __main__ guard",
+          "search_block": "                lines.append(f'{prefix}{connector}📄 {path.name}')\nif\n    @service_endpoint(inputs={}, outputs={'status': 'str', 'uptime': 'float'}, description='Standardized health check for service status.', tags=['diagnostic', 'health'])\n    def get_health(self):\n        \"\"\"Returns the operational status of the service.\"\"\"\n        start = getattr(self, 'start_time', None)\n        if start is None:\n            start = time.time()\n            self.start_time = start\n        return {'status': 'online', 'uptime': time.time() - start}\n __name__ == '__main__':\n",
+          "replace_block": "                lines.append(f'{prefix}{connector}📄 {path.name}')\n\n    @service_endpoint(inputs={}, outputs={'status': 'str', 'uptime': 'float'}, description='Standardized health check for service status.', tags=['diagnostic', 'health'])\n    def get_health(self):\n        \"\"\"Returns the operational status of the service.\"\"\"\n        start = getattr(self, 'start_time', None)\n        if start is None:\n            start = time.time()\n            self.start_time = start\n        return {'status': 'online', 'uptime': time.time() - start}\n\nif __name__ == '__main__':\n",
+          "use_patch_indent": true
+        }
+      ]
+    }
+  ]
+}

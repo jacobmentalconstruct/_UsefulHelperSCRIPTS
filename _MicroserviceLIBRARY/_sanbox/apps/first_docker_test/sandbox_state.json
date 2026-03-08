@@ -1,0 +1,14 @@
+{
+  "version": "0.1.0",
+  "run_id": "first_docker_test",
+  "workspace_root": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_sanbox\\apps\\first_docker_test",
+  "base_app_dir": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_sanbox\\apps\\first_docker_test\\base",
+  "working_app_dir": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_sanbox\\apps\\first_docker_test\\working",
+  "workspace_patch_dir": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_sanbox\\apps\\first_docker_test\\patches",
+  "workspace_report_dir": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_sanbox\\apps\\first_docker_test\\reports",
+  "app_patch_dir": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_sanbox\\apps\\first_docker_test\\working\\.app_factory\\patches",
+  "app_report_dir": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_sanbox\\apps\\first_docker_test\\working\\.app_factory\\reports",
+  "template_id": "ui_explorer_workbench",
+  "source_manifest_path": "",
+  "last_promotion_destination": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_sanbox\\promoted\\first_docker_test"
+}

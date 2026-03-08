@@ -1,0 +1,39 @@
+{
+  "layout": {
+    "type": "row",
+    "weight": 1,
+    "children": [
+      {
+        "type": "panel",
+        "id": "services",
+        "weight": 1
+      },
+      {
+        "type": "col",
+        "weight": 3,
+        "children": [
+          {
+            "type": "panel",
+            "id": "details",
+            "weight": 3
+          },
+          {
+            "type": "panel",
+            "id": "actions",
+            "weight": 1
+          }
+        ]
+      }
+    ]
+  },
+  "theme": {
+    "background": "#14181D",
+    "foreground": "#F3EEE7",
+    "accent": "#C9773B",
+    "accent_alt": "#2D7F86",
+    "panel_bg": "#10161E",
+    "terminal_bg": "#0A0F16",
+    "muted": "#8C97A6",
+    "border": "#334155"
+  }
+}

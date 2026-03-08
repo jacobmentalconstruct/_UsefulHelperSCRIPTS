@@ -1,0 +1,93 @@
+{
+  "app_id": "app_e2fa8a063a3b71b28cdc3910",
+  "name": "Foundry Project Lens",
+  "destination": "_sanbox/apps/foundry_project_lens_20260307/working",
+  "vendor_mode": "module_ref",
+  "resolution_profile": "app_ready",
+  "ui_pack": "tkinter_base_pack",
+  "orchestrator": "tkinter_shell_orchestrator",
+  "manager_layers": [],
+  "microservices": [
+    "ExplorerWidgetMS",
+    "FingerprintScannerMS",
+    "SysInspectorMS"
+  ],
+  "modules": [],
+  "settings_defaults": {
+    "app_title": "Foundry Project Lens",
+    "assistant_enabled": false
+  },
+  "hooks": {},
+  "selected_services": [
+    {
+      "service_id": "service_6970158b116a0e1d8301d2ed",
+      "artifact_id": "artifact_e97d77e2c31a6782aafe14a2",
+      "class_name": "ExplorerWidgetMS",
+      "service_name": "ExplorerWidgetMS",
+      "version": "1.0.0",
+      "layer": "ui",
+      "description": "A standalone file system tree viewer widget.",
+      "tags": [
+        "ui",
+        "filesystem",
+        "widget"
+      ],
+      "capabilities": [
+        "ui:gui",
+        "filesystem:read"
+      ],
+      "side_effects": [
+        "ui:update",
+        "ui:read",
+        "filesystem:read"
+      ],
+      "import_key": "library.microservices.ui._ExplorerWidgetMS",
+      "source_path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservices\\ui\\_ExplorerWidgetMS.py"
+    },
+    {
+      "service_id": "service_bff1ef62f6ffdb93b7d51b90",
+      "artifact_id": "artifact_c46b8b25ac18e53b139054c4",
+      "class_name": "FingerprintScannerMS",
+      "service_name": "FingerprintScannerMS",
+      "version": "1.0.0",
+      "layer": "core",
+      "description": "Scans a directory tree and generates a deterministic SHA-256 fingerprint.",
+      "tags": [
+        "scanning",
+        "integrity",
+        "hashing"
+      ],
+      "capabilities": [
+        "filesystem:read"
+      ],
+      "side_effects": [
+        "filesystem:read"
+      ],
+      "import_key": "library.microservices.core._FingerprintScannerMS",
+      "source_path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservices\\core\\_FingerprintScannerMS.py"
+    },
+    {
+      "service_id": "service_20d2878a52402a98f45b433c",
+      "artifact_id": "artifact_98af46146ff0af7ac82f12eb",
+      "class_name": "SysInspectorMS",
+      "service_name": "SysInspector",
+      "version": "1.0.0",
+      "layer": "core",
+      "description": "Gathers hardware and environment statistics via shell commands.",
+      "tags": [
+        "system",
+        "audit",
+        "hardware"
+      ],
+      "capabilities": [
+        "os:shell",
+        "compute"
+      ],
+      "side_effects": [
+        "os:read"
+      ],
+      "import_key": "library.microservices.core._SysInspectorMS",
+      "source_path": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\library\\microservices\\core\\_SysInspectorMS.py"
+    }
+  ]
+}

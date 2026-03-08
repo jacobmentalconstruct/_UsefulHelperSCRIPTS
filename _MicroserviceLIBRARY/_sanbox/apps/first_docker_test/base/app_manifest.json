@@ -1,0 +1,19 @@
+{
+  "app_id": "app_79189bd3bbe1a06487d1191f",
+  "name": "Demo App",
+  "destination": "C:\\Users\\jacob\\Documents\\_UsefulHelperSCRIPTS\\_MicroserviceLIBRARY\\_sanbox\\apps\\first_docker_test\\base",
+  "vendor_mode": "module_ref",
+  "resolution_profile": "app_ready",
+  "ui_pack": "tkinter_base_pack",
+  "orchestrator": "tkinter_shell_orchestrator",
+  "manager_layers": [],
+  "microservices": [
+    "ExplorerWidgetMS"
+  ],
+  "modules": [],
+  "settings_defaults": {
+    "app_title": "Demo App",
+    "assistant_enabled": false
+  },
+  "hooks": {}
+}

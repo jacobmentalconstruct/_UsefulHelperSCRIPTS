@@ -1,0 +1,35 @@
+{
+  "layout": {
+    "type": "row",
+    "weight": 1,
+    "children": [
+      {
+        "type": "panel",
+        "id": "services",
+        "weight": 1
+      },
+      {
+        "type": "col",
+        "weight": 3,
+        "children": [
+          {
+            "type": "panel",
+            "id": "details",
+            "weight": 3
+          },
+          {
+            "type": "panel",
+            "id": "actions",
+            "weight": 1
+          }
+        ]
+      }
+    ]
+  },
+  "theme": {
+    "background": "#202124",
+    "foreground": "#f1f3f4",
+    "accent": "#4f8cff",
+    "panel_bg": "#2b2f36"
+  }
+}

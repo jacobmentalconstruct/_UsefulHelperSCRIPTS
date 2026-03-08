@@ -2,6 +2,7 @@
 MainWindow – Orchestrates the tabbed workspace and global menu bar.
 Built on ttk.Notebook for multi-file curation.
 """
+import os
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
 from theme import THEME
@@ -184,6 +185,8 @@ class MainWindow(tk.Toplevel):
         tools_menu.add_separator()
         tools_menu.add_command(label="Refresh Models", command=self._refresh_models)
         menubar.add_cascade(label="Tools", menu=tools_menu)
+        self.tools_menu = tools_menu
+        self._set_file_tools_state(False)  # Disabled until a file is open
 
         # Settings
         settings_menu = tk.Menu(menubar, tearoff=0, bg=THEME["bg2"], fg=THEME["fg"])
@@ -211,6 +214,8 @@ class MainWindow(tk.Toplevel):
 
         # Right-click context menu for tab closing
         self.notebook.bind("<Button-3>", self._on_notebook_right_click)
+        # Update Tools menu state when the active tab changes
+        self.notebook.bind("<<NotebookTabChanged>>", self._on_tab_changed)
 
     def _show_welcome(self):
         """Display the welcome panel when no workspace tabs are open."""
@@ -231,6 +236,7 @@ class MainWindow(tk.Toplevel):
             self._hide_welcome()
 
         tab = WorkspaceTab(self.notebook, backend=self.backend)
+        tab.bind("<<FileLoaded>>", lambda e: self._on_tab_changed())
         if file_path:
             tab.load_file(file_path)
 
@@ -244,6 +250,19 @@ class MainWindow(tk.Toplevel):
         if sel:
             return self.notebook.nametowidget(sel)
         return None
+
+    def _set_file_tools_state(self, enabled: bool):
+        """Enable or disable the four file-dependent Tools menu items."""
+        state = "normal" if enabled else "disabled"
+        for i in range(4):  # AST Lens, Transformer Engine, AI Plan Refinement, Run Default Workflow
+            self.tools_menu.entryconfig(i, state=state)
+
+    def _on_tab_changed(self, event=None):
+        """React to tab switches or file loads — update Tools menu state."""
+        tab = self._get_current_tab()
+        self._set_file_tools_state(
+            isinstance(tab, WorkspaceTab) and bool(tab.file_path)
+        )
 
     # ── status bar ──────────────────────────────────────────
 
@@ -273,6 +292,15 @@ class MainWindow(tk.Toplevel):
             ]
         )
         if path:
+            # If this file is already open in a tab, bring it to the front
+            norm = os.path.normpath(path)
+            for tab_id in self.notebook.tabs():
+                tab = self.notebook.nametowidget(tab_id)
+                if (isinstance(tab, WorkspaceTab)
+                        and tab.file_path
+                        and os.path.normpath(tab.file_path) == norm):
+                    self.notebook.select(tab_id)
+                    return
             self.add_workspace_tab(file_path=path)
 
     def _save_file(self):

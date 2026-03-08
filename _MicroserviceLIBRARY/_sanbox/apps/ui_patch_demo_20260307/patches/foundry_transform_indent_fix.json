@@ -1,0 +1,15 @@
+{
+  "files": [
+    {
+      "path": "ui.py",
+      "hunks": [
+        {
+          "description": "Repair top-level helper indentation after transform insertion",
+          "search_block": "    else:\n        pane.pack(fill=\"both\", expand=True)\n        for child in node.get(\"children\", []) or []:\n            _build_layout(pane, child, panels)\n        return pane\n\n\n    def _apply_theme(root, theme):\n        theme = theme or {}\n        background = theme.get(\"background\", \"#202124\")\n        foreground = theme.get(\"foreground\", \"#f1f3f4\")\n        accent = theme.get(\"accent\", \"#4f8cff\")\n        panel_bg = theme.get(\"panel_bg\", \"#2b2f36\")\n        selection = theme.get(\"selection\", accent)\n        root.configure(bg=background)\n        root.option_add(\"*Listbox*Background\", panel_bg)\n        root.option_add(\"*Listbox*Foreground\", foreground)\n        root.option_add(\"*Listbox*selectBackground\", selection)\n        root.option_add(\"*Listbox*selectForeground\", foreground)\n        style = ttk.Style(root)\n        if \"clam\" in style.theme_names():\n            style.theme_use(\"clam\")\n        style.configure(\".\", background=panel_bg, foreground=foreground)\n        style.configure(\"TFrame\", background=panel_bg)\n        style.configure(\"TLabel\", background=panel_bg, foreground=foreground)\n        style.configure(\"TButton\", background=accent, foreground=foreground)\n        style.map(\"TButton\", background=[(\"active\", selection)])\n\n\n    def run_headless(runtime):\n    return {\"status\": \"headless\", \"health\": runtime.health(), \"services\": runtime.list_services()}\n\n\n",
+          "replace_block": "    else:\n        pane.pack(fill=\"both\", expand=True)\n    for child in node.get(\"children\", []) or []:\n        _build_layout(pane, child, panels)\n    return pane\n\n\ndef _apply_theme(root, theme):\n    theme = theme or {}\n    background = theme.get(\"background\", \"#202124\")\n    foreground = theme.get(\"foreground\", \"#f1f3f4\")\n    accent = theme.get(\"accent\", \"#4f8cff\")\n    panel_bg = theme.get(\"panel_bg\", \"#2b2f36\")\n    selection = theme.get(\"selection\", accent)\n    root.configure(bg=background)\n    root.option_add(\"*Listbox*Background\", panel_bg)\n    root.option_add(\"*Listbox*Foreground\", foreground)\n    root.option_add(\"*Listbox*selectBackground\", selection)\n    root.option_add(\"*Listbox*selectForeground\", foreground)\n    style = ttk.Style(root)\n    if \"clam\" in style.theme_names():\n        style.theme_use(\"clam\")\n    style.configure(\".\", background=panel_bg, foreground=foreground)\n    style.configure(\"TFrame\", background=panel_bg)\n    style.configure(\"TLabel\", background=panel_bg, foreground=foreground)\n    style.configure(\"TButton\", background=accent, foreground=foreground)\n    style.map(\"TButton\", background=[(\"active\", selection)])\n\n\ndef run_headless(runtime):\n    return {\"status\": \"headless\", \"health\": runtime.health(), \"services\": runtime.list_services()}\n\n\n",
+          "use_patch_indent": true
+        }
+      ]
+    }
+  ]
+}

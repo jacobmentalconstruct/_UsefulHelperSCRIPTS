@@ -1,0 +1,19 @@
+{
+  "app_id": "app_a4a4b27ec9a050aa56500d95",
+  "name": "Template Stamp Smoke",
+  "destination": "_design-docs\\template_stamp_smoke",
+  "vendor_mode": "module_ref",
+  "resolution_profile": "app_ready",
+  "ui_pack": "headless_pack",
+  "orchestrator": "headless_backend_orchestrator",
+  "manager_layers": [],
+  "microservices": [
+    "FingerprintScannerMS"
+  ],
+  "modules": [],
+  "settings_defaults": {
+    "app_title": "Template Stamp Smoke",
+    "assistant_enabled": false
+  },
+  "hooks": {}
+}
