@@ -1,0 +1,18 @@
+{
+  "folder_states": {
+    ".": "checked",
+    "src": "checked",
+    "src\\managers": "checked",
+    "src\\microservices": "checked",
+    "src\\orchestrators": "checked",
+    "src\\orchestrators\\backend.py": "checked",
+    "src\\orchestrators\\ui.py": "checked",
+    "src\\app.py": "checked",
+    ".gitignore": "checked",
+    "LICENSE.md": "checked",
+    "README.md": "checked",
+    "requirements.txt": "checked",
+    "setup_env.bat": "checked"
+  },
+  "dynamic_exclusions": []
+}
