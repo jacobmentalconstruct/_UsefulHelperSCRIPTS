@@ -1,0 +1,48 @@
+Project Tree: C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_MileageCURATOR
+Generated: 2026-03-11 14:18:03.894180
+
+├── 📁 _dev_tools/
+│   ├── 📄 analyze_timeline_schema.py
+│   ├── 📄 cleanup_root_microservices_contract.py
+│   ├── 📄 dev_tools_hub.py
+│   ├── 📄 organize_library_layers.py
+│   ├── 📄 sql_schema_mapper.py
+│   ├── 📄 tokenizing-patcher-readme.md
+│   └── 📄 tokenizing_patcher_with_cli.py
+├── 📁 _samples/
+│   └── 📄 Timeline.json
+├── 📁 assets/
+│   └── 📁 icons/
+├── 📁 src/
+│   ├── 📁 templates/
+│   │   └── 📄 index.html
+│   ├── 📄 app.py
+│   ├── 📄 database.py
+│   ├── 📄 ingestion.py
+│   └── 📄 workspace.py
+├── 📁 workspaces/
+│   ├── 📁 2025_Jacob/
+│   │   ├── 📄 mileage.db
+│   │   └── 📄 Timeline.json
+│   └── 📁 Jacob_2025/
+│       ├── 📄 mileage.db
+│       └── 📄 Timeline.json
+├── 📄 .gitignore
+├── 📄 01_init_backend.patch.json
+├── 📄 02_workspace_db.patch.json
+├── 📄 03_dashboard_routes.patch.json
+├── 📄 04_fix_imports.patch.json
+├── 📄 05_header_and_upload.patch.json
+├── 📄 06_dev_tools_metadata.patch.json
+├── 📄 07_hub_runner_upgrade.patch.json
+├── 📄 08_analyzer_args.patch.json
+├── 📄 10_ingestion_schema_fix.patch.json
+├── 📄 11_fix_parsing_and_ui.patch.json
+├── 📄 12_hub_ui_tweaks.patch.json
+├── 📄 _ui_spec
+├── 📄 LICENSE.md
+├── 📄 README.md
+├── 📄 requirements.txt
+├── 📄 run.bat
+├── 📄 run_tool_hub.bat
+└── 📄 setup_env.bat

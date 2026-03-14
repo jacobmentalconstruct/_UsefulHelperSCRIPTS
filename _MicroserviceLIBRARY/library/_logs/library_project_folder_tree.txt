@@ -1,0 +1,158 @@
+Project Tree: C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_MicroserviceLIBRARY\library
+Generated: 2026-03-12 23:05:20.558881
+
+├── 📁 app_factory/
+│   ├── 📄 __init__.py
+│   ├── 📄 __main__.py
+│   ├── 📄 assistant.py
+│   ├── 📄 catalog.py
+│   ├── 📄 cli.py
+│   ├── 📄 constants.py
+│   ├── 📄 librarian_ui.py
+│   ├── 📄 models.py
+│   ├── 📄 packs.py
+│   ├── 📄 pipeline_runner.py
+│   ├── 📄 query.py
+│   ├── 📄 README.md
+│   ├── 📄 runner_ui.py
+│   ├── 📄 sandbox.py
+│   ├── 📄 stamper.py
+│   └── 📄 ui_schema.py
+├── 📁 assets/
+│   └── 📄 files.zip
+├── 📁 catalog/
+│   ├── 📄 canonical_mapping_report.json
+│   ├── 📄 catalog.db
+│   ├── 📄 LAYERING.md
+│   ├── 📄 library_catalog.json
+│   └── 📄 library_plan.md
+├── 📁 managers/
+│   ├── 📄 __init__.py
+│   ├── 📄 _source_managers.py
+│   └── 📄 managers.py
+├── 📁 microservices/
+│   ├── 📁 core/
+│   │   ├── 📄 _ArchiveBotMS.py
+│   │   ├── 📄 _AuthMS.py
+│   │   ├── 📄 _CodeFormatterMS.py
+│   │   ├── 📄 _CodeJanitorMS.py
+│   │   ├── 📄 _CognitiveMemoryMS.py
+│   │   ├── 📄 _ContentExtractorMS.py
+│   │   ├── 📄 _ContextAggregatorMS.py
+│   │   ├── 📄 _ContextPackerMS.py
+│   │   ├── 📄 _EnvironmentManagerMS.py
+│   │   ├── 📄 _FingerprintScannerMS.py
+│   │   ├── 📄 _HeuristicSumMS.py
+│   │   ├── 📄 _IntakeServiceMS.py
+│   │   ├── 📄 _IsoProcessMS.py
+│   │   ├── 📄 _LibrarianMS.py
+│   │   ├── 📄 _LibrarianServiceMS.py
+│   │   ├── 📄 _NeuralServiceMS.py
+│   │   ├── 📄 _ProjectForgeMS.py
+│   │   ├── 📄 _PromptOptimizerMS.py
+│   │   ├── 📄 _PromptVaultMS.py
+│   │   ├── 📄 _RegexWeaverMS.py
+│   │   ├── 📄 _ScannerMS.py
+│   │   ├── 📄 _ScoutMS.py
+│   │   ├── 📄 _ServiceRegistryMS.py
+│   │   ├── 📄 _SysInspectorMS.py
+│   │   ├── 📄 _TreeMapperMS.py
+│   │   └── 📄 _WebScraperMS.py
+│   ├── 📁 db/
+│   │   ├── 📄 _DiffEngineMS.py
+│   │   ├── 📄 _LexicalSearchMS.py
+│   │   ├── 📄 _RoleManagerMS.py
+│   │   ├── 📄 _SandboxManagerMS.py
+│   │   └── 📄 _TasklistVaultMS.py
+│   ├── 📁 grouped/
+│   │   ├── 📄 meaning_relation_observability_manifold_groups.py
+│   │   ├── 📄 storage_group.py
+│   │   └── 📄 structure_group.py
+│   ├── 📁 meaning/
+│   │   ├── 📄 _SearchEngineMS.py
+│   │   └── 📄 _VectorFactoryMS.py
+│   ├── 📁 observability/
+│   │   └── 📄 _TelemetryServiceMS.py
+│   ├── 📁 pipeline/
+│   │   ├── 📄 _IngestEngineMS.py
+│   │   └── 📄 _SemanticChunkerMS.py
+│   ├── 📁 reference/
+│   │   ├── 📄 _ReferenceChunkViewerFormatMS.py
+│   │   ├── 📄 _ReferenceCliPlannerMS.py
+│   │   ├── 📄 _ReferenceCompoundDetectMS.py
+│   │   ├── 📄 _ReferenceCompoundRoutingMS.py
+│   │   ├── 📄 _ReferenceConfigRegistryMS.py
+│   │   ├── 📄 _ReferenceDbConnectionMS.py
+│   │   ├── 📄 _ReferenceDbQueryMS.py
+│   │   ├── 📄 _ReferenceDbSchemaPolicyMS.py
+│   │   ├── 📄 _ReferenceDbSearchMS.py
+│   │   ├── 📄 _ReferenceDetectMS.py
+│   │   ├── 📄 _ReferenceEmbedPipelineMS.py
+│   │   ├── 📄 _ReferenceEmbedUtilsMS.py
+│   │   ├── 📄 _ReferenceExplorerModelMS.py
+│   │   ├── 📄 _ReferenceExportMS.py
+│   │   ├── 📄 _ReferenceGraphExtractMS.py
+│   │   ├── 📄 _ReferenceIngestRunnerMS.py
+│   │   ├── 📄 _ReferenceLanguageTierMS.py
+│   │   ├── 📄 _ReferenceManifestMS.py
+│   │   ├── 📄 _ReferenceModelDownloadMS.py
+│   │   ├── 📄 _ReferenceModelManagerRuntimeMS.py
+│   │   ├── 📄 _ReferenceProseChunkerMS.py
+│   │   ├── 📄 _ReferencePythonAstChunkerMS.py
+│   │   ├── 📄 _ReferenceReviewQueueMS.py
+│   │   ├── 📄 _ReferenceSemanticHunkSplitterMS.py
+│   │   ├── 📄 _ReferenceSemanticSplitterMS.py
+│   │   ├── 📄 _ReferenceSettingsDialogStateMS.py
+│   │   ├── 📄 _ReferenceSettingsGuardMS.py
+│   │   ├── 📄 _ReferenceSettingsStoreMS.py
+│   │   ├── 📄 _ReferenceShellActionsMS.py
+│   │   ├── 📄 _ReferenceStructuralDelimiterMS.py
+│   │   ├── 📄 _ReferenceTreeItemModelMS.py
+│   │   ├── 📄 _ReferenceTreeSitterQueryRegistryMS.py
+│   │   ├── 📄 _ReferenceTreeSitterStrategyMS.py
+│   │   ├── 📄 _ReferenceVerbatimMS.py
+│   │   └── 📄 _ReferenceViewerContentMS.py
+│   ├── 📁 relation/
+│   │   ├── 📄 _CodeGrapherMS.py
+│   │   ├── 📄 _NetworkLayoutMS.py
+│   │   ├── 📄 _NeuralGraphEngineMS.py
+│   │   └── 📄 _RefineryServiceMS.py
+│   ├── 📁 storage/
+│   │   └── 📄 _CartridgeServiceMS.py
+│   ├── 📁 structure/
+│   │   ├── 📄 _ChunkingRouterMS.py
+│   │   ├── 📄 _CodeChunkerMS.py
+│   │   ├── 📄 _PythonChunkerMS.py
+│   │   └── 📄 _TextChunkerMS.py
+│   ├── 📁 ui/
+│   │   ├── 📄 _ChalkBoardMS.py
+│   │   ├── 📄 _ExplorerWidgetMS.py
+│   │   ├── 📄 _GitPilotMS.py
+│   │   ├── 📄 _LogViewMS.py
+│   │   ├── 📄 _MonacoHostMS.py
+│   │   ├── 📄 _NeuralGraphViewerMS.py
+│   │   ├── 📄 _SpinnerThingyMaBobberMS.py
+│   │   ├── 📄 _ThoughtStreamMS.py
+│   │   ├── 📄 _TkinterAppShellMS.py
+│   │   ├── 📄 _TkinterSmartExplorerMS.py
+│   │   ├── 📄 _TkinterThemeManagerMS.py
+│   │   ├── 📄 _TkinterUniButtonMS.py
+│   │   └── 📄 _WorkbenchLayoutMS.py
+│   └── 📄 __init__.py
+├── 📁 modules/
+│   ├── 📄 __init__.py
+│   └── 📄 wasm_modules_spec.py
+├── 📁 orchestrators/
+│   ├── 📄 __init__.py
+│   ├── 📄 layer_hub.py
+│   └── 📄 microservice_std_lib_registry.py
+├── 📁 tests/
+│   ├── 📄 __init__.py
+│   └── 📄 test_app_factory.py
+├── 📁 tools/
+│   ├── 📄 __init__.py
+│   └── 📄 inject_register_hook.py
+├── 📄 __init__.py
+├── 📄 base_service.py
+├── 📄 document_utils.py
+└── 📄 microservice_std_lib.py

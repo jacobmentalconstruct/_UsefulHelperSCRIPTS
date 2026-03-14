@@ -1,0 +1,24 @@
+{
+  "files": [
+    {
+      "path": "src/app.py",
+      "hunks": [
+        {
+          "description": "Fix local import pathing for the app",
+          "search_block": "from pathlib import Path\nfrom database import get_db_connection\n",
+          "replace_block": "from pathlib import Path\nfrom src.database import get_db_connection\n"
+        }
+      ]
+    },
+    {
+      "path": "src/ingestion.py",
+      "hunks": [
+        {
+          "description": "Fix local import pathing for the ingestion script",
+          "search_block": "from pathlib import Path\nfrom database import get_db_connection, init_db\n",
+          "replace_block": "from pathlib import Path\nfrom src.database import get_db_connection, init_db\n"
+        }
+      ]
+    }
+  ]
+}

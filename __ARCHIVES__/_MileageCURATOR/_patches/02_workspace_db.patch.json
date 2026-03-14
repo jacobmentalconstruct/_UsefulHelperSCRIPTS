@@ -1,0 +1,19 @@
+{
+  "files": [
+    {
+      "path": "src/database.py",
+      "hunks": [
+        {
+          "description": "Make DB connection workspace-aware",
+          "search_block": "DB_PATH = Path('mileage.db')\n\ndef get_db_connection():\n    \"\"\"Establishes and returns a connection to the SQLite database.\"\"\"\n    conn = sqlite3.connect(DB_PATH)\n    conn.row_factory = sqlite3.Row\n    return conn\n\ndef init_db():\n    \"\"\"Initializes the database schema if it doesn't exist.\"\"\"\n    conn = get_db_connection()\n",
+          "replace_block": "def get_db_connection(project_dir: Path):\n    \"\"\"Establishes and returns a connection to the SQLite database inside the project workspace.\"\"\"\n    db_path = project_dir / 'mileage.db'\n    conn = sqlite3.connect(db_path)\n    conn.row_factory = sqlite3.Row\n    return conn\n\ndef init_db(project_dir: Path):\n    \"\"\"Initializes the database schema if it doesn't exist in the project workspace.\"\"\"\n    conn = get_db_connection(project_dir)\n"
+        },
+        {
+          "description": "Update init_db test call",
+          "search_block": "if __name__ == \"__main__\":\n    init_db()\n",
+          "replace_block": "if __name__ == \"__main__\":\n    # Test with a dummy project dir\n    test_dir = Path('../workspaces/test_project')\n    test_dir.mkdir(parents=True, exist_ok=True)\n    init_db(test_dir)\n"
+        }
+      ]
+    }
+  ]
+}

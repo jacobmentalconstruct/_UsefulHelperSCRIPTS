@@ -1,0 +1,1907 @@
+Dump: C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_MileageCURATOR\_dev_tools
+
+
+--------------------------------------------------------------------------------
+FILE: analyze_timeline_schema.py
+--------------------------------------------------------------------------------
+import json
+from pathlib import Path
+
+def extract_schema(obj):
+    """Recursively extracts the skeleton/schema of a JSON object."""
+    if isinstance(obj, dict):
+        schema = {}
+        for k, v in obj.items():
+            schema[k] = extract_schema(v)
+        return schema
+    elif isinstance(obj, list):
+        if not obj:
+            return ["empty list"]
+        # Just look at the very first item to define the list's structure
+        return [extract_schema(obj[0])]
+    else:
+        # Return the data type (str, int, float, etc.)
+        return type(obj).__name__
+
+if __name__ == "__main__":
+    # Point this to the specific workspace file you just created
+    # Update "2025_Jacob" if you named your workspace something else!
+    target_file = Path("../workspaces/2025_Jacob/Timeline.json")
+    
+    if not target_file.exists():
+        print(f"Error: Cannot find {target_file}.")
+        print("Make sure the workspace name matches what you typed in the UI!")
+        exit(1)
+        
+    print("Loading the 93MB JSON into memory... give it a few seconds...")
+    with open(target_file, 'r', encoding='utf-8') as f:
+        data = json.load(f)
+        
+    print("Mapping the JSON structure...")
+    schema = extract_schema(data)
+    
+    out_path = Path("../timeline_schema_dump.json")
+    with open(out_path, 'w', encoding='utf-8') as f:
+        json.dump(schema, f, indent=2)
+        
+    print(f"\nSuccess! The skeleton has been saved to: {out_path.resolve()}")
+
+--------------------------------------------------------------------------------
+FILE: cleanup_root_microservices_contract.py
+--------------------------------------------------------------------------------
+import argparse
+import ast
+import json
+import re
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Tuple
+
+
+def build_line_offsets(text: str) -> List[int]:
+    offsets = [0]
+    for line in text.splitlines(keepends=True):
+        offsets.append(offsets[-1] + len(line))
+    return offsets
+
+
+def to_offset(offsets: List[int], lineno: int, col: int) -> int:
+    return offsets[lineno - 1] + col
+
+
+def parse_header_list(text: str, label: str) -> List[str]:
+    chunk = "\n".join(text.splitlines()[:80])
+    match = re.search(rf"{re.escape(label)}\s*:\s*(.+)", chunk)
+    if not match:
+        return []
+    raw = match.group(1).strip()
+    if raw.lower() in {"", "none", "n/a", "na"}:
+        return []
+    parts = [p.strip().strip("'\"") for p in raw.split(",")]
+    seen = set()
+    out: List[str] = []
+    for part in parts:
+        if not part:
+            continue
+        key = part.lower()
+        if key in {"none", "n/a", "na"}:
+            continue
+        if key not in seen:
+            seen.add(key)
+            out.append(part)
+    return out
+
+
+def is_service_metadata_call(node: ast.AST) -> bool:
+    return isinstance(node, ast.Call) and (
+        (isinstance(node.func, ast.Name) and node.func.id == "service_metadata")
+        or (isinstance(node.func, ast.Attribute) and node.func.attr == "service_metadata")
+    )
+
+
+def is_service_endpoint_call(node: ast.AST) -> bool:
+    return isinstance(node, ast.Call) and (
+        (isinstance(node.func, ast.Name) and node.func.id == "service_endpoint")
+        or (isinstance(node.func, ast.Attribute) and node.func.attr == "service_endpoint")
+    )
+
+
+def collect_class_side_effects(class_node: ast.ClassDef) -> List[str]:
+    seen = set()
+    effects: List[str] = []
+    for node in class_node.body:
+        if not isinstance(node, ast.FunctionDef):
+            continue
+        for dec in node.decorator_list:
+            if not is_service_endpoint_call(dec):
+                continue
+            for kw in dec.keywords:
+                if kw.arg != "side_effects":
+                    continue
+                if isinstance(kw.value, (ast.List, ast.Tuple)):
+                    for elt in kw.value.elts:
+                        if isinstance(elt, ast.Constant) and isinstance(elt.value, str):
+                            if elt.value not in seen:
+                                seen.add(elt.value)
+                                effects.append(elt.value)
+    return effects
+
+
+def default_service_metadata(
+    class_name: str,
+    internal_deps: List[str],
+    external_deps: List[str],
+    side_effects: List[str],
+) -> str:
+    call = ast.Call(
+        func=ast.Name(id="service_metadata", ctx=ast.Load()),
+        args=[],
+        keywords=[
+            ast.keyword(arg="name", value=ast.Constant(value=class_name)),
+            ast.keyword(arg="version", value=ast.Constant(value="1.0.0")),
+            ast.keyword(
+                arg="description",
+                value=ast.Constant(value=f"Auto-generated metadata for {class_name}."),
+            ),
+            ast.keyword(
+                arg="tags",
+                value=ast.List(elts=[ast.Constant(value="microservice")], ctx=ast.Load()),
+            ),
+            ast.keyword(arg="capabilities", value=ast.List(elts=[], ctx=ast.Load())),
+            ast.keyword(
+                arg="side_effects",
+                value=ast.List(
+                    elts=[ast.Constant(value=e) for e in side_effects],
+                    ctx=ast.Load(),
+                ),
+            ),
+            ast.keyword(
+                arg="internal_dependencies",
+                value=ast.List(
+                    elts=[ast.Constant(value=e) for e in internal_deps],
+                    ctx=ast.Load(),
+                ),
+            ),
+            ast.keyword(
+                arg="external_dependencies",
+                value=ast.List(
+                    elts=[ast.Constant(value=e) for e in external_deps],
+                    ctx=ast.Load(),
+                ),
+            ),
+        ],
+    )
+    return f"@{ast.unparse(call)}\n"
+
+
+def service_endpoint_health_decorator(indent: str) -> str:
+    return (
+        f"{indent}@service_endpoint(inputs={{}}, outputs={{'status': 'str', 'uptime': 'float'}}, "
+        "description='Standardized health check for service status.', tags=['diagnostic', 'health'])\n"
+    )
+
+
+def service_health_method(indent: str) -> str:
+    return (
+        f"\n{service_endpoint_health_decorator(indent)}"
+        f"{indent}def get_health(self):\n"
+        f"{indent}    \"\"\"Returns the operational status of the service.\"\"\"\n"
+        f"{indent}    start = getattr(self, 'start_time', None)\n"
+        f"{indent}    if start is None:\n"
+        f"{indent}        start = time.time()\n"
+        f"{indent}        self.start_time = start\n"
+        f"{indent}    return {{'status': 'online', 'uptime': time.time() - start}}\n"
+    )
+
+
+def cleanup_file(path: Path) -> Optional[Dict[str, Any]]:
+    text = path.read_text(encoding="utf-8")
+    try:
+        tree = ast.parse(text)
+    except SyntaxError:
+        return None
+
+    class_nodes = [n for n in tree.body if isinstance(n, ast.ClassDef)]
+    if not class_nodes:
+        return None
+    # Prefer the actual microservice class, not helper/dataclass types.
+    ms_class_nodes = [n for n in class_nodes if n.name.endswith("MS")]
+    class_node = ms_class_nodes[0] if ms_class_nodes else class_nodes[0]
+
+    offsets = build_line_offsets(text)
+    edits: List[Tuple[int, int, str, str]] = []
+    reasons: List[str] = []
+
+    internal_default = parse_header_list(text, "INTERNAL_DEPENDENCIES")
+    external_default = parse_header_list(text, "EXTERNAL_DEPENDENCIES")
+    side_effects_default = collect_class_side_effects(class_node)
+
+    metadata_decorator = None
+    for dec in class_node.decorator_list:
+        if is_service_metadata_call(dec):
+            metadata_decorator = dec
+            break
+
+    if metadata_decorator is None:
+        class_start = to_offset(offsets, class_node.lineno, 0)
+        edits.append(
+            (
+                class_start,
+                class_start,
+                default_service_metadata(
+                    class_node.name,
+                    internal_default,
+                    external_default,
+                    side_effects_default,
+                ),
+                "added_service_metadata",
+            )
+        )
+        reasons.append("added_service_metadata")
+    else:
+        present = {kw.arg for kw in metadata_decorator.keywords if kw.arg}
+        missing: Dict[str, ast.AST] = {}
+        if "internal_dependencies" not in present:
+            missing["internal_dependencies"] = ast.List(
+                elts=[ast.Constant(value=e) for e in internal_default],
+                ctx=ast.Load(),
+            )
+        if "external_dependencies" not in present:
+            missing["external_dependencies"] = ast.List(
+                elts=[ast.Constant(value=e) for e in external_default],
+                ctx=ast.Load(),
+            )
+        if "side_effects" not in present:
+            missing["side_effects"] = ast.List(
+                elts=[ast.Constant(value=e) for e in side_effects_default],
+                ctx=ast.Load(),
+            )
+        if missing:
+            new_keywords = list(metadata_decorator.keywords)
+            for key in ("side_effects", "internal_dependencies", "external_dependencies"):
+                if key in missing:
+                    new_keywords.append(ast.keyword(arg=key, value=missing[key]))
+            new_call = ast.Call(
+                func=metadata_decorator.func,
+                args=metadata_decorator.args,
+                keywords=new_keywords,
+            )
+            start = to_offset(offsets, metadata_decorator.lineno, metadata_decorator.col_offset)
+            end = to_offset(offsets, metadata_decorator.end_lineno, metadata_decorator.end_col_offset)
+            edits.append((start, end, ast.unparse(new_call), "expanded_service_metadata"))
+            reasons.append("expanded_service_metadata")
+
+    health_fn = None
+    for node in class_node.body:
+        if isinstance(node, ast.FunctionDef) and node.name == "get_health":
+            health_fn = node
+            break
+
+    needs_time_import = False
+    if health_fn is None:
+        indent = " " * (class_node.col_offset + 4)
+        insert = to_offset(offsets, class_node.end_lineno, class_node.end_col_offset)
+        edits.append((insert, insert, service_health_method(indent), "added_get_health"))
+        reasons.append("added_get_health")
+        needs_time_import = True
+    else:
+        has_endpoint = any(is_service_endpoint_call(dec) for dec in health_fn.decorator_list)
+        if not has_endpoint:
+            fn_start = to_offset(offsets, health_fn.lineno, 0)
+            indent = " " * health_fn.col_offset
+            edits.append(
+                (
+                    fn_start,
+                    fn_start,
+                    service_endpoint_health_decorator(indent),
+                    "decorated_get_health",
+                )
+            )
+            reasons.append("decorated_get_health")
+
+    has_time_import = False
+    has_metadata_import = False
+    has_endpoint_import = False
+    for node in tree.body:
+        if isinstance(node, ast.Import):
+            for alias in node.names:
+                if alias.name == "time":
+                    has_time_import = True
+        elif isinstance(node, ast.ImportFrom) and node.module == "microservice_std_lib":
+            for alias in node.names:
+                if alias.name == "service_metadata":
+                    has_metadata_import = True
+                if alias.name == "service_endpoint":
+                    has_endpoint_import = True
+
+    import_lines: List[str] = []
+    if needs_time_import and not has_time_import:
+        import_lines.append("import time\n")
+    if reasons and (not has_metadata_import or not has_endpoint_import):
+        import_lines.append("from microservice_std_lib import service_metadata, service_endpoint\n")
+
+    if import_lines:
+        insert_after_line = 1
+        body = list(tree.body)
+        idx = 0
+        if body and isinstance(body[0], ast.Expr) and isinstance(body[0].value, ast.Constant) and isinstance(body[0].value.value, str):
+            insert_after_line = body[0].end_lineno + 1
+            idx = 1
+        while idx < len(body) and isinstance(body[idx], (ast.Import, ast.ImportFrom)):
+            insert_after_line = body[idx].end_lineno + 1
+            idx += 1
+        import_insert = to_offset(offsets, insert_after_line, 0)
+        edits.append((import_insert, import_insert, "".join(import_lines), "imports"))
+        reasons.append("imports")
+
+    if not edits:
+        return None
+
+    edits.sort(key=lambda x: (x[0], x[1]), reverse=True)
+    new_text = text
+    for start, end, replacement, _ in edits:
+        new_text = new_text[:start] + replacement + new_text[end:]
+
+    return {
+        "path": str(path),
+        "text": new_text,
+        "reasons": sorted(set(reasons)),
+    }
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description="Cleanup root microservice contract fields and health endpoint.")
+    parser.add_argument("--root", default=".", help="Project root containing _*MS.py files.")
+    parser.add_argument("--apply", action="store_true", help="Write edits in-place.")
+    args = parser.parse_args()
+
+    root = Path(args.root).resolve()
+    files = sorted([p for p in root.glob("_*MS.py") if p.is_file()])
+    changed: List[Dict[str, Any]] = []
+    for path in files:
+        result = cleanup_file(path)
+        if result:
+            changed.append(result)
+
+    summary = {
+        "root": str(root),
+        "files_scanned": len(files),
+        "files_changed": len(changed),
+        "changes": [
+            {"file": Path(item["path"]).name, "reasons": item["reasons"]}
+            for item in changed
+        ],
+    }
+    print(json.dumps(summary, indent=2))
+
+    if args.apply:
+        for item in changed:
+            Path(item["path"]).write_text(item["text"], encoding="utf-8")
+
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
+
+--------------------------------------------------------------------------------
+FILE: organize_library_layers.py
+--------------------------------------------------------------------------------
+"""
+organize_library_layers.py
+
+Creates a layered library layout for growing microservice ecosystems without
+breaking existing root-level imports. Supports dry-run planning and safe apply
+(copy by default, optional move).
+"""
+
+from __future__ import annotations
+
+import argparse
+import ast
+import json
+import shutil
+import time
+from dataclasses import asdict, dataclass, field
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Set, Tuple
+
+
+LAYER_ORDER = [
+    "reference",
+    "ui",
+    "storage",
+    "structure",
+    "meaning",
+    "relation",
+    "observability",
+    "manifold",
+    "pipeline",
+    "db",
+    "core",
+]
+
+TAG_LAYER_RULES: List[Tuple[str, Set[str]]] = [
+    ("storage", {"storage", "verbatim", "merkle", "temporal", "cid", "hash"}),
+    ("structure", {"structure", "dag", "interval", "flow", "positional", "chunking", "chunker"}),
+    ("meaning", {"meaning", "semantic", "lexical", "ontology", "vector"}),
+    ("relation", {"relation", "identity", "property-graph", "graph", "knowledge-graph"}),
+    ("observability", {"observability", "monitoring", "trace", "telemetry", "diagnostic"}),
+    ("manifold", {"manifold", "hypergraph", "cross-layer", "superposition"}),
+    ("ui", {"ui", "theme", "viewer", "tkinter"}),
+    ("pipeline", {"pipeline", "ingest", "embed", "extract", "manifest"}),
+    ("db", {"db", "sqlite", "query", "search"}),
+]
+
+FILENAME_LAYER_HINTS: List[Tuple[str, str]] = [
+    ("tkinter", "ui"),
+    ("viewer", "ui"),
+    ("theme", "ui"),
+    ("explorer", "ui"),
+    ("db", "db"),
+    ("search", "db"),
+    ("chunk", "pipeline"),
+    ("ingest", "pipeline"),
+    ("embed", "pipeline"),
+    ("manifest", "pipeline"),
+    ("graph", "relation"),
+    ("telemetry", "observability"),
+]
+
+SUPPORT_FILE_DEST_MAP = {
+    "microservice_std_lib.py": "microservice_std_lib.py",
+}
+
+
+NEW_MODULE_DEST_MAP = {
+    "managers.py": "managers/_source_managers.py",
+    "microservice_std_lib_registry.py": "orchestrators/microservice_std_lib_registry.py",
+    "inject_register_hook.py": "tools/inject_register_hook.py",
+    "storage_group.py": "microservices/grouped/storage_group.py",
+    "structure_group.py": "microservices/grouped/structure_group.py",
+    "meaning_relation_observability_manifold_groups.py": "microservices/grouped/meaning_relation_observability_manifold_groups.py",
+    "wasm_modules_spec.py": "modules/wasm_modules_spec.py",
+    "files.zip": "assets/files.zip",
+}
+
+
+@dataclass
+class FilePlan:
+    source: str
+    destination: str
+    source_type: str
+    layer: str
+    service_name: str = ""
+    class_name: str = ""
+    tags: List[str] = field(default_factory=list)
+    mode: str = "copy"
+
+
+@dataclass
+class PlanSummary:
+    total_files: int
+    by_source_type: Dict[str, int]
+    by_layer: Dict[str, int]
+
+
+
+def _call_name(node: ast.AST) -> str:
+    if isinstance(node, ast.Name):
+        return node.id
+    if isinstance(node, ast.Attribute):
+        return node.attr
+    return ""
+
+
+
+def _literal(node: Optional[ast.AST]) -> Any:
+    if node is None:
+        return None
+    try:
+        return ast.literal_eval(node)
+    except Exception:
+        return None
+
+
+
+def extract_service_metadata(path: Path) -> Tuple[str, str, List[str]]:
+    source = path.read_text(encoding="utf-8", errors="ignore")
+    tree = ast.parse(source)
+
+    best_class = ""
+    best_name = ""
+    best_tags: List[str] = []
+
+    for node in tree.body:
+        if not isinstance(node, ast.ClassDef):
+            continue
+        if not node.name.endswith("MS"):
+            continue
+
+        svc_name = node.name
+        tags: List[str] = []
+
+        for deco in node.decorator_list:
+            if isinstance(deco, ast.Call) and _call_name(deco.func) == "service_metadata":
+                for kw in deco.keywords:
+                    if kw.arg == "name":
+                        val = _literal(kw.value)
+                        if isinstance(val, str) and val.strip():
+                            svc_name = val.strip()
+                    elif kw.arg == "tags":
+                        val = _literal(kw.value)
+                        if isinstance(val, list):
+                            tags = [str(x).strip() for x in val if str(x).strip()]
+                break
+
+        best_class = node.name
+        best_name = svc_name
+        best_tags = tags
+        break
+
+    if not best_class:
+        stem = path.stem.lstrip("_")
+        return stem or path.stem, "", []
+
+    return best_name, best_class, best_tags
+
+
+
+def classify_layer(filename: str, tags: List[str]) -> str:
+    fname = filename.lower()
+    if fname.startswith("_reference"):
+        return "reference"
+
+    normalized_tags = {t.lower() for t in tags}
+
+    for layer, tag_set in TAG_LAYER_RULES:
+        if normalized_tags & tag_set:
+            return layer
+
+    for needle, layer in FILENAME_LAYER_HINTS:
+        if needle in fname:
+            return layer
+
+    return "core"
+
+
+
+def plan_root_microservices(root: Path, dest_root: Path, mode: str) -> List[FilePlan]:
+    plans: List[FilePlan] = []
+    for path in sorted(root.glob("_*MS.py")):
+        svc_name, class_name, tags = extract_service_metadata(path)
+        layer = classify_layer(path.name, tags)
+        dest = dest_root / "microservices" / layer / path.name
+        plans.append(
+            FilePlan(
+                source=str(path),
+                destination=str(dest),
+                source_type="root_microservice",
+                layer=layer,
+                service_name=svc_name,
+                class_name=class_name,
+                tags=tags,
+                mode=mode,
+            )
+        )
+    return plans
+
+
+
+
+def plan_support_files(root: Path, dest_root: Path, mode: str) -> List[FilePlan]:
+    plans: List[FilePlan] = []
+    for name, rel_dest in SUPPORT_FILE_DEST_MAP.items():
+        src = root / name
+        if not src.exists() or not src.is_file():
+            continue
+        dest = dest_root / rel_dest
+        plans.append(
+            FilePlan(
+                source=str(src),
+                destination=str(dest),
+                source_type="support_module",
+                layer="support",
+                service_name=src.stem,
+                class_name="",
+                tags=[],
+                mode=mode,
+            )
+        )
+    return plans
+
+
+def plan_new_modules(root: Path, new_dir_name: str, dest_root: Path, mode: str) -> List[FilePlan]:
+    plans: List[FilePlan] = []
+    new_dir = root / new_dir_name
+    if not new_dir.exists():
+        return plans
+
+    for path in sorted(new_dir.glob("*")):
+        if not path.is_file():
+            continue
+        rel_dest = NEW_MODULE_DEST_MAP.get(path.name, f"modules/extra/{path.name}")
+        if rel_dest.startswith("microservices/grouped/"):
+            layer = "grouped"
+        elif rel_dest.startswith("managers/"):
+            layer = "manager"
+        elif rel_dest.startswith("orchestrators/"):
+            layer = "orchestrator"
+        elif rel_dest.startswith("tools/"):
+            layer = "tooling"
+        elif rel_dest.startswith("assets/"):
+            layer = "asset"
+        else:
+            layer = "module"
+
+        dest = dest_root / rel_dest
+        plans.append(
+            FilePlan(
+                source=str(path),
+                destination=str(dest),
+                source_type="new_module",
+                layer=layer,
+                service_name=path.stem,
+                class_name="",
+                tags=[],
+                mode=mode,
+            )
+        )
+
+    return plans
+
+
+
+def summarize(plans: List[FilePlan]) -> PlanSummary:
+    by_source_type: Dict[str, int] = {}
+    by_layer: Dict[str, int] = {}
+    for p in plans:
+        by_source_type[p.source_type] = by_source_type.get(p.source_type, 0) + 1
+        by_layer[p.layer] = by_layer.get(p.layer, 0) + 1
+    return PlanSummary(total_files=len(plans), by_source_type=by_source_type, by_layer=by_layer)
+
+
+
+def ensure_layout_markers(dest_root: Path) -> None:
+    package_dirs = [
+        dest_root,
+        dest_root / "microservices",
+        dest_root / "managers",
+        dest_root / "orchestrators",
+        dest_root / "modules",
+        dest_root / "tools",
+    ]
+    for d in package_dirs:
+        d.mkdir(parents=True, exist_ok=True)
+        init_py = d / "__init__.py"
+        if not init_py.exists():
+            init_py.write_text('"""Generated package marker for grouped library layout."""\n', encoding="utf-8")
+
+
+
+def apply(plans: List[FilePlan], mode: str) -> None:
+    for p in plans:
+        src = Path(p.source)
+        dst = Path(p.destination)
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        if mode == "move":
+            shutil.move(str(src), str(dst))
+        else:
+            shutil.copy2(src, dst)
+
+
+
+def write_artifacts(dest_root: Path, root: Path, mode: str, plans: List[FilePlan], summary: PlanSummary, applied: bool) -> None:
+    catalog_dir = dest_root / "catalog"
+    catalog_dir.mkdir(parents=True, exist_ok=True)
+
+    payload = {
+        "generated_at_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "root": str(root),
+        "destination_root": str(dest_root),
+        "mode": mode,
+        "applied": applied,
+        "summary": asdict(summary),
+        "plans": [asdict(p) for p in plans],
+    }
+
+    (catalog_dir / "library_catalog.json").write_text(json.dumps(payload, indent=2), encoding="utf-8")
+
+    lines: List[str] = []
+    lines.append("# Library Grouping Plan")
+    lines.append("")
+    lines.append(f"- Applied: `{applied}`")
+    lines.append(f"- Mode: `{mode}`")
+    lines.append(f"- Total files: `{summary.total_files}`")
+    lines.append("")
+    lines.append("## By Source Type")
+    for key in sorted(summary.by_source_type):
+        lines.append(f"- `{key}`: `{summary.by_source_type[key]}`")
+    lines.append("")
+    lines.append("## By Layer")
+    for key in sorted(summary.by_layer):
+        lines.append(f"- `{key}`: `{summary.by_layer[key]}`")
+    lines.append("")
+    lines.append("## Planned Moves/Copies")
+    for p in plans:
+        lines.append(f"- `{p.source_type}` `{Path(p.source).name}` -> `{p.destination}`")
+
+    (catalog_dir / "library_plan.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
+
+def build_arg_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description="Group microservices/modules into a layered library layout.")
+    parser.add_argument("--root", default=".", help="Workspace root path.")
+    parser.add_argument("--dest", default="library", help="Destination grouped library directory (relative to root).")
+    parser.add_argument("--new-modules-dir", default="NEW MICROSERVICES AND MODULES", help="Folder name containing newly added grouped modules.")
+    parser.add_argument("--mode", choices=["copy", "move"], default="copy", help="Whether to copy (safe) or move source files.")
+    parser.add_argument("--apply", action="store_true", help="Apply copy/move operations. Without this, only dry-run artifacts are produced.")
+    return parser
+
+
+
+def main() -> int:
+    parser = build_arg_parser()
+    args = parser.parse_args()
+
+    root = Path(args.root).resolve()
+    dest_root = (root / args.dest).resolve()
+
+    plans: List[FilePlan] = []
+    plans.extend(plan_root_microservices(root, dest_root, mode=args.mode))
+    plans.extend(plan_support_files(root, dest_root, mode=args.mode))
+    plans.extend(plan_new_modules(root, args.new_modules_dir, dest_root, mode=args.mode))
+
+    summary = summarize(plans)
+
+    if args.apply:
+        ensure_layout_markers(dest_root)
+        apply(plans, mode=args.mode)
+
+    write_artifacts(dest_root, root, args.mode, plans, summary, applied=bool(args.apply))
+
+    result = {
+        "status": "applied" if args.apply else "dry-run",
+        "mode": args.mode,
+        "destination": str(dest_root),
+        "summary": asdict(summary),
+        "catalog": str(dest_root / "catalog" / "library_catalog.json"),
+        "plan": str(dest_root / "catalog" / "library_plan.md"),
+    }
+    print(json.dumps(result, indent=2))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
+--------------------------------------------------------------------------------
+FILE: sql_schema_mapper.py
+--------------------------------------------------------------------------------
+import json
+import sqlite3
+from pathlib import Path
+
+def flatten_json(y, sep='.'):
+    """Flattens a nested JSON object into dot-notation paths."""
+    out = {}
+    def flatten(x, name=''):
+        if type(x) is dict:
+            for a in x:
+                flatten(x[a], name + a + sep)
+        elif type(x) is list:
+            if len(x) > 0:
+                # Just sample the first item in the list to get the structure
+                flatten(x[0], name + sep)
+        else:
+            out[name[:-1]] = (type(x).__name__, str(x)[:50]) # Save type and a short sample
+    flatten(y)
+    return out
+
+def map_to_sqlite(project_dir: Path):
+    json_path = project_dir / "Timeline.json"
+    db_path = project_dir / "schema_map.db"
+    
+    if not json_path.exists():
+        print(f"Error: {json_path} not found.")
+        return
+
+    print("Parsing 93MB JSON into memory...")
+    with open(json_path, 'r', encoding='utf-8') as f:
+        data = json.load(f)
+
+    print("Flattening structure...")
+    flat_schema = flatten_json(data)
+
+    print("Building queryable SQLite map...")
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    
+    cursor.execute('DROP TABLE IF EXISTS schema_map')
+    cursor.execute('''
+        CREATE TABLE schema_map (
+            path TEXT PRIMARY KEY,
+            data_type TEXT,
+            sample_value TEXT
+        )
+    ''')
+
+    for path, (dtype, sample) in flat_schema.items():
+        cursor.execute('INSERT INTO schema_map (path, data_type, sample_value) VALUES (?, ?, ?)', 
+                       (path, dtype, sample))
+
+    conn.commit()
+    conn.close()
+    
+    print(f"\nSuccess! Schema mapped to: {db_path}")
+    print("You can now open this DB in any SQLite viewer and search for things like '%driving%' or '%distance%'.")
+
+if __name__ == "__main__":
+    # Update this to match your workspace folder name!
+    target_workspace = Path("../workspaces/2025_Jacob")
+    map_to_sqlite(target_workspace)
+
+--------------------------------------------------------------------------------
+FILE: tokenizing-patcher-readme.md
+--------------------------------------------------------------------------------
+# Tokenizing Patcher CLI
+
+A patching utility for applying structured JSON patch objects to source files.
+
+This tool is designed for deterministic, auditable patching of text files using anchored hunks instead of whole-file regeneration. It supports both single-file and multi-file patch manifests.
+
+---
+
+## What it is for
+
+`tokenizing_patcher_with_cli.py` applies structured patch objects to files on disk.
+
+It is useful when you want:
+
+- small, controlled edits instead of replacing entire files
+- a patch format another agent can generate mechanically
+- dry-run validation before writing changes
+- multi-file patch execution from a single manifest
+- machine-readable introspection of command and schema expectations
+
+---
+
+## Core concepts
+
+The patcher works by applying one or more **hunks**.
+
+A hunk contains:
+
+- a human-readable description
+- a `search_block` that must be found in the target text
+- a `replace_block` that replaces the matched text
+- an optional indentation behavior flag
+
+The engine attempts to patch text in a careful way:
+
+1. strict search first
+2. whitespace-tolerant / floating fallback if needed
+3. ambiguity and collision checks where possible
+
+This makes it more reliable than naive global find/replace while still remaining simple and inspectable.
+
+---
+
+## Supported patch modes
+
+There are two main ways to use the patcher.
+
+### 1. Single patch object applied to one or more target files
+
+You provide:
+
+- one patch JSON file containing top-level `hunks`
+- one or more file paths on the command line
+
+This is useful when the exact same patch must be attempted against multiple files.
+
+### 2. Multi-file patch manifest
+
+You provide:
+
+- one patch JSON file containing top-level `files`
+- each file entry contains its own `path` and `hunks`
+
+This is useful when many files each need their own targeted hunks.
+
+---
+
+## Command overview
+
+### Show help
+
+```bash
+python tokenizing_patcher_with_cli.py --help
+```
+
+### Show schema
+
+```bash
+python tokenizing_patcher_with_cli.py --schema
+```
+
+### Show command reference
+
+```bash
+python tokenizing_patcher_with_cli.py --command
+python tokenizing_patcher_with_cli.py --command apply
+python tokenizing_patcher_with_cli.py --command validate
+```
+
+### Emit schema/command info as JSON
+
+```bash
+python tokenizing_patcher_with_cli.py --schema --json
+python tokenizing_patcher_with_cli.py --command apply --json
+```
+
+### Validate a patch against one or more files
+
+```bash
+python tokenizing_patcher_with_cli.py validate patch.json file1.py
+python tokenizing_patcher_with_cli.py validate patch.json file1.py file2.py file3.py
+```
+
+### Apply a patch to one or more files
+
+```bash
+python tokenizing_patcher_with_cli.py apply patch.json file1.py
+python tokenizing_patcher_with_cli.py apply patch.json file1.py file2.py
+```
+
+### Dry-run a patch
+
+```bash
+python tokenizing_patcher_with_cli.py apply patch.json file1.py --dry-run
+```
+
+### Apply a multi-file manifest
+
+```bash
+python tokenizing_patcher_with_cli.py apply patch_manifest.json
+```
+
+### Validate a multi-file manifest
+
+```bash
+python tokenizing_patcher_with_cli.py validate patch_manifest.json
+```
+
+### Use a root directory for relative paths in a manifest
+
+```bash
+python tokenizing_patcher_with_cli.py apply patch_manifest.json --root-dir /path/to/project
+```
+
+### Write outputs to a separate directory instead of overwriting originals
+
+```bash
+python tokenizing_patcher_with_cli.py apply patch_manifest.json --root-dir /path/to/project --output-dir /tmp/patched_out
+```
+
+### Create backups when writing in place
+
+```bash
+python tokenizing_patcher_with_cli.py apply patch_manifest.json --backup
+```
+
+---
+
+## Patch schema: single patch object
+
+Use this shape when the patch JSON will be applied to files named on the command line.
+
+```json
+{
+  "hunks": [
+    {
+      "description": "Add import",
+      "search_block": "import json\n",
+      "replace_block": "import json\nfrom collections import deque\n",
+      "use_patch_indent": false
+    }
+  ]
+}
+```
+
+### Field meanings
+
+#### `hunks`
+Required. A list of patch hunk objects.
+
+#### `description`
+Required. Human-readable explanation of what the hunk is meant to do.
+
+#### `search_block`
+Required. Exact or near-exact text block to locate in the target file.
+
+#### `replace_block`
+Required. Text that replaces the matched block.
+
+#### `use_patch_indent`
+Optional boolean. When `false` (default), the patcher rebases replacement indentation onto the matched block while preserving relative nested indentation. When `true`, replacement indentation is used exactly as written in the patch.
+
+If a hunk omits this field inside a multi-file manifest, the patcher now falls back to `default_use_patch_indent` from the file entry first, then the manifest root, and finally `false`.
+
+---
+
+## Patch schema: multi-file manifest
+
+Use this shape when the patch JSON contains its own file paths.
+
+```json
+{
+  "default_use_patch_indent": true,
+  "files": [
+    {
+      "path": "src/module_a.py",
+      "default_use_patch_indent": true,
+      "hunks": [
+        {
+          "description": "Add import",
+          "search_block": "import json\n",
+          "replace_block": "import json\nfrom collections import deque\n"
+        }
+      ]
+    },
+    {
+      "path": "src/module_b.py",
+      "hunks": [
+        {
+          "description": "Rename variable",
+          "search_block": "old_name = 1\n",
+          "replace_block": "new_name = 1\n",
+          "use_patch_indent": false
+        }
+      ]
+    }
+  ]
+}
+```
+
+### Manifest field meanings
+
+#### `default_use_patch_indent`
+Optional boolean at the manifest root. Provides the default indentation policy for every file entry and hunk that does not set `use_patch_indent` explicitly.
+
+This is useful for Python-heavy multi-file transforms where preserving literal patch indentation is safer than rebasing each hunk individually.
+
+#### `files`
+Required. List of file patch entries.
+
+#### `path`
+Required. Target file path such as `src/module_a.py`.
+
+This may be:
+
+- absolute
+- relative to the current working directory
+- relative to `--root-dir` if provided
+
+#### `default_use_patch_indent`
+Optional boolean at the file-entry level. Provides the default indentation policy for hunks in that file entry when a hunk omits `use_patch_indent`.
+
+#### `hunks`
+Required. List of hunk objects for that file.
+
+---
+
+## Behavioral rules
+
+### If target files are supplied on the command line
+
+The patch file must contain top-level:
+
+```json
+{ "hunks": [...] }
+```
+
+### If no target files are supplied
+
+The patch file must contain top-level:
+
+```json
+{ "files": [...] }
+```
+
+This split avoids ambiguity.
+
+---
+
+## Exit behavior and workflow expectations
+
+Typical workflow:
+
+1. generate patch JSON
+2. run `validate`
+3. run `apply --dry-run`
+4. inspect results
+5. run `apply` for real
+6. optionally back up originals or write to a separate output directory
+
+Recommended operational habit:
+
+- use `validate` first for every generated patch
+- use `--backup` when patching in place
+- use `--output-dir` if you want a staging area instead of directly modifying source files
+
+---
+
+## Example workflows
+
+### Example 1: patch one file
+
+```bash
+python tokenizing_patcher_with_cli.py validate add_import_patch.json src/tool.py
+python tokenizing_patcher_with_cli.py apply add_import_patch.json src/tool.py --backup
+```
+
+### Example 2: patch many files with the same patch
+
+```bash
+python tokenizing_patcher_with_cli.py validate rename_patch.json src/a.py src/b.py src/c.py
+python tokenizing_patcher_with_cli.py apply rename_patch.json src/a.py src/b.py src/c.py --dry-run
+```
+
+### Example 3: patch many files from a manifest
+
+```bash
+python tokenizing_patcher_with_cli.py validate migration_manifest.json --root-dir /repo/project
+python tokenizing_patcher_with_cli.py apply migration_manifest.json --root-dir /repo/project --backup
+```
+
+### Example 4: stage patched outputs instead of overwriting originals
+
+```bash
+python tokenizing_patcher_with_cli.py apply migration_manifest.json --root-dir /repo/project --output-dir /tmp/migration_stage
+```
+
+---
+
+## Failure modes to expect
+
+A patch may fail if:
+
+- `search_block` is not found
+- multiple possible matches create ambiguity
+- earlier hunks modify text in a way that prevents later hunks from matching
+- the wrong file path is targeted
+- the patch was generated against an outdated file version
+
+When a patch fails, inspect:
+
+- the exact file contents
+- line endings / indentation differences
+- whether the source drifted since the patch was generated
+- whether the search block is too broad or too brittle
+
+---
+
+## Guidance for agent-generated patches
+
+If another agent is generating patches for this tool, it should follow these principles:
+
+- make hunks small and anchored
+- avoid giant whole-file replacement blocks
+- ensure `search_block` includes enough local context to be unique
+- avoid overlapping hunks unless the sequence is intentionally dependent
+- prefer deterministic blocks over fuzzy natural-language descriptions
+- validate generated patches before applying them automatically
+
+Good patch generation tends to use:
+
+- local imports
+- exact function signatures
+- short but distinctive code neighborhoods
+- one conceptual edit per hunk where possible
+
+---
+
+## Suggested integration with migration tooling
+
+This patcher is a good fit for a migration engine that wants to:
+
+- inspect files
+- generate patch objects instead of full replacement files
+- dry-run and validate changes before writing
+- stage outputs for human review
+- apply multi-file migrations from a single manifest
+
+A migration runner can integrate it in either of two ways:
+
+1. import the patching functions directly
+2. shell out to the CLI and consume JSON/text results
+
+Direct import is usually cleaner for orchestration.
+
+---
+
+## File naming suggestions
+
+Example patch filenames:
+
+- `rename_service_imports.patch.json`
+- `phase_ui_migration_manifest.json`
+- `adapter_split_pass_01.json`
+
+Example readme/tool pairing:
+
+- `tokenizing_patcher_with_cli.py`
+- `tokenizing-patcher-readme.md`
+
+---
+
+## In plain terms
+
+This tool gives you a controlled middle ground between:
+
+- brittle search-and-replace scripts
+- and over-aggressive whole-file regeneration
+
+It is built for structured, inspectable text transformation.
+
+--------------------------------------------------------------------------------
+FILE: tokenizing_patcher_with_cli.py
+--------------------------------------------------------------------------------
+"""
+tripartite/tokenizing_patcher.py — Whitespace-immune Hunk-based Patching
+
+Extracted from _TokenizingPATCHER v4.3 (headless core only, no UI).
+Includes a CLI for:
+- single-file patching
+- applying one patch to many targets
+- multi-file manifest patching where each entry carries its own path
+
+Supported patch JSON shapes
+
+1) Single-file patch object:
+{
+  "hunks": [
+    {
+      "description": "Human-readable description of what this hunk does",
+      "search_block": "exact text to find\\n(can span multiple lines)",
+      "replace_block": "replacement text\\n(same or different line count)",
+      "use_patch_indent": false
+    }
+  ]
+}
+
+2) Multi-file patch manifest:
+{
+  "files": [
+    {
+      "path": "src/module_a.py",
+      "hunks": [ ...single-file hunks... ]
+    },
+    {
+      "path": "src/module_b.py",
+      "hunks": [ ...single-file hunks... ]
+    }
+  ]
+}
+"""
+from __future__ import annotations
+
+import argparse
+import json
+import re
+import sys
+from pathlib import Path
+
+
+PATCH_HUNK_SCHEMA = {
+    "name": "TokenizingPATCHER hunk schema",
+    "type": "object",
+    "required": ["hunks"],
+    "properties": {
+        "hunks": {
+            "type": "array",
+            "description": "Ordered list of non-overlapping patch hunks.",
+            "items": {
+                "type": "object",
+                "required": ["search_block", "replace_block"],
+                "properties": {
+                    "description": {
+                        "type": "string",
+                        "description": "Optional human-readable note describing the hunk.",
+                    },
+                    "search_block": {
+                        "type": "string",
+                        "description": "Exact source text to locate. May span multiple lines.",
+                    },
+                    "replace_block": {
+                        "type": "string",
+                        "description": "Replacement text for the matched block. May span multiple lines.",
+                    },
+                    "use_patch_indent": {
+                        "type": "boolean",
+                        "description": (
+                            "When true, preserve indentation from the patch text exactly. "
+                            "When false, rebase the patch block onto the matched file indent."
+                        ),
+                        "default": False,
+                    },
+                },
+                "additionalProperties": True,
+            },
+        }
+    },
+    "additionalProperties": True,
+}
+
+PATCH_MANIFEST_SCHEMA = {
+    "name": "TokenizingPATCHER multi-file manifest schema",
+    "type": "object",
+    "required": ["files"],
+    "properties": {
+        "default_use_patch_indent": {
+            "type": "boolean",
+            "description": "Default indentation mode applied to file entries and hunks that do not set use_patch_indent.",
+            "default": False,
+        },
+        "files": {
+            "type": "array",
+            "description": "Ordered list of file patch entries.",
+            "items": {
+                "type": "object",
+                "required": ["path", "hunks"],
+                "properties": {
+                    "path": {
+                        "type": "string",
+                        "description": 'Target file path, e.g. "path/filename.py".',
+                    },
+                    "default_use_patch_indent": {
+                        "type": "boolean",
+                        "description": "Default indentation mode for hunks in this file entry when a hunk omits use_patch_indent.",
+                        "default": False,
+                    },
+                    "hunks": PATCH_HUNK_SCHEMA["properties"]["hunks"],
+                },
+                "additionalProperties": True,
+            },
+        }
+    },
+    "additionalProperties": True,
+}
+
+PATCH_SCHEMA_EXAMPLES = {
+    "single_file": {
+        "hunks": [
+            {
+                "description": "Add deque import for ring buffer support",
+                "search_block": "import argparse\nimport json\n",
+                "replace_block": "import argparse\nimport json\nfrom collections import deque\n",
+                "use_patch_indent": False,
+            }
+        ]
+    },
+    "multi_file": {
+        "default_use_patch_indent": True,
+        "files": [
+            {
+                "path": "src/module_a.py",
+                "default_use_patch_indent": True,
+                "hunks": [
+                    {
+                        "description": "Add deque import for ring buffer support",
+                        "search_block": "import argparse\nimport json\n",
+                        "replace_block": "import argparse\nimport json\nfrom collections import deque\n",
+                        "use_patch_indent": False,
+                    }
+                ],
+            },
+            {
+                "path": "src/module_b.py",
+                "hunks": [
+                    {
+                        "description": "Rename variable",
+                        "search_block": "old_name = 1\n",
+                        "replace_block": "new_name = 1\n",
+                        "use_patch_indent": False,
+                    }
+                ],
+            },
+        ]
+    },
+}
+
+COMMAND_REFERENCE = {
+    "apply": {
+        "summary": "Apply a patch to one file, many files, or a multi-file manifest.",
+        "usage": [
+            "tokenizing_patcher_with_cli.py apply PATCH TARGET [TARGET ...]",
+            "tokenizing_patcher_with_cli.py apply PATCH",
+        ],
+        "notes": [
+            "If TARGETs are supplied, PATCH must be a single-file hunk object and the same patch is applied to each target.",
+            "If no TARGETs are supplied, PATCH must be a multi-file manifest with files[].path entries.",
+            "Use --output-dir to redirect writes for multi-target or manifest mode.",
+        ],
+    },
+    "validate": {
+        "summary": "Validate patch applicability for one file, many files, or a multi-file manifest.",
+        "usage": [
+            "tokenizing_patcher_with_cli.py validate PATCH TARGET [TARGET ...]",
+            "tokenizing_patcher_with_cli.py validate PATCH",
+        ],
+        "notes": [
+            "Does not write any files.",
+            "Returns non-zero on missing, ambiguous, or overlapping hunks.",
+        ],
+    },
+}
+
+
+class PatchError(Exception):
+    pass
+
+
+class StructuredLine:
+    __slots__ = ["indent", "content", "trailing", "original"]
+
+    def __init__(self, line: str):
+        self.original = line
+        m = re.match(r"(^[ \t]*)(.*?)([ \t]*$)", line, re.DOTALL)
+        if m:
+            self.indent, self.content, self.trailing = m.group(1), m.group(2), m.group(3)
+        else:
+            self.indent, self.content, self.trailing = "", line, ""
+
+    def reconstruct(self) -> str:
+        return f"{self.indent}{self.content}{self.trailing}"
+
+
+def tokenize_text(text: str):
+    if "\r\n" in text:
+        newline = "\r\n"
+    elif "\n" in text:
+        newline = "\n"
+    else:
+        newline = "\n"
+    raw_lines = text.splitlines()
+    lines = [StructuredLine(l) for l in raw_lines]
+    return lines, newline
+
+
+def locate_hunk(file_lines, search_lines, floating: bool = False):
+    if not search_lines:
+        return []
+    matches = []
+    max_start = len(file_lines) - len(search_lines)
+    for start in range(max_start + 1):
+        ok = True
+        for i, s in enumerate(search_lines):
+            f = file_lines[start + i]
+            if floating:
+                if f.content != s.content:
+                    ok = False
+                    break
+            else:
+                if f.reconstruct() != s.reconstruct():
+                    ok = False
+                    break
+        if ok:
+            matches.append(start)
+    return matches
+
+
+def _common_indent_prefix(lines):
+    prefix = None
+    for line in lines:
+        if not line.content:
+            continue
+        indent = line.indent
+        if prefix is None:
+            prefix = indent
+            continue
+        i = 0
+        max_i = min(len(prefix), len(indent))
+        while i < max_i and prefix[i] == indent[i]:
+            i += 1
+        prefix = prefix[:i]
+    return prefix or ""
+
+
+def _strip_indent_prefix(indent: str, prefix: str) -> str:
+    if prefix and indent.startswith(prefix):
+        return indent[len(prefix):]
+    return indent
+
+def apply_patch_text(original_text: str, patch_obj: dict, global_force_indent: bool = False) -> str:
+    if not isinstance(patch_obj, dict) or "hunks" not in patch_obj:
+        raise PatchError("Patch must be a dict with a 'hunks' list.")
+
+    hunks = patch_obj.get("hunks", [])
+    if not isinstance(hunks, list):
+        raise PatchError("'hunks' must be a list.")
+
+    file_lines, newline = tokenize_text(original_text)
+    applications = []
+
+    for idx, hunk in enumerate(hunks, start=1):
+        search_block = hunk.get("search_block")
+        replace_block = hunk.get("replace_block")
+        use_patch_indent = hunk.get("use_patch_indent", global_force_indent)
+
+        if search_block is None or replace_block is None:
+            raise PatchError(f"Hunk {idx}: Missing 'search_block' or 'replace_block'.")
+
+        s_lines = [StructuredLine(l) for l in search_block.splitlines()]
+        r_lines = [StructuredLine(l) for l in replace_block.splitlines()]
+
+        matches = locate_hunk(file_lines, s_lines, floating=False)
+        if not matches:
+            matches = locate_hunk(file_lines, s_lines, floating=True)
+
+        if not matches:
+            raise PatchError(f"Hunk {idx}: Search block not found.")
+        if len(matches) > 1:
+            raise PatchError(f"Hunk {idx}: Ambiguous match ({len(matches)} found).")
+
+        start = matches[0]
+        applications.append({
+            "start": start,
+            "end": start + len(s_lines),
+            "replace_lines": r_lines,
+            "use_patch_indent": bool(use_patch_indent),
+            "id": idx,
+        })
+
+    applications.sort(key=lambda a: a["start"])
+    for i in range(len(applications) - 1):
+        if applications[i]["end"] > applications[i + 1]["start"]:
+            raise PatchError(
+                f"Hunks {applications[i]['id']} and {applications[i + 1]['id']} overlap in the target file."
+            )
+
+    for app in reversed(applications):
+        start = app["start"]
+        end = app["end"]
+        r_lines = app["replace_lines"]
+        use_patch_indent = app["use_patch_indent"]
+
+        matched_indent = file_lines[start].indent if start < len(file_lines) else ""
+        patch_base_indent = _common_indent_prefix(r_lines)
+        adjusted_lines = []
+        for r in r_lines:
+            line = StructuredLine(r.reconstruct())
+            if not use_patch_indent:
+                relative_indent = _strip_indent_prefix(line.indent, patch_base_indent)
+                if line.content:
+                    line.indent = matched_indent + relative_indent
+                else:
+                    line.indent = ""
+            adjusted_lines.append(line)
+
+        file_lines[start:end] = adjusted_lines
+
+    result = newline.join(line.reconstruct() for line in file_lines)
+    if original_text.endswith(("\n", "\r\n")):
+        result += newline
+    return result
+
+
+def _load_patch_obj(patch_path: Path) -> dict:
+    try:
+        return json.loads(patch_path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        raise PatchError(f"Invalid patch JSON: {exc}") from exc
+    except OSError as exc:
+        raise PatchError(f"Unable to read patch file '{patch_path}': {exc}") from exc
+
+
+def _read_text_file(path: Path) -> str:
+    try:
+        return path.read_text(encoding="utf-8")
+    except OSError as exc:
+        raise PatchError(f"Unable to read target file '{path}': {exc}") from exc
+
+
+def _write_text_file(path: Path, text: str) -> None:
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(text, encoding="utf-8", newline="")
+    except OSError as exc:
+        raise PatchError(f"Unable to write output file '{path}': {exc}") from exc
+
+
+def _build_summary(original_text: str, patched_text: str, patch_obj: dict) -> dict:
+    return {
+        "changed": original_text != patched_text,
+        "original_line_count": len(original_text.splitlines()),
+        "patched_line_count": len(patched_text.splitlines()),
+        "hunk_count": len(patch_obj.get("hunks", [])),
+    }
+
+
+def _is_manifest_patch(obj: dict) -> bool:
+    return isinstance(obj, dict) and isinstance(obj.get("files"), list)
+
+
+def _is_single_patch(obj: dict) -> bool:
+    return isinstance(obj, dict) and isinstance(obj.get("hunks"), list)
+
+
+def _resolve_output_path(target_path: Path, output_path: Path | None, output_dir: Path | None) -> Path:
+    if output_path and output_dir:
+        raise PatchError("Use either output_path or output_dir, not both.")
+    if output_path:
+        return output_path
+    if output_dir:
+        return output_dir / target_path
+    return target_path
+
+
+def patch_file(target_path: Path, patch_obj: dict, output_path: Path | None = None, output_dir: Path | None = None,
+               force_indent: bool = False, dry_run: bool = False, create_backup: bool = False) -> dict:
+    if not _is_single_patch(patch_obj):
+        raise PatchError("Single-file patching requires a patch object with a 'hunks' list.")
+
+    original_text = _read_text_file(target_path)
+    patched_text = apply_patch_text(original_text, patch_obj, global_force_indent=force_indent)
+    summary = _build_summary(original_text, patched_text, patch_obj)
+    final_output = _resolve_output_path(target_path, output_path, output_dir)
+
+    if dry_run:
+        return {"status": "dry-run", "target": str(target_path), "output": str(final_output), **summary}
+
+    if create_backup and final_output == target_path:
+        backup_path = target_path.with_suffix(target_path.suffix + ".bak")
+        _write_text_file(backup_path, original_text)
+
+    _write_text_file(final_output, patched_text)
+    return {"status": "applied", "target": str(target_path), "output": str(final_output), **summary}
+
+
+def validate_patch(target_path: Path, patch_obj: dict, force_indent: bool = False) -> dict:
+    if not _is_single_patch(patch_obj):
+        raise PatchError("Single-file validation requires a patch object with a 'hunks' list.")
+    original_text = _read_text_file(target_path)
+    patched_text = apply_patch_text(original_text, patch_obj, global_force_indent=force_indent)
+    return {"status": "valid", "target": str(target_path), **_build_summary(original_text, patched_text, patch_obj)}
+
+
+def patch_many_files(targets, patch_obj: dict, output_dir: Path | None = None, force_indent: bool = False,
+                     dry_run: bool = False, create_backup: bool = False) -> dict:
+    if not _is_single_patch(patch_obj):
+        raise PatchError("Multi-target mode requires a single-file patch object with a 'hunks' list.")
+    results = []
+    changed_count = 0
+    for target in targets:
+        res = patch_file(target, patch_obj, output_dir=output_dir, force_indent=force_indent,
+                         dry_run=dry_run, create_backup=create_backup)
+        changed_count += int(bool(res.get("changed")))
+        results.append(res)
+    return {
+        "status": "dry-run" if dry_run else "applied",
+        "mode": "multi-target",
+        "target_count": len(targets),
+        "changed_count": changed_count,
+        "results": results,
+    }
+
+
+def validate_many_files(targets, patch_obj: dict, force_indent: bool = False) -> dict:
+    if not _is_single_patch(patch_obj):
+        raise PatchError("Multi-target validation requires a single-file patch object with a 'hunks' list.")
+    results = [validate_patch(target, patch_obj, force_indent=force_indent) for target in targets]
+    return {
+        "status": "valid",
+        "mode": "multi-target",
+        "target_count": len(targets),
+        "changed_count": sum(int(bool(r.get("changed"))) for r in results),
+        "results": results,
+    }
+
+
+def patch_manifest(manifest: dict, root_dir: Path | None = None, output_dir: Path | None = None,
+                   force_indent: bool = False, dry_run: bool = False, create_backup: bool = False) -> dict:
+    if not _is_manifest_patch(manifest):
+        raise PatchError("Manifest mode requires a patch object with a 'files' list.")
+    root = root_dir or Path(".")
+    manifest_default_use_patch_indent = bool(manifest.get("default_use_patch_indent", False))
+    results = []
+    changed_count = 0
+    for idx, entry in enumerate(manifest.get("files", []), start=1):
+        rel_path = entry.get("path")
+        if not rel_path:
+            raise PatchError(f"Manifest entry {idx} is missing 'path'.")
+        target = root / Path(rel_path)
+        file_default_use_patch_indent = entry.get("default_use_patch_indent", manifest_default_use_patch_indent)
+        patch_obj = {
+            "hunks": [
+                {
+                    **hunk,
+                    **({} if "use_patch_indent" in hunk else {"use_patch_indent": file_default_use_patch_indent}),
+                }
+                for hunk in entry.get("hunks", [])
+            ]
+        }
+        res = patch_file(target, patch_obj, output_dir=output_dir, force_indent=force_indent,
+                         dry_run=dry_run, create_backup=create_backup)
+        changed_count += int(bool(res.get("changed")))
+        results.append(res)
+    return {
+        "status": "dry-run" if dry_run else "applied",
+        "mode": "manifest",
+        "target_count": len(results),
+        "changed_count": changed_count,
+        "results": results,
+    }
+
+
+def validate_manifest(manifest: dict, root_dir: Path | None = None, force_indent: bool = False) -> dict:
+    if not _is_manifest_patch(manifest):
+        raise PatchError("Manifest mode requires a patch object with a 'files' list.")
+    root = root_dir or Path(".")
+    manifest_default_use_patch_indent = bool(manifest.get("default_use_patch_indent", False))
+    results = []
+    for idx, entry in enumerate(manifest.get("files", []), start=1):
+        rel_path = entry.get("path")
+        if not rel_path:
+            raise PatchError(f"Manifest entry {idx} is missing 'path'.")
+        target = root / Path(rel_path)
+        file_default_use_patch_indent = entry.get("default_use_patch_indent", manifest_default_use_patch_indent)
+        patch_obj = {
+            "hunks": [
+                {
+                    **hunk,
+                    **({} if "use_patch_indent" in hunk else {"use_patch_indent": file_default_use_patch_indent}),
+                }
+                for hunk in entry.get("hunks", [])
+            ]
+        }
+        results.append(validate_patch(target, patch_obj, force_indent=force_indent))
+    return {
+        "status": "valid",
+        "mode": "manifest",
+        "target_count": len(results),
+        "changed_count": sum(int(bool(r.get("changed"))) for r in results),
+        "results": results,
+    }
+
+
+def _render_schema_payload() -> dict:
+    return {
+        "single_file_schema": PATCH_HUNK_SCHEMA,
+        "single_file_example": PATCH_SCHEMA_EXAMPLES["single_file"],
+        "multi_file_schema": PATCH_MANIFEST_SCHEMA,
+        "multi_file_example": PATCH_SCHEMA_EXAMPLES["multi_file"],
+    }
+
+
+def _render_command_payload(command_name: str | None = None) -> dict:
+    if command_name:
+        if command_name not in COMMAND_REFERENCE:
+            raise PatchError(f"Unknown command reference '{command_name}'.")
+        return {"command": command_name, "reference": COMMAND_REFERENCE[command_name], **_render_schema_payload()}
+    return {"commands": COMMAND_REFERENCE, **_render_schema_payload()}
+
+
+def _build_arg_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description="Whitespace-immune hunk patcher for source files.")
+    parser.add_argument("--schema", action="store_true", help="Print the supported patch JSON schema and examples, then exit.")
+    parser.add_argument("--command", nargs="?", const="", metavar="NAME",
+                        help="Print command reference info for all commands or one command, then exit.")
+    parser.add_argument("--json", action="store_true", help="Emit machine-readable JSON result to stdout.")
+
+    subparsers = parser.add_subparsers(dest="subcommand")
+
+    common = argparse.ArgumentParser(add_help=False)
+    common.add_argument("patch", type=Path, help="Path to the patch JSON file")
+    common.add_argument("targets", nargs="*", type=Path,
+                        help="Optional target paths. If omitted, PATCH must be a multi-file manifest with files[].path.")
+    common.add_argument("--root-dir", type=Path,
+                        help="Base directory used to resolve files[].path when PATCH is a multi-file manifest.")
+    common.add_argument("--force-indent", action="store_true",
+                        help="Use patch indentation exactly instead of rebasing to target indentation.")
+
+    apply_parser = subparsers.add_parser("apply", parents=[common], help="Apply a patch.")
+    apply_parser.add_argument("-o", "--output", type=Path,
+                              help="Write patched content to a different path. Only valid for single-target mode.")
+    apply_parser.add_argument("--output-dir", type=Path,
+                              help="Write outputs under a separate directory, preserving target-relative paths.")
+    apply_parser.add_argument("--dry-run", action="store_true",
+                              help="Validate and compute the patch without writing output.")
+    apply_parser.add_argument("--backup", action="store_true",
+                              help="Create a .bak backup when patching target files in place.")
+
+    subparsers.add_parser("validate", parents=[common], help="Validate that a patch can be applied cleanly.")
+    return parser
+
+
+def _emit_result(result: dict, as_json: bool) -> None:
+    if as_json:
+        print(json.dumps(result, indent=2))
+    else:
+        print(json.dumps(result, indent=2))
+
+
+def main(argv=None) -> int:
+    parser = _build_arg_parser()
+    args = parser.parse_args(argv)
+    try:
+        if args.schema:
+            _emit_result(_render_schema_payload(), as_json=True if args.json else False)
+            return 0
+        if args.command is not None:
+            command_name = args.command or None
+            _emit_result(_render_command_payload(command_name), as_json=True if args.json else False)
+            return 0
+        if not args.subcommand:
+            parser.print_help()
+            return 2
+
+        patch_obj = _load_patch_obj(args.patch)
+
+        if args.subcommand == "apply":
+            if args.output and len(args.targets) != 1:
+                raise PatchError("--output is only valid when exactly one target path is supplied.")
+
+            if args.targets:
+                if not _is_single_patch(patch_obj):
+                    raise PatchError("When targets are supplied, the patch file must contain a top-level 'hunks' list.")
+                if len(args.targets) == 1:
+                    result = patch_file(
+                        target_path=args.targets[0],
+                        patch_obj=patch_obj,
+                        output_path=args.output,
+                        output_dir=args.output_dir,
+                        force_indent=args.force_indent,
+                        dry_run=args.dry_run,
+                        create_backup=args.backup,
+                    )
+                else:
+                    result = patch_many_files(
+                        targets=args.targets,
+                        patch_obj=patch_obj,
+                        output_dir=args.output_dir,
+                        force_indent=args.force_indent,
+                        dry_run=args.dry_run,
+                        create_backup=args.backup,
+                    )
+            else:
+                result = patch_manifest(
+                    manifest=patch_obj,
+                    root_dir=args.root_dir,
+                    output_dir=args.output_dir,
+                    force_indent=args.force_indent,
+                    dry_run=args.dry_run,
+                    create_backup=args.backup,
+                )
+
+            _emit_result(result, as_json=args.json)
+            return 0
+
+        if args.subcommand == "validate":
+            if args.targets:
+                if not _is_single_patch(patch_obj):
+                    raise PatchError("When targets are supplied, the patch file must contain a top-level 'hunks' list.")
+                if len(args.targets) == 1:
+                    result = validate_patch(args.targets[0], patch_obj, force_indent=args.force_indent)
+                else:
+                    result = validate_many_files(args.targets, patch_obj, force_indent=args.force_indent)
+            else:
+                result = validate_manifest(patch_obj, root_dir=args.root_dir, force_indent=args.force_indent)
+
+            _emit_result(result, as_json=args.json)
+            return 0
+
+        parser.error(f"Unknown subcommand: {args.subcommand}")
+        return 2
+
+    except PatchError as exc:
+        error = {"status": "error", "message": str(exc)}
+        if getattr(args, "json", False):
+            print(json.dumps(error, indent=2), file=sys.stderr)
+        else:
+            print(f"ERROR: {exc}", file=sys.stderr)
+        return 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

@@ -1,0 +1,1076 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Graph Manifold</title>
+<script src="https://unpkg.com/cytoscape@3.28.1/dist/cytoscape.min.js"></script>
+<style>
+  :root {
+    --bg-primary: #0d1117;
+    --bg-secondary: #161b22;
+    --bg-tertiary: #21262d;
+    --border: #30363d;
+    --text-primary: #e6edf3;
+    --text-secondary: #8b949e;
+    --accent: #58a6ff;
+    --accent-hover: #79c0ff;
+    --green: #3fb950;
+    --orange: #d29922;
+    --red: #f85149;
+    --purple: #bc8cff;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* Header */
+  .header {
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border);
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-shrink: 0;
+  }
+  .header h1 {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--accent);
+    white-space: nowrap;
+  }
+  .header input {
+    flex: 1;
+    max-width: 400px;
+    padding: 6px 12px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text-primary);
+    font-size: 13px;
+  }
+  .header input:focus { outline: none; border-color: var(--accent); }
+  .btn {
+    padding: 6px 14px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    font-size: 13px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .btn:hover { background: var(--border); }
+  .btn-primary { background: #238636; border-color: #2ea043; }
+  .btn-primary:hover { background: #2ea043; }
+  .btn-accent { background: #1f6feb; border-color: #388bfd; }
+  .btn-accent:hover { background: #388bfd; }
+  .manifold-status {
+    font-size: 12px;
+    color: var(--text-secondary);
+    white-space: nowrap;
+  }
+  .manifold-status.loaded { color: var(--green); }
+
+  /* Main layout */
+  .main {
+    flex: 1;
+    display: flex;
+    overflow: hidden;
+  }
+
+  /* Left panel: Query & Results */
+  .left-panel {
+    width: 50%;
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid var(--border);
+  }
+  .query-bar {
+    padding: 12px 16px;
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+  .query-bar input {
+    flex: 1;
+    padding: 8px 12px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text-primary);
+    font-size: 14px;
+  }
+  .query-bar input:focus { outline: none; border-color: var(--accent); }
+  .query-config {
+    padding: 8px 16px;
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    font-size: 12px;
+    color: var(--text-secondary);
+    flex-shrink: 0;
+  }
+  .query-config label { display: flex; align-items: center; gap: 4px; }
+  .query-config input[type="number"] {
+    width: 60px;
+    padding: 2px 6px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--text-primary);
+    font-size: 12px;
+  }
+  .query-config input[type="checkbox"] {
+    accent-color: var(--accent);
+  }
+
+  .results-area {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+  }
+  .result-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-bottom: 12px;
+    overflow: hidden;
+  }
+  .result-card .card-header {
+    padding: 10px 14px;
+    background: var(--bg-tertiary);
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+    font-weight: 600;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .result-card .card-body { padding: 12px 14px; font-size: 13px; line-height: 1.6; }
+  .result-card .answer-text { white-space: pre-wrap; }
+
+  /* Expandable sections */
+  .expandable { cursor: pointer; user-select: none; }
+  .expandable::before { content: '\25B6 '; font-size: 10px; }
+  .expandable.open::before { content: '\25BC '; }
+  .expand-content { display: none; padding: 10px 14px; border-top: 1px solid var(--border); }
+  .expand-content.show { display: block; }
+
+  /* Score table */
+  .score-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+  .score-table th {
+    text-align: left;
+    padding: 6px 8px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text-secondary);
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .score-table th:hover { color: var(--accent); }
+  .score-table td {
+    padding: 4px 8px;
+    border-bottom: 1px solid var(--bg-tertiary);
+    font-family: 'SFMono-Regular', Consolas, monospace;
+    font-size: 11px;
+  }
+  .score-table tr:hover { background: var(--bg-tertiary); }
+
+  /* Right panel: Graph + Scores */
+  .right-panel {
+    width: 50%;
+    display: flex;
+    flex-direction: column;
+  }
+  .graph-container {
+    flex: 1;
+    position: relative;
+    min-height: 300px;
+  }
+  #cy {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+  }
+  .graph-empty {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: var(--text-secondary);
+    font-size: 14px;
+    text-align: center;
+  }
+  .score-panel {
+    height: 250px;
+    border-top: 1px solid var(--border);
+    overflow-y: auto;
+    padding: 8px;
+    flex-shrink: 0;
+  }
+  .score-panel-header {
+    font-size: 13px;
+    font-weight: 600;
+    padding: 6px 8px;
+    color: var(--text-secondary);
+  }
+
+  /* Node detail popup */
+  .node-detail {
+    display: none;
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px;
+    font-size: 12px;
+    max-width: 300px;
+    z-index: 100;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+  }
+  .node-detail.visible { display: block; }
+  .node-detail h3 { font-size: 14px; margin-bottom: 8px; color: var(--accent); }
+  .node-detail .detail-row { display: flex; justify-content: space-between; padding: 2px 0; }
+  .node-detail .detail-label { color: var(--text-secondary); }
+  .node-detail .detail-value { font-family: monospace; }
+  .node-detail .close-btn {
+    position: absolute;
+    top: 6px;
+    right: 8px;
+    cursor: pointer;
+    color: var(--text-secondary);
+    font-size: 16px;
+  }
+
+  /* Pipeline status bar */
+  .pipeline-bar {
+    background: var(--bg-secondary);
+    border-top: 1px solid var(--border);
+    padding: 8px 20px;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    font-size: 12px;
+    flex-shrink: 0;
+  }
+  .stage-pill {
+    padding: 2px 10px;
+    border-radius: 10px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    font-size: 11px;
+  }
+  .stage-pill.done { border-color: var(--green); color: var(--green); }
+  .stage-pill.skipped { border-color: var(--orange); color: var(--orange); }
+  .pipeline-info { color: var(--text-secondary); margin-left: auto; }
+
+  /* Loading indicator */
+  .loading {
+    display: none;
+    padding: 20px;
+    text-align: center;
+    color: var(--text-secondary);
+  }
+  .loading.active { display: block; }
+  .spinner {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Modals */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 200;
+    justify-content: center;
+    align-items: center;
+  }
+  .modal-overlay.active { display: flex; }
+  .modal {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    width: 420px;
+    max-width: 90%;
+  }
+  .modal.wide { width: 560px; }
+  .modal h2 { font-size: 16px; margin-bottom: 16px; }
+  .modal label { display: block; font-size: 13px; color: var(--text-secondary); margin-bottom: 4px; margin-top: 12px; }
+  .modal input[type="text"] {
+    width: 100%;
+    padding: 8px 12px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text-primary);
+    font-size: 13px;
+  }
+  .modal .modal-actions { margin-top: 20px; display: flex; gap: 8px; justify-content: flex-end; }
+
+  /* Path input with browse button */
+  .path-row {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+  }
+  .path-row input { flex: 1; }
+  .btn-browse {
+    padding: 6px 10px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+    font-size: 18px;
+    cursor: pointer;
+    line-height: 1;
+    flex-shrink: 0;
+  }
+  .btn-browse:hover { background: var(--border); color: var(--text-primary); }
+
+  /* File browser */
+  .browser-path {
+    padding: 8px 12px;
+    background: var(--bg-primary);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 12px;
+    font-family: monospace;
+    color: var(--text-secondary);
+    margin-bottom: 10px;
+    word-break: break-all;
+  }
+  .browser-list {
+    max-height: 350px;
+    overflow-y: auto;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--bg-primary);
+  }
+  .browser-item {
+    padding: 7px 12px;
+    font-size: 13px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-bottom: 1px solid var(--bg-tertiary);
+  }
+  .browser-item:last-child { border-bottom: none; }
+  .browser-item:hover { background: var(--bg-tertiary); }
+  .browser-item.selected { background: #1f6feb33; border-color: var(--accent); }
+  .browser-icon { font-size: 15px; width: 20px; text-align: center; flex-shrink: 0; }
+  .browser-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .browser-size { font-size: 11px; color: var(--text-secondary); flex-shrink: 0; }
+  .browser-up {
+    padding: 7px 12px;
+    font-size: 13px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-bottom: 1px solid var(--border);
+    color: var(--accent);
+  }
+  .browser-up:hover { background: var(--bg-tertiary); }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <h1>Graph Manifold</h1>
+  <input type="text" id="dbPath" placeholder="Manifold DB path (e.g. ./manifold.db)">
+  <button class="btn-browse" onclick="openBrowser('dbPath', true)" title="Browse">&#128193;</button>
+  <button class="btn" onclick="loadManifold()">Load</button>
+  <button class="btn btn-accent" onclick="showIngestModal()">Ingest</button>
+  <span class="manifold-status" id="manifoldStatus">No manifold loaded</span>
+</div>
+
+<!-- Main -->
+<div class="main">
+
+  <!-- Left: Query & Results -->
+  <div class="left-panel">
+    <div class="query-bar">
+      <input type="text" id="queryInput" placeholder="Enter your query..." onkeydown="if(event.key==='Enter')runQuery()">
+      <button class="btn btn-primary" onclick="runQuery()">Run</button>
+    </div>
+    <div class="query-config">
+      <label>Alpha: <input type="number" id="alphaInput" value="0.6" step="0.1" min="0" max="1"></label>
+      <label>Beta: <input type="number" id="betaInput" value="0.4" step="0.1" min="0" max="1"></label>
+      <label><input type="checkbox" id="skipSynthesis" checked> Skip synthesis</label>
+    </div>
+    <div class="results-area" id="resultsArea">
+      <div class="loading" id="loadingIndicator">
+        <span class="spinner"></span>
+        <p style="margin-top:8px">Running pipeline...</p>
+      </div>
+      <div id="resultsContainer">
+        <p style="color:var(--text-secondary);text-align:center;padding:40px">
+          Load a manifold and enter a query to begin.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right: Graph + Scores -->
+  <div class="right-panel">
+    <div class="graph-container">
+      <div id="cy"></div>
+      <div class="graph-empty" id="graphEmpty">
+        Run a query to visualize the graph
+      </div>
+      <div class="node-detail" id="nodeDetail">
+        <span class="close-btn" onclick="hideNodeDetail()">&times;</span>
+        <h3 id="detailLabel">Node</h3>
+        <div id="detailRows"></div>
+      </div>
+    </div>
+    <div class="score-panel">
+      <div class="score-panel-header">Score Explorer</div>
+      <table class="score-table" id="scoreTable">
+        <thead>
+          <tr>
+            <th onclick="sortScores('label')">Node</th>
+            <th onclick="sortScores('gravity')">Gravity</th>
+            <th onclick="sortScores('structural')">Structural</th>
+            <th onclick="sortScores('semantic')">Semantic</th>
+          </tr>
+        </thead>
+        <tbody id="scoreBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Pipeline status bar -->
+<div class="pipeline-bar" id="pipelineBar">
+  <span class="stage-pill" id="stageProjection">Projection</span>
+  <span class="stage-pill" id="stageFusion">Fusion</span>
+  <span class="stage-pill" id="stageScoring">Scoring</span>
+  <span class="stage-pill" id="stageExtraction">Extraction</span>
+  <span class="stage-pill" id="stageHydration">Hydration</span>
+  <span class="stage-pill" id="stageSynthesis">Synthesis</span>
+  <span class="pipeline-info" id="pipelineInfo"></span>
+</div>
+
+<!-- Ingest modal -->
+<div class="modal-overlay" id="ingestModal">
+  <div class="modal">
+    <h2>Ingest Source</h2>
+    <label>Source path (file or directory):</label>
+    <div class="path-row">
+      <input type="text" id="ingestSource" placeholder="./project">
+      <button class="btn-browse" onclick="openBrowser('ingestSource', true)" title="Browse">&#128193;</button>
+    </div>
+    <label>Database path:</label>
+    <div class="path-row">
+      <input type="text" id="ingestDb" placeholder="./manifold.db">
+      <button class="btn-browse" onclick="openBrowser('ingestDb', true)" title="Browse">&#128193;</button>
+    </div>
+    <label style="margin-top:12px">
+      <input type="checkbox" id="ingestSkipEmbed" checked> Skip embeddings
+    </label>
+    <div class="modal-actions">
+      <button class="btn" onclick="hideIngestModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="doIngest()">Ingest</button>
+    </div>
+  </div>
+</div>
+
+<!-- File browser modal -->
+<div class="modal-overlay" id="browserModal">
+  <div class="modal wide">
+    <h2 id="browserTitle">Select Path</h2>
+    <div class="browser-path" id="browserCurrent">Loading...</div>
+    <div class="browser-list" id="browserList"></div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeBrowser()">Cancel</button>
+      <button class="btn" onclick="selectBrowserCwd()">Use This Folder</button>
+      <button class="btn btn-primary" id="browserSelectBtn" onclick="confirmBrowser()" disabled>Select</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// =========================================================================
+// State
+// =========================================================================
+let cy = null;
+let currentScores = [];
+let sortCol = 'gravity';
+let sortAsc = false;
+
+// =========================================================================
+// Cytoscape.js init
+// =========================================================================
+function initGraph() {
+  cy = cytoscape({
+    container: document.getElementById('cy'),
+    style: [
+      {
+        selector: 'node',
+        style: {
+          'label': 'data(label)',
+          'font-size': '10px',
+          'color': '#e6edf3',
+          'text-outline-color': '#0d1117',
+          'text-outline-width': 1,
+          'text-valign': 'bottom',
+          'text-halign': 'center',
+          'text-margin-y': 4,
+          'width': 'mapData(gravity, 0, 1, 20, 60)',
+          'height': 'mapData(gravity, 0, 1, 20, 60)',
+          'background-color': 'mapData(gravity, 0, 1, #58a6ff, #f85149)',
+          'border-width': 1,
+          'border-color': '#30363d',
+        }
+      },
+      {
+        selector: 'edge',
+        style: {
+          'width': 'mapData(weight, 0, 1, 1, 3)',
+          'line-color': '#30363d',
+          'target-arrow-color': '#30363d',
+          'target-arrow-shape': 'triangle',
+          'curve-style': 'bezier',
+          'opacity': 0.6,
+        }
+      },
+      {
+        selector: 'edge[type = "BRIDGE"]',
+        style: {
+          'line-color': '#d29922',
+          'target-arrow-color': '#d29922',
+          'line-style': 'dashed',
+          'opacity': 0.8,
+        }
+      },
+      {
+        selector: ':selected',
+        style: {
+          'border-color': '#58a6ff',
+          'border-width': 3,
+        }
+      }
+    ],
+    layout: { name: 'grid' },
+    minZoom: 0.2,
+    maxZoom: 3,
+  });
+
+  cy.on('tap', 'node', function(evt) {
+    const data = evt.target.data();
+    showNodeDetail(data);
+  });
+
+  cy.on('tap', function(evt) {
+    if (evt.target === cy) hideNodeDetail();
+  });
+}
+
+// =========================================================================
+// API calls
+// =========================================================================
+async function loadManifold() {
+  const dbPath = document.getElementById('dbPath').value.trim();
+  if (!dbPath) return;
+
+  try {
+    const res = await fetch('/api/manifold?db_path=' + encodeURIComponent(dbPath));
+    const data = await res.json();
+    if (res.ok) {
+      const status = document.getElementById('manifoldStatus');
+      status.textContent = `${data.manifold_id} (${data.node_count} nodes, ${data.edge_count} edges)`;
+      status.classList.add('loaded');
+
+      // Load graph
+      const graphRes = await fetch('/api/manifold/graph?db_path=' + encodeURIComponent(dbPath));
+      const graphData = await graphRes.json();
+      renderGraph(graphData);
+    } else {
+      alert(data.error || 'Failed to load manifold');
+    }
+  } catch (e) {
+    alert('Connection error: ' + e.message);
+  }
+}
+
+async function runQuery() {
+  const query = document.getElementById('queryInput').value.trim();
+  const dbPath = document.getElementById('dbPath').value.trim();
+  if (!query) return;
+  if (!dbPath) { alert('Load a manifold first'); return; }
+
+  const alpha = parseFloat(document.getElementById('alphaInput').value) || 0.6;
+  const beta = parseFloat(document.getElementById('betaInput').value) || 0.4;
+  const skipSynthesis = document.getElementById('skipSynthesis').checked;
+
+  document.getElementById('loadingIndicator').classList.add('active');
+  resetPipelineBar();
+
+  try {
+    const res = await fetch('/api/query', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        query: query,
+        db_path: dbPath,
+        alpha: alpha,
+        beta: beta,
+        skip_synthesis: skipSynthesis,
+      }),
+    });
+    const data = await res.json();
+    document.getElementById('loadingIndicator').classList.remove('active');
+
+    if (res.ok) {
+      renderResults(query, data);
+      if (data.graph) renderGraph(data.graph);
+      if (data.scores) renderScoreTable(data.scores);
+      updatePipelineBar(data);
+    } else {
+      renderError(data.error || 'Query failed');
+    }
+  } catch (e) {
+    document.getElementById('loadingIndicator').classList.remove('active');
+    renderError('Connection error: ' + e.message);
+  }
+}
+
+// =========================================================================
+// Rendering
+// =========================================================================
+function renderResults(query, data) {
+  const container = document.getElementById('resultsContainer');
+  let html = '';
+
+  // Query card
+  html += `<div class="result-card">
+    <div class="card-header">
+      <span>Query: ${escapeHtml(query)}</span>
+      <span style="color:var(--text-secondary);font-weight:normal">${data.total_time ? data.total_time.toFixed(3) + 's' : ''}</span>
+    </div>
+    <div class="card-body">`;
+
+  if (data.answer_text) {
+    html += `<div class="answer-text">${escapeHtml(data.answer_text)}</div>`;
+  } else {
+    // Evidence summary
+    const overview = data.overview || {};
+    const evidence = data.evidence || {};
+    html += `<div style="color:var(--text-secondary)">Synthesis skipped &mdash; showing evidence summary</div>`;
+    html += `<div style="margin-top:8px">`;
+    html += `<strong>Nodes scored:</strong> ${overview.scoring_summary?.gravity_nodes || 0}<br>`;
+    if (evidence.node_count !== undefined) {
+      html += `<strong>Evidence nodes:</strong> ${evidence.node_count}<br>`;
+      html += `<strong>Chunks:</strong> ${evidence.chunk_ref_count || 0}<br>`;
+      if (evidence.token_budget) {
+        const util = (evidence.token_budget.utilization * 100).toFixed(1);
+        html += `<strong>Token budget:</strong> ${evidence.token_budget.used} / ${evidence.token_budget.max} (${util}%)<br>`;
+      }
+    }
+    html += `</div>`;
+  }
+
+  html += `</div>`;
+
+  // Expandable: Timing
+  if (data.timing && Object.keys(data.timing).length > 0) {
+    html += `<div class="expandable" onclick="toggleExpand(this)">Timing</div>
+      <div class="expand-content"><table class="score-table">`;
+    for (const [stage, time] of Object.entries(data.timing)) {
+      html += `<tr><td>${stage}</td><td>${time.toFixed(4)}s</td></tr>`;
+    }
+    html += `</table></div>`;
+  }
+
+  // Expandable: Top Scores
+  if (data.scores && data.scores.length > 0) {
+    html += `<div class="expandable" onclick="toggleExpand(this)">Top Scores (${data.scores.length} nodes)</div>
+      <div class="expand-content"><table class="score-table">
+      <thead><tr><th>Node</th><th>Gravity</th><th>Struct</th><th>Semantic</th></tr></thead><tbody>`;
+    for (const s of data.scores.slice(0, 15)) {
+      html += `<tr><td title="${s.node_id}">${truncate(s.node_id, 30)}</td><td>${s.gravity.toFixed(4)}</td><td>${s.structural.toFixed(4)}</td><td>${s.semantic.toFixed(4)}</td></tr>`;
+    }
+    html += `</tbody></table></div>`;
+  }
+
+  // Expandable: Evidence Bag
+  if (data.evidence) {
+    const ev = data.evidence;
+    html += `<div class="expandable" onclick="toggleExpand(this)">Evidence Bag</div>
+      <div class="expand-content">
+        <div>Bag ID: <code>${ev.bag_id || 'N/A'}</code></div>
+        <div>Nodes: ${ev.node_count || 0} | Edges: ${ev.edge_count || 0}</div>
+        <div>Chunks: ${ev.chunk_ref_count || 0}</div>`;
+    if (ev.top_gravity && ev.top_gravity.length > 0) {
+      html += `<div style="margin-top:8px"><strong>Top gravity nodes:</strong></div>
+        <table class="score-table"><thead><tr><th>Node</th><th>Gravity</th></tr></thead><tbody>`;
+      for (const tg of ev.top_gravity) {
+        html += `<tr><td title="${tg.node_id}">${truncate(tg.node_id, 30)}</td><td>${tg.gravity.toFixed(4)}</td></tr>`;
+      }
+      html += `</tbody></table>`;
+    }
+    html += `</div>`;
+  }
+
+  // Degradation warnings
+  if (data.degraded) {
+    html += `<div style="padding:8px 14px;color:var(--orange);font-size:12px">&#9888; Degraded: semantic scoring unavailable</div>`;
+  }
+  if (data.skipped_stages && data.skipped_stages.length > 0) {
+    html += `<div style="padding:4px 14px 8px;color:var(--orange);font-size:12px">Skipped: ${data.skipped_stages.join(', ')}</div>`;
+  }
+
+  html += `</div>`;
+  container.innerHTML = html;
+}
+
+function renderError(msg) {
+  document.getElementById('resultsContainer').innerHTML =
+    `<div class="result-card"><div class="card-header" style="color:var(--red)">Error</div>
+     <div class="card-body">${escapeHtml(msg)}</div></div>`;
+}
+
+function renderGraph(graphData) {
+  document.getElementById('graphEmpty').style.display = 'none';
+  if (!cy) initGraph();
+
+  cy.elements().remove();
+  if (graphData.nodes && graphData.nodes.length > 0) {
+    cy.add(graphData.nodes);
+    cy.add(graphData.edges || []);
+    cy.layout({
+      name: 'cose',
+      animate: false,
+      nodeDimensionsIncludeLabels: true,
+      idealEdgeLength: 80,
+      nodeOverlap: 20,
+      padding: 30,
+    }).run();
+    cy.fit(null, 30);
+  }
+}
+
+function renderScoreTable(scores) {
+  currentScores = scores || [];
+  sortAndRender();
+}
+
+function sortScores(col) {
+  if (sortCol === col) { sortAsc = !sortAsc; }
+  else { sortCol = col; sortAsc = false; }
+  sortAndRender();
+}
+
+function sortAndRender() {
+  const sorted = [...currentScores].sort((a, b) => {
+    const va = sortCol === 'label' ? (a.node_id || '') : (a[sortCol] || 0);
+    const vb = sortCol === 'label' ? (b.node_id || '') : (b[sortCol] || 0);
+    if (typeof va === 'string') return sortAsc ? va.localeCompare(vb) : vb.localeCompare(va);
+    return sortAsc ? va - vb : vb - va;
+  });
+
+  const body = document.getElementById('scoreBody');
+  body.innerHTML = sorted.map(s =>
+    `<tr><td title="${s.node_id}">${truncate(s.node_id, 24)}</td>
+     <td>${s.gravity.toFixed(4)}</td>
+     <td>${s.structural.toFixed(4)}</td>
+     <td>${s.semantic.toFixed(4)}</td></tr>`
+  ).join('');
+}
+
+function showNodeDetail(data) {
+  const detail = document.getElementById('nodeDetail');
+  document.getElementById('detailLabel').textContent = data.label || data.id;
+  const rows = [
+    ['ID', data.id],
+    ['Type', data.type],
+    ['Canonical Key', data.canonical_key || 'N/A'],
+    ['Gravity', (data.gravity || 0).toFixed(6)],
+    ['Structural', (data.structural || 0).toFixed(6)],
+    ['Semantic', (data.semantic || 0).toFixed(6)],
+  ];
+  document.getElementById('detailRows').innerHTML = rows.map(([l, v]) =>
+    `<div class="detail-row"><span class="detail-label">${l}</span><span class="detail-value">${v}</span></div>`
+  ).join('');
+  detail.classList.add('visible');
+}
+
+function hideNodeDetail() {
+  document.getElementById('nodeDetail').classList.remove('visible');
+}
+
+function updatePipelineBar(data) {
+  const stages = ['projection', 'fusion', 'scoring', 'extraction', 'hydration', 'synthesis'];
+  const stageIds = ['stageProjection', 'stageFusion', 'stageScoring', 'stageExtraction', 'stageHydration', 'stageSynthesis'];
+  const skipped = new Set(data.skipped_stages || []);
+  const timing = data.timing || {};
+
+  for (let i = 0; i < stages.length; i++) {
+    const el = document.getElementById(stageIds[i]);
+    el.className = 'stage-pill';
+    if (skipped.has(stages[i]) || skipped.has(stages[i] + '_scoring')) {
+      el.classList.add('skipped');
+    } else if (timing[stages[i]] !== undefined) {
+      el.classList.add('done');
+    }
+  }
+
+  // Mark synthesis as skipped if skip_synthesis was true
+  if (data.overview && data.overview.artifacts && !data.overview.artifacts.hydrated_bundle === false) {
+    // Check synthesis specifically
+  }
+  if (!data.answer_text && !skipped.has('synthesis')) {
+    document.getElementById('stageSynthesis').classList.add('skipped');
+  }
+
+  const info = document.getElementById('pipelineInfo');
+  const totalTime = data.total_time ? `Total: ${data.total_time.toFixed(3)}s` : '';
+  const degraded = data.degraded ? ' | Degraded' : '';
+  info.textContent = totalTime + degraded;
+}
+
+function resetPipelineBar() {
+  ['stageProjection', 'stageFusion', 'stageScoring', 'stageExtraction', 'stageHydration', 'stageSynthesis']
+    .forEach(id => document.getElementById(id).className = 'stage-pill');
+  document.getElementById('pipelineInfo').textContent = '';
+}
+
+// =========================================================================
+// Ingest modal
+// =========================================================================
+function showIngestModal() {
+  document.getElementById('ingestDb').value = document.getElementById('dbPath').value;
+  document.getElementById('ingestModal').classList.add('active');
+}
+
+function hideIngestModal() {
+  document.getElementById('ingestModal').classList.remove('active');
+}
+
+async function doIngest() {
+  const source = document.getElementById('ingestSource').value.trim();
+  const dbPath = document.getElementById('ingestDb').value.trim();
+  const skipEmbed = document.getElementById('ingestSkipEmbed').checked;
+
+  if (!source || !dbPath) { alert('Source and DB path are required'); return; }
+
+  hideIngestModal();
+  document.getElementById('loadingIndicator').classList.add('active');
+  document.getElementById('resultsContainer').innerHTML =
+    '<p style="color:var(--text-secondary);text-align:center;padding:20px">Ingesting...</p>';
+
+  try {
+    const res = await fetch('/api/ingest', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ source, db_path: dbPath, skip_embeddings: skipEmbed }),
+    });
+    const data = await res.json();
+    document.getElementById('loadingIndicator').classList.remove('active');
+
+    if (res.ok) {
+      document.getElementById('resultsContainer').innerHTML =
+        `<div class="result-card">
+          <div class="card-header" style="color:var(--green)">Ingestion Complete</div>
+          <div class="card-body">
+            <div><strong>Source:</strong> ${escapeHtml(data.source)}</div>
+            <div><strong>Files:</strong> ${data.files_processed} processed, ${data.files_skipped} skipped</div>
+            <div><strong>Nodes:</strong> ${data.nodes_created}</div>
+            <div><strong>Edges:</strong> ${data.edges_created}</div>
+            <div><strong>Chunks:</strong> ${data.chunks_created}</div>
+            <div><strong>Embeddings:</strong> ${data.embeddings_created}</div>
+            <div><strong>Time:</strong> ${data.elapsed_seconds}s</div>
+          </div></div>`;
+      // Auto-load the manifold using the actual DB path (may have been auto-appended with filename)
+      document.getElementById('dbPath').value = data.db_path;
+      loadManifold();
+    } else {
+      renderError(data.error || 'Ingestion failed');
+    }
+  } catch (e) {
+    document.getElementById('loadingIndicator').classList.remove('active');
+    renderError('Connection error: ' + e.message);
+  }
+}
+
+// =========================================================================
+// File browser
+// =========================================================================
+let browserTargetInput = null;
+let browserShowFiles = true;
+let browserSelected = null;    // currently highlighted entry path
+
+function openBrowser(targetInputId, showFiles) {
+  browserTargetInput = targetInputId;
+  browserShowFiles = showFiles !== false;
+  browserSelected = null;
+  document.getElementById('browserSelectBtn').disabled = true;
+
+  // Seed with the current value of the target input (or blank for cwd)
+  const seedPath = document.getElementById(targetInputId).value.trim();
+  document.getElementById('browserModal').classList.add('active');
+  browseTo(seedPath);
+}
+
+function closeBrowser() {
+  document.getElementById('browserModal').classList.remove('active');
+  browserTargetInput = null;
+  browserSelected = null;
+}
+
+function selectBrowserCwd() {
+  // Use the folder currently being viewed
+  const cwd = document.getElementById('browserCurrent').textContent;
+  if (browserTargetInput && cwd && cwd !== 'Loading...') {
+    document.getElementById(browserTargetInput).value = cwd;
+  }
+  closeBrowser();
+}
+
+function confirmBrowser() {
+  // Use the selected item (file or folder)
+  if (browserTargetInput && browserSelected) {
+    document.getElementById(browserTargetInput).value = browserSelected;
+  }
+  closeBrowser();
+}
+
+async function browseTo(path) {
+  const list = document.getElementById('browserList');
+  const pathDisplay = document.getElementById('browserCurrent');
+  pathDisplay.textContent = 'Loading...';
+  list.innerHTML = '<div style="padding:16px;color:var(--text-secondary);text-align:center">Loading...</div>';
+
+  try {
+    const url = '/api/browse?show_files=' + browserShowFiles + (path ? '&path=' + encodeURIComponent(path) : '');
+    const res = await fetch(url);
+    const data = await res.json();
+
+    if (!res.ok) {
+      list.innerHTML = `<div style="padding:16px;color:var(--red)">${escapeHtml(data.error || 'Browse failed')}</div>`;
+      return;
+    }
+
+    pathDisplay.textContent = data.current;
+    browserSelected = null;
+    document.getElementById('browserSelectBtn').disabled = true;
+
+    let html = '';
+
+    // Parent directory link
+    if (data.parent) {
+      html += `<div class="browser-up" onclick="browseTo('${escapeAttr(data.parent)}')">
+        <span class="browser-icon">\u2B06</span>
+        <span class="browser-name">..</span>
+      </div>`;
+    }
+
+    // Entries
+    if (data.entries.length === 0) {
+      html += '<div style="padding:16px;color:var(--text-secondary);text-align:center">Empty folder</div>';
+    }
+
+    for (const entry of data.entries) {
+      const escapedPath = escapeAttr(entry.path);
+      if (entry.is_dir) {
+        html += `<div class="browser-item" data-path="${escapedPath}"
+                      ondblclick="browseTo('${escapedPath}')"
+                      onclick="selectBrowserItem(this, '${escapedPath}')">
+          <span class="browser-icon">\uD83D\uDCC1</span>
+          <span class="browser-name">${escapeHtml(entry.name)}</span>
+        </div>`;
+      } else {
+        const size = formatSize(entry.size || 0);
+        html += `<div class="browser-item" data-path="${escapedPath}"
+                      onclick="selectBrowserItem(this, '${escapedPath}')">
+          <span class="browser-icon">\uD83D\uDCC4</span>
+          <span class="browser-name">${escapeHtml(entry.name)}</span>
+          <span class="browser-size">${size}</span>
+        </div>`;
+      }
+    }
+
+    list.innerHTML = html;
+  } catch (e) {
+    list.innerHTML = `<div style="padding:16px;color:var(--red)">Error: ${escapeHtml(e.message)}</div>`;
+  }
+}
+
+function selectBrowserItem(el, path) {
+  // Deselect previous
+  document.querySelectorAll('#browserList .browser-item.selected').forEach(i => i.classList.remove('selected'));
+  el.classList.add('selected');
+  browserSelected = path;
+  document.getElementById('browserSelectBtn').disabled = false;
+}
+
+function escapeAttr(str) {
+  return str.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+}
+
+function formatSize(bytes) {
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+  return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+}
+
+// =========================================================================
+// Utilities
+// =========================================================================
+function toggleExpand(el) {
+  el.classList.toggle('open');
+  const content = el.nextElementSibling;
+  content.classList.toggle('show');
+}
+
+function escapeHtml(str) {
+  const d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
+}
+
+function truncate(str, len) {
+  if (!str) return '';
+  return str.length > len ? str.substring(0, len) + '...' : str;
+}
+
+// =========================================================================
+// Init
+// =========================================================================
+initGraph();
+</script>
+</body>
+</html>

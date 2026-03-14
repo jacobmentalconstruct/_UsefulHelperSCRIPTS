@@ -1,0 +1,2411 @@
+Dump: C:\Users\petya\Documents\Jacob's BIN\_NoStringsPDF
+
+
+--------------------------------------------------------------------------------
+FILE: LICENSE.md
+--------------------------------------------------------------------------------
+MIT License
+
+Copyright (c) 2025 Jacob Lambert
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+--------------------------------------------------------------------------------
+FILE: NoStringsPDF.spec
+--------------------------------------------------------------------------------
+# -*- mode: python ; coding: utf-8 -*-
+
+
+a = Analysis(
+    ['src\\app.py'],
+    pathex=['src', 'src/microservices'],
+    binaries=[],
+    datas=[],
+    hiddenimports=['microservice_std_lib', 'PIL', 'fitz', 'pymupdf'],
+    hookspath=[],
+    hooksconfig={},
+    runtime_hooks=[],
+    excludes=[],
+    noarchive=False,
+    optimize=0,
+)
+pyz = PYZ(a.pure)
+
+exe = EXE(
+    pyz,
+    a.scripts,
+    a.binaries,
+    a.datas,
+    [],
+    name='NoStringsPDF',
+    debug=False,
+    bootloader_ignore_signals=False,
+    strip=False,
+    upx=True,
+    upx_exclude=[],
+    runtime_tmpdir=None,
+    console=False,
+    disable_windowed_traceback=False,
+    argv_emulation=False,
+    target_arch=None,
+    codesign_identity=None,
+    entitlements_file=None,
+    icon=['app.ico'],
+)
+
+--------------------------------------------------------------------------------
+FILE: README.md
+--------------------------------------------------------------------------------
+# NoStringsPDF
+
+**The Industrial-Grade, Local-First PDF Manipulator.**
+
+NoStringsPDF is a privacy-respecting, lightweight desktop application for managing PDF documents. It runs entirely on your machine—no cloud uploads, no subscriptions, and no watermarks. Just raw, efficient utility.
+
+---
+
+## ⚡ Core Features
+
+### 1. View & Navigate
+* **High-Speed Rendering:** Powered by PyMuPDF for instant page loads.
+* **Smart Zoom:** Fluid zooming with mouse wheel (Ctrl+Scroll) or toolbar buttons.
+* **Thumbnail Grid:** Interactive sidebar for quick navigation.
+
+### 2. Organize & Edit
+* **Drag-and-Drop Reordering:** Click and drag thumbnails to rearrange pages. Visual indicators show exactly where pages will land.
+* **Visual Rotation:** Rotate individual pages 90° CW or CCW instantly.
+* **Delete Pages:** Right-click or press `Delete` to remove unwanted pages.
+* **Insert Files:** Inject another PDF document anywhere into your current file.
+
+### 3. Advanced Tools
+* **Scanner Interleave:** Fix double-sided scans by merging two files (e.g., "Odd Pages" + "Even Pages"). Includes a **Reverse Order** option for face-down stacks.
+* **Smart Split:** Break large documents into chunks based on file size (e.g., "Split into 5MB chunks")—perfect for email limits.
+* **Precision Extract:** Save specific pages or ranges (e.g., `1, 3, 5-10`) into a new file.
+* **Pro Compression:** Export with granular control over DPI, JPEG Quality, and Grayscale conversion to drastically reduce file size.
+
+---
+
+## 🚀 How to Use
+
+### Installation
+**No installation required.** This is a portable application.
+1.  Unzip the release folder.
+2.  Run `NoStringsPDF.exe`.
+3.  (Optional) Right-click a PDF file > **Open with** > Select `NoStringsPDF.exe` to make it your default.
+
+### Key Shortcuts
+| Action | Shortcut |
+| :--- | :--- |
+| **Next Page** | Right Arrow / Scroll Down |
+| **Prev Page** | Left Arrow / Scroll Up |
+| **Zoom In/Out** | Ctrl + Scroll |
+| **Delete Page** | Delete Key |
+| **Context Menu** | Right-Click on Viewer |
+
+---
+
+## 🛠️ For Developers
+
+Built with **Python**, **Tkinter**, and **PyMuPDF**.
+
+### Project Structure
+* `src/microservices`: Core logic (PDF Engine, UI components, Theme Manager).
+* `src/orchestrators`: UI logic and event handling.
+* `assets`: Icon resources.
+
+### Running from Source
+1.  Run `setup_env.bat` to create the virtual environment.
+2.  Run `src/app.py` via the environment python.
+
+### Building the Exe
+Run `build_exe.bat`. This script will:
+1.  Compile the code using PyInstaller.
+2.  Bundle all dependencies.
+3.  Copy the `assets` folder.
+4.  Generate a release-ready ZIP file.
+
+---
+
+## 📄 License
+
+**MIT License**
+Copyright (c) 2025 Jacob Lambert
+
+Free software. Do whatever you want with it.
+--------------------------------------------------------------------------------
+FILE: requirements.txt
+--------------------------------------------------------------------------------
+pymupdf
+Pillow
+--------------------------------------------------------------------------------
+FILE: window_layout.json
+--------------------------------------------------------------------------------
+{"geometry": "1024x768+26+26", "zoomed": false}
+--------------------------------------------------------------------------------
+FILE: src\app.py
+--------------------------------------------------------------------------------
+import sys
+import os
+
+# --- PATH SETUP ---
+current_dir = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(os.path.dirname(current_dir))
+sys.path.append(os.path.join(current_dir, 'microservices'))
+# Add orchestrators to path if needed, though we import directly below
+sys.path.append(os.path.join(current_dir, 'orchestrators'))
+
+# --- Core Services ---
+from src.microservices._TkinterAppShellMS import TkinterAppShellMS
+from src.microservices._TkinterThemeManagerMS import TkinterThemeManagerMS
+from src.microservices._PdfEngineMS import PdfEngineMS
+
+# --- Orchestrators ---
+from src.orchestrators.ui_orchestrator import MainUIOrchestrator
+
+class NoStringsPDFApp:
+    def __init__(self):
+        # 1. Initialize Services (The Tools)
+        self.shell = TkinterAppShellMS({"title": "_NoStringsPDF", "geometry": "1400x900"})
+        self.theme_mgr = TkinterThemeManagerMS()
+        self.engine = PdfEngineMS()
+        
+        # 2. Initialize Orchestrator (The Brain)
+        # This will build the UI inside the shell using the engine
+        self.ui = MainUIOrchestrator(
+            root=self.shell.root,
+            shell=self.shell,
+            theme_mgr=self.theme_mgr,
+            engine=self.engine
+        )
+
+    def run(self):
+        self.shell.launch()
+
+if __name__ == '__main__':
+    NoStringsPDFApp().run()
+--------------------------------------------------------------------------------
+FILE: src\__init__.py
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+FILE: src\microservices\base_service.py
+--------------------------------------------------------------------------------
+import logging
+from typing import Dict, Any
+
+class BaseService:
+    """
+    Standard parent class for all microservices. 
+    Provides consistent logging and identity management.
+    """
+    def __init__(self, name: str):
+        self._service_info = {
+            "name": name, 
+            "id": name.lower().replace(" ", "_")
+        }
+        
+        # Setup standard logging
+        logging.basicConfig(
+            level=logging.INFO, 
+            format='%(asctime)s [%(levelname)s] %(message)s',
+            datefmt='%H:%M:%S'
+        )
+        self.logger = logging.getLogger(name)
+
+    def log_info(self, message: str):
+        self.logger.info(message)
+
+    def log_error(self, message: str):
+        self.logger.error(message)
+
+    def log_warning(self, message: str):
+        self.logger.warning(message)
+
+--------------------------------------------------------------------------------
+FILE: src\microservices\document_utils.py
+--------------------------------------------------------------------------------
+from _ContentExtractorMS import ContentExtractorMS
+
+# Singleton instance to reuse the extractor logic
+_extractor = ContentExtractorMS()
+
+def extract_text_from_pdf(blob: bytes) -> str:
+    """Proxy to ContentExtractorMS PDF logic."""
+    return _extractor._extract_pdf(blob)
+
+def extract_text_from_html(html_text: str) -> str:
+    """Proxy to ContentExtractorMS HTML logic."""
+    return _extractor._extract_html(html_text)
+
+--------------------------------------------------------------------------------
+FILE: src\microservices\microservice_std_lib.py
+--------------------------------------------------------------------------------
+"""
+LIBRARY: Microservice Standard Lib
+VERSION: 2.0.0
+ROLE: Provides decorators for tagging Python classes as AI-discoverable services.
+"""
+
+import functools
+import inspect
+from typing import Dict, List, Any, Optional, Type
+
+# ==============================================================================
+# DECORATORS (The "Writer" Tools)
+# ==============================================================================
+
+def service_metadata(name: str, version: str, description: str, tags: List[str], capabilities: List[str] = None, dependencies: List[str] = None, side_effects: List[str] = None):
+    """
+    Class Decorator.
+    Labels a Microservice class with high-level metadata for the Catalog.
+    """
+    def decorator(cls):
+        cls._is_microservice = True
+        cls._service_info = {
+            "name": name,
+            "version": version,
+            "description": description,
+            "tags": tags,
+            "capabilities": capabilities or [],
+            "dependencies": dependencies or [],
+            "side_effects": side_effects or []
+        }
+        return cls
+    return decorator
+
+def service_endpoint(inputs: Dict[str, str], outputs: Dict[str, str], description: str, tags: List[str] = None, side_effects: List[str] = None, mode: str = "sync"):
+    """
+    Method Decorator.
+    Defines the 'Socket' that the AI Architect can plug into.
+    
+    :param inputs: Dict of {arg_name: type_string} (e.g. {"query": "str"})
+    :param outputs: Dict of {return_name: type_string} (e.g. {"results": "List[Dict]"})
+    :param description: What this specific function does.
+    :param tags: Keywords for searching (e.g. ["search", "read-only"])
+    :param side_effects: List of impact types (e.g. ["network:outbound", "disk:write"])
+    :param mode: 'sync', 'async', or 'ui_event'
+    """
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            return func(*args, **kwargs)
+        
+        # Attach metadata to the function object itself
+        wrapper._endpoint_info = {
+            "name": func.__name__,
+            "inputs": inputs,
+            "outputs": outputs,
+            "description": description,
+            "tags": tags or [],
+            "side_effects": side_effects or [],
+            "mode": mode
+        }
+        return wrapper
+    return decorator
+
+# ==============================================================================
+# INTROSPECTION (The "Reader" Tools)
+# ==============================================================================
+
+def extract_service_schema(service_cls: Type) -> Dict[str, Any]:
+    """
+    Scans a decorated Service Class and returns a JSON-serializable schema 
+    of its metadata and all its exposed endpoints.
+    
+    This is what the AI Agent uses to 'read' the manual.
+    """
+    if not getattr(service_cls, "_is_microservice", False):
+        raise ValueError(f"Class {service_cls.__name__} is not decorated with @service_metadata")
+
+    schema = {
+        "meta": getattr(service_cls, "_service_info", {}),
+        "endpoints": []
+    }
+
+    # Inspect all methods of the class
+    for name, method in inspect.getmembers(service_cls, predicate=inspect.isfunction):
+        # Unwrap decorators if necessary to find our tags
+        # (Though usually the wrapper has the tag attached)
+        endpoint_info = getattr(method, "_endpoint_info", None)
+        
+        if endpoint_info:
+            schema["endpoints"].append(endpoint_info)
+
+    return schema
+
+--------------------------------------------------------------------------------
+FILE: src\microservices\_ContextAggregatorMS.py
+--------------------------------------------------------------------------------
+"""
+SERVICE_NAME: _ContextAggregatorMS
+ENTRY_POINT: _ContextAggregatorMS.py
+DEPENDENCIES: None
+"""
+
+import os
+import fnmatch
+import datetime
+import logging
+from pathlib import Path
+from typing import Set, Optional, Dict, Any
+from microservice_std_lib import service_metadata, service_endpoint
+
+# ==============================================================================
+# USER CONFIGURATION: DEFAULTS
+# ==============================================================================
+# Extensions known to be binary/non-text (Images, Archives, Executables)
+DEFAULT_BINARY_EXTENSIONS = {
+    ".tar.gz", ".gz", ".zip", ".rar", ".7z", ".bz2", ".xz", ".tgz",
+    ".png", ".jpg", ".jpeg", ".gif", ".bmp", ".ico", ".webp", ".tif", ".tiff",
+    ".mp3", ".wav", ".ogg", ".flac", ".mp4", ".mkv", ".avi", ".mov", ".webm",
+    ".pdf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx", ".exe", ".dll", ".so",
+    ".db", ".sqlite", ".mdb", ".pyc", ".pyo", ".class", ".jar", ".wasm"
+}
+
+# Folders to ignore by default
+DEFAULT_IGNORE_DIRS = {
+    "node_modules", ".git", "__pycache__", ".venv", ".env", 
+    "dist", "build", "coverage", ".idea", ".vscode"
+}
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(message)s')
+log = logging.getLogger("ContextAggregator")
+# ==============================================================================
+
+@service_metadata(
+    name="ContextAggregator",
+    version="1.0.0",
+    description="Flattens a project folder into a single readable text file.",
+    tags=["filesystem", "context", "compilation"],
+    capabilities=["filesystem:read", "filesystem:write"],
+    dependencies=["os", "fnmatch", "datetime"],
+    side_effects=["filesystem:read", "filesystem:write"]
+)
+class ContextAggregatorMS:
+    """
+    The Context Builder: Flattens a project folder into a single readable text file.
+    """
+
+    def __init__(self, config: Optional[Dict[str, Any]] = None):
+        self.config = config or {}
+        max_file_size_mb = self.config.get("max_file_size_mb", 1)
+        self.max_file_size_bytes = max_file_size_mb * 1024 * 1024
+
+    @service_endpoint(
+        inputs={"root_path": "str", "output_file": "str", "extra_exclusions": "Set[str]", "use_default_exclusions": "bool"},
+        outputs={"file_count": "int"},
+        description="Aggregates project files into a single text dump.",
+        tags=["filesystem", "dump"],
+        side_effects=["filesystem:read", "filesystem:write"]
+    )
+    def aggregate(self, 
+                  root_path: str, 
+                  output_file: str, 
+                  extra_exclusions: Optional[Set[str]] = None,
+                  use_default_exclusions: bool = True) -> int:
+        
+        project_root = Path(root_path).resolve()
+        out_path = Path(output_file).resolve()
+        
+        # Build Exclusions
+        exclusions = set()
+        if use_default_exclusions:
+            exclusions.update(DEFAULT_IGNORE_DIRS)
+        if extra_exclusions:
+            exclusions.update(extra_exclusions)
+
+        # Build Binary List
+        binary_exts = DEFAULT_BINARY_EXTENSIONS.copy()
+        
+        file_count = 0
+        timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+        try:
+            with open(out_path, "w", encoding="utf-8") as out_f:
+                out_f.write(f"File Dump from Project: {project_root.name}\nGenerated: {timestamp}\n{'='*60}\n\n")
+
+                for root, dirs, files in os.walk(project_root):
+                    # In-place filtering of directories
+                    dirs[:] = [d for d in dirs if d not in exclusions]
+                    
+                    for filename in files:
+                        if self._should_exclude(filename, exclusions): continue
+
+                        file_path = Path(root) / filename
+                        if file_path.resolve() == out_path: continue
+
+                        if self._is_safe_to_dump(file_path, binary_exts):
+                            self._write_file_content(out_f, file_path, project_root)
+                            file_count += 1                            
+        except IOError as e:
+            log.error(f"Error writing dump: {e}")
+            
+        return file_count
+
+    def _should_exclude(self, filename: str, exclusions: Set[str]) -> bool:
+        return any(fnmatch.fnmatch(filename, pattern) for pattern in exclusions)
+
+    def _is_safe_to_dump(self, file_path: Path, binary_exts: Set[str]) -> bool:
+        if "".join(file_path.suffixes).lower() in binary_exts: return False
+        try:
+            if file_path.stat().st_size > self.max_file_size_bytes: return False
+            with open(file_path, 'rb') as f:
+                if b'\0' in f.read(1024): return False
+        except (IOError, OSError): return False
+        return True
+
+    def _write_file_content(self, out_f, file_path: Path, project_root: Path):
+        relative_path = file_path.relative_to(project_root)
+        header = f"\n{'-'*20} FILE: {relative_path} {'-'*20}\n"
+        try:
+            with open(file_path, "r", encoding="utf-8", errors="ignore") as in_f:
+                out_f.write(header + in_f.read() + f"\n{'-'*60}\n")
+        except Exception as e:
+            out_f.write(f"\n[Error reading file: {e}]\n")
+
+if __name__ == "__main__":
+    svc = ContextAggregatorMS()
+    print("Service ready:", svc)
+--------------------------------------------------------------------------------
+FILE: src\microservices\_PdfEngineMS.py
+--------------------------------------------------------------------------------
+"""
+SERVICE_NAME: _PdfEngineMS
+ENTRY_POINT: _PdfEngineMS.py
+DEPENDENCIES: pymupdf, Pillow
+"""
+import fitz  # PyMuPDF
+import io
+import os
+import re
+from PIL import Image, ImageTk
+from typing import Optional, Dict, Any, Tuple, List
+from microservice_std_lib import service_metadata, service_endpoint
+
+@service_metadata(
+    name="PdfEngine",
+    version="3.0.0",
+    description="Handles PDF loading, rendering, optimization, splitting, reordering, and merging.",
+    tags=["pdf", "engine", "core"],
+    capabilities=["pdf:read", "pdf:render", "pdf:write", "pdf:edit"]
+)
+class PdfEngineMS:
+    def __init__(self, config: Optional[Dict[str, Any]] = None):
+        self.doc: Optional[fitz.Document] = None
+        self.current_path: Optional[str] = None
+
+    @service_endpoint(
+        inputs={"path": "str"},
+        outputs={"page_count": "int"},
+        description="Opens a PDF file from disk.",
+        tags=["io", "load"]
+    )
+    def load_pdf(self, path: str) -> int:
+        try:
+            self.doc = fitz.open(path)
+            self.current_path = path
+            return self.doc.page_count
+        except Exception as e:
+            print(f"Engine Error: {e}")
+            return 0
+
+    # --- MANIPULATION METHODS (NEW) ---
+
+    @service_endpoint(
+        inputs={"page_idx": "int"},
+        outputs={"success": "bool", "new_count": "int"},
+        description="Deletes a single page.",
+        tags=["edit", "delete"]
+    )
+    def delete_page(self, page_idx: int) -> Tuple[bool, int]:
+        if not self.doc: return False, 0
+        try:
+            self.doc.delete_page(page_idx)
+            return True, self.doc.page_count
+        except Exception as e:
+            print(f"Delete Error: {e}")
+            return False, self.doc.page_count
+
+    @service_endpoint(
+        inputs={"path": "str", "at_index": "int"},
+        outputs={"success": "bool", "new_count": "int"},
+        description="Inserts another PDF file at the specified index.",
+        tags=["edit", "insert"]
+    )
+    def insert_file(self, path: str, at_index: int) -> Tuple[bool, int]:
+        if not self.doc: return False, 0
+        try:
+            src = fitz.open(path)
+            # PyMuPDF insert_pdf merges 'src' into 'doc'
+            # start_at: index in 'doc' where insertion happens (default -1 is end)
+            # We want to insert *before* the current page usually, or after.
+            # Let's map 'at_index' directly.
+            self.doc.insert_pdf(src, start_at=at_index)
+            return True, self.doc.page_count
+        except Exception as e:
+            print(f"Insert Error: {e}")
+            return False, self.doc.page_count
+
+    @service_endpoint(
+        inputs={"path": "str", "reverse_second": "bool"},
+        outputs={"success": "bool", "new_count": "int"},
+        description="Interleaves an external PDF with the current one (A1, B1, A2, B2...).",
+        tags=["edit", "interleave"]
+    )
+    def interleave_file(self, path: str, reverse_second: bool = False) -> Tuple[bool, int]:
+        if not self.doc: return False, 0
+        try:
+            doc_b = fitz.open(path)
+            
+            # Create a new destination doc to rebuild cleanly
+            new_doc = fitz.open()
+            
+            len_a = self.doc.page_count
+            len_b = doc_b.page_count
+            max_len = max(len_a, len_b)
+            
+            for i in range(max_len):
+                # Add Page from A (Current)
+                if i < len_a:
+                    new_doc.insert_pdf(self.doc, from_page=i, to_page=i)
+                
+                # Add Page from B (External)
+                if i < len_b:
+                    # Calculate index for B
+                    idx_b = (len_b - 1 - i) if reverse_second else i
+                    new_doc.insert_pdf(doc_b, from_page=idx_b, to_page=idx_b)
+            
+            # Swap current doc with new interleaved one
+            self.doc = new_doc
+            return True, self.doc.page_count
+            
+        except Exception as e:
+            print(f"Interleave Error: {e}")
+            return False, self.doc.page_count
+
+    # --- EXISTING METHODS ---
+
+    @service_endpoint(
+        inputs={"from_idx": "int", "to_idx": "int"},
+        outputs={"success": "bool"},
+        description="Moves a page.",
+        tags=["edit", "reorder"]
+    )
+    def move_page(self, from_idx: int, to_idx: int) -> bool:
+        if not self.doc: return False
+        try:
+            self.doc.move_page(from_idx, to_idx)
+            return True
+        except: return False
+
+    @service_endpoint(
+        inputs={"path": "str", "page_string": "str"},
+        outputs={"success": "bool", "message": "str"},
+        description="Saves a subset.",
+        tags=["io", "save", "extract"]
+    )
+    def save_subset(self, path: str, page_string: str) -> Tuple[bool, str]:
+        if not self.doc: return False, "No doc"
+        if self.current_path and os.path.abspath(path) == os.path.abspath(self.current_path):
+            return False, "Cannot overwrite open file."
+        try:
+            indices = self._parse_page_string(page_string, self.doc.page_count)
+            if not indices: return False, "No valid pages."
+            new_doc = fitz.open()
+            for idx in indices: new_doc.insert_pdf(self.doc, from_page=idx, to_page=idx)
+            new_doc.save(path, garbage=4, deflate=True)
+            new_doc.close()
+            return True, f"Saved {len(indices)} pages."
+        except Exception as e: return False, str(e)
+
+    def _parse_page_string(self, range_str: str, max_pages: int) -> List[int]:
+        indices = []
+        cleaned = re.sub(r'[;\s]+', ',', range_str)
+        for part in cleaned.split(','):
+            part = part.strip()
+            if not part: continue
+            try:
+                if '-' in part:
+                    s, e = map(int, part.split('-'))
+                    step = 1 if e >= s else -1
+                    for i in range(s, e + step, step):
+                        if 0 <= i-1 < max_pages: indices.append(i-1)
+                else:
+                    i = int(part)
+                    if 0 <= i-1 < max_pages: indices.append(i-1)
+            except: continue
+        return indices
+
+    @service_endpoint(
+        inputs={"base_path": "str", "max_mb": "int"},
+        outputs={"created_files": "List[str]"},
+        description="Splits PDF by size.",
+        tags=["io", "save", "split"]
+    )
+    def save_split_by_size(self, base_path: str, max_mb: int) -> Tuple[bool, List[str]]:
+        if not self.doc: return False, []
+        target = max_mb * 1024 * 1024
+        files = []
+        folder, fname = os.path.split(base_path)
+        name, ext = os.path.splitext(fname)
+        chunk_start = 0
+        curr = fitz.open()
+        try:
+            for i in range(self.doc.page_count):
+                curr.insert_pdf(self.doc, from_page=i, to_page=i)
+                buf = io.BytesIO()
+                curr.save(buf, garbage=4, deflate=True)
+                if buf.tell() > target:
+                    if curr.page_count == 1:
+                        out = f"{name}_Part{len(files)+1}_{chunk_start+1}-{i+1}{ext}"
+                        curr.save(os.path.join(folder, out), garbage=4)
+                        files.append(out)
+                        curr.close(); curr = fitz.open(); chunk_start = i+1
+                    else:
+                        curr.delete_page(-1)
+                        out = f"{name}_Part{len(files)+1}_{chunk_start+1}-{i}{ext}"
+                        curr.save(os.path.join(folder, out), garbage=4)
+                        files.append(out)
+                        curr.close(); curr = fitz.open(); curr.insert_pdf(self.doc, from_page=i, to_page=i)
+                        chunk_start = i
+            if curr.page_count > 0:
+                out = f"{name}_Part{len(files)+1}_{chunk_start+1}-{self.doc.page_count}{ext}"
+                curr.save(os.path.join(folder, out), garbage=4)
+                files.append(out)
+            return True, files
+        except Exception as e: return False, [str(e)]
+
+    @service_endpoint(
+        inputs={"path": "str", "settings": "Dict"},
+        outputs={"success": "bool"},
+        description="Advanced Save.",
+        tags=["io", "save", "advanced"]
+    )
+    def save_advanced(self, path: str, settings: Dict[str, Any]) -> bool:
+        if not self.doc: return False
+        try:
+            if settings.get("optimize_images", False): self._optimize_images_granular(settings)
+            garbage = 4 if settings.get("deduplicate", True) else 0
+            deflate = settings.get("compress_streams", True)
+            clean = settings.get("clean_structure", True)
+            self.doc.save(path, garbage=garbage, deflate=deflate, clean=clean)
+            return True
+        except: return False
+
+    def _optimize_images_granular(self, settings):
+        dpi = settings.get("target_dpi", 150)
+        qual = settings.get("jpeg_quality", 75)
+        gray = settings.get("grayscale", False)
+        flat = settings.get("flatten_transparency", True)
+        max_d = int(dpi * 11.0)
+        visited = set()
+        for i in range(self.doc.page_count):
+            for img in self.doc[i].get_images():
+                xref = img[0]
+                if xref in visited: continue
+                visited.add(xref)
+                try:
+                    if self.doc.xref_object(xref, "ImageMask") == "true" and not settings.get("process_masks", False): continue
+                    pix = fitz.Pixmap(self.doc, xref)
+                    if pix.width < 100 or pix.height < 100: continue
+                    if pix.n - pix.alpha > 3: pix = fitz.Pixmap(fitz.csRGB, pix, 0)
+                    pil = Image.open(io.BytesIO(pix.tobytes()))
+                    if flat:
+                        if pil.mode in ('RGBA', 'LA') or (pil.mode == 'P' and 'transparency' in pil.info):
+                            pil = pil.convert('RGBA')
+                            bg = Image.new('RGB', pil.size, (255,255,255))
+                            bg.paste(pil, mask=pil.split()[3])
+                            pil = bg
+                        elif pil.mode != 'RGB': pil = pil.convert('RGB')
+                    if gray: pil = pil.convert("L")
+                    if pil.width > max_d or pil.height > max_d: pil.thumbnail((max_d, max_d), Image.Resampling.LANCZOS)
+                    buf = io.BytesIO()
+                    pil.save(buf, "JPEG", quality=qual, optimize=True)
+                    self.doc.update_stream(xref, buf.getvalue())
+                except: pass
+
+    @service_endpoint(
+        inputs={"page_num": "int", "clockwise": "bool"},
+        outputs={"new_rotation": "int"},
+        description="Rotates page.",
+        tags=["edit", "rotate"]
+    )
+    def rotate_page(self, page_num: int, clockwise: bool = True) -> int:
+        if not self.doc: return 0
+        p = self.doc.load_page(page_num)
+        p.set_rotation((p.rotation + (90 if clockwise else -90)) % 360)
+        return p.rotation
+
+    @service_endpoint(
+        inputs={"page_num": "int", "zoom": "float"},
+        outputs={"image": "ImageTk.PhotoImage"},
+        description="Renders page.",
+        tags=["render"]
+    )
+    def render_page(self, page_num: int, zoom: float = 1.0) -> Tuple[Any, int, int]:
+        if not self.doc or not (0 <= page_num < self.doc.page_count): return None, 0, 0
+        pix = self.doc.load_page(page_num).get_pixmap(matrix=fitz.Matrix(zoom, zoom), alpha=False)
+        img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
+        return ImageTk.PhotoImage(img), pix.width, pix.height
+
+    @service_endpoint(
+        inputs={"page_num": "int", "max_size": "Tuple"},
+        outputs={"image": "ImageTk.PhotoImage"},
+        description="Renders thumbnail.",
+        tags=["render", "thumbnail"]
+    )
+    def render_thumbnail_fit(self, page_num: int, max_size: Tuple[int, int] = (200, 200)) -> Tuple[Any, int, int]:
+        if not self.doc: return None, 0, 0
+        p = self.doc.load_page(page_num)
+        s = min(max_size[0]/p.rect.width, max_size[1]/p.rect.height)
+        pix = p.get_pixmap(matrix=fitz.Matrix(s, s), alpha=False)
+        img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
+        return ImageTk.PhotoImage(img), pix.width, pix.height
+
+    def get_metadata(self): return self.doc.metadata if self.doc else {}
+--------------------------------------------------------------------------------
+FILE: src\microservices\_SpinnerThingyMaBobberMS.py
+--------------------------------------------------------------------------------
+import tkinter as tk
+import math
+import colorsys
+import time
+from typing import Optional, Dict, Any
+
+from microservice_std_lib import service_metadata, service_endpoint
+
+# ==============================================================================
+# MICROSERVICE CLASS
+# ==============================================================================
+
+@service_metadata(
+    name="SpinnerTHINGYMABOBBER",
+    version="1.0.0",
+    description="Interactive visual spinner widget for OBS/UI overlays.",
+    tags=["ui", "widget", "visuals"],
+    capabilities=["ui:gui"]
+)
+class SpinnerThingyMaBobberMS:
+    """
+    The Visualizer: An interactive spinner widget.
+    Useful for "Processing..." screens or OBS overlays.
+    """
+    
+    def __init__(self, config: Optional[Dict[str, Any]] = None):
+        self.config = config or {}
+        self.root = tk.Tk()
+        self.root.title("OBS Interactive Spinner")
+        self.root.configure(bg="black")
+        
+        # Default size
+        self.root.geometry("600x600")
+        
+        # Canvas for drawing
+        self.canvas = tk.Canvas(
+            self.root, 
+            bg="black", 
+            highlightthickness=0
+        )
+        self.canvas.pack(fill="both", expand=True)
+
+        # --- STATE VARIABLES ---
+        self.angle_1 = 0
+        self.angle_2 = 0
+        self.angle_3 = 0
+        self.hue = 0
+        
+        # Text Input State
+        self.user_text = "PROCESSING"
+        self.cursor_visible = True
+        self.last_cursor_toggle = time.time()
+        
+        # Bind keyboard events to the window
+        self.root.bind("<Key>", self.handle_keypress)
+        
+        # Start animation immediately
+        self.animate()
+
+    @service_endpoint(
+        inputs={},
+        outputs={},
+        description="Launches the GUI main loop.",
+        tags=["ui", "execution"],
+        mode="sync",
+        side_effects=["ui:block"]
+    )
+    def launch(self):
+        """Starts the Tkinter main event loop."""
+        self.root.mainloop()
+
+    def handle_keypress(self, event):
+        # Handle Backspace
+        if event.keysym == "BackSpace":
+            self.user_text = self.user_text[:-1]
+        # Handle Escape (Reset to default)
+        elif event.keysym == "Escape":
+            self.user_text = "PROCESSING"
+        # Ignore special keys (Shift, Ctrl, Alt, F-keys, etc.)
+        elif len(event.char) == 1 and ord(event.char) >= 32:
+            # Limit length to prevent chaos (optional, but 20 is a safe max)
+            if len(self.user_text) < 25: 
+                self.user_text += event.char.upper()
+
+    def get_neon_color(self, offset=0):
+        h = (self.hue + offset) % 1.0
+        r, g, b = colorsys.hsv_to_rgb(h, 1.0, 1.0)
+        return f'#{int(r*255):02x}{int(g*255):02x}{int(b*255):02x}'
+
+    def draw_arc(self, cx, cy, radius, width, start, extent, color):
+        x0 = cx - radius
+        y0 = cy - radius
+        x1 = cx + radius
+        y1 = cy + radius
+        
+        self.canvas.create_arc(
+            x0, y0, x1, y1,
+            start=start, extent=extent,
+            outline=color, width=width, style="arc"
+        )
+
+    def animate(self):
+        self.canvas.delete("all")
+        
+        # Window Dimensions
+        w = self.canvas.winfo_width()
+        h = self.canvas.winfo_height()
+        
+        if w < 10 or h < 10:
+            self.root.after(50, self.animate)
+            return
+
+        cx, cy = w / 2, h / 2
+        base_size = min(w, h) / 2
+        
+        # Update Hue
+        self.hue += 0.005
+        if self.hue > 1: self.hue = 0
+        c1 = self.get_neon_color(0.0)
+        c2 = self.get_neon_color(0.3)
+        c3 = self.get_neon_color(0.6)
+
+        # --- RINGS ---
+            
+        # Ring 1
+        r1 = base_size * 0.85
+        self.angle_1 -= 3
+        for i in range(3):
+            self.draw_arc(cx, cy, r1, base_size*0.08, self.angle_1 + (i*120), 80, c1)
+
+        # Ring 2
+        r2 = base_size * 0.65
+        self.angle_2 += 5
+        self.draw_arc(cx, cy, r2, base_size*0.05, self.angle_2, 160, c2)
+        self.draw_arc(cx, cy, r2, base_size*0.05, self.angle_2 + 180, 160, c2)
+
+        # Ring 3
+        r3 = base_size * 0.45
+        self.angle_3 -= 8
+        self.draw_arc(cx, cy, r3, base_size*0.04, self.angle_3, 300, c3)
+        
+        # --- TEXT LOGIC ---
+        
+        # Toggle cursor every 0.5 seconds
+        if time.time() - self.last_cursor_toggle > 0.5:
+            self.cursor_visible = not self.cursor_visible
+            self.last_cursor_toggle = time.time()
+            
+        display_text = self.user_text + ("_" if self.cursor_visible else " ")
+
+        # Dynamic Font Scaling
+        # We start with a base size (0.15 of window).
+        # If text is long (> 8 chars), we shrink it proportionally so it fits.
+        text_len = max(len(self.user_text), 1)
+        scaling_factor = 1.0
+        if text_len > 8:
+            scaling_factor = 8 / text_len
+            
+        font_size = int(base_size * 0.15 * scaling_factor)
+        # Ensure font doesn't vanish
+        font_size = max(font_size, 10) 
+
+        self.canvas.create_text(
+            cx, cy, 
+            text=display_text, 
+            fill="white", 
+            font=("Courier", font_size, "bold")
+        )
+
+        self.root.after(30, self.animate)
+
+
+# --- Independent Test Block ---
+if __name__ == "__main__":
+    print("Launching Spinner ThingyMaBobber...")
+    svc = SpinnerThingyMaBobberMS()
+    svc.launch()
+--------------------------------------------------------------------------------
+FILE: src\microservices\_TkinterAppShellMS.py
+--------------------------------------------------------------------------------
+"""
+SERVICE_NAME: _TkinterAppShellMS
+ENTRY_POINT: _TkinterAppShellMS.py
+DEPENDENCIES: None
+"""
+import tkinter as tk
+from tkinter import ttk
+import logging
+import json
+import os
+from typing import Dict, Any, Optional
+
+from microservice_std_lib import service_metadata, service_endpoint
+
+# Updated Import
+try:
+    from _TkinterThemeManagerMS import TkinterThemeManagerMS
+except ImportError:
+    TkinterThemeManagerMS = None
+
+logger = logging.getLogger("AppShell")
+
+@service_metadata(
+    name="TkinterAppShell",
+    version="2.1.0",
+    description="The Application Container. Manages root window, layout persistence, and lifecycle.",
+    tags=["ui", "core", "lifecycle"],
+    capabilities=["ui:root", "ui:gui"]
+)
+class TkinterAppShellMS:
+    """
+    The Mother Ship.
+    Owns the Tkinter Root and remembers where you parked it.
+    """
+    
+    def __init__(self, config: Optional[Dict[str, Any]] = None):
+        self.config = config or {}
+        self.root = tk.Tk()
+        self.root.withdraw() # Hide during setup
+        
+        # State File (Saved next to the App/EXE)
+        self.layout_file = "window_layout.json"
+        
+        # Load Theme
+        self.theme_svc = self.config.get("theme_manager")
+        if not self.theme_svc and TkinterThemeManagerMS:
+            self.theme_svc = TkinterThemeManagerMS()
+            
+        self.colors = self.theme_svc.get_theme() if self.theme_svc else {}
+        self._configure_root()
+        
+        # Bind the "X" button to our smart shutdown
+        self.root.protocol("WM_DELETE_WINDOW", self.shutdown)
+        
+    def _configure_root(self):
+        self.root.title(self.config.get("title", "Microservice OS"))
+        
+        # Apply Base Theme
+        bg = self.colors.get('background', '#1e1e1e')
+        self.root.configure(bg=bg)
+        
+        # Configure TTK Styles
+        style = ttk.Style()
+        style.theme_use('clam')
+        style.configure('TFrame', background=bg)
+        style.configure('TLabel', background=bg, foreground=self.colors.get('foreground', '#ccc'))
+        style.configure('TButton', background=self.colors.get('panel_bg', '#333'), foreground='white')
+        
+        # --- SMART GEOMETRY RESTORE ---
+        restored = False
+        if os.path.exists(self.layout_file):
+            try:
+                with open(self.layout_file, 'r') as f:
+                    data = json.load(f)
+                    # Apply geometry (Size + Position)
+                    if "geometry" in data:
+                        self.root.geometry(data["geometry"])
+                    # Apply Maximized State
+                    if data.get("zoomed", False):
+                        self.root.state('zoomed')
+                    restored = True
+            except Exception as e:
+                logger.error(f"Failed to load layout: {e}")
+
+        # Fallback if no save file exists
+        if not restored:
+            self.root.geometry("1024x768") # Safe default
+        
+        # Main Container
+        self.main_container = tk.Frame(self.root, bg=bg)
+        self.main_container.pack(fill="both", expand=True, padx=5, pady=5)
+
+    @service_endpoint(
+        inputs={},
+        outputs={},
+        description="Starts the GUI Main Loop.",
+        tags=["lifecycle", "start"],
+        mode="sync",
+        side_effects=["ui:block"]
+    )
+    def launch(self):
+        """Ignition sequence start."""
+        self.root.deiconify()
+        logger.info("AppShell Launched.")
+        self.root.mainloop()
+
+    @service_endpoint(
+        inputs={},
+        outputs={"container": "tk.Frame"},
+        description="Returns the main content area for other services to dock into.",
+        tags=["ui", "layout"]
+    )
+    def get_main_container(self):
+        return self.main_container
+
+    @service_endpoint(
+        inputs={},
+        outputs={},
+        description="Saves layout and shuts down.",
+        tags=["lifecycle", "stop"],
+        side_effects=["ui:close", "disk:write"]
+    )
+    def shutdown(self):
+        """Saves current window state before exiting."""
+        try:
+            # Capture state
+            is_zoomed = (self.root.state() == 'zoomed')
+            geo = self.root.geometry()
+            
+            with open(self.layout_file, 'w') as f:
+                json.dump({
+                    "geometry": geo,
+                    "zoomed": is_zoomed
+                }, f)
+        except Exception as e:
+            logger.error(f"Could not save layout: {e}")
+            
+        self.root.quit()
+
+if __name__ == "__main__":
+    shell = TkinterAppShellMS({"title": "Test Shell"})
+    shell.launch()
+--------------------------------------------------------------------------------
+FILE: src\microservices\_TkinterButtonMS.py
+--------------------------------------------------------------------------------
+"""
+SERVICE_NAME: _TkinterButtonMS
+ENTRY_POINT: _TkinterButtonMS.py
+DEPENDENCIES: tkinter, Pillow
+"""
+import tkinter as tk
+from PIL import Image, ImageTk
+from typing import Callable, Optional, Dict, Any
+from microservice_std_lib import service_metadata
+
+@service_metadata(
+    name="StandardButton",
+    version="1.1.0",
+    description="Standard styled button for toolbars with Icon support.",
+    tags=["ui", "widget"],
+    capabilities=["ui:click"]
+)
+class TkinterButtonMS(tk.Button):
+    def __init__(self, parent, text: str, command: Callable, icon_path: str = None, theme: Dict = None):
+        self.theme = theme or {}
+        
+        # Style
+        bg = self.theme.get('panel_bg', '#333')
+        fg = self.theme.get('foreground', '#fff')
+        active_bg = self.theme.get('accent', '#007acc')
+        
+        # Icon Processing
+        self.img = None
+        if icon_path:
+            try:
+                pil_img = Image.open(icon_path).resize((16, 16), Image.Resampling.LANCZOS)
+                self.img = ImageTk.PhotoImage(pil_img)
+            except Exception:
+                print(f"Warning: Could not load icon {icon_path}")
+
+        super().__init__(
+            parent,
+            text=f"  {text}  ", 
+            image=self.img if self.img else None,
+            compound="left", # Icon left of text
+            command=command,
+            bg=bg,
+            fg=fg,
+            activebackground=active_bg,
+            activeforeground="#fff",
+            relief="flat",
+            bd=0,
+            cursor="hand2",
+            font=("Segoe UI", 9)
+        )
+--------------------------------------------------------------------------------
+FILE: src\microservices\_TkinterThemeManagerMS.py
+--------------------------------------------------------------------------------
+"""
+SERVICE_NAME: _TkinterThemeManagerMS
+ENTRY_POINT: _TkinterThemeManagerMS.py
+DEPENDENCIES: None
+"""
+from typing import Dict, Any, Optional
+from microservice_std_lib import service_metadata, service_endpoint
+
+# Default "Dark Modern" Theme
+DEFAULT_THEME = {
+    'background': '#1e1e1e',
+    'foreground': '#d4d4d4',
+    'panel_bg':   '#252526',
+    'border':     '#3c3c3c',
+    'accent':     '#007acc',
+    'error':      '#f48771',
+    'success':    '#89d185',
+    'font_main':  ('Segoe UI', 10),
+    'font_mono':  ('Consolas', 10)
+}
+
+@service_metadata(
+    name="TkinterThemeManager",
+    version="1.0.0",
+    description="Centralized configuration for UI colors and fonts.",
+    tags=["ui", "config", "theme"],
+    capabilities=["ui:style"]
+)
+class TkinterThemeManagerMS:
+    """
+    The Stylist: Holds the color palette and font settings.
+    All UI components query this service to decide how to draw themselves.
+    """
+    def __init__(self, config: Optional[Dict[str, Any]] = None):
+        self.config = config or {}
+        self.theme = DEFAULT_THEME.copy()
+        
+        # Allow override from config
+        if "overrides" in self.config:
+            self.theme.update(self.config["overrides"])
+
+    @service_endpoint(
+        inputs={},
+        outputs={"theme": "Dict"},
+        description="Returns the current active theme dictionary.",
+        tags=["ui", "read"]
+    )
+    def get_theme(self) -> Dict[str, Any]:
+        return self.theme
+
+    @service_endpoint(
+        inputs={"key": "str", "value": "Any"},
+        outputs={},
+        description="Updates a specific theme attribute (e.g., changing accent color).",
+        tags=["ui", "write"],
+        side_effects=["ui:refresh"]
+    )
+    def update_key(self, key: str, value: Any):
+        self.theme[key] = value
+
+if __name__ == "__main__":
+    svc = TkinterThemeManagerMS()
+    print("Theme Ready:", svc.get_theme()['accent'])
+--------------------------------------------------------------------------------
+FILE: src\microservices\_TkinterUniButtonMS.py
+--------------------------------------------------------------------------------
+import tkinter as tk
+from dataclasses import dataclass
+from typing import Any, Dict, Optional, Callable
+
+from microservice_std_lib import service_metadata, service_endpoint
+
+# ==============================================================================
+# CONFIGURATION MODELS
+# ==============================================================================
+
+@dataclass
+class ButtonConfig:
+    text: str
+    command: Callable[[], None]
+    bg_color: str
+    active_bg_color: str
+    fg_color: str = "#FFFFFF"
+
+@dataclass
+class LinkConfig:
+    """Configuration for the 'Linked' state (The Trap)"""
+    trap_bg: str = "#7C3AED"    # Deep Purple
+    btn_bg: str = "#8B5CF6"     # Lighter Purple
+    text_color: str = "#FFFFFF"
+
+# ==============================================================================
+# MICROSERVICE CLASS
+# ==============================================================================
+
+@service_metadata(
+    name="LockingDualBtn",
+    version="1.0.0",
+    description="A unified button group (Left/Right/Link) where linking merges the actions.",
+    tags=["ui", "widget", "button"],
+    capabilities=["ui:gui"]
+)
+class TkinterUniButtonMS(tk.Frame):
+    """
+    A generic button group that can merge ANY two actions.
+    Pass the visual/functional definitions in via the config objects.
+    """
+    
+    def __init__(self, config: Optional[Dict[str, Any]] = None):
+        self.config = config or {}
+        parent = self.config.get("parent")
+        # Initialize tk.Frame
+        super().__init__(parent)
+        
+        # Extract Button Configurations
+        self.left_cfg: Optional[ButtonConfig] = self.config.get("left_btn")
+        self.right_cfg: Optional[ButtonConfig] = self.config.get("right_btn")
+        self.link_cfg: LinkConfig = self.config.get("link_config") or LinkConfig()
+        
+        self.is_linked = False
+        
+        # Attempt to get parent background for seamless look
+        try:
+            self.default_bg = parent.cget("bg")
+        except AttributeError:
+            self.default_bg = "#f0f0f0"
+
+        if not self.left_cfg or not self.right_cfg:
+            # Fallback for safe init if configs are missing
+            print("Warning: TkinterUniButtonMS initialized without button configs.")
+            return
+
+        self._setup_ui()
+        self._update_state()
+
+    def _setup_ui(self):
+        self.configure(padx=4, pady=4)
+        
+        common_style = {"relief": "flat", "font": ("Segoe UI", 10, "bold"), "bd": 0, "cursor": "hand2"}
+
+        # 1. Left Button (Generic)
+        self.btn_left = tk.Button(self, command=lambda: self._execute("left"), **common_style)
+        self.btn_left.pack(side="left", fill="y", padx=(0, 2))
+
+        # 2. Link Toggle (The Chain)
+        self.btn_link = tk.Button(self, text="&", width=3, command=self._toggle_link, **common_style)
+        self.btn_link.pack(side="left", fill="y", padx=(0, 2))
+
+        # 3. Right Button (Generic)
+        self.btn_right = tk.Button(self, command=lambda: self._execute("right"), **common_style)
+        self.btn_right.pack(side="left", fill="y")
+
+    def _toggle_link(self):
+        self.is_linked = not self.is_linked
+        self._update_state()
+
+    def _update_state(self):
+        if self.is_linked:
+            # --- LINKED STATE (The Trap) ---
+            self.configure(bg=self.link_cfg.trap_bg)
+            
+            # Both buttons look identical in the "Trap"
+            for btn in (self.btn_left, self.btn_right, self.btn_link):
+                btn.configure(bg=self.link_cfg.btn_bg, fg=self.link_cfg.text_color, activebackground=self.link_cfg.trap_bg)
+            
+            # Keep original text
+            self.btn_left.configure(text=self.left_cfg.text)
+            self.btn_right.configure(text=self.right_cfg.text)
+
+        else:
+            # --- INDEPENDENT STATE ---
+            try: 
+                self.configure(bg=self.default_bg)
+            except: 
+                self.configure(bg="#f0f0f0") 
+
+            # Restore Left Button
+            self.btn_left.configure(
+                text=self.left_cfg.text, 
+                bg=self.left_cfg.bg_color, 
+                fg=self.left_cfg.fg_color,
+                activebackground=self.left_cfg.active_bg_color
+            )
+
+            # Restore Right Button
+            self.btn_right.configure(
+                text=self.right_cfg.text, 
+                bg=self.right_cfg.bg_color, 
+                fg=self.right_cfg.fg_color,
+                activebackground=self.right_cfg.active_bg_color
+            )
+
+            # Restore Link Button (Neutral Gray)
+            self.btn_link.configure(bg="#E5E7EB", fg="#374151", activebackground="#D1D5DB")
+
+    def _execute(self, source):
+        if self.is_linked:
+            # Chain them: Left then Right
+            self.left_cfg.command()
+            self.right_cfg.command()
+        else:
+            if source == "left": 
+                self.left_cfg.command()
+            elif source == "right": 
+                self.right_cfg.command()
+
+
+# --- Independent Test Block ---
+if __name__ == "__main__":
+    root = tk.Tk()
+    root.title("UniButton Test")
+    root.geometry("300x100")
+    
+    # Define actions
+    def on_validate(): print("Validating Data...")
+    def on_apply(): print("Applying Changes...")
+    
+    # Create Configs
+    btn1 = ButtonConfig("Validate", on_validate, "#3b82f6", "#2563eb") # Blue
+    btn2 = ButtonConfig("Apply", on_apply, "#10b981", "#059669")       # Green
+    
+    # Init Service
+    svc = TkinterUniButtonMS({
+        "parent": root, 
+        "left_btn": btn1, 
+        "right_btn": btn2
+    })
+    print("Service ready:", svc)
+    svc.pack(pady=20)
+    
+    root.mainloop()
+--------------------------------------------------------------------------------
+FILE: src\microservices\_TreeMapperMS.py
+--------------------------------------------------------------------------------
+import os
+import datetime
+import logging
+from pathlib import Path
+from typing import Any, Dict, List, Set, Optional
+
+from microservice_std_lib import service_metadata, service_endpoint
+
+# ==============================================================================
+# CONFIGURATION
+# ==============================================================================
+DEFAULT_EXCLUDES = {
+    '.git', '__pycache__', '.idea', '.vscode', 'node_modules', 
+    '.venv', 'env', 'venv', 'dist', 'build', '.DS_Store'
+}
+logger = logging.getLogger("TreeMapper")
+
+# ==============================================================================
+# MICROSERVICE CLASS
+# ==============================================================================
+
+@service_metadata(
+    name="TreeMapper",
+    version="1.0.0",
+    description="Generates ASCII-art style directory maps of the file system.",
+    tags=["filesystem", "map", "visualization"],
+    capabilities=["filesystem:read"]
+)
+class TreeMapperMS:
+    """
+    The Cartographer: Generates ASCII-art style directory maps.
+    Useful for creating context snapshots for LLMs.
+    """
+    
+    def __init__(self, config: Optional[Dict[str, Any]] = None):
+        self.config = config or {}
+
+    @service_endpoint(
+        inputs={"root_path": "str", "additional_exclusions": "Set[str]", "use_default_exclusions": "bool"},
+        outputs={"tree_map": "str"},
+        description="Generates an ASCII tree map of the directory.",
+        tags=["filesystem", "visualization"],
+        side_effects=["filesystem:read"]
+    )
+    def generate_tree(self, 
+                      root_path: str, 
+                      additional_exclusions: Optional[Set[str]] = None,
+                      use_default_exclusions: bool = True) -> str:
+        
+        start_path = Path(root_path).resolve()
+        if not start_path.exists(): 
+            return f"Error: Path '{root_path}' does not exist."
+
+        exclusions = set()
+        if use_default_exclusions:
+            exclusions.update(DEFAULT_EXCLUDES)
+        if additional_exclusions:
+            exclusions.update(additional_exclusions)
+
+        timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        lines = [
+            f"Project Map: {start_path.name}",
+            f"Generated: {timestamp}",
+            "-" * 40,
+            f"📁 {start_path.name}/"
+        ]
+
+        logger.info(f"Mapping directory: {start_path}")
+        self._walk(start_path, "", lines, exclusions)
+        return "\n".join(lines)
+
+    def _walk(self, directory: Path, prefix: str, lines: List[str], exclusions: Set[str]):
+        try:
+            # Sort: Directories first, then files (alphabetical)
+            children = sorted(
+                [p for p in directory.iterdir() if p.name not in exclusions],
+                key=lambda x: (not x.is_dir(), x.name.lower())
+            )
+        except PermissionError:
+            lines.append(f"{prefix}└── 🚫 [Permission Denied]")
+            return
+
+        count = len(children)
+        for index, path in enumerate(children):
+            is_last = (index == count - 1)
+            connector = "└── " if is_last else "├── "
+            
+            if path.is_dir():
+                lines.append(f"{prefix}{connector}📁 {path.name}/")
+                extension = "    " if is_last else "│   "
+                self._walk(path, prefix + extension, lines, exclusions)
+            else:
+                lines.append(f"{prefix}{connector}📄 {path.name}")
+
+
+# --- Independent Test Block ---
+if __name__ == "__main__":
+    # Setup logging
+    logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(message)s')
+
+    svc = TreeMapperMS()
+    print("Service ready:", svc)
+    
+    # Map the current directory
+    print("\n--- Map of Current Dir ---")
+    tree = svc.generate_tree(".", additional_exclusions={"__pycache__"})
+    print(tree)
+--------------------------------------------------------------------------------
+FILE: src\orchestrators\ui_orchestrator.py
+--------------------------------------------------------------------------------
+"""
+ORCHESTRATOR: UI Orchestrator
+DESCRIPTION: Manages the layout, events, dialogs, and async loading states.
+"""
+import tkinter as tk
+from tkinter import ttk, filedialog, messagebox, Menu
+import threading
+import math
+import time
+import os
+import colorsys  # <--- Added for Neon effects
+from src.microservices._TkinterButtonMS import TkinterButtonMS
+
+class MainUIOrchestrator:
+    def __init__(self, root, shell, theme_mgr, engine):
+        self.root = root
+        self.shell = shell
+        self.theme_mgr = theme_mgr
+        self.engine = engine
+        self.colors = self.theme_mgr.get_theme()
+        
+        self.state = {
+            "zoom": 1.0,
+            "page_idx": 0,
+            "total_pages": 0,
+            "file_path": None,
+            "thumb_size": 180,
+            "grid_cols": 1
+        }
+        
+        # Image Tracking
+        self.thumbnail_widgets = [] 
+        self.thumbnail_images = []
+        
+        # Main View Tracking
+        self.main_image_item = None
+        self.current_img_w = 0
+        self.current_img_h = 0
+        
+        # Drag Data
+        self.drag_data = {
+            "source_idx": None, 
+            "ghost_window": None,
+            "indicator": None,
+            "indicator_active": False,
+            "drop_target_idx": None
+        }
+
+        # LOADING OVERLAY STATE
+        self.loading_overlay = None
+        self.spinner_running = False
+        self.spinner_state = { "a1": 0, "a2": 0, "a3": 0, "hue": 0 } # <--- State for ThingyMaBobber
+        
+        self._build_layout()
+        self._build_toolbar()
+        self._build_context_menu()
+        self._bind_hotkeys()
+
+    def _build_layout(self):
+        container = self.shell.get_main_container()
+        
+        self.toolbar_frame = tk.Frame(container, bg=self.colors['panel_bg'], height=40)
+        self.toolbar_frame.pack(side="top", fill="x", pady=(0, 2))
+        
+        self.paned = tk.PanedWindow(container, orient=tk.HORIZONTAL, bg=self.colors['border'], sashwidth=4)
+        self.paned.pack(fill="both", expand=True)
+        
+        # Left Panel
+        self.left_container = tk.Frame(self.paned, bg=self.colors['panel_bg'], width=300)
+        self.paned.add(self.left_container, minsize=200)
+        
+        self.thumb_canvas = tk.Canvas(self.left_container, bg=self.colors['panel_bg'], highlightthickness=0)
+        self.thumb_scroll = ttk.Scrollbar(self.left_container, orient="vertical", command=self.thumb_canvas.yview)
+        self.thumb_frame = tk.Frame(self.thumb_canvas, bg=self.colors['panel_bg'])
+        
+        self.thumb_canvas.configure(yscrollcommand=self.thumb_scroll.set)
+        self.thumb_scroll.pack(side="right", fill="y")
+        self.thumb_canvas.pack(side="left", fill="both", expand=True)
+        self.thumb_window_id = self.thumb_canvas.create_window((0,0), window=self.thumb_frame, anchor="nw")
+        
+        # Right Panel
+        self.right_panel = tk.Frame(self.paned, bg="#525252")
+        self.paned.add(self.right_panel, minsize=400)
+        
+        self.canvas = tk.Canvas(self.right_panel, bg="#525252", highlightthickness=0)
+        self.v_scroll = ttk.Scrollbar(self.right_panel, orient="vertical", command=self.canvas.yview)
+        self.h_scroll = ttk.Scrollbar(self.right_panel, orient="horizontal", command=self.canvas.xview)
+        self.canvas.configure(yscrollcommand=self.v_scroll.set, xscrollcommand=self.h_scroll.set)
+        
+        self.canvas.grid(row=0, column=0, sticky="nsew")
+        self.v_scroll.grid(row=0, column=1, sticky="ns")
+        self.h_scroll.grid(row=1, column=0, sticky="ew")
+        self.right_panel.grid_rowconfigure(0, weight=1)
+        self.right_panel.grid_columnconfigure(0, weight=1)
+        
+        # Bindings
+        self.thumb_frame.bind("<Configure>", self._on_thumb_frame_configure)
+        self.thumb_canvas.bind("<Configure>", self._on_sidebar_resize)
+        self.canvas.bind("<Configure>", self._on_main_view_resize)
+        self.canvas.bind("<Button-3>", self._show_context_menu)
+        
+        self.root.bind_all("<MouseWheel>", self._dispatch_scroll)
+        self.root.bind_all("<Button-4>", self._dispatch_scroll) 
+        self.root.bind_all("<Button-5>", self._dispatch_scroll)
+
+    def _bind_hotkeys(self):
+        self.root.bind("<Left>", lambda e: self._prev_page())
+        self.root.bind("<Right>", lambda e: self._next_page())
+        self.root.bind("<Delete>", lambda e: self._action_delete_page())
+
+    def _build_toolbar(self):
+        def add_btn(text, cmd, icon_name=None, side="left"):
+            icon_path = f"assets/{icon_name}.png" if icon_name else None
+            btn = TkinterButtonMS(self.toolbar_frame, text=text, command=cmd, icon_path=icon_path, theme=self.colors)
+            btn.pack(side=side, padx=2, pady=4)
+        
+        add_btn("OPEN", self._action_open, "open")
+        add_btn("INSERT", self._action_insert_file, "insert")
+        add_btn("INTERLEAVE", self._show_interleave_dialog, "interleave")
+        
+        tk.Frame(self.toolbar_frame, bg=self.colors['panel_bg'], width=15).pack(side="left")
+        
+        add_btn("EXTRACT", self._show_extract_dialog, "extract")
+        add_btn("SPLIT", self._show_split_dialog, "split") 
+        add_btn("EXPORT", self._show_compression_dialog, "save")
+        
+        tk.Frame(self.toolbar_frame, bg=self.colors['panel_bg'], width=15).pack(side="left")
+        
+        add_btn("", lambda: self._action_rotate(False), "rot_l") 
+        add_btn("", lambda: self._action_rotate(True), "rot_r")
+        
+        tk.Frame(self.toolbar_frame, bg=self.colors['panel_bg'], width=15).pack(side="left")
+        
+        add_btn("", lambda: self._change_main_zoom(-0.2), "zoom_out")
+        add_btn("", lambda: self._change_main_zoom(0.2), "zoom_in")
+        
+        add_btn("", self._next_page, "next", side="right")
+        add_btn("", self._prev_page, "prev", side="right")
+
+    def _build_context_menu(self):
+        self.context_menu = Menu(self.root, tearoff=0)
+        self.context_menu.add_command(label="Rotate CW", command=lambda: self._action_rotate(True))
+        self.context_menu.add_command(label="Rotate CCW", command=lambda: self._action_rotate(False))
+        self.context_menu.add_separator()
+        self.context_menu.add_command(label="Delete Page", command=self._action_delete_page)
+
+    def _show_context_menu(self, event):
+        self.context_menu.post(event.x_root, event.y_root)
+
+    # --- ACTIONS ---
+
+    def _action_open(self):
+        path = filedialog.askopenfilename(filetypes=[("PDF Files", "*.pdf")])
+        if path:
+            def load(): return self.engine.load_pdf(path)
+            def done(count):
+                self._hide_loading()
+                self.state["total_pages"] = count
+                self.state["file_path"] = path
+                self.state["page_idx"] = 0
+                filename = os.path.basename(path)
+                self.root.title(f"{filename} - NoStringsPDF")
+                self._render_current_page()
+                self._regenerate_thumbnails()
+            self._run_async(load, done, message="Loading PDF...")
+
+    def _action_delete_page(self):
+        if not self.state["file_path"]: return
+        idx = self.state["page_idx"]
+        if messagebox.askyesno("Confirm", f"Delete Page {idx+1}?"):
+            s, n = self.engine.delete_page(idx)
+            if s:
+                self.state["total_pages"] = n
+                if self.state["page_idx"] >= n: self.state["page_idx"] = max(0, n - 1)
+                self._regenerate_thumbnails()
+                self._render_current_page()
+
+    def _action_insert_file(self):
+        if not self.state["file_path"]: return messagebox.showwarning("Warning", "Open PDF first.")
+        path = filedialog.askopenfilename(filetypes=[("PDF", "*.pdf")])
+        if not path: return
+        at = self.state["page_idx"] + 1
+        def on_done(res):
+            success, count = res
+            self._hide_loading()
+            if success:
+                self.state["total_pages"] = count
+                self._regenerate_thumbnails()
+                self.state["page_idx"] = at
+                self._render_current_page()
+                messagebox.showinfo("Done", "File inserted.")
+        self._run_async(self.engine.insert_file, on_done, path, at, message="Inserting File...")
+
+    def _show_interleave_dialog(self):
+        if not self.state["file_path"]: return messagebox.showwarning("Warning", "Open first PDF.")
+        path_b = filedialog.askopenfilename(title="Select Second PDF", filetypes=[("PDF", "*.pdf")])
+        if not path_b: return
+        rev = messagebox.askyesno("Reverse?", "Reverse second file order?")
+        def on_done(res):
+            success, count = res
+            self._hide_loading()
+            if success:
+                self.state["total_pages"] = count
+                self.state["page_idx"] = 0
+                self._regenerate_thumbnails()
+                self._render_current_page()
+                messagebox.showinfo("Done", "Interleaved successfully.")
+            else: messagebox.showerror("Error", "Failed.")
+        self._run_async(self.engine.interleave_file, on_done, path_b, rev, message="Interleaving Docs...")
+
+    def _action_rotate(self, clockwise):
+        if not self.state["file_path"]: return
+        self.engine.rotate_page(self.state["page_idx"], clockwise)
+        self._render_current_page()
+        self._update_single_thumbnail(self.state["page_idx"])
+
+    def _show_split_dialog(self):
+        if not self.state["file_path"]: return messagebox.showwarning("No File", "Open PDF first.")
+        dlg = tk.Toplevel(self.root)
+        dlg.title("Smart Split"); dlg.geometry("400x220"); dlg.configure(bg="#2d2d2d")
+        tk.Label(dlg, text="Split into Chunks", bg="#2d2d2d", fg="white", font=("Arial", 12)).pack(pady=10)
+        tk.Label(dlg, text="Max Size (MB):", bg="#2d2d2d", fg="#aaa").pack()
+        e = tk.Entry(dlg, width=10); e.insert(0,"5"); e.pack(pady=5)
+        def run():
+            try: mb = int(e.get())
+            except: return
+            path = filedialog.asksaveasfilename(title="Base Name", filetypes=[("PDF","*.pdf")])
+            if path:
+                def task(): return self.engine.save_split_by_size(path, mb)
+                def done(res):
+                    self._hide_loading()
+                    if res[0]: messagebox.showinfo("Success", f"Created {len(res[1])} files.")
+                    else: messagebox.showerror("Error", str(res[1]))
+                self._run_async(task, done, message="Splitting PDF...")
+                dlg.destroy()
+        TkinterButtonMS(dlg, text="SPLIT", command=run, theme=self.colors).pack(fill="x", padx=60, pady=20)
+
+    def _show_extract_dialog(self):
+        if not self.state["file_path"]: return messagebox.showwarning("No File", "Open PDF first.")
+        dlg = tk.Toplevel(self.root)
+        dlg.title("Extract"); dlg.geometry("400x250"); dlg.configure(bg="#2d2d2d")
+        tk.Label(dlg, text="Page Range (e.g. 1, 3-5):", bg="#2d2d2d", fg="white").pack(pady=20)
+        e = tk.Entry(dlg, width=40); e.pack()
+        def run():
+            s = e.get()
+            if not s: return
+            path = filedialog.asksaveasfilename(filetypes=[("PDF","*.pdf")])
+            if path:
+                def done(res):
+                    self._hide_loading()
+                    if res[0]: messagebox.showinfo("Saved", res[1])
+                    else: messagebox.showerror("Error", res[1])
+                self._run_async(self.engine.save_subset, done, path, s, message="Extracting Pages...")
+                dlg.destroy()
+        TkinterButtonMS(dlg, text="SAVE", command=run, theme=self.colors).pack(fill="x", padx=40, pady=20)
+
+    def _show_compression_dialog(self):
+        if not self.state["file_path"]: return messagebox.showwarning("No File", "Open PDF first.")
+        dlg = tk.Toplevel(self.root)
+        dlg.title("Advanced Export"); dlg.geometry("400x550"); dlg.configure(bg="#2d2d2d")
+        vars = { "optimize": tk.BooleanVar(value=True), "dpi": tk.IntVar(value=150), 
+                 "quality": tk.IntVar(value=75), "grayscale": tk.BooleanVar(value=False), 
+                 "flatten": tk.BooleanVar(value=True), "masks": tk.BooleanVar(value=False), 
+                 "dedup": tk.BooleanVar(value=True), "stream": tk.BooleanVar(value=True) }
+        tk.Label(dlg, text="Optimization Settings", bg="#2d2d2d", fg="white").pack(pady=10)
+        f1 = tk.LabelFrame(dlg, text="Images", bg="#2d2d2d", fg="white"); f1.pack(fill="x", padx=10)
+        tk.Checkbutton(f1, text="Optimize Images", variable=vars["optimize"], bg="#2d2d2d", fg="#ccc", selectcolor="#444").pack(anchor="w")
+        tk.Scale(f1, variable=vars["dpi"], from_=50, to=300, orient="horizontal", label="DPI", bg="#2d2d2d", fg="white").pack(fill="x")
+        tk.Scale(f1, variable=vars["quality"], from_=10, to=100, orient="horizontal", label="Quality", bg="#2d2d2d", fg="white").pack(fill="x")
+        tk.Checkbutton(f1, text="Grayscale", variable=vars["grayscale"], bg="#2d2d2d", fg="#ccc", selectcolor="#444").pack(anchor="w")
+        def run():
+            path = filedialog.asksaveasfilename(filetypes=[("PDF","*.pdf")])
+            if path:
+                settings = {k: v.get() for k,v in vars.items()}
+                def done(res):
+                    self._hide_loading()
+                    if res: messagebox.showinfo("Saved", f"Saved to {path}")
+                    else: messagebox.showerror("Error", "Save failed.")
+                self._run_async(self.engine.save_advanced, done, path, settings, message="Compressing...")
+                dlg.destroy()
+        TkinterButtonMS(dlg, text="EXPORT", command=run, theme=self.colors).pack(fill="x", padx=20, pady=20)
+
+    # --- SCROLL & NAV ---
+
+    def _get_target_panel(self, widget):
+        curr = widget
+        while curr:
+            if curr == self.left_container or curr == self.thumb_canvas or curr == self.thumb_frame: return "LEFT"
+            if curr == self.right_panel or curr == self.canvas: return "RIGHT"
+            if curr == self.root: break
+            curr = curr.master
+        return "UNKNOWN"
+
+    def _dispatch_scroll(self, event):
+        delta = 0
+        if event.num == 5 or event.delta < 0: delta = -1 
+        if event.num == 4 or event.delta > 0: delta = 1 
+        
+        x, y = self.root.winfo_pointerxy()
+        target = self.root.winfo_containing(x, y)
+        if not target: return
+        panel = self._get_target_panel(target)
+        is_shift = (event.state & 0x0001) or (event.state & 0x0004)
+        
+        if panel == "LEFT":
+            if is_shift: self._change_thumb_size(20 if delta > 0 else -20)
+            else: self.thumb_canvas.yview_scroll(int(-1 * delta), "units")
+        elif panel == "RIGHT":
+            if is_shift: 
+                self._change_main_zoom(0.2 if delta > 0 else -0.2)
+            else:
+                top, bottom = self.canvas.yview()
+                at_top, at_bottom = (top <= 0.001), (bottom >= 0.999)
+                content_fits = at_top and at_bottom
+                if delta < 0: # Down
+                    if at_bottom or content_fits: self._next_page()
+                    else: self.canvas.yview_scroll(1, "units")
+                else: # Up
+                    if at_top or content_fits: self._prev_page()
+                    else: self.canvas.yview_scroll(-1, "units")
+
+    def _next_page(self):
+        if self.state["page_idx"] < self.state["total_pages"] - 1:
+            self.state["page_idx"] += 1
+            self._render_current_page()
+
+    def _prev_page(self):
+        if self.state["page_idx"] > 0:
+            self.state["page_idx"] -= 1
+            self._render_current_page()
+
+    # --- VIEWERS ---
+
+    def _render_current_page(self):
+        if not self.state["file_path"]: return
+        img, w, h = self.engine.render_page(self.state["page_idx"], self.state["zoom"])
+        self.canvas.image = img 
+        self.current_img_w = w; self.current_img_h = h
+        self.canvas.delete("all")
+        self.main_image_item = self.canvas.create_image(0, 0, image=img, anchor="center")
+        self.canvas.yview_moveto(0) 
+        self._reflow_main_view()
+
+    def _reflow_main_view(self):
+        if not self.main_image_item or not self.canvas.image: return
+        cw = self.canvas.winfo_width(); ch = self.canvas.winfo_height()
+        iw = self.current_img_w + 40; ih = self.current_img_h + 40
+        x = max(cw, iw) // 2; y = max(ch, ih) // 2
+        self.canvas.coords(self.main_image_item, x, y)
+        self.canvas.configure(scrollregion=(0, 0, max(cw, iw), max(ch, ih)))
+
+    def _on_main_view_resize(self, event):
+        self._reflow_main_view()
+
+    # --- THUMBNAILS ---
+    def _update_single_thumbnail(self, idx):
+        if idx < 0 or idx >= len(self.thumbnail_widgets): return
+        box_size = self.state["thumb_size"]
+        img, w, h = self.engine.render_thumbnail_fit(idx, max_size=(box_size, box_size))
+        self.thumbnail_images[idx] = img
+        cell = self.thumbnail_widgets[idx]
+        for child in cell.winfo_children():
+            if isinstance(child, tk.Frame):
+                for grandchild in child.winfo_children():
+                    if isinstance(grandchild, tk.Label) and grandchild.cget("text") == "":
+                        grandchild.configure(image=img)
+                        return
+
+    def _change_main_zoom(self, delta):
+        self.state["zoom"] = max(0.2, min(5.0, self.state["zoom"] + delta))
+        self._render_current_page()
+
+    def _change_thumb_size(self, delta):
+        new_s = max(80, min(400, self.state["thumb_size"] + delta))
+        if new_s != self.state["thumb_size"]:
+            self.state["thumb_size"] = new_s
+            self._regenerate_thumbnails()
+
+    def _regenerate_thumbnails(self):
+        for w in self.thumb_frame.winfo_children(): w.destroy()
+        self.thumbnail_widgets = []
+        self.thumbnail_images = []
+        try:
+            for i in range(self.state["total_pages"]):
+                box_size = self.state["thumb_size"]
+                img, w, h = self.engine.render_thumbnail_fit(i, max_size=(box_size, box_size))
+                self.thumbnail_images.append(img)
+                cell = tk.Frame(self.thumb_frame, bg=self.colors['panel_bg'], width=box_size+20, height=box_size+40)
+                cell.pack_propagate(False) 
+                inner = tk.Frame(cell, bg=self.colors['panel_bg'])
+                inner.place(relx=0.5, rely=0.5, anchor="center")
+                
+                lbl = tk.Label(inner, image=img, bg="#444", cursor="hand2")
+                lbl.pack()
+                
+                # BINDINGS
+                for widget in (cell, inner, lbl):
+                    widget.bind("<ButtonPress-1>", lambda e, p=i: self._on_drag_start(e, p))
+                    widget.bind("<B1-Motion>", self._on_drag_motion)
+                    widget.bind("<ButtonRelease-1>", self._on_drag_drop)
+                
+                tk.Label(inner, text=f"{i+1}", bg=self.colors['panel_bg'], fg="#999", font=("Arial", 9)).pack(pady=(2,0))
+                self.thumbnail_widgets.append(cell)
+                if i % 10 == 0: self.thumb_frame.update_idletasks()
+            self._reflow_thumbnails()
+        except Exception as e: print(f"Error: {e}")
+
+    def _reflow_thumbnails(self):
+        if not self.thumbnail_widgets: return
+        panel_w = self.thumb_canvas.winfo_width()
+        item_w = self.state["thumb_size"] + 30 
+        cols = max(1, panel_w // item_w)
+        self.state["grid_cols"] = cols
+        for i in range(cols): self.thumb_frame.grid_columnconfigure(i, weight=1)
+        for idx, widget in enumerate(self.thumbnail_widgets):
+            widget.grid(row=idx // cols, column=idx % cols, sticky="n", padx=5, pady=5)
+
+    def _on_sidebar_resize(self, event):
+        item_w = self.state["thumb_size"] + 30
+        new_cols = max(1, event.width // item_w)
+        if new_cols != self.state["grid_cols"]: self._reflow_thumbnails()
+        self.thumb_canvas.itemconfig(self.thumb_window_id, width=event.width)
+
+    def _on_thumb_frame_configure(self, event):
+        self.thumb_canvas.configure(scrollregion=self.thumb_canvas.bbox("all"))
+    
+    def _jump_to_page(self, idx):
+        self.state["page_idx"] = idx
+        self._render_current_page()
+
+    # --- DRAG AND DROP ---
+    def _create_drag_ghost(self, idx, event):
+        if self.drag_data["ghost_window"]: self.drag_data["ghost_window"].destroy()
+        img = self.thumbnail_images[idx]
+        ghost = tk.Toplevel(self.root)
+        ghost.overrideredirect(True)
+        ghost.attributes("-alpha", 0.6)
+        ghost.attributes("-topmost", True)
+        lbl = tk.Label(ghost, image=img, bg="#333", bd=2, relief="solid")
+        lbl.pack()
+        self.drag_data["ghost_window"] = ghost
+        ghost.geometry(f"+{event.x_root + 10}+{event.y_root + 10}")
+
+    def _update_drop_indicator(self, target_idx, side="left"):
+        if not self.drag_data["indicator"]:
+            self.drag_data["indicator"] = tk.Frame(self.thumb_frame, bg="#00FFFF", width=4)
+            self.drag_data["indicator_active"] = True
+            self._animate_drop_indicator()
+        ind = self.drag_data["indicator"]
+        if target_idx is not None and 0 <= target_idx < len(self.thumbnail_widgets):
+            tgt = self.thumbnail_widgets[target_idx]
+            x, y, w, h = tgt.winfo_x(), tgt.winfo_y(), tgt.winfo_width(), tgt.winfo_height()
+            px = x - 4 if side == "left" else (x + w)
+            ind.place(x=px, y=y, height=h, width=4); ind.lift()
+        else: ind.place_forget()
+
+    def _animate_drop_indicator(self):
+        if not self.drag_data["indicator_active"] or not self.drag_data["indicator"]: return
+        try:
+            cur = self.drag_data["indicator"].cget("bg")
+            self.drag_data["indicator"].configure(bg="#FFFF00" if cur == "#00FFFF" else "#00FFFF")
+            self.root.after(80, self._animate_drop_indicator)
+        except: self.drag_data["indicator_active"] = False
+
+    def _on_drag_start(self, event, idx):
+        self._jump_to_page(idx)
+        self.drag_data["source_idx"] = idx
+        if 0 <= idx < len(self.thumbnail_widgets): self.thumbnail_widgets[idx].configure(bg="#007acc")
+        self._create_drag_ghost(idx, event)
+
+    def _on_drag_motion(self, event):
+        if self.drag_data["ghost_window"]:
+            self.drag_data["ghost_window"].geometry(f"+{event.x_root + 15}+{event.y_root + 15}")
+        
+        target = self.root.winfo_containing(*self.root.winfo_pointerxy())
+        t_idx = self._get_thumbnail_index(target)
+        
+        if t_idx is not None:
+            w = self.thumbnail_widgets[t_idx]
+            side = "left" if (event.x_root - w.winfo_rootx()) < (w.winfo_width()/2) else "right"
+            drop_idx = t_idx if side == "left" else t_idx + 1
+            src = self.drag_data["source_idx"]
+            
+            if drop_idx in (src, src+1):
+                if self.drag_data["indicator"]: self.drag_data["indicator"].place_forget()
+                self.drag_data["drop_target_idx"] = None
+            else:
+                self._update_drop_indicator(t_idx, side)
+                self.drag_data["drop_target_idx"] = drop_idx
+        else:
+            if self.drag_data["indicator"]: self.drag_data["indicator"].place_forget()
+            self.drag_data["drop_target_idx"] = None
+
+    def _on_drag_drop(self, event):
+        src, final = self.drag_data["source_idx"], self.drag_data["drop_target_idx"]
+        
+        if self.drag_data["ghost_window"]: self.drag_data["ghost_window"].destroy()
+        if self.drag_data["indicator"]: self.drag_data["indicator"].destroy(); self.drag_data["indicator"] = None
+        
+        if src is not None: self.thumbnail_widgets[src].configure(bg=self.colors['panel_bg'])
+        
+        if src is not None and final is not None:
+            target_arg = final
+            if final >= self.state["total_pages"]: target_arg = -1
+            
+            if self.engine.move_page(src, target_arg):
+                self._regenerate_thumbnails()
+                new_p = final if final <= src else final - 1
+                if target_arg == -1: new_p = self.state["total_pages"] - 1
+                self.state["page_idx"] = max(0, min(new_p, self.state["total_pages"]-1))
+                self._render_current_page()
+                
+        self.drag_data["source_idx"] = None
+
+    def _get_thumbnail_index(self, widget):
+        curr = widget
+        while curr:
+            if curr in self.thumbnail_widgets: return self.thumbnail_widgets.index(curr)
+            if curr in (self.thumb_frame, self.root): break
+            curr = curr.master
+        return None
+
+    # --- LOADING (THINGY-MA-BOBBER STYLE) ---
+    def _show_loading(self, message="Processing..."):
+        if self.loading_overlay: return
+        # Fullscreen overlay
+        self.loading_overlay = tk.Frame(self.root, bg="black")
+        self.loading_overlay.place(relx=0, rely=0, relwidth=1, relheight=1)
+        
+        # Center container
+        # Box matches the 'ThingyMaBobber' vibe: Dark background
+        box = tk.Frame(self.loading_overlay, bg="#111", padx=30, pady=30, relief="flat")
+        box.place(relx=0.5, rely=0.5, anchor="center")
+        
+        # Canvas
+        self.spinner_canvas = tk.Canvas(box, width=120, height=120, bg="#111", highlightthickness=0)
+        self.spinner_canvas.pack(pady=(0, 20))
+        
+        # Boot Log Label
+        self.loading_label = tk.Label(box, text=message, bg="#111", fg="white", font=("Consolas", 12, "bold"))
+        self.loading_label.pack()
+        
+        # Init State
+        self.spinner_running = True
+        self.spinner_state = { "a1": 0, "a2": 0, "a3": 0, "hue": 0 }
+        self._animate_spinner()
+        self.root.update()
+
+    def _hide_loading(self):
+        self.spinner_running = False
+        if self.loading_overlay:
+            self.loading_overlay.destroy()
+            self.loading_overlay = None
+
+    def _get_neon_color(self, offset=0):
+        # Cycling hue
+        h = (self.spinner_state["hue"] + offset) % 1.0
+        r, g, b = colorsys.hsv_to_rgb(h, 1.0, 1.0)
+        return f'#{int(r*255):02x}{int(g*255):02x}{int(b*255):02x}'
+
+    def _draw_arc(self, cx, cy, r, width, start, extent, color):
+        self.spinner_canvas.create_arc(
+            cx-r, cy-r, cx+r, cy+r,
+            start=start, extent=extent,
+            outline=color, width=width, style="arc"
+        )
+
+    def _animate_spinner(self):
+        if not self.spinner_running: return
+        
+        c = self.spinner_canvas
+        c.delete("all")
+        
+        w, h = 120, 120
+        cx, cy = w/2, h/2
+        base = 50
+        
+        # Update State
+        self.spinner_state["hue"] += 0.01
+        if self.spinner_state["hue"] > 1: self.spinner_state["hue"] = 0
+        
+        # Colors
+        c1 = self._get_neon_color(0.0)
+        c2 = self._get_neon_color(0.33)
+        c3 = self._get_neon_color(0.66)
+        
+        # Ring 1 (Inner, Fast)
+        self.spinner_state["a1"] -= 8
+        r1 = base * 0.5
+        for i in range(3):
+            self._draw_arc(cx, cy, r1, 4, self.spinner_state["a1"] + (i*120), 80, c1)
+            
+        # Ring 2 (Middle)
+        self.spinner_state["a2"] += 5
+        r2 = base * 0.75
+        self._draw_arc(cx, cy, r2, 3, self.spinner_state["a2"], 160, c2)
+        self._draw_arc(cx, cy, r2, 3, self.spinner_state["a2"]+180, 160, c2)
+        
+        # Ring 3 (Outer, Slow)
+        self.spinner_state["a3"] -= 3
+        r3 = base
+        self._draw_arc(cx, cy, r3, 2, self.spinner_state["a3"], 300, c3)
+        
+        self.root.after(30, self._animate_spinner)
+
+    def _run_async(self, target_func, on_complete, *args, message="Processing..."):
+        def wrapper():
+            result = target_func(*args)
+            self.root.after(0, lambda: on_complete(result))
+        
+        self._show_loading(message)
+        threading.Thread(target=wrapper, daemon=True).start()
+--------------------------------------------------------------------------------
+FILE: _utilities-used-for-installation\generate_button_icons.py
+--------------------------------------------------------------------------------
+"""
+SCRIPT: generate_assets.py
+DESCRIPTION: Procedurally generates a UI icon pack for NoStringsPDF.
+"""
+import os
+from PIL import Image, ImageDraw
+
+# [FIX] Force script to run from Project Root
+os.chdir(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+def draw_icon(name, draw_func):
+    size = (48, 48) # Generates @2x for crispness, Button class will resize
+    img = Image.new("RGBA", size, (0, 0, 0, 0))
+    draw = ImageDraw.Draw(img)
+    
+    # Style: White lines, 3px thick
+    fg = "#ffffff"
+    w = 4
+    
+    draw_func(draw, size, fg, w)
+    
+    # Save
+    if not os.path.exists("assets"):
+        os.makedirs("assets")
+    img.save(f"assets/{name}.png", "PNG")
+    print(f"Generated assets/{name}.png")
+
+# --- DRAWING FUNCTIONS ---
+
+def icon_open(d, s, c, w):
+    # Folder shape
+    d.polygon([(4, 12), (16, 12), (20, 16), (44, 16), (44, 40), (4, 40)], outline=c, width=w)
+    d.line([(4, 20), (44, 20)], fill=c, width=w)
+
+def icon_insert(d, s, c, w):
+    # Doc with Plus
+    d.rectangle([10, 6, 38, 42], outline=c, width=w)
+    d.line([(24, 18), (24, 30)], fill=c, width=w) # Vertical
+    d.line([(18, 24), (30, 24)], fill=c, width=w) # Horizontal
+
+def icon_interleave(d, s, c, w):
+    # Two stacks merging like a zipper
+    d.rectangle([8, 10, 20, 22], outline=c, width=3) # Top Left
+    d.rectangle([28, 26, 40, 38], outline=c, width=3) # Bot Right
+    # Arrows
+    d.line([(22, 16), (26, 32)], fill=c, width=2)
+
+def icon_extract(d, s, c, w):
+    # Doc with arrow coming out
+    d.rectangle([8, 8, 32, 40], outline=c, width=3)
+    d.line([(32, 24), (44, 24)], fill=c, width=3) # Arrow shaft
+    d.polygon([(40, 20), (44, 24), (40, 28)], fill=c) # Arrow head
+
+def icon_split(d, s, c, w):
+    # Scissors / Cut line
+    d.line([(24, 4), (24, 44)], fill=c, width=3) # Vertical dash
+    # Arrows parting
+    d.polygon([(10, 20), (4, 24), (10, 28)], fill=c) # Left arrow
+    d.polygon([(38, 20), (44, 24), (38, 28)], fill=c) # Right arrow
+
+def icon_save(d, s, c, w):
+    # Floppy disk (Classic)
+    d.rectangle([8, 8, 40, 40], outline=c, width=w) # Main body
+    d.rectangle([14, 8, 34, 18], fill=c) # Metal shutter (Top)
+    # FIX: Coordinates were flipped [12, 40, 36, 28] -> [12, 28, 36, 40]
+    # This draws the label area at the bottom properly.
+    d.rectangle([12, 28, 36, 40], outline=c, width=2) 
+
+def icon_rot_l(d, s, c, w):
+    # Counter-Clockwise Arrow
+    d.arc([8, 8, 40, 40], 135, 405, fill=c, width=w)
+    d.polygon([(8, 24), (2, 20), (14, 20)], fill=c) # Arrowhead left
+
+def icon_rot_r(d, s, c, w):
+    # Clockwise Arrow
+    d.arc([8, 8, 40, 40], 135, 405, fill=c, width=w)
+    d.polygon([(40, 24), (46, 20), (34, 20)], fill=c) # Arrowhead right
+
+def icon_zoom_in(d, s, c, w):
+    d.ellipse([8, 8, 32, 32], outline=c, width=w)
+    d.line([(28, 28), (40, 40)], fill=c, width=w) # Handle
+    d.line([(20, 14), (20, 26)], fill=c, width=3) # V
+    d.line([(14, 20), (26, 20)], fill=c, width=3) # H
+
+def icon_zoom_out(d, s, c, w):
+    d.ellipse([8, 8, 32, 32], outline=c, width=w)
+    d.line([(28, 28), (40, 40)], fill=c, width=w) # Handle
+    d.line([(14, 20), (26, 20)], fill=c, width=3) # H
+
+def icon_prev(d, s, c, w):
+    d.polygon([(30, 10), (14, 24), (30, 38)], fill=c)
+
+def icon_next(d, s, c, w):
+    d.polygon([(18, 10), (34, 24), (18, 38)], fill=c)
+
+# --- RUN ---
+if __name__ == "__main__":
+    mapping = {
+        "open": icon_open,
+        "insert": icon_insert,
+        "interleave": icon_interleave,
+        "extract": icon_extract,
+        "split": icon_split,
+        "save": icon_save,
+        "rot_l": icon_rot_l,
+        "rot_r": icon_rot_r,
+        "zoom_in": icon_zoom_in,
+        "zoom_out": icon_zoom_out,
+        "prev": icon_prev,
+        "next": icon_next
+    }
+    
+    for name, func in mapping.items():
+        try:
+            draw_icon(name, func)
+        except Exception as e:
+            print(f"Error generating {name}: {e}")
+        
+    print("[SUCCESS] Icon pack generated in /assets")
+--------------------------------------------------------------------------------
+FILE: _utilities-used-for-installation\generate_icon.py
+--------------------------------------------------------------------------------
+"""
+SCRIPT: generate_icon.py
+DESCRIPTION: Procedurally generates a modern 'NoStringsPDF' app icon.
+"""
+from PIL import Image, ImageDraw, ImageFont
+import os
+
+# [FIX] Force script to run from Project Root
+os.chdir(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+def create_icon():
+    size = (256, 256)
+    # Transparent background
+    img = Image.new("RGBA", size, (0, 0, 0, 0))
+    draw = ImageDraw.Draw(img)
+
+    # Colors
+    dark_bg = "#252526"
+    accent = "#007acc"  # VS Code Blue/Cyan
+    paper = "#e0e0e0"
+    
+    # 1. Draw Background (Rounded Square)
+    # We fake rounded corners by drawing circles + rectangles
+    r = 40 # Radius
+    margin = 10
+    box = [margin, margin, size[0]-margin, size[1]-margin]
+    
+    # Main Body
+    draw.rounded_rectangle(box, radius=r, fill=dark_bg, outline="#333", width=4)
+
+    # 2. Draw "Document" Shape in Center
+    doc_w, doc_h = 120, 160
+    doc_x = (size[0] - doc_w) // 2
+    doc_y = (size[1] - doc_h) // 2
+    
+    # Paper Body
+    draw.rectangle([doc_x, doc_y, doc_x + doc_w, doc_y + doc_h], fill=paper)
+    
+    # 3. Draw "Redacted/Text" Lines (Industrial feel)
+    line_h = 12
+    gap = 20
+    start_y = doc_y + 30
+    for i in range(4):
+        y = start_y + (i * gap)
+        # Random-ish widths
+        w = doc_w - 40 if i % 2 == 0 else doc_w - 60
+        draw.rectangle([doc_x + 20, y, doc_x + 20 + w, y + line_h], fill="#555")
+
+    # 4. Draw "No Strings" Accent (Cyan Slash/Corner)
+    # A triangular fold or slash at the bottom right of the document
+    draw.polygon([
+        (doc_x + doc_w, doc_y + doc_h - 40), # Top of slash
+        (doc_x + doc_w, doc_y + doc_h),      # Corner
+        (doc_x + doc_w - 40, doc_y + doc_h)  # Left of slash
+    ], fill=accent)
+
+    # 5. Save as ICO
+    # Windows icons usually contain multiple sizes
+    img.save("app.ico", format="ICO", sizes=[(256, 256), (128, 128), (64, 64), (48, 48), (32, 32), (16, 16)])
+    print("[SUCCESS] Generated app.ico in Project Root")
+
+if __name__ == "__main__":
+    create_icon()
+--------------------------------------------------------------------------------
+FILE: _utilities-used-for-installation\package-the-app.bat
+--------------------------------------------------------------------------------
+@echo off
+:: [FIX 1] Switch to Project Root so we can find src/ and assets/
+pushd "%~dp0.."
+
+set "APP_NAME=NoStringsPDF"
+
+echo ---------------------------------------------------------------------
+echo [BUILD SYSTEM] Starting Release Build for %APP_NAME%...
+echo ---------------------------------------------------------------------
+
+:: 1. ACTIVATE ENVIRONMENT
+if exist .venv\Scripts\activate (
+    call .venv\Scripts\activate
+) else (
+    echo [ERROR] Virtual environment not found. Run setup_env.bat first.
+    pause
+    exit /b
+)
+
+:: [FIX 2] AUTO-INSTALL PYINSTALLER if missing
+:: We check if the command exists. If not, we pip install it locally.
+where pyinstaller >nul 2>nul
+if %errorlevel% neq 0 (
+    echo [SYSTEM] PyInstaller not found in venv. Installing...
+    pip install pyinstaller
+)
+
+:: 2. CLEANUP PREVIOUS BUILDS
+echo.
+echo [CLEAN] Removing old build artifacts...
+if exist build rmdir /s /q build
+if exist dist rmdir /s /q dist
+if exist *.spec del /q *.spec
+if exist "%APP_NAME%_Release.zip" del /q "%APP_NAME%_Release.zip"
+
+:: 3. BUILD EXECUTABLE
+echo.
+echo [COMPILE] Generating EXE...
+:: --paths: WE ADD "src;src/microservices" so it finds the missing library!
+
+pyinstaller --noconsole --onefile ^
+    --name "%APP_NAME%" ^
+    --icon="app.ico" ^
+    --paths="src;src/microservices" ^
+    --hidden-import="microservice_std_lib" ^
+    --hidden-import="PIL" ^
+    --hidden-import="fitz" ^
+    --hidden-import="pymupdf" ^
+    src/app.py
+
+:: 4. STAGE ASSETS
+echo.
+echo [STAGE] Copying assets to distribution folder...
+if exist assets (
+    xcopy /E /I /Y "assets" "dist\assets"
+) else (
+    echo [WARNING] No assets folder found! Icons will be missing.
+)
+
+:: 5. PACKAGE
+echo.
+echo [PACKAGE] Zipping distribution into single file...
+powershell Compress-Archive -Path "dist\*" -DestinationPath "%APP_NAME%_Release.zip" -Force
+
+echo.
+echo ---------------------------------------------------------------------
+echo [SUCCESS] BUILD COMPLETE!
+echo ---------------------------------------------------------------------
+echo.
+echo You have two options:
+echo 1. The Folder:  dist\ (In project root)
+echo 2. The Zip:     %APP_NAME%_Release.zip  (SEND THIS ONE)
+echo.
+pause
+popd
+--------------------------------------------------------------------------------
+FILE: _utilities-used-for-installation\setup_env.bat
+--------------------------------------------------------------------------------
+@echo off
+:: [FIX] Switch to Project Root so relative paths (like .venv) work
+pushd "%~dp0.."
+
+echo [SYSTEM] Initializing new project environment...
+
+:: 1. Create the venv if it doesn't exist
+if not exist .venv (
+    echo [SYSTEM] Creating .venv...
+    py -m venv .venv
+)
+
+:: 2. Upgrade pip and install requirements
+echo [SYSTEM] Installing dependencies...
+.venv\Scripts\python.exe -m pip install --upgrade pip
+if exist requirements.txt (
+    .venv\Scripts\pip install -r requirements.txt
+)
+
+echo.
+echo [SUCCESS] Environment ready!
+echo You can now open this folder in VS Code.
+pause
+popd

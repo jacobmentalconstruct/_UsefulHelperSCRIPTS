@@ -1,0 +1,9723 @@
+{
+  "vocab": {
+    "﻿": 0,
+    "U": 1,
+    "n": 2,
+    "i": 3,
+    "f": 4,
+    "e": 5,
+    "d": 6,
+    "</w>": 7,
+    "T": 8,
+    "h": 9,
+    "o": 10,
+    "r": 11,
+    "y": 12,
+    "A": 13,
+    "w": 14,
+    "a": 15,
+    "s": 16,
+    "(": 17,
+    ")": 18,
+    ":": 19,
+    "F": 20,
+    "m": 21,
+    "C": 22,
+    "p": 23,
+    "l": 24,
+    "t": 25,
+    "S": 26,
+    "c": 27,
+    "I": 28,
+    "x": 29,
+    "_": 30,
+    "1": 31,
+    ".": 32,
+    "2": 33,
+    "u": 34,
+    "g": 35,
+    ",": 36,
+    "-": 37,
+    "v": 38,
+    "b": 39,
+    "j": 40,
+    "W": 41,
+    "k": 42,
+    "q": 43,
+    "B": 44,
+    "E": 45,
+    "3": 46,
+    "D": 47,
+    "z": 48,
+    "M": 49,
+    "’": 50,
+    "P": 51,
+    "\"": 52,
+    "Z": 53,
+    "N": 54,
+    ";": 55,
+    "/": 56,
+    "V": 57,
+    "'": 58,
+    "R": 59,
+    "L": 60,
+    "H": 61,
+    "4": 62,
+    "*": 63,
+    "G": 64,
+    "O": 65,
+    "5": 66,
+    "Q": 67,
+    "K": 68,
+    "—": 69,
+    "6": 70,
+    "e</w>": 71,
+    "s</w>": 72,
+    "in": 73,
+    "th": 74,
+    "en": 75,
+    "on": 76,
+    "ti": 77,
+    "er": 78,
+    "al": 79,
+    "an": 80,
+    "__": 81,
+    "d</w>": 82,
+    "the</w>": 83,
+    "of": 84,
+    "t</w>": 85,
+    "of</w>": 86,
+    "es": 87,
+    "it": 88,
+    "y</w>": 89,
+    ",</w>": 90,
+    ".</w>": 91,
+    "ex": 92,
+    "tion": 93,
+    "and</w>": 94,
+    "ing": 95,
+    "re": 96,
+    "ar": 97,
+    "____": 98,
+    "con": 99,
+    "ic": 100,
+    "Th": 101,
+    "ing</w>": 102,
+    "st": 103,
+    "es</w>": 104,
+    "si": 105,
+    "or": 106,
+    "un": 107,
+    "pl": 108,
+    "enc": 109,
+    ":</w>": 110,
+    "om": 111,
+    "ec": 112,
+    "al</w>": 113,
+    "a</w>": 114,
+    "is</w>": 115,
+    "po": 116,
+    "ou": 117,
+    "ation": 118,
+    "The</w>": 119,
+    "alit": 120,
+    "enti": 121,
+    "per": 122,
+    "pr": 123,
+    "ed</w>": 124,
+    "in</w>": 125,
+    "ver": 126,
+    "to": 127,
+    "at": 128,
+    "ter": 129,
+    "di": 130,
+    "ac": 131,
+    "all": 132,
+    "tenti": 133,
+    "to</w>": 134,
+    "ent</w>": 135,
+    "potenti": 136,
+    "________": 137,
+    "am": 138,
+    "ali": 139,
+    "ess</w>": 140,
+    "ci": 141,
+    "*</w>": 142,
+    "at</w>": 143,
+    "el": 144,
+    "wi": 145,
+    "that</w>": 146,
+    "ent": 147,
+    "wh": 148,
+    "tu": 149,
+    "with": 150,
+    "if": 151,
+    "ol": 152,
+    "ality": 153,
+    "peri": 154,
+    "fin": 155,
+    "perienc": 156,
+    "ity</w>": 157,
+    "all</w>": 158,
+    "h</w>": 159,
+    "ap": 160,
+    "em": 161,
+    "inter": 162,
+    "is": 163,
+    "experienc": 164,
+    "und": 165,
+    "ation</w>": 166,
+    "ompl": 167,
+    "su": 168,
+    "ow": 169,
+    "qu": 170,
+    "cont": 171,
+    "fr": 172,
+    "UF": 173,
+    "UFA": 174,
+    "pres": 175,
+    "tiv": 176,
+    "e,</w>": 177,
+    "ul": 178,
+    "are</w>": 179,
+    "s,</w>": 180,
+    "ality</w>": 181,
+    "ce": 182,
+    "as</w>": 183,
+    "ed": 184,
+    "du": 185,
+    "tic": 186,
+    "sion": 187,
+    "omplex": 188,
+    "s.</w>": 189,
+    "ts</w>": 190,
+    "vers": 191,
+    "ur": 192,
+    "ic</w>": 193,
+    "uni": 194,
+    "UT": 195,
+    "UTA": 196,
+    "or</w>": 197,
+    "sci": 198,
+    "mpl": 199,
+    "pro": 200,
+    "ding</w>": 201,
+    "ph": 202,
+    "finit": 203,
+    "exi": 204,
+    "wher": 205,
+    "where</w>": 206,
+    "nec": 207,
+    "stat": 208,
+    "sp": 209,
+    "lu": 210,
+    "ory</w>": 211,
+    "This</w>": 212,
+    "no": 213,
+    "exist": 214,
+    "om</w>": 215,
+    "mplic": 216,
+    "bs": 217,
+    "an</w>": 218,
+    "finite</w>": 219,
+    "our": 220,
+    "complex": 221,
+    "ous": 222,
+    "ence</w>": 223,
+    "tive</w>": 224,
+    "under": 225,
+    "cep": 226,
+    "elf": 227,
+    "spec": 228,
+    "tic</w>": 229,
+    "il": 230,
+    "ties</w>": 231,
+    "en</w>": 232,
+    "within</w>": 233,
+    "war": 234,
+    "sh": 235,
+    "reality": 236,
+    "vi": 237,
+    "fer": 238,
+    "with</w>": 239,
+    "waren": 240,
+    "par": 241,
+    "UTA</w>": 242,
+    "ow</w>": 243,
+    "Con": 244,
+    "stan": 245,
+    "from</w>": 246,
+    "the": 247,
+    "ra": 248,
+    "se": 249,
+    "bser": 250,
+    "de": 251,
+    "ro": 252,
+    "m</w>": 253,
+    "infinite</w>": 254,
+    "ity": 255,
+    "est": 256,
+    "ness</w>": 257,
+    "e:</w>": 258,
+    "ifi": 259,
+    "ified</w>": 260,
+    "et": 261,
+    "elf-": 262,
+    "obser": 263,
+    "e.</w>": 264,
+    "potential</w>": 265,
+    "expres": 266,
+    "contex": 267,
+    "tion:</w>": 268,
+    "by</w>": 269,
+    "In": 270,
+    "ch": 271,
+    "ew": 272,
+    "________________": 273,
+    "________________</w>": 274,
+    "pos": 275,
+    "connec": 276,
+    "scious": 277,
+    "yn": 278,
+    "ynam": 279,
+    "bu": 280,
+    "inf": 281,
+    "actu": 282,
+    "connect": 283,
+    "ations</w>": 284,
+    "ev": 285,
+    "not</w>": 286,
+    "wareness</w>": 287,
+    "versi": 288,
+    "versif": 289,
+    "tions</w>": 290,
+    "proc": 291,
+    "expression": 292,
+    "shap": 293,
+    "potential": 294,
+    "univers": 295,
+    "state</w>": 296,
+    "anif": 297,
+    "es,</w>": 298,
+    "Un": 299,
+    "le</w>": 300,
+    "sug": 301,
+    "sugg": 302,
+    "ce</w>": 303,
+    "co": 304,
+    "duali": 305,
+    "conscious": 306,
+    "dynam": 307,
+    "ig": 308,
+    "its</w>": 309,
+    "ech": 310,
+    "echan": 311,
+    "manif": 312,
+    "reality.</w>": 313,
+    "It</w>": 314,
+    "standing</w>": 315,
+    "versific": 316,
+    "this</w>": 317,
+    "into</w>": 318,
+    "complexity</w>": 319,
+    "interconnect": 320,
+    "ma": 321,
+    "tim": 322,
+    "Mechan": 323,
+    "Ex": 324,
+    "but</w>": 325,
+    "ru": 326,
+    "ess": 327,
+    "tion</w>": 328,
+    "concep": 329,
+    "self-": 330,
+    "mul": 331,
+    "tan": 332,
+    "ly</w>": 333,
+    "pre": 334,
+    "fol": 335,
+    "reality</w>": 336,
+    "uniqu": 337,
+    "oment</w>": 338,
+    "luenc": 339,
+    "understanding</w>": 340,
+    "ich</w>": 341,
+    "for</w>": 342,
+    "unfol": 343,
+    "dynamic</w>": 344,
+    "on</w>": 345,
+    "ism": 346,
+    "aliz": 347,
+    "es.</w>": 348,
+    "ach</w>": 349,
+    "our</w>": 350,
+    "simplic": 351,
+    "us": 352,
+    "observ": 353,
+    "her": 354,
+    "which</w>": 355,
+    "UFA</w>": 356,
+    "stic</w>": 357,
+    "min": 358,
+    "er</w>": 359,
+    "dif": 360,
+    "differ": 361,
+    "influenc": 362,
+    "fram": 363,
+    "cre": 364,
+    "int": 365,
+    "present": 366,
+    "ess,</w>": 367,
+    "ri": 368,
+    "ir": 369,
+    "alities</w>": 370,
+    "ous</w>": 371,
+    "possi": 372,
+    "possib": 373,
+    "as": 374,
+    "unique</w>": 375,
+    "Now</w>": 376,
+    "oic": 377,
+    "self-di": 378,
+    "unified</w>": 379,
+    "dualistic</w>": 380,
+    "oug": 381,
+    "process</w>": 382,
+    "ical</w>": 383,
+    "we</w>": 384,
+    "ole</w>": 385,
+    "fig": 386,
+    "figur": 387,
+    "be": 388,
+    "etw": 389,
+    "manifest": 390,
+    "stru": 391,
+    "struc": 392,
+    "perspec": 393,
+    "ental</w>": 394,
+    "ality,</w>": 395,
+    "ity,</w>": 396,
+    "phen": 397,
+    "phenom": 398,
+    "phenomen": 399,
+    "ork": 400,
+    "simul": 401,
+    "simultan": 402,
+    "simultane": 403,
+    "ver</w>": 404,
+    "divers": 405,
+    "ure</w>": 406,
+    "os": 407,
+    "how</w>": 408,
+    "ins</w>": 409,
+    "tual</w>": 410,
+    "im": 411,
+    "rel": 412,
+    "De": 413,
+    "configur": 414,
+    "tern": 415,
+    "Mechanism": 416,
+    "ple:</w>": 417,
+    "iv": 418,
+    "different</w>": 419,
+    "experience</w>": 420,
+    "t,</w>": 421,
+    "pla": 422,
+    "clu": 423,
+    "por": 424,
+    "gn": 425,
+    "Unified</w>": 426,
+    "awareness</w>": 427,
+    "self-diversific": 428,
+    "ges</w>": 429,
+    "erg": 430,
+    "existence</w>": 431,
+    "ear": 432,
+    "istic</w>": 433,
+    "thing": 434,
+    "ence,</w>": 435,
+    "ili": 436,
+    "Defin": 437,
+    "Defini": 438,
+    "Definition:</w>": 439,
+    "can</w>": 440,
+    "Mechanism:</w>": 441,
+    "inher": 442,
+    "Exam": 443,
+    "Example:</w>": 444,
+    "time</w>": 445,
+    "betw": 446,
+    "betwe": 447,
+    "between</w>": 448,
+    "sequ": 449,
+    "Moment</w>": 450,
+    "each</w>": 451,
+    "oth": 452,
+    "experiences</w>": 453,
+    "choic": 454,
+    "ests</w>": 455,
+    "antu": 456,
+    "antum</w>": 457,
+    "theory</w>": 458,
+    "suggest": 459,
+    "suggesting</w>": 460,
+    "sour": 461,
+    "framew": 462,
+    "framework": 463,
+    "sing": 464,
+    "ular": 465,
+    "roug": 466,
+    "nat": 467,
+    "fl": 468,
+    "consciousness</w>": 469,
+    "orm": 470,
+    "sy": 471,
+    "ternal</w>": 472,
+    "actualiz": 473,
+    "Du": 474,
+    "universe</w>": 475,
+    "UFA.</w>": 476,
+    "mplications</w>": 477,
+    "perspective</w>": 478,
+    "The": 479,
+    "Awareness</w>": 480,
+    ")</w>": 481,
+    "fund": 482,
+    "fundam": 483,
+    "fundamental</w>": 484,
+    "ation,</w>": 485,
+    "simplicity</w>": 486,
+    "aus": 487,
+    "observer</w>": 488,
+    "ating</w>": 489,
+    "aris": 490,
+    "tr": 491,
+    "ds</w>": 492,
+    "view": 493,
+    "interconnected</w>": 494,
+    "throug": 495,
+    "nature</w>": 496,
+    "ness,</w>": 497,
+    "insi": 498,
+    "insig": 499,
+    "insigh": 500,
+    "ance</w>": 501,
+    "interconnected": 502,
+    "interconnectedness</w>": 503,
+    "inci": 504,
+    "sion</w>": 505,
+    "role</w>": 506,
+    "shaping</w>": 507,
+    "interpre": 508,
+    "fo": 509,
+    "be</w>": 510,
+    "ese</w>": 511,
+    "now": 512,
+    "specif": 513,
+    "specific</w>": 514,
+    "ents</w>": 515,
+    "consequ": 516,
+    "stem": 517,
+    "es:</w>": 518,
+    "ality:</w>": 519,
+    "contin": 520,
+    "continu": 521,
+    "Implications</w>": 522,
+    "se</w>": 523,
+    "suggests</w>": 524,
+    "og": 525,
+    "construc": 526,
+    "Theory</w>": 527,
+    "omplet": 528,
+    "reality,</w>": 529,
+    "go": 530,
+    "dition": 531,
+    "bj": 532,
+    "bjec": 533,
+    "ed,</w>": 534,
+    "singular": 535,
+    "through</w>": 536,
+    "com": 537,
+    "y,</w>": 538,
+    "ilos": 539,
+    "iloso": 540,
+    "ilosoph": 541,
+    "potentials</w>": 542,
+    "us</w>": 543,
+    "experience,</w>": 544,
+    "princi": 545,
+    "principl": 546,
+    "ke</w>": 547,
+    "tot": 548,
+    "their": 549,
+    "their</w>": 550,
+    "UFA,</w>": 551,
+    "unfolding</w>": 552,
+    "ally</w>": 553,
+    "possibili": 554,
+    "sam": 555,
+    "same</w>": 556,
+    "states</w>": 557,
+    "potentialities</w>": 558,
+    "pas": 559,
+    "ll": 560,
+    "termin": 561,
+    "cip": 562,
+    "percep": 563,
+    "context</w>": 564,
+    "ys": 565,
+    "ics</w>": 566,
+    "s:</w>": 567,
+    "Connec": 568,
+    "quantum</w>": 569,
+    "olog": 570,
+    "omplete</w>": 571,
+    "Complex": 572,
+    "rodu": 573,
+    "roduc": 574,
+    "concept</w>": 575,
+    "ity.</w>": 576,
+    "emerg": 577,
+    "source</w>": 578,
+    "ously</w>": 579,
+    "diversity</w>": 580,
+    "tran": 581,
+    "ve</w>": 582,
+    "existence,</w>": 583,
+    "bri": 584,
+    "refl": 585,
+    "reflec": 586,
+    "t.</w>": 587,
+    "vid": 588,
+    "li": 589,
+    "like</w>": 590,
+    "iz": 591,
+    "interpret": 592,
+    "ed.</w>": 593,
+    "expression</w>": 594,
+    "ari": 595,
+    "ly": 596,
+    "inherent</w>": 597,
+    "on-": 598,
+    "Self-": 599,
+    "form": 600,
+    "’s</w>": 601,
+    "ely</w>": 602,
+    "relation": 603,
+    "relationsh": 604,
+    "relationshi": 605,
+    "relationship": 606,
+    "ant": 607,
+    "antec": 608,
+    "anteced": 609,
+    "configuration</w>": 610,
+    "est</w>": 611,
+    "ag": 612,
+    "ray</w>": 613,
+    "interpla": 614,
+    "interplay</w>": 615,
+    "posi": 616,
+    "determin": 617,
+    "ticip": 618,
+    "Re": 619,
+    "interac": 620,
+    "ties,</w>": 621,
+    "ce.</w>": 622,
+    "ad": 623,
+    "Conclu": 624,
+    "ea": 625,
+    "evel": 626,
+    "influenced</w>": 627,
+    "potentiality</w>": 628,
+    "empor": 629,
+    "offer": 630,
+    "mem": 631,
+    "(UTA": 632,
+    "Si": 633,
+    "Simplic": 634,
+    "Int": 635,
+    "Introduc": 636,
+    "tra": 637,
+    "tradition": 638,
+    "traditional</w>": 639,
+    "caus": 640,
+    "phenomena</w>": 641,
+    "ess.</w>": 642,
+    "iel": 643,
+    "inc": 644,
+    "hol": 645,
+    "self-diversification</w>": 646,
+    "allow": 647,
+    "consciousness,</w>": 648,
+    "entif": 649,
+    "ilosophical</w>": 650,
+    "bal": 651,
+    "provid": 652,
+    "insights</w>": 653,
+    "experience.</w>": 654,
+    "ary</w>": 655,
+    "ree</w>": 656,
+    "conceptual</w>": 657,
+    "ful": 658,
+    "possible</w>": 659,
+    "represent": 660,
+    "ate</w>": 661,
+    "Di": 662,
+    "UFA’s</w>": 663,
+    "acro": 664,
+    "acros": 665,
+    "denti": 666,
+    "anc": 667,
+    "unc": 668,
+    "Po": 669,
+    "Potenti": 670,
+    "manifestation</w>": 671,
+    "lin": 672,
+    "ear</w>": 673,
+    "principle</w>": 674,
+    "system": 675,
+    "out": 676,
+    "it</w>": 677,
+    "ies</w>": 678,
+    "present</w>": 679,
+    "tur": 680,
+    "moment</w>": 681,
+    "being</w>": 682,
+    "de</w>": 683,
+    "consequent</w>": 684,
+    "cur": 685,
+    "n</w>": 686,
+    "Par": 687,
+    "dual</w>": 688,
+    "partic": 689,
+    "underly": 690,
+    "underlying</w>": 691,
+    "In</w>": 692,
+    "ll</w>": 693,
+    "ab": 694,
+    "ity:</w>": 695,
+    "ality.</w>": 696,
+    "Mechanics</w>": 697,
+    "o</w>": 698,
+    "ation.</w>": 699,
+    "Conclusion": 700,
+    "Conclusion:</w>": 701,
+    "Ph": 702,
+    "res": 703,
+    "Experienc": 704,
+    "emporal</w>": 705,
+    "oll": 706,
+    "ollap": 707,
+    "ollapse</w>": 708,
+    "align": 709,
+    "emph": 710,
+    "empha": 711,
+    "emphasi": 712,
+    "emphasiz": 713,
+    "expressions</w>": 714,
+    "ot": 715,
+    "complete</w>": 716,
+    "chall": 717,
+    "challen": 718,
+    "challenges</w>": 719,
+    "separ": 720,
+    "objec": 721,
+    "simultaneously</w>": 722,
+    "creat": 723,
+    "aspec": 724,
+    "trans": 725,
+    "dist": 726,
+    "distinc": 727,
+    "ch</w>": 728,
+    "holistic</w>": 729,
+    "view</w>": 730,
+    "allows</w>": 731,
+    "entific</w>": 732,
+    "tion,</w>": 733,
+    "expl": 734,
+    "maint": 735,
+    "mainta": 736,
+    "universe.</w>": 737,
+    "By</w>": 738,
+    "time,</w>": 739,
+    "provides</w>": 740,
+    "dee": 741,
+    "y:</w>": 742,
+    "contextual</w>": 743,
+    "found": 744,
+    "these</w>": 745,
+    "vari": 746,
+    "self": 747,
+    "know": 748,
+    "led": 749,
+    "ledg": 750,
+    "und</w>": 751,
+    "Diversific": 752,
+    "simultaneous</w>": 753,
+    "across</w>": 754,
+    "ts.</w>": 755,
+    "des": 756,
+    "possibilities</w>": 757,
+    "\"</w>": 758,
+    "oment": 759,
+    "act</w>": 760,
+    "linear</w>": 761,
+    "realiz": 762,
+    "ties.</w>": 763,
+    "event": 764,
+    "rema": 765,
+    "ensu": 766,
+    "res</w>": 767,
+    "poin": 768,
+    "point</w>": 769,
+    "past</w>": 770,
+    "fu": 771,
+    "ence.</w>": 772,
+    "pa": 773,
+    "Ar": 774,
+    "Array</w>": 775,
+    "Duality</w>": 776,
+    "multi": 777,
+    "super": 778,
+    "ative</w>": 779,
+    "curr": 780,
+    "defin": 781,
+    "'s</w>": 782,
+    "aw": 783,
+    "play": 784,
+    "influences</w>": 785,
+    "particip": 786,
+    "divi": 787,
+    "Uni": 788,
+    "fac": 789,
+    "simplicity,</w>": 790,
+    "giv": 791,
+    "Introduction:</w>": 792,
+    "Nu": 793,
+    "Nuanc": 794,
+    "Nuances:</w>": 795,
+    "ation:</w>": 796,
+    "ess:</w>": 797,
+    "ies,</w>": 798,
+    "ty</w>": 799,
+    "level": 800,
+    "ff": 801,
+    "ffec": 802,
+    "Temporal</w>": 803,
+    "eur": 804,
+    "collapse</w>": 805,
+    "op": 806,
+    "aligns</w>": 807,
+    "cogn": 808,
+    "memory</w>": 809,
+    "Fr": 810,
+    "From</w>": 811,
+    "Infinite</w>": 812,
+    "Complexity</w>": 813,
+    "propos": 814,
+    "para": 815,
+    "paradi": 816,
+    "paradig": 817,
+    "awaren": 818,
+    "inte": 819,
+    "integ": 820,
+    "coher": 821,
+    "Fiel": 822,
+    "Field</w>": 823,
+    "sive</w>": 824,
+    "framework</w>": 825,
+    "brid": 826,
+    "spir": 827,
+    "spirit": 828,
+    "spiritu": 829,
+    "explor": 830,
+    "shapes</w>": 831,
+    "balance</w>": 832,
+    "equ": 833,
+    "um</w>": 834,
+    "inv": 835,
+    "invit": 836,
+    "new": 837,
+    "new</w>": 838,
+    "things.</w>": 839,
+    "deeper": 840,
+    "deeper</w>": 841,
+    "concepts</w>": 842,
+    "singularity</w>": 843,
+    "frame</w>": 844,
+    "refer": 845,
+    "dic": 846,
+    "maintain": 847,
+    "underst": 848,
+    "nothing": 849,
+    "various</w>": 850,
+    "ations.</w>": 851,
+    "exists</w>": 852,
+    "self</w>": 853,
+    "represents</w>": 854,
+    "arises</w>": 855,
+    "complex</w>": 856,
+    "ing,</w>": 857,
+    "knowledg": 858,
+    "non-": 859,
+    "gro": 860,
+    "Self-Diversific": 861,
+    "express": 862,
+    "diverse</w>": 863,
+    "forms</w>": 864,
+    "These</w>": 865,
+    "identi": 866,
+    "app": 867,
+    "due</w>": 868,
+    "relationships</w>": 869,
+    "phenomena": 870,
+    "func": 871,
+    "Ac": 872,
+    "infinit": 873,
+    "potential.</w>": 874,
+    "observation</w>": 875,
+    "o-": 876,
+    "constan": 877,
+    "potentials,</w>": 878,
+    "inherent": 879,
+    "inherently</w>": 880,
+    "ains</w>": 881,
+    "external</w>": 882,
+    "pu": 883,
+    "ensures</w>": 884,
+    "y.</w>": 885,
+    "conver": 886,
+    "converg": 887,
+    "inters": 888,
+    "intersec": 889,
+    "ture</w>": 890,
+    "ther</w>": 891,
+    "mer": 892,
+    "merely</w>": 893,
+    "you": 894,
+    "you</w>": 895,
+    "ust</w>": 896,
+    "states.</w>": 897,
+    "od": 898,
+    "antecedent</w>": 899,
+    "other</w>": 900,
+    "ages</w>": 901,
+    "atory</w>": 902,
+    "active</w>": 903,
+    "experiences.</w>": 904,
+    "ting</w>": 905,
+    "co-": 906,
+    "wa": 907,
+    "indivi": 908,
+    "individual</w>": 909,
+    "choices</w>": 910,
+    "contri": 911,
+    "contribu": 912,
+    "over": 913,
+    "overall</w>": 914,
+    "both": 915,
+    "both</w>": 916,
+    "law": 917,
+    "context.</w>": 918,
+    "exp": 919,
+    "expan": 920,
+    "will</w>": 921,
+    "unfold": 922,
+    "Role</w>": 923,
+    "al,</w>": 924,
+    "oc": 925,
+    "very</w>": 926,
+    "gover": 927,
+    "continuous</w>": 928,
+    "Connection": 929,
+    "Connections:</w>": 930,
+    "free</w>": 931,
+    "lea": 932,
+    "les</w>": 933,
+    "Per": 934,
+    "vali": 935,
+    "valid</w>": 936,
+    "perception</w>": 937,
+    "necess": 938,
+    "Inter": 939,
+    "shaped</w>": 940,
+    "Experience:</w>": 941,
+    "offers</w>": 942,
+    "als": 943,
+    "also</w>": 944,
+    "euro": 945,
+    "eurosci": 946,
+    "Cont": 947,
+    "Contex": 948,
+    "entities</w>": 949,
+    "choice</w>": 950,
+    "fact": 951,
+    "factor": 952,
+    "theor": 953,
+    "encour": 954,
+    "mind": 955,
+    "sych": 956,
+    "sycholog": 957,
+    "(UTA)": 958,
+    "Simplicity</w>": 959,
+    "(UTA)</w>": 960,
+    "paradigm</w>": 961,
+    "self-diversification,</w>": 962,
+    "complexity.</w>": 963,
+    "causality,</w>": 964,
+    "emerge</w>": 965,
+    "observed,</w>": 966,
+    "rating</w>": 967,
+    "(UFA": 968,
+    "transc": 969,
+    "transcen": 970,
+    "transcends</w>": 971,
+    "such</w>": 972,
+    "expression.</w>": 973,
+    "ms</w>": 974,
+    "scientific</w>": 975,
+    "philosophical</w>": 976,
+    "unfolds</w>": 977,
+    "complexity,</w>": 978,
+    "actualities</w>": 979,
+    "equili": 980,
+    "equilibri": 981,
+    "recon": 982,
+    "Em": 983,
+    "maintaining</w>": 984,
+    "foc": 985,
+    "foundation": 986,
+    "foundational</w>": 987,
+    "potentiality,</w>": 988,
+    "bas": 989,
+    "onistic</w>": 990,
+    "even</w>": 991,
+    "ground</w>": 992,
+    "der": 993,
+    "appear": 994,
+    "configurations</w>": 995,
+    "antecedents</w>": 996,
+    "phenomena,</w>": 997,
+    "phot": 998,
+    "desp": 999,
+    "despit": 1000,
+    "despite</w>": 1001,
+    "Potentiality</w>": 1002,
+    "Actu": 1003,
+    "infinite,</w>": 1004,
+    "existing</w>": 1005,
+    "pure</w>": 1006,
+    "\"now": 1007,
+    "moment": 1008,
+    "bec": 1009,
+    "tang": 1010,
+    "ero-": 1011,
+    "remains</w>": 1012,
+    "total</w>": 1013,
+    "val": 1014,
+    "valu": 1015,
+    "actualization</w>": 1016,
+    "converge</w>": 1017,
+    "actualized</w>": 1018,
+    "intersection</w>": 1019,
+    "experienced</w>": 1020,
+    "existence.</w>": 1021,
+    "ates</w>": 1022,
+    "observed</w>": 1023,
+    "just</w>": 1024,
+    "sta": 1025,
+    "static</w>": 1026,
+    "past": 1027,
+    "ld</w>": 1028,
+    "ha": 1029,
+    "led</w>": 1030,
+    "it.</w>": 1031,
+    "eness</w>": 1032,
+    "el</w>": 1033,
+    "subjec": 1034,
+    "ap</w>": 1035,
+    "position,</w>": 1036,
+    "Each</w>": 1037,
+    "Conscious": 1038,
+    "manifest</w>": 1039,
+    "manifest.</w>": 1040,
+    "aspect</w>": 1041,
+    "ceiv": 1042,
+    "ated</w>": 1043,
+    "plays</w>": 1044,
+    "creation</w>": 1045,
+    "defines</w>": 1046,
+    "simpl": 1047,
+    "condi": 1048,
+    "conditions</w>": 1049,
+    "one</w>": 1050,
+    "ado": 1051,
+    "adox": 1052,
+    "contra": 1053,
+    "contradic": 1054,
+    "lim": 1055,
+    "laws</w>": 1056,
+    "I.</w>": 1057,
+    "abs": 1058,
+    "absence</w>": 1059,
+    "vo": 1060,
+    "voi": 1061,
+    "unfolds.</w>": 1062,
+    "contains</w>": 1063,
+    "context,</w>": 1064,
+    "pi": 1065,
+    "va": 1066,
+    "me": 1067,
+    "mean": 1068,
+    "Non-": 1069,
+    "Duality:</w>": 1070,
+    "et</w>": 1071,
+    "Complexity:</w>": 1072,
+    "ris": 1073,
+    "rise</w>": 1074,
+    "process,</w>": 1075,
+    "Dynam": 1076,
+    "Dynamic</w>": 1077,
+    "occurr": 1078,
+    "frag": 1079,
+    "fragm": 1080,
+    "able</w>": 1081,
+    "inform": 1082,
+    "vision</w>": 1083,
+    "um": 1084,
+    "bro": 1085,
+    "broad": 1086,
+    "broader</w>": 1087,
+    "As</w>": 1088,
+    "they</w>": 1089,
+    "rul": 1090,
+    "rules</w>": 1091,
+    "creating</w>": 1092,
+    "Ch": 1093,
+    "Choic": 1094,
+    "Every</w>": 1095,
+    "outcom": 1096,
+    "universe,</w>": 1097,
+    "Univers": 1098,
+    "particles</w>": 1099,
+    "sub": 1100,
+    "org": 1101,
+    "organ": 1102,
+    "Percep": 1103,
+    "perspectiv": 1104,
+    "necessary</w>": 1105,
+    "source.</w>": 1106,
+    "Philosophical</w>": 1107,
+    "Connection:</w>": 1108,
+    "inst": 1109,
+    "instea": 1110,
+    "instead</w>": 1111,
+    "dualities,</w>": 1112,
+    "Tim": 1113,
+    "Pres": 1114,
+    "eternal</w>": 1115,
+    "Reality:</w>": 1116,
+    "rec": 1117,
+    "Sci": 1118,
+    "effec": 1119,
+    "Inf": 1120,
+    "choice,</w>": 1121,
+    "factors</w>": 1122,
+    "mental</w>": 1123,
+    "shape</w>": 1124,
+    "emphasizing</w>": 1125,
+    "plin": 1126,
+    "Qu": 1127,
+    "Quantum</w>": 1128,
+    "ysic": 1129,
+    "seen</w>": 1130,
+    "going</w>": 1131,
+    "etap": 1132,
+    "etaph": 1133,
+    "ist</w>": 1134,
+    "tru": 1135,
+    "encourages</w>": 1136,
+    "recogn": 1137,
+    "recogniz": 1138,
+    "sychological</w>": 1139,
+    "Awaren": 1140,
+    "emphasizes</w>": 1141,
+    "itive</w>": 1142,
+    "bra": 1143,
+    "brain</w>": 1144,
+    "process": 1145,
+    "sen": 1146,
+    "causality</w>": 1147,
+    "invites</w>": 1148,
+    "(UTA):</w>": 1149,
+    "Complete</w>": 1150,
+    "proposes</w>": 1151,
+    "root": 1152,
+    "rooted</w>": 1153,
+    "ving</w>": 1154,
+    "notions</w>": 1155,
+    "separation,</w>": 1156,
+    "objectiv": 1157,
+    "awareness.</w>": 1158,
+    "framework,</w>": 1159,
+    "creator</w>": 1160,
+    "integrating</w>": 1161,
+    "aspects</w>": 1162,
+    "coherent</w>": 1163,
+    "whol": 1164,
+    "At</w>": 1165,
+    "(UFA)": 1166,
+    "(UFA),</w>": 1167,
+    "distinctions</w>": 1168,
+    "mind</w>": 1169,
+    "mat": 1170,
+    "matter": 1171,
+    "actuality,</w>": 1172,
+    "presenting</w>": 1173,
+    "emergence</w>": 1174,
+    "compre": 1175,
+    "compreh": 1176,
+    "comprehen": 1177,
+    "bridg": 1178,
+    "bridging</w>": 1179,
+    "real": 1180,
+    "inqu": 1181,
+    "inquir": 1182,
+    "inquiry,</w>": 1183,
+    "reflection,</w>": 1184,
+    "spiritual</w>": 1185,
+    "len": 1186,
+    "UTA,</w>": 1187,
+    "explore</w>": 1188,
+    "equilibrium</w>": 1189,
+    "br": 1190,
+    "brac": 1191,
+    "principles</w>": 1192,
+    "cent": 1193,
+    "centr": 1194,
+    "central</w>": 1195,
+    "Dic": 1196,
+    "Diction": 1197,
+    "cer": 1198,
+    "Wh": 1199,
+    "When</w>": 1200,
+    "exib": 1201,
+    "exibil": 1202,
+    "red": 1203,
+    "ize</w>": 1204,
+    "interpretations</w>": 1205,
+    "whil": 1206,
+    "while</w>": 1207,
+    "coherence</w>": 1208,
+    "understo": 1209,
+    "understoo": 1210,
+    "understood</w>": 1211,
+    "nothingness,</w>": 1212,
+    "totality,</w>": 1213,
+    "configurations.</w>": 1214,
+    "itself</w>": 1215,
+    "bey": 1216,
+    "beyon": 1217,
+    "beyond</w>": 1218,
+    "distinction": 1219,
+    "interpretation</w>": 1220,
+    "monistic</w>": 1221,
+    "orig": 1222,
+    "knowledge</w>": 1223,
+    "Self-Diversification</w>": 1224,
+    "expresses</w>": 1225,
+    "expressions.</w>": 1226,
+    "reflects</w>": 1227,
+    "cap": 1228,
+    "capac": 1229,
+    "capacity</w>": 1230,
+    "uniquely</w>": 1231,
+    "contexts.</w>": 1232,
+    "expressions,</w>": 1233,
+    "consequent": 1234,
+    "photon": 1235,
+    "photons,</w>": 1236,
+    "function": 1237,
+    "functionally</w>": 1238,
+    "sim": 1239,
+    "simil": 1240,
+    "Actuality</w>": 1241,
+    "ential</w>": 1242,
+    "\"now\"</w>": 1243,
+    "Potentialities</w>": 1244,
+    "transi": 1245,
+    "transition</w>": 1246,
+    "consciousn": 1247,
+    "consciousness.</w>": 1248,
+    "realization</w>": 1249,
+    "becom": 1250,
+    "ib": 1251,
+    "Zero-": 1252,
+    "Zero-S": 1253,
+    "Zero-Sum</w>": 1254,
+    "Bal": 1255,
+    "totality</w>": 1256,
+    "constant,</w>": 1257,
+    "set</w>": 1258,
+    "system</w>": 1259,
+    "value</w>": 1260,
+    "inpu": 1261,
+    "diversif": 1262,
+    "diversifies</w>": 1263,
+    "focal</w>": 1264,
+    "future</w>": 1265,
+    "states,</w>": 1266,
+    "ether</w>": 1267,
+    "singular,</w>": 1268,
+    "moment,</w>": 1269,
+    "eng": 1270,
+    "aging</w>": 1271,
+    "pasts</w>": 1272,
+    "futu": 1273,
+    "cou": 1274,
+    "could</w>": 1275,
+    "have</w>": 1276,
+    "reflections</w>": 1277,
+    "Moment": 1278,
+    "mod": 1279,
+    "representing</w>": 1280,
+    "dualities</w>": 1281,
+    "(e": 1282,
+    "(e.": 1283,
+    "(e.g": 1284,
+    "(e.g.": 1285,
+    "(e.g.,</w>": 1286,
+    "t/": 1287,
+    ").</w>": 1288,
+    "multi-": 1289,
+    "multi-di": 1290,
+    "multi-dim": 1291,
+    "multi-dimen": 1292,
+    "multi-dimension": 1293,
+    "multi-dimensional</w>": 1294,
+    "phenomenon</w>": 1295,
+    "node</w>": 1296,
+    "thoug": 1297,
+    "though": 1298,
+    "when</w>": 1299,
+    "ten": 1300,
+    "array</w>": 1301,
+    "superposition,</w>": 1302,
+    "current</w>": 1303,
+    "vas": 1304,
+    "vast</w>": 1305,
+    "netw": 1306,
+    "network": 1307,
+    "network</w>": 1308,
+    "point": 1309,
+    "node": 1310,
+    "relationship</w>": 1311,
+    "arra": 1312,
+    "structure</w>": 1313,
+    "Consciousness</w>": 1314,
+    "perceiv": 1315,
+    "own</w>": 1316,
+    "complexi": 1317,
+    "Particip": 1318,
+    "Participatory</w>": 1319,
+    "differenti": 1320,
+    "ere": 1321,
+    "way</w>": 1322,
+    "perceptions</w>": 1323,
+    "contribut": 1324,
+    "Func": 1325,
+    "Function": 1326,
+    "Functional</w>": 1327,
+    "Uniqu": 1328,
+    "Uniqueness</w>": 1329,
+    "char": 1330,
+    "charac": 1331,
+    "character": 1332,
+    "potential,</w>": 1333,
+    "actualized,</w>": 1334,
+    "ven</w>": 1335,
+    "simple</w>": 1336,
+    "particular": 1337,
+    "particular</w>": 1338,
+    "stance.</w>": 1339,
+    "elec": 1340,
+    "electr": 1341,
+    "electron</w>": 1342,
+    "compa": 1343,
+    "red</w>": 1344,
+    "other": 1345,
+    "potentials.</w>": 1346,
+    "Paradox": 1347,
+    "Co": 1348,
+    "contradict": 1349,
+    "contradictory</w>": 1350,
+    "contributing</w>": 1351,
+    "coexistence</w>": 1352,
+    "thing</w>": 1353,
+    "framework.</w>": 1354,
+    "clusion</w>": 1355,
+    "ta": 1356,
+    "given</w>": 1357,
+    "balan": 1358,
+    "balance.</w>": 1359,
+    "phys": 1360,
+    "physical</w>": 1361,
+    "can": 1362,
+    "ener": 1363,
+    "ody</w>": 1364,
+    "we": 1365,
+    "refin": 1366,
+    "appl": 1367,
+    "abl": 1368,
+    "Simplicity:</w>": 1369,
+    "beg": 1370,
+    "begins</w>": 1371,
+    "ser": 1372,
+    "potentiality.</w>": 1373,
+    "oft": 1374,
+    "often</w>": 1375,
+    "desc": 1376,
+    "descri": 1377,
+    "describ": 1378,
+    "described</w>": 1379,
+    "d,</w>": 1380,
+    "ferti": 1381,
+    "fertile</w>": 1382,
+    "ini": 1383,
+    "initi": 1384,
+    "initial</w>": 1385,
+    "seed": 1386,
+    "seeds</w>": 1387,
+    "manifestations.</w>": 1388,
+    "tis": 1389,
+    "creates</w>": 1390,
+    "ster": 1391,
+    "void</w>": 1392,
+    "duality,</w>": 1393,
+    "actual,</w>": 1394,
+    "yet</w>": 1395,
+    "Emerg": 1396,
+    "Emergence</w>": 1397,
+    "self-diversification.</w>": 1398,
+    "II.</w>": 1399,
+    "Self-Diversification:</w>": 1400,
+    "UFA's</w>": 1401,
+    "Pro": 1402,
+    "Proc": 1403,
+    "Self-di": 1404,
+    "Self-diversific": 1405,
+    "Self-diversification</w>": 1406,
+    "occurrence</w>": 1407,
+    "dynamis": 1408,
+    "dynamism</w>": 1409,
+    "manifests</w>": 1410,
+    "proper": 1411,
+    "atal": 1412,
+    "iting</w>": 1413,
+    "energ": 1414,
+    "ts:</w>": 1415,
+    "interact,</w>": 1416,
+    "govern</w>": 1417,
+    "information</w>": 1418,
+    "remain</w>": 1419,
+    "part</w>": 1420,
+    "Choice:</w>": 1421,
+    "possibilities,</w>": 1422,
+    "meaning": 1423,
+    "creative</w>": 1424,
+    "sm": 1425,
+    "gal": 1426,
+    "gala": 1427,
+    "galax": 1428,
+    "galaxies,</w>": 1429,
+    "emo": 1430,
+    "emotions</w>": 1431,
+    "prof": 1432,
+    "profo": 1433,
+    "profound</w>": 1434,
+    "b</w>": 1435,
+    "arising</w>": 1436,
+    "entity</w>": 1437,
+    "event</w>": 1438,
+    "system.</w>": 1439,
+    "Level": 1440,
+    "Levels</w>": 1441,
+    "level</w>": 1442,
+    "Perception:</w>": 1443,
+    "cul": 1444,
+    "ever": 1445,
+    "ness:</w>": 1446,
+    "things,</w>": 1447,
+    "single</w>": 1448,
+    "leading</w>": 1449,
+    "related</w>": 1450,
+    "arise</w>": 1451,
+    "inclu": 1452,
+    "separations</w>": 1453,
+    "V.</w>": 1454,
+    "exus</w>": 1455,
+    "Experience</w>": 1456,
+    "actualized.</w>": 1457,
+    "Presenc": 1458,
+    "Presence:</w>": 1459,
+    "present,</w>": 1460,
+    "events</w>": 1461,
+    "connected</w>": 1462,
+    "actuality.</w>": 1463,
+    "participan": 1464,
+    "influencing</w>": 1465,
+    "events.</w>": 1466,
+    "passive</w>": 1467,
+    "cru": 1468,
+    "cruci": 1469,
+    "crucial</w>": 1470,
+    "determining</w>": 1471,
+    "direc": 1472,
+    "Obser": 1473,
+    "Observer</w>": 1474,
+    "Effec": 1475,
+    "t:</w>": 1476,
+    "participatory</w>": 1477,
+    "potentiali": 1478,
+    "potentialities.</w>": 1479,
+    "es)</w>": 1480,
+    "subs": 1481,
+    "al.</w>": 1482,
+    "Scientific</w>": 1483,
+    "neurosci": 1484,
+    "ke": 1485,
+    "key</w>": 1486,
+    "ement</w>": 1487,
+    "Influenc": 1488,
+    "Context</w>": 1489,
+    "govern": 1490,
+    "governs</w>": 1491,
+    "levels</w>": 1492,
+    "condition": 1493,
+    "conditions,</w>": 1494,
+    "luence</w>": 1495,
+    "exer": 1496,
+    "dev": 1497,
+    "devel": 1498,
+    "develop": 1499,
+    "developm": 1500,
+    "determinism": 1501,
+    "intern": 1502,
+    "internal</w>": 1503,
+    "envi": 1504,
+    "envir": 1505,
+    "environ": 1506,
+    "interactions</w>": 1507,
+    "bridges</w>": 1508,
+    "gap</w>": 1509,
+    "views</w>": 1510,
+    "impor": 1511,
+    "importan": 1512,
+    "importance</w>": 1513,
+    "activ": 1514,
+    "disci": 1515,
+    "disciplin": 1516,
+    "ysics:</w>": 1517,
+    "foundation</w>": 1518,
+    "effect,</w>": 1519,
+    "positions</w>": 1520,
+    "observation.</w>": 1521,
+    "En": 1522,
+    "Entang": 1523,
+    "ent:</w>": 1524,
+    "used</w>": 1525,
+    "interpret</w>": 1526,
+    "ang": 1527,
+    "may</w>": 1528,
+    "ve": 1529,
+    "ve-": 1530,
+    "offer</w>": 1531,
+    "Cos": 1532,
+    "Cosm": 1533,
+    "Cosmolog": 1534,
+    "ongoing</w>": 1535,
+    "verse</w>": 1536,
+    "represent</w>": 1537,
+    "Eternal</w>": 1538,
+    "Metaph": 1539,
+    "Duali": 1540,
+    "Dualistic</w>": 1541,
+    "ysics</w>": 1542,
+    "proposing</w>": 1543,
+    "appar": 1544,
+    "apparent</w>": 1545,
+    "Identi": 1546,
+    "redefines</w>": 1547,
+    "awareness,</w>": 1548,
+    "tly</w>": 1549,
+    "pistem": 1550,
+    "pistemolog": 1551,
+    "Interpre": 1552,
+    "Interpret": 1553,
+    "appro": 1554,
+    "approach</w>": 1555,
+    "knowledge,</w>": 1556,
+    "pers": 1557,
+    "person": 1558,
+    "personal</w>": 1559,
+    "wor": 1560,
+    "infor": 1561,
+    "mindful": 1562,
+    "Awareness:</w>": 1563,
+    "psychological</w>": 1564,
+    "consci": 1565,
+    "consciou": 1566,
+    "conscious,</w>": 1567,
+    "theories</w>": 1568,
+    "sup": 1569,
+    "suppor": 1570,
+    "supports</w>": 1571,
+    "Neurosci": 1572,
+    "Under": 1573,
+    "Understanding</w>": 1574,
+    "processes</w>": 1575,
+    "sense</w>": 1576,
+    "memor": 1577,
+    "Mem": 1578,
+    "Memory</w>": 1579,
+    "Reconstruc": 1580,
+    "Reconstruction:</w>": 1581,
+    "continuously</w>": 1582,
+    "cognitive</w>": 1583,
+    "reconstruc": 1584,
+    "rather</w>": 1585,
+    "than</w>": 1586,
+    "Caus": 1587,
+    "reconci": 1588,
+    "construct</w>": 1589,
+    "exist</w>": 1590,
+    "thin": 1591,
+    "think": 1592,
+    "thinking</w>": 1593,
+    "understand</w>": 1594,
+    "objective</w>": 1595,
+    "perception": 1596,
+    "trum</w>": 1597,
+    "integra": 1598,
+    "integrative</w>": 1599,
+    "recognizes</w>": 1600,
+    "fiel": 1601,
+    "fields</w>": 1602,
+    "transf": 1603,
+    "transfor": 1604,
+    "transforma": 1605,
+    "unity</w>": 1606,
+    "﻿Unified</w>": 1607,
+    "1.</w>": 1608,
+    "Tit": 1609,
+    "Title</w>": 1610,
+    "2.</w>": 1611,
+    "Introduction</w>": 1612,
+    "shif": 1613,
+    "shift</w>": 1614,
+    "undergo": 1615,
+    "undergoes</w>": 1616,
+    "mo": 1617,
+    "moving</w>": 1618,
+    "objectivity,</w>": 1619,
+    "Wi": 1620,
+    "With": 1621,
+    "Within</w>": 1622,
+    "creation,</w>": 1623,
+    "whole.</w>": 1624,
+    "hear": 1625,
+    "heart</w>": 1626,
+    "singular</w>": 1627,
+    "arise.</w>": 1628,
+    "matter,</w>": 1629,
+    "things</w>": 1630,
+    "comprehensive</w>": 1631,
+    "realms</w>": 1632,
+    "insight.</w>": 1633,
+    "Throug": 1634,
+    "Through</w>": 1635,
+    "lens</w>": 1636,
+    "maintains</w>": 1637,
+    "inviting</w>": 1638,
+    "reconsi": 1639,
+    "reconsid": 1640,
+    "reconsider</w>": 1641,
+    "Embrac": 1642,
+    "Embracing</w>": 1643,
+    "comprehension</w>": 1644,
+    "3.</w>": 1645,
+    "Dictionary</w>": 1646,
+    "Ter": 1647,
+    "Terms</w>": 1648,
+    "Concep": 1649,
+    "Concepts</w>": 1650,
+    "For": 1651,
+    "Forwar": 1652,
+    "Forward</w>": 1653,
+    "Concer": 1654,
+    "Concern": 1655,
+    "Concerning</w>": 1656,
+    "Dictionar": 1657,
+    "Dictionary:</w>": 1658,
+    "exploring</w>": 1659,
+    "reference,</w>": 1660,
+    "deg": 1661,
+    "degree</w>": 1662,
+    "flexibil": 1663,
+    "flexibility</w>": 1664,
+    "requ": 1665,
+    "requi": 1666,
+    "required": 1667,
+    "required.</w>": 1668,
+    "diction": 1669,
+    "dictionary</w>": 1670,
+    "aim": 1671,
+    "aims</w>": 1672,
+    "minim": 1673,
+    "minimize</w>": 1674,
+    "focus</w>": 1675,
+    "relev": 1676,
+    "relevance</w>": 1677,
+    "presented.</w>": 1678,
+    "(UFA)</w>": 1679,
+    "etern": 1680,
+    "eternall": 1681,
+    "eternally,</w>": 1682,
+    "experiencing</w>": 1683,
+    "fully</w>": 1684,
+    "variations</w>": 1685,
+    "simultaneous": 1686,
+    "simultaneously": 1687,
+    "simultaneously.</w>": 1688,
+    "base</w>": 1689,
+    "distinctions.</w>": 1690,
+    "An": 1691,
+    "Any</w>": 1692,
+    "frameworks</w>": 1693,
+    "enoug": 1694,
+    "enough</w>": 1695,
+    "contem": 1696,
+    "contempl": 1697,
+    "contemplate</w>": 1698,
+    "origin": 1699,
+    "origin.</w>": 1700,
+    "term</w>": 1701,
+    "tool": 1702,
+    "tool,</w>": 1703,
+    "allowing</w>": 1704,
+    "reference</w>": 1705,
+    "understan": 1706,
+    "understand": 1707,
+    "understanding,</w>": 1708,
+    "acknowledge</w>": 1709,
+    "non-distinction": 1710,
+    "non-distinction.</w>": 1711,
+    "ultim": 1712,
+    "ultimate</w>": 1713,
+    "deriv": 1714,
+    "derived.</w>": 1715,
+    "simplicity.</w>": 1716,
+    "over</w>": 1717,
+    "expr": 1718,
+    "express</w>": 1719,
+    "potentially</w>": 1720,
+    "identic": 1721,
+    "identical</w>": 1722,
+    "appearanc": 1723,
+    "appearance,</w>": 1724,
+    "consequents.</w>": 1725,
+    "appearing</w>": 1726,
+    "similar": 1727,
+    "similar</w>": 1728,
+    "context": 1729,
+    "contexts,</w>": 1730,
+    "self-expression</w>": 1731,
+    "forms.</w>": 1732,
+    "unexpress": 1733,
+    "unexpressed</w>": 1734,
+    "refers</w>": 1735,
+    "experi": 1736,
+    "experiential</w>": 1737,
+    "moment.</w>": 1738,
+    "possibilities.</w>": 1739,
+    "ide": 1740,
+    "idea</w>": 1741,
+    "becoming</w>": 1742,
+    "tangib": 1743,
+    "tangible</w>": 1744,
+    "action</w>": 1745,
+    "event.</w>": 1746,
+    "Balance</w>": 1747,
+    "diversity.</w>": 1748,
+    "maintained</w>": 1749,
+    "reconfiguration</w>": 1750,
+    "unique.</w>": 1751,
+    "ret": 1752,
+    "retains</w>": 1753,
+    "withou": 1754,
+    "without</w>": 1755,
+    "any</w>": 1756,
+    "input</w>": 1757,
+    "outpu": 1758,
+    "output.</w>": 1759,
+    "unal": 1760,
+    "unalter": 1761,
+    "unaltered,</w>": 1762,
+    "infinitel": 1763,
+    "infinitely.</w>": 1764,
+    "encap": 1765,
+    "encapsu": 1766,
+    "encapsul": 1767,
+    "encapsulates</w>": 1768,
+    "consequents</w>": 1769,
+    "come</w>": 1770,
+    "tog": 1771,
+    "together</w>": 1772,
+    "all-": 1773,
+    "all-enc": 1774,
+    "all-encom": 1775,
+    "all-encompas": 1776,
+    "all-encompass": 1777,
+    "all-encompassing</w>": 1778,
+    "realized</w>": 1779,
+    "full": 1780,
+    "fullest</w>": 1781,
+    "form,</w>": 1782,
+    "observing</w>": 1783,
+    "reality;": 1784,
+    "reality;</w>": 1785,
+    "engaging</w>": 1786,
+    "convergence</w>": 1787,
+    "futures</w>": 1788,
+    "sti": 1789,
+    "still": 1790,
+    "stillness</w>": 1791,
+    "complet": 1792,
+    "completeness</w>": 1793,
+    "fe": 1794,
+    "feel</w>": 1795,
+    "Moment’s</w>": 1796,
+    "model</w>": 1797,
+    "lig": 1798,
+    "ligh": 1799,
+    "light/": 1800,
+    "light/d": 1801,
+    "light/dar": 1802,
+    "light/dark": 1803,
+    "light/dark,</w>": 1804,
+    "subject/": 1805,
+    "subject/objec": 1806,
+    "subject/object": 1807,
+    "subject/object).</w>": 1808,
+    "map</w>": 1809,
+    "super-": 1810,
+    "super-position,</w>": 1811,
+    "thought</w>": 1812,
+    "what</w>": 1813,
+    "happ": 1814,
+    "happen": 1815,
+    "happens</w>": 1816,
+    "\"fl": 1817,
+    "\"flat": 1818,
+    "\"flatten": 1819,
+    "\"flattened</w>": 1820,
+    "out\"</w>": 1821,
+    "gr": 1822,
+    "grap": 1823,
+    "graph</w>": 1824,
+    "map": 1825,
+    "maps</w>": 1826,
+    "dualities.</w>": 1827,
+    "holding</w>": 1828,
+    "relative</w>": 1829,
+    "Vis": 1830,
+    "Visu": 1831,
+    "Visualiz": 1832,
+    "Visualize</w>": 1833,
+    "points,</w>": 1834,
+    "(or</w>": 1835,
+    "node)</w>": 1836,
+    "photon</w>": 1837,
+    "Its</w>": 1838,
+    "nod": 1839,
+    "nodes,</w>": 1840,
+    "defined</w>": 1841,
+    "futur": 1842,
+    "futures,</w>": 1843,
+    "determines</w>": 1844,
+    "node's</w>": 1845,
+    "position</w>": 1846,
+    "array.</w>": 1847,
+    "observes</w>": 1848,
+    "phenomena.</w>": 1849,
+    "realizes</w>": 1850,
+    "observation,</w>": 1851,
+    "unmanifest</w>": 1852,
+    "self-aw": 1853,
+    "self-aware</w>": 1854,
+    "perceives</w>": 1855,
+    "engages</w>": 1856,
+    "complexities.</w>": 1857,
+    "Reality</w>": 1858,
+    "differentiated</w>": 1859,
+    "interacting</w>": 1860,
+    "actuali": 1861,
+    "actualities,</w>": 1862,
+    "there": 1863,
+    "thereby</w>": 1864,
+    "participating</w>": 1865,
+    "co-creation</w>": 1866,
+    "contribute</w>": 1867,
+    "characteristic</w>": 1868,
+    "consequents,</w>": 1869,
+    "similari": 1870,
+    "similarities</w>": 1871,
+    "appearance</w>": 1872,
+    "function</w>": 1873,
+    "becaus": 1874,
+    "because</w>": 1875,
+    "relationships.</w>": 1876,
+    "Even</w>": 1877,
+    "instance.</w>": 1878,
+    "An</w>": 1879,
+    "functions</w>": 1880,
+    "compared</w>": 1881,
+    "another": 1882,
+    "another,</w>": 1883,
+    "differing</w>": 1884,
+    "contexts</w>": 1885,
+    "Paradoxical</w>": 1886,
+    "Coexistence</w>": 1887,
+    "seem": 1888,
+    "seeming": 1889,
+    "seemingly</w>": 1890,
+    "paradox": 1891,
+    "paradoxical</w>": 1892,
+    "Paradoxes</w>": 1893,
+    "contradictions</w>": 1894,
+    "face": 1895,
+    "facets</w>": 1896,
+    "coexisting</w>": 1897,
+    "som": 1898,
+    "some": 1899,
+    "something</w>": 1900,
+    "nothing,</w>": 1901,
+    "Pre": 1902,
+    "Preclusion</w>": 1903,
+    "Lim": 1904,
+    "Limit": 1905,
+    "Limitation</w>": 1906,
+    "Configur": 1907,
+    "Configurations</w>": 1908,
+    "certa": 1909,
+    "certain</w>": 1910,
+    "limit</w>": 1911,
+    "preclu": 1912,
+    "preclude</w>": 1913,
+    "preclusion</w>": 1914,
+    "limits</w>": 1915,
+    "incompa": 1916,
+    "incompati": 1917,
+    "incompatib": 1918,
+    "incompatible</w>": 1919,
+    "law</w>": 1920,
+    "exists,</w>": 1921,
+    "cannot</w>": 1922,
+    "I'": 1923,
+    "I'll</w>": 1924,
+    "gener": 1925,
+    "generate</w>": 1926,
+    "mor": 1927,
+    "more</w>": 1928,
+    "deta": 1929,
+    "detail": 1930,
+    "detailed</w>": 1931,
+    "expansive</w>": 1932,
+    "dra": 1933,
+    "draf": 1934,
+    "draft</w>": 1935,
+    "body</w>": 1936,
+    "(UTA),</w>": 1937,
+    "incor": 1938,
+    "incorpor": 1939,
+    "incorporating</w>": 1940,
+    "we'": 1941,
+    "we've</w>": 1942,
+    "refined,</w>": 1943,
+    "expanding</w>": 1944,
+    "content": 1945,
+    "content,</w>": 1946,
+    "introduc": 1947,
+    "introducing</w>": 1948,
+    "applic": 1949,
+    "applicabl": 1950,
+    "applicable.</w>": 1951,
+    "Here": 1952,
+    "Here's</w>": 1953,
+    "structu": 1954,
+    "structured": 1955,
+    "structured:</w>": 1956,
+    "4.</w>": 1957,
+    "Body</w>": 1958,
+    "Sour": 1959,
+    "Source</w>": 1960,
+    "serv": 1961,
+    "serves</w>": 1962,
+    "void,</w>": 1963,
+    "emp": 1964,
+    "empt": 1965,
+    "emptin": 1966,
+    "emptiness</w>": 1967,
+    "Simplicity,</w>": 1968,
+    "emerges,</w>": 1969,
+    "mu": 1970,
+    "much</w>": 1971,
+    "artis": 1972,
+    "artist</w>": 1973,
+    "who</w>": 1974,
+    "master": 1975,
+    "masterpi": 1976,
+    "masterpiec": 1977,
+    "masterpiece</w>": 1978,
+    "bl": 1979,
+    "blan": 1980,
+    "blank": 1981,
+    "blank</w>": 1982,
+    "canva": 1983,
+    "canvas.</w>": 1984,
+    "devoid</w>": 1985,
+    "meaning</w>": 1986,
+    "rich</w>": 1987,
+    "Non-Duality:</w>": 1988,
+    "non-duality,</w>": 1989,
+    "do</w>": 1990,
+    "exist.</w>": 1991,
+    "non-dual</w>": 1992,
+    "essence</w>": 1993,
+    "undifferenti": 1994,
+    "undifferentiat": 1995,
+    "undifferentiated.</w>": 1996,
+    "singularity,</w>": 1997,
+    "unfold</w>": 1998,
+    "manifol": 1999
+  },
+  "merges": [
+    [
+      "e",
+      "</w>"
+    ],
+    [
+      "s",
+      "</w>"
+    ],
+    [
+      "i",
+      "n"
+    ],
+    [
+      "t",
+      "h"
+    ],
+    [
+      "e",
+      "n"
+    ],
+    [
+      "o",
+      "n"
+    ],
+    [
+      "t",
+      "i"
+    ],
+    [
+      "e",
+      "r"
+    ],
+    [
+      "a",
+      "l"
+    ],
+    [
+      "a",
+      "n"
+    ],
+    [
+      "_",
+      "_"
+    ],
+    [
+      "d",
+      "</w>"
+    ],
+    [
+      "th",
+      "e</w>"
+    ],
+    [
+      "o",
+      "f"
+    ],
+    [
+      "t",
+      "</w>"
+    ],
+    [
+      "of",
+      "</w>"
+    ],
+    [
+      "e",
+      "s"
+    ],
+    [
+      "i",
+      "t"
+    ],
+    [
+      "y",
+      "</w>"
+    ],
+    [
+      ",",
+      "</w>"
+    ],
+    [
+      ".",
+      "</w>"
+    ],
+    [
+      "e",
+      "x"
+    ],
+    [
+      "ti",
+      "on"
+    ],
+    [
+      "an",
+      "d</w>"
+    ],
+    [
+      "in",
+      "g"
+    ],
+    [
+      "r",
+      "e"
+    ],
+    [
+      "a",
+      "r"
+    ],
+    [
+      "__",
+      "__"
+    ],
+    [
+      "c",
+      "on"
+    ],
+    [
+      "i",
+      "c"
+    ],
+    [
+      "T",
+      "h"
+    ],
+    [
+      "ing",
+      "</w>"
+    ],
+    [
+      "s",
+      "t"
+    ],
+    [
+      "e",
+      "s</w>"
+    ],
+    [
+      "s",
+      "i"
+    ],
+    [
+      "o",
+      "r"
+    ],
+    [
+      "u",
+      "n"
+    ],
+    [
+      "p",
+      "l"
+    ],
+    [
+      "en",
+      "c"
+    ],
+    [
+      ":",
+      "</w>"
+    ],
+    [
+      "o",
+      "m"
+    ],
+    [
+      "e",
+      "c"
+    ],
+    [
+      "al",
+      "</w>"
+    ],
+    [
+      "a",
+      "</w>"
+    ],
+    [
+      "i",
+      "s</w>"
+    ],
+    [
+      "p",
+      "o"
+    ],
+    [
+      "o",
+      "u"
+    ],
+    [
+      "a",
+      "tion"
+    ],
+    [
+      "Th",
+      "e</w>"
+    ],
+    [
+      "al",
+      "it"
+    ],
+    [
+      "en",
+      "ti"
+    ],
+    [
+      "p",
+      "er"
+    ],
+    [
+      "p",
+      "r"
+    ],
+    [
+      "e",
+      "d</w>"
+    ],
+    [
+      "in",
+      "</w>"
+    ],
+    [
+      "v",
+      "er"
+    ],
+    [
+      "t",
+      "o"
+    ],
+    [
+      "a",
+      "t"
+    ],
+    [
+      "t",
+      "er"
+    ],
+    [
+      "d",
+      "i"
+    ],
+    [
+      "a",
+      "c"
+    ],
+    [
+      "al",
+      "l"
+    ],
+    [
+      "t",
+      "enti"
+    ],
+    [
+      "to",
+      "</w>"
+    ],
+    [
+      "en",
+      "t</w>"
+    ],
+    [
+      "po",
+      "tenti"
+    ],
+    [
+      "____",
+      "____"
+    ],
+    [
+      "a",
+      "m"
+    ],
+    [
+      "al",
+      "i"
+    ],
+    [
+      "es",
+      "s</w>"
+    ],
+    [
+      "c",
+      "i"
+    ],
+    [
+      "*",
+      "</w>"
+    ],
+    [
+      "a",
+      "t</w>"
+    ],
+    [
+      "e",
+      "l"
+    ],
+    [
+      "w",
+      "i"
+    ],
+    [
+      "th",
+      "at</w>"
+    ],
+    [
+      "en",
+      "t"
+    ],
+    [
+      "w",
+      "h"
+    ],
+    [
+      "t",
+      "u"
+    ],
+    [
+      "wi",
+      "th"
+    ],
+    [
+      "i",
+      "f"
+    ],
+    [
+      "o",
+      "l"
+    ],
+    [
+      "alit",
+      "y"
+    ],
+    [
+      "per",
+      "i"
+    ],
+    [
+      "f",
+      "in"
+    ],
+    [
+      "peri",
+      "enc"
+    ],
+    [
+      "it",
+      "y</w>"
+    ],
+    [
+      "all",
+      "</w>"
+    ],
+    [
+      "h",
+      "</w>"
+    ],
+    [
+      "a",
+      "p"
+    ],
+    [
+      "e",
+      "m"
+    ],
+    [
+      "in",
+      "ter"
+    ],
+    [
+      "i",
+      "s"
+    ],
+    [
+      "ex",
+      "perienc"
+    ],
+    [
+      "un",
+      "d"
+    ],
+    [
+      "ation",
+      "</w>"
+    ],
+    [
+      "om",
+      "pl"
+    ],
+    [
+      "s",
+      "u"
+    ],
+    [
+      "o",
+      "w"
+    ],
+    [
+      "q",
+      "u"
+    ],
+    [
+      "con",
+      "t"
+    ],
+    [
+      "f",
+      "r"
+    ],
+    [
+      "U",
+      "F"
+    ],
+    [
+      "UF",
+      "A"
+    ],
+    [
+      "pr",
+      "es"
+    ],
+    [
+      "ti",
+      "v"
+    ],
+    [
+      "e",
+      ",</w>"
+    ],
+    [
+      "u",
+      "l"
+    ],
+    [
+      "ar",
+      "e</w>"
+    ],
+    [
+      "s",
+      ",</w>"
+    ],
+    [
+      "alit",
+      "y</w>"
+    ],
+    [
+      "c",
+      "e"
+    ],
+    [
+      "a",
+      "s</w>"
+    ],
+    [
+      "e",
+      "d"
+    ],
+    [
+      "d",
+      "u"
+    ],
+    [
+      "ti",
+      "c"
+    ],
+    [
+      "si",
+      "on"
+    ],
+    [
+      "ompl",
+      "ex"
+    ],
+    [
+      "s",
+      ".</w>"
+    ],
+    [
+      "t",
+      "s</w>"
+    ],
+    [
+      "ver",
+      "s"
+    ],
+    [
+      "u",
+      "r"
+    ],
+    [
+      "ic",
+      "</w>"
+    ],
+    [
+      "un",
+      "i"
+    ],
+    [
+      "U",
+      "T"
+    ],
+    [
+      "UT",
+      "A"
+    ],
+    [
+      "or",
+      "</w>"
+    ],
+    [
+      "s",
+      "ci"
+    ],
+    [
+      "m",
+      "pl"
+    ],
+    [
+      "pr",
+      "o"
+    ],
+    [
+      "d",
+      "ing</w>"
+    ],
+    [
+      "p",
+      "h"
+    ],
+    [
+      "fin",
+      "it"
+    ],
+    [
+      "ex",
+      "i"
+    ],
+    [
+      "wh",
+      "er"
+    ],
+    [
+      "wher",
+      "e</w>"
+    ],
+    [
+      "n",
+      "ec"
+    ],
+    [
+      "st",
+      "at"
+    ],
+    [
+      "s",
+      "p"
+    ],
+    [
+      "l",
+      "u"
+    ],
+    [
+      "or",
+      "y</w>"
+    ],
+    [
+      "Th",
+      "is</w>"
+    ],
+    [
+      "n",
+      "o"
+    ],
+    [
+      "exi",
+      "st"
+    ],
+    [
+      "om",
+      "</w>"
+    ],
+    [
+      "mpl",
+      "ic"
+    ],
+    [
+      "b",
+      "s"
+    ],
+    [
+      "an",
+      "</w>"
+    ],
+    [
+      "finit",
+      "e</w>"
+    ],
+    [
+      "ou",
+      "r"
+    ],
+    [
+      "c",
+      "omplex"
+    ],
+    [
+      "ou",
+      "s"
+    ],
+    [
+      "enc",
+      "e</w>"
+    ],
+    [
+      "tiv",
+      "e</w>"
+    ],
+    [
+      "und",
+      "er"
+    ],
+    [
+      "ce",
+      "p"
+    ],
+    [
+      "el",
+      "f"
+    ],
+    [
+      "sp",
+      "ec"
+    ],
+    [
+      "tic",
+      "</w>"
+    ],
+    [
+      "i",
+      "l"
+    ],
+    [
+      "ti",
+      "es</w>"
+    ],
+    [
+      "en",
+      "</w>"
+    ],
+    [
+      "with",
+      "in</w>"
+    ],
+    [
+      "w",
+      "ar"
+    ],
+    [
+      "s",
+      "h"
+    ],
+    [
+      "re",
+      "ality"
+    ],
+    [
+      "v",
+      "i"
+    ],
+    [
+      "f",
+      "er"
+    ],
+    [
+      "with",
+      "</w>"
+    ],
+    [
+      "war",
+      "en"
+    ],
+    [
+      "p",
+      "ar"
+    ],
+    [
+      "UTA",
+      "</w>"
+    ],
+    [
+      "ow",
+      "</w>"
+    ],
+    [
+      "C",
+      "on"
+    ],
+    [
+      "st",
+      "an"
+    ],
+    [
+      "fr",
+      "om</w>"
+    ],
+    [
+      "th",
+      "e"
+    ],
+    [
+      "r",
+      "a"
+    ],
+    [
+      "s",
+      "e"
+    ],
+    [
+      "bs",
+      "er"
+    ],
+    [
+      "d",
+      "e"
+    ],
+    [
+      "r",
+      "o"
+    ],
+    [
+      "m",
+      "</w>"
+    ],
+    [
+      "in",
+      "finite</w>"
+    ],
+    [
+      "it",
+      "y"
+    ],
+    [
+      "es",
+      "t"
+    ],
+    [
+      "n",
+      "ess</w>"
+    ],
+    [
+      "e",
+      ":</w>"
+    ],
+    [
+      "if",
+      "i"
+    ],
+    [
+      "ifi",
+      "ed</w>"
+    ],
+    [
+      "e",
+      "t"
+    ],
+    [
+      "elf",
+      "-"
+    ],
+    [
+      "o",
+      "bser"
+    ],
+    [
+      "e",
+      ".</w>"
+    ],
+    [
+      "potenti",
+      "al</w>"
+    ],
+    [
+      "ex",
+      "pres"
+    ],
+    [
+      "cont",
+      "ex"
+    ],
+    [
+      "tion",
+      ":</w>"
+    ],
+    [
+      "b",
+      "y</w>"
+    ],
+    [
+      "I",
+      "n"
+    ],
+    [
+      "c",
+      "h"
+    ],
+    [
+      "e",
+      "w"
+    ],
+    [
+      "________",
+      "________"
+    ],
+    [
+      "________________",
+      "</w>"
+    ],
+    [
+      "po",
+      "s"
+    ],
+    [
+      "con",
+      "nec"
+    ],
+    [
+      "sci",
+      "ous"
+    ],
+    [
+      "y",
+      "n"
+    ],
+    [
+      "yn",
+      "am"
+    ],
+    [
+      "b",
+      "u"
+    ],
+    [
+      "in",
+      "f"
+    ],
+    [
+      "ac",
+      "tu"
+    ],
+    [
+      "connec",
+      "t"
+    ],
+    [
+      "ation",
+      "s</w>"
+    ],
+    [
+      "e",
+      "v"
+    ],
+    [
+      "no",
+      "t</w>"
+    ],
+    [
+      "waren",
+      "ess</w>"
+    ],
+    [
+      "ver",
+      "si"
+    ],
+    [
+      "versi",
+      "f"
+    ],
+    [
+      "tion",
+      "s</w>"
+    ],
+    [
+      "pro",
+      "c"
+    ],
+    [
+      "expres",
+      "sion"
+    ],
+    [
+      "sh",
+      "ap"
+    ],
+    [
+      "potenti",
+      "al"
+    ],
+    [
+      "uni",
+      "vers"
+    ],
+    [
+      "stat",
+      "e</w>"
+    ],
+    [
+      "an",
+      "if"
+    ],
+    [
+      "es",
+      ",</w>"
+    ],
+    [
+      "U",
+      "n"
+    ],
+    [
+      "l",
+      "e</w>"
+    ],
+    [
+      "su",
+      "g"
+    ],
+    [
+      "sug",
+      "g"
+    ],
+    [
+      "c",
+      "e</w>"
+    ],
+    [
+      "c",
+      "o"
+    ],
+    [
+      "du",
+      "ali"
+    ],
+    [
+      "con",
+      "scious"
+    ],
+    [
+      "d",
+      "ynam"
+    ],
+    [
+      "i",
+      "g"
+    ],
+    [
+      "it",
+      "s</w>"
+    ],
+    [
+      "ec",
+      "h"
+    ],
+    [
+      "ech",
+      "an"
+    ],
+    [
+      "m",
+      "anif"
+    ],
+    [
+      "reality",
+      ".</w>"
+    ],
+    [
+      "I",
+      "t</w>"
+    ],
+    [
+      "stan",
+      "ding</w>"
+    ],
+    [
+      "versif",
+      "ic"
+    ],
+    [
+      "th",
+      "is</w>"
+    ],
+    [
+      "in",
+      "to</w>"
+    ],
+    [
+      "complex",
+      "ity</w>"
+    ],
+    [
+      "inter",
+      "connect"
+    ],
+    [
+      "m",
+      "a"
+    ],
+    [
+      "ti",
+      "m"
+    ],
+    [
+      "M",
+      "echan"
+    ],
+    [
+      "E",
+      "x"
+    ],
+    [
+      "bu",
+      "t</w>"
+    ],
+    [
+      "r",
+      "u"
+    ],
+    [
+      "es",
+      "s"
+    ],
+    [
+      "tion",
+      "</w>"
+    ],
+    [
+      "con",
+      "cep"
+    ],
+    [
+      "s",
+      "elf-"
+    ],
+    [
+      "m",
+      "ul"
+    ],
+    [
+      "t",
+      "an"
+    ],
+    [
+      "l",
+      "y</w>"
+    ],
+    [
+      "p",
+      "re"
+    ],
+    [
+      "f",
+      "ol"
+    ],
+    [
+      "re",
+      "ality</w>"
+    ],
+    [
+      "uni",
+      "qu"
+    ],
+    [
+      "om",
+      "ent</w>"
+    ],
+    [
+      "lu",
+      "enc"
+    ],
+    [
+      "under",
+      "standing</w>"
+    ],
+    [
+      "ic",
+      "h</w>"
+    ],
+    [
+      "f",
+      "or</w>"
+    ],
+    [
+      "un",
+      "fol"
+    ],
+    [
+      "dynam",
+      "ic</w>"
+    ],
+    [
+      "on",
+      "</w>"
+    ],
+    [
+      "is",
+      "m"
+    ],
+    [
+      "ali",
+      "z"
+    ],
+    [
+      "es",
+      ".</w>"
+    ],
+    [
+      "ac",
+      "h</w>"
+    ],
+    [
+      "our",
+      "</w>"
+    ],
+    [
+      "si",
+      "mplic"
+    ],
+    [
+      "u",
+      "s"
+    ],
+    [
+      "obser",
+      "v"
+    ],
+    [
+      "h",
+      "er"
+    ],
+    [
+      "wh",
+      "ich</w>"
+    ],
+    [
+      "UFA",
+      "</w>"
+    ],
+    [
+      "s",
+      "tic</w>"
+    ],
+    [
+      "m",
+      "in"
+    ],
+    [
+      "er",
+      "</w>"
+    ],
+    [
+      "di",
+      "f"
+    ],
+    [
+      "dif",
+      "fer"
+    ],
+    [
+      "inf",
+      "luenc"
+    ],
+    [
+      "fr",
+      "am"
+    ],
+    [
+      "c",
+      "re"
+    ],
+    [
+      "in",
+      "t"
+    ],
+    [
+      "pres",
+      "ent"
+    ],
+    [
+      "es",
+      "s,</w>"
+    ],
+    [
+      "r",
+      "i"
+    ],
+    [
+      "i",
+      "r"
+    ],
+    [
+      "ali",
+      "ties</w>"
+    ],
+    [
+      "ou",
+      "s</w>"
+    ],
+    [
+      "pos",
+      "si"
+    ],
+    [
+      "possi",
+      "b"
+    ],
+    [
+      "a",
+      "s"
+    ],
+    [
+      "uniqu",
+      "e</w>"
+    ],
+    [
+      "N",
+      "ow</w>"
+    ],
+    [
+      "o",
+      "ic"
+    ],
+    [
+      "self-",
+      "di"
+    ],
+    [
+      "un",
+      "ified</w>"
+    ],
+    [
+      "duali",
+      "stic</w>"
+    ],
+    [
+      "ou",
+      "g"
+    ],
+    [
+      "proc",
+      "ess</w>"
+    ],
+    [
+      "ic",
+      "al</w>"
+    ],
+    [
+      "w",
+      "e</w>"
+    ],
+    [
+      "ol",
+      "e</w>"
+    ],
+    [
+      "f",
+      "ig"
+    ],
+    [
+      "fig",
+      "ur"
+    ],
+    [
+      "b",
+      "e"
+    ],
+    [
+      "et",
+      "w"
+    ],
+    [
+      "manif",
+      "est"
+    ],
+    [
+      "st",
+      "ru"
+    ],
+    [
+      "stru",
+      "c"
+    ],
+    [
+      "per",
+      "spec"
+    ],
+    [
+      "ent",
+      "al</w>"
+    ],
+    [
+      "ality",
+      ",</w>"
+    ],
+    [
+      "ity",
+      ",</w>"
+    ],
+    [
+      "ph",
+      "en"
+    ],
+    [
+      "phen",
+      "om"
+    ],
+    [
+      "phenom",
+      "en"
+    ],
+    [
+      "or",
+      "k"
+    ],
+    [
+      "si",
+      "mul"
+    ],
+    [
+      "simul",
+      "tan"
+    ],
+    [
+      "simultan",
+      "e"
+    ],
+    [
+      "ver",
+      "</w>"
+    ],
+    [
+      "di",
+      "vers"
+    ],
+    [
+      "ur",
+      "e</w>"
+    ],
+    [
+      "o",
+      "s"
+    ],
+    [
+      "h",
+      "ow</w>"
+    ],
+    [
+      "in",
+      "s</w>"
+    ],
+    [
+      "tu",
+      "al</w>"
+    ],
+    [
+      "i",
+      "m"
+    ],
+    [
+      "re",
+      "l"
+    ],
+    [
+      "D",
+      "e"
+    ],
+    [
+      "con",
+      "figur"
+    ],
+    [
+      "ter",
+      "n"
+    ],
+    [
+      "Mechan",
+      "ism"
+    ],
+    [
+      "pl",
+      "e:</w>"
+    ],
+    [
+      "i",
+      "v"
+    ],
+    [
+      "differ",
+      "ent</w>"
+    ],
+    [
+      "experienc",
+      "e</w>"
+    ],
+    [
+      "t",
+      ",</w>"
+    ],
+    [
+      "pl",
+      "a"
+    ],
+    [
+      "c",
+      "lu"
+    ],
+    [
+      "p",
+      "or"
+    ],
+    [
+      "g",
+      "n"
+    ],
+    [
+      "Un",
+      "ified</w>"
+    ],
+    [
+      "a",
+      "wareness</w>"
+    ],
+    [
+      "self-di",
+      "versific"
+    ],
+    [
+      "g",
+      "es</w>"
+    ],
+    [
+      "er",
+      "g"
+    ],
+    [
+      "exist",
+      "ence</w>"
+    ],
+    [
+      "e",
+      "ar"
+    ],
+    [
+      "is",
+      "tic</w>"
+    ],
+    [
+      "th",
+      "ing"
+    ],
+    [
+      "enc",
+      "e,</w>"
+    ],
+    [
+      "il",
+      "i"
+    ],
+    [
+      "De",
+      "fin"
+    ],
+    [
+      "Defin",
+      "i"
+    ],
+    [
+      "Defini",
+      "tion:</w>"
+    ],
+    [
+      "c",
+      "an</w>"
+    ],
+    [
+      "Mechanism",
+      ":</w>"
+    ],
+    [
+      "in",
+      "her"
+    ],
+    [
+      "Ex",
+      "am"
+    ],
+    [
+      "Exam",
+      "ple:</w>"
+    ],
+    [
+      "tim",
+      "e</w>"
+    ],
+    [
+      "b",
+      "etw"
+    ],
+    [
+      "betw",
+      "e"
+    ],
+    [
+      "betwe",
+      "en</w>"
+    ],
+    [
+      "se",
+      "qu"
+    ],
+    [
+      "M",
+      "oment</w>"
+    ],
+    [
+      "e",
+      "ach</w>"
+    ],
+    [
+      "o",
+      "th"
+    ],
+    [
+      "experienc",
+      "es</w>"
+    ],
+    [
+      "ch",
+      "oic"
+    ],
+    [
+      "es",
+      "ts</w>"
+    ],
+    [
+      "an",
+      "tu"
+    ],
+    [
+      "antu",
+      "m</w>"
+    ],
+    [
+      "the",
+      "ory</w>"
+    ],
+    [
+      "sugg",
+      "est"
+    ],
+    [
+      "suggest",
+      "ing</w>"
+    ],
+    [
+      "s",
+      "our"
+    ],
+    [
+      "fram",
+      "ew"
+    ],
+    [
+      "framew",
+      "ork"
+    ],
+    [
+      "s",
+      "ing"
+    ],
+    [
+      "ul",
+      "ar"
+    ],
+    [
+      "r",
+      "oug"
+    ],
+    [
+      "n",
+      "at"
+    ],
+    [
+      "f",
+      "l"
+    ],
+    [
+      "conscious",
+      "ness</w>"
+    ],
+    [
+      "or",
+      "m"
+    ],
+    [
+      "s",
+      "y"
+    ],
+    [
+      "tern",
+      "al</w>"
+    ],
+    [
+      "actu",
+      "aliz"
+    ],
+    [
+      "D",
+      "u"
+    ],
+    [
+      "univers",
+      "e</w>"
+    ],
+    [
+      "UFA",
+      ".</w>"
+    ],
+    [
+      "mplic",
+      "ations</w>"
+    ],
+    [
+      "perspec",
+      "tive</w>"
+    ],
+    [
+      "Th",
+      "e"
+    ],
+    [
+      "A",
+      "wareness</w>"
+    ],
+    [
+      ")",
+      "</w>"
+    ],
+    [
+      "f",
+      "und"
+    ],
+    [
+      "fund",
+      "am"
+    ],
+    [
+      "fundam",
+      "ental</w>"
+    ],
+    [
+      "ation",
+      ",</w>"
+    ],
+    [
+      "simplic",
+      "ity</w>"
+    ],
+    [
+      "a",
+      "us"
+    ],
+    [
+      "obser",
+      "ver</w>"
+    ],
+    [
+      "at",
+      "ing</w>"
+    ],
+    [
+      "ar",
+      "is"
+    ],
+    [
+      "t",
+      "r"
+    ],
+    [
+      "d",
+      "s</w>"
+    ],
+    [
+      "vi",
+      "ew"
+    ],
+    [
+      "interconnect",
+      "ed</w>"
+    ],
+    [
+      "th",
+      "roug"
+    ],
+    [
+      "nat",
+      "ure</w>"
+    ],
+    [
+      "n",
+      "ess,</w>"
+    ],
+    [
+      "in",
+      "si"
+    ],
+    [
+      "insi",
+      "g"
+    ],
+    [
+      "insig",
+      "h"
+    ],
+    [
+      "an",
+      "ce</w>"
+    ],
+    [
+      "interconnect",
+      "ed"
+    ],
+    [
+      "interconnected",
+      "ness</w>"
+    ],
+    [
+      "in",
+      "ci"
+    ],
+    [
+      "sion",
+      "</w>"
+    ],
+    [
+      "r",
+      "ole</w>"
+    ],
+    [
+      "shap",
+      "ing</w>"
+    ],
+    [
+      "inter",
+      "pre"
+    ],
+    [
+      "f",
+      "o"
+    ],
+    [
+      "b",
+      "e</w>"
+    ],
+    [
+      "es",
+      "e</w>"
+    ],
+    [
+      "n",
+      "ow"
+    ],
+    [
+      "spec",
+      "if"
+    ],
+    [
+      "specif",
+      "ic</w>"
+    ],
+    [
+      "ent",
+      "s</w>"
+    ],
+    [
+      "con",
+      "sequ"
+    ],
+    [
+      "st",
+      "em"
+    ],
+    [
+      "es",
+      ":</w>"
+    ],
+    [
+      "ality",
+      ":</w>"
+    ],
+    [
+      "cont",
+      "in"
+    ],
+    [
+      "contin",
+      "u"
+    ],
+    [
+      "I",
+      "mplications</w>"
+    ],
+    [
+      "s",
+      "e</w>"
+    ],
+    [
+      "sugg",
+      "ests</w>"
+    ],
+    [
+      "o",
+      "g"
+    ],
+    [
+      "con",
+      "struc"
+    ],
+    [
+      "The",
+      "ory</w>"
+    ],
+    [
+      "ompl",
+      "et"
+    ],
+    [
+      "reality",
+      ",</w>"
+    ],
+    [
+      "g",
+      "o"
+    ],
+    [
+      "di",
+      "tion"
+    ],
+    [
+      "b",
+      "j"
+    ],
+    [
+      "bj",
+      "ec"
+    ],
+    [
+      "ed",
+      ",</w>"
+    ],
+    [
+      "sing",
+      "ular"
+    ],
+    [
+      "throug",
+      "h</w>"
+    ],
+    [
+      "c",
+      "om"
+    ],
+    [
+      "y",
+      ",</w>"
+    ],
+    [
+      "il",
+      "os"
+    ],
+    [
+      "ilos",
+      "o"
+    ],
+    [
+      "iloso",
+      "ph"
+    ],
+    [
+      "potential",
+      "s</w>"
+    ],
+    [
+      "u",
+      "s</w>"
+    ],
+    [
+      "experienc",
+      "e,</w>"
+    ],
+    [
+      "pr",
+      "inci"
+    ],
+    [
+      "princi",
+      "pl"
+    ],
+    [
+      "k",
+      "e</w>"
+    ],
+    [
+      "to",
+      "t"
+    ],
+    [
+      "the",
+      "ir"
+    ],
+    [
+      "their",
+      "</w>"
+    ],
+    [
+      "UFA",
+      ",</w>"
+    ],
+    [
+      "unfol",
+      "ding</w>"
+    ],
+    [
+      "all",
+      "y</w>"
+    ],
+    [
+      "possib",
+      "ili"
+    ],
+    [
+      "s",
+      "am"
+    ],
+    [
+      "sam",
+      "e</w>"
+    ],
+    [
+      "stat",
+      "es</w>"
+    ],
+    [
+      "potenti",
+      "alities</w>"
+    ],
+    [
+      "p",
+      "as"
+    ],
+    [
+      "l",
+      "l"
+    ],
+    [
+      "ter",
+      "min"
+    ],
+    [
+      "ci",
+      "p"
+    ],
+    [
+      "per",
+      "cep"
+    ],
+    [
+      "contex",
+      "t</w>"
+    ],
+    [
+      "y",
+      "s"
+    ],
+    [
+      "ic",
+      "s</w>"
+    ],
+    [
+      "s",
+      ":</w>"
+    ],
+    [
+      "Con",
+      "nec"
+    ],
+    [
+      "qu",
+      "antum</w>"
+    ],
+    [
+      "ol",
+      "og"
+    ],
+    [
+      "omplet",
+      "e</w>"
+    ],
+    [
+      "C",
+      "omplex"
+    ],
+    [
+      "ro",
+      "du"
+    ],
+    [
+      "rodu",
+      "c"
+    ],
+    [
+      "concep",
+      "t</w>"
+    ],
+    [
+      "ity",
+      ".</w>"
+    ],
+    [
+      "em",
+      "erg"
+    ],
+    [
+      "sour",
+      "ce</w>"
+    ],
+    [
+      "ous",
+      "ly</w>"
+    ],
+    [
+      "divers",
+      "ity</w>"
+    ],
+    [
+      "tr",
+      "an"
+    ],
+    [
+      "v",
+      "e</w>"
+    ],
+    [
+      "exist",
+      "ence,</w>"
+    ],
+    [
+      "b",
+      "ri"
+    ],
+    [
+      "re",
+      "fl"
+    ],
+    [
+      "refl",
+      "ec"
+    ],
+    [
+      "t",
+      ".</w>"
+    ],
+    [
+      "vi",
+      "d"
+    ],
+    [
+      "l",
+      "i"
+    ],
+    [
+      "li",
+      "ke</w>"
+    ],
+    [
+      "i",
+      "z"
+    ],
+    [
+      "interpre",
+      "t"
+    ],
+    [
+      "ed",
+      ".</w>"
+    ],
+    [
+      "expression",
+      "</w>"
+    ],
+    [
+      "ar",
+      "i"
+    ],
+    [
+      "l",
+      "y"
+    ],
+    [
+      "inher",
+      "ent</w>"
+    ],
+    [
+      "on",
+      "-"
+    ],
+    [
+      "S",
+      "elf-"
+    ],
+    [
+      "f",
+      "orm"
+    ],
+    [
+      "’",
+      "s</w>"
+    ],
+    [
+      "el",
+      "y</w>"
+    ],
+    [
+      "rel",
+      "ation"
+    ],
+    [
+      "relation",
+      "sh"
+    ],
+    [
+      "relationsh",
+      "i"
+    ],
+    [
+      "relationshi",
+      "p"
+    ],
+    [
+      "an",
+      "t"
+    ],
+    [
+      "ant",
+      "ec"
+    ],
+    [
+      "antec",
+      "ed"
+    ],
+    [
+      "configur",
+      "ation</w>"
+    ],
+    [
+      "es",
+      "t</w>"
+    ],
+    [
+      "a",
+      "g"
+    ],
+    [
+      "ra",
+      "y</w>"
+    ],
+    [
+      "inter",
+      "pla"
+    ],
+    [
+      "interpla",
+      "y</w>"
+    ],
+    [
+      "po",
+      "si"
+    ],
+    [
+      "de",
+      "termin"
+    ],
+    [
+      "ti",
+      "cip"
+    ],
+    [
+      "R",
+      "e"
+    ],
+    [
+      "inter",
+      "ac"
+    ],
+    [
+      "ti",
+      "es,</w>"
+    ],
+    [
+      "ce",
+      ".</w>"
+    ],
+    [
+      "a",
+      "d"
+    ],
+    [
+      "Con",
+      "clu"
+    ],
+    [
+      "e",
+      "a"
+    ],
+    [
+      "ev",
+      "el"
+    ],
+    [
+      "influenc",
+      "ed</w>"
+    ],
+    [
+      "potenti",
+      "ality</w>"
+    ],
+    [
+      "em",
+      "por"
+    ],
+    [
+      "of",
+      "fer"
+    ],
+    [
+      "m",
+      "em"
+    ],
+    [
+      "(",
+      "UTA"
+    ],
+    [
+      "S",
+      "i"
+    ],
+    [
+      "Si",
+      "mplic"
+    ],
+    [
+      "In",
+      "t"
+    ],
+    [
+      "Int",
+      "roduc"
+    ],
+    [
+      "t",
+      "ra"
+    ],
+    [
+      "tra",
+      "dition"
+    ],
+    [
+      "tradition",
+      "al</w>"
+    ],
+    [
+      "c",
+      "aus"
+    ],
+    [
+      "phenomen",
+      "a</w>"
+    ],
+    [
+      "es",
+      "s.</w>"
+    ],
+    [
+      "i",
+      "el"
+    ],
+    [
+      "in",
+      "c"
+    ],
+    [
+      "h",
+      "ol"
+    ],
+    [
+      "self-diversific",
+      "ation</w>"
+    ],
+    [
+      "all",
+      "ow"
+    ],
+    [
+      "conscious",
+      "ness,</w>"
+    ],
+    [
+      "enti",
+      "f"
+    ],
+    [
+      "ilosoph",
+      "ical</w>"
+    ],
+    [
+      "b",
+      "al"
+    ],
+    [
+      "pro",
+      "vid"
+    ],
+    [
+      "insigh",
+      "ts</w>"
+    ],
+    [
+      "experienc",
+      "e.</w>"
+    ],
+    [
+      "ar",
+      "y</w>"
+    ],
+    [
+      "re",
+      "e</w>"
+    ],
+    [
+      "concep",
+      "tual</w>"
+    ],
+    [
+      "f",
+      "ul"
+    ],
+    [
+      "possib",
+      "le</w>"
+    ],
+    [
+      "re",
+      "present"
+    ],
+    [
+      "at",
+      "e</w>"
+    ],
+    [
+      "D",
+      "i"
+    ],
+    [
+      "UFA",
+      "’s</w>"
+    ],
+    [
+      "ac",
+      "ro"
+    ],
+    [
+      "acro",
+      "s"
+    ],
+    [
+      "d",
+      "enti"
+    ],
+    [
+      "an",
+      "c"
+    ],
+    [
+      "un",
+      "c"
+    ],
+    [
+      "P",
+      "o"
+    ],
+    [
+      "Po",
+      "tenti"
+    ],
+    [
+      "manifest",
+      "ation</w>"
+    ],
+    [
+      "l",
+      "in"
+    ],
+    [
+      "ear",
+      "</w>"
+    ],
+    [
+      "principl",
+      "e</w>"
+    ],
+    [
+      "sy",
+      "stem"
+    ],
+    [
+      "ou",
+      "t"
+    ],
+    [
+      "i",
+      "t</w>"
+    ],
+    [
+      "i",
+      "es</w>"
+    ],
+    [
+      "pres",
+      "ent</w>"
+    ],
+    [
+      "tu",
+      "r"
+    ],
+    [
+      "m",
+      "oment</w>"
+    ],
+    [
+      "be",
+      "ing</w>"
+    ],
+    [
+      "d",
+      "e</w>"
+    ],
+    [
+      "consequ",
+      "ent</w>"
+    ],
+    [
+      "c",
+      "ur"
+    ],
+    [
+      "n",
+      "</w>"
+    ],
+    [
+      "P",
+      "ar"
+    ],
+    [
+      "du",
+      "al</w>"
+    ],
+    [
+      "par",
+      "tic"
+    ],
+    [
+      "under",
+      "ly"
+    ],
+    [
+      "underly",
+      "ing</w>"
+    ],
+    [
+      "In",
+      "</w>"
+    ],
+    [
+      "ll",
+      "</w>"
+    ],
+    [
+      "a",
+      "b"
+    ],
+    [
+      "ity",
+      ":</w>"
+    ],
+    [
+      "ality",
+      ".</w>"
+    ],
+    [
+      "Mechan",
+      "ics</w>"
+    ],
+    [
+      "o",
+      "</w>"
+    ],
+    [
+      "ation",
+      ".</w>"
+    ],
+    [
+      "Conclu",
+      "sion"
+    ],
+    [
+      "Conclusion",
+      ":</w>"
+    ],
+    [
+      "P",
+      "h"
+    ],
+    [
+      "r",
+      "es"
+    ],
+    [
+      "Ex",
+      "perienc"
+    ],
+    [
+      "empor",
+      "al</w>"
+    ],
+    [
+      "ol",
+      "l"
+    ],
+    [
+      "oll",
+      "ap"
+    ],
+    [
+      "ollap",
+      "se</w>"
+    ],
+    [
+      "ali",
+      "gn"
+    ],
+    [
+      "em",
+      "ph"
+    ],
+    [
+      "emph",
+      "a"
+    ],
+    [
+      "empha",
+      "si"
+    ],
+    [
+      "emphasi",
+      "z"
+    ],
+    [
+      "expression",
+      "s</w>"
+    ],
+    [
+      "o",
+      "t"
+    ],
+    [
+      "c",
+      "omplete</w>"
+    ],
+    [
+      "ch",
+      "all"
+    ],
+    [
+      "chall",
+      "en"
+    ],
+    [
+      "challen",
+      "ges</w>"
+    ],
+    [
+      "se",
+      "par"
+    ],
+    [
+      "o",
+      "bjec"
+    ],
+    [
+      "simultane",
+      "ously</w>"
+    ],
+    [
+      "cre",
+      "at"
+    ],
+    [
+      "a",
+      "spec"
+    ],
+    [
+      "tran",
+      "s"
+    ],
+    [
+      "di",
+      "st"
+    ],
+    [
+      "dist",
+      "inc"
+    ],
+    [
+      "c",
+      "h</w>"
+    ],
+    [
+      "hol",
+      "istic</w>"
+    ],
+    [
+      "view",
+      "</w>"
+    ],
+    [
+      "allow",
+      "s</w>"
+    ],
+    [
+      "entif",
+      "ic</w>"
+    ],
+    [
+      "tion",
+      ",</w>"
+    ],
+    [
+      "ex",
+      "pl"
+    ],
+    [
+      "ma",
+      "int"
+    ],
+    [
+      "maint",
+      "a"
+    ],
+    [
+      "univers",
+      "e.</w>"
+    ],
+    [
+      "B",
+      "y</w>"
+    ],
+    [
+      "tim",
+      "e,</w>"
+    ],
+    [
+      "provid",
+      "es</w>"
+    ],
+    [
+      "de",
+      "e"
+    ],
+    [
+      "y",
+      ":</w>"
+    ],
+    [
+      "contex",
+      "tual</w>"
+    ],
+    [
+      "fo",
+      "und"
+    ],
+    [
+      "th",
+      "ese</w>"
+    ],
+    [
+      "v",
+      "ari"
+    ],
+    [
+      "s",
+      "elf"
+    ],
+    [
+      "k",
+      "now"
+    ],
+    [
+      "l",
+      "ed"
+    ],
+    [
+      "led",
+      "g"
+    ],
+    [
+      "un",
+      "d</w>"
+    ],
+    [
+      "Di",
+      "versific"
+    ],
+    [
+      "simultane",
+      "ous</w>"
+    ],
+    [
+      "acros",
+      "s</w>"
+    ],
+    [
+      "t",
+      "s.</w>"
+    ],
+    [
+      "d",
+      "es"
+    ],
+    [
+      "possibili",
+      "ties</w>"
+    ],
+    [
+      "\"",
+      "</w>"
+    ],
+    [
+      "om",
+      "ent"
+    ],
+    [
+      "ac",
+      "t</w>"
+    ],
+    [
+      "lin",
+      "ear</w>"
+    ],
+    [
+      "re",
+      "aliz"
+    ],
+    [
+      "ti",
+      "es.</w>"
+    ],
+    [
+      "ev",
+      "ent"
+    ],
+    [
+      "re",
+      "ma"
+    ],
+    [
+      "en",
+      "su"
+    ],
+    [
+      "re",
+      "s</w>"
+    ],
+    [
+      "po",
+      "in"
+    ],
+    [
+      "poin",
+      "t</w>"
+    ],
+    [
+      "pas",
+      "t</w>"
+    ],
+    [
+      "f",
+      "u"
+    ],
+    [
+      "enc",
+      "e.</w>"
+    ],
+    [
+      "p",
+      "a"
+    ],
+    [
+      "A",
+      "r"
+    ],
+    [
+      "Ar",
+      "ray</w>"
+    ],
+    [
+      "Du",
+      "ality</w>"
+    ],
+    [
+      "mul",
+      "ti"
+    ],
+    [
+      "su",
+      "per"
+    ],
+    [
+      "a",
+      "tive</w>"
+    ],
+    [
+      "cur",
+      "r"
+    ],
+    [
+      "de",
+      "fin"
+    ],
+    [
+      "'",
+      "s</w>"
+    ],
+    [
+      "a",
+      "w"
+    ],
+    [
+      "pla",
+      "y"
+    ],
+    [
+      "influenc",
+      "es</w>"
+    ],
+    [
+      "par",
+      "ticip"
+    ],
+    [
+      "di",
+      "vi"
+    ],
+    [
+      "Un",
+      "i"
+    ],
+    [
+      "f",
+      "ac"
+    ],
+    [
+      "simplic",
+      "ity,</w>"
+    ],
+    [
+      "g",
+      "iv"
+    ],
+    [
+      "Introduc",
+      "tion:</w>"
+    ],
+    [
+      "N",
+      "u"
+    ],
+    [
+      "Nu",
+      "anc"
+    ],
+    [
+      "Nuanc",
+      "es:</w>"
+    ],
+    [
+      "ation",
+      ":</w>"
+    ],
+    [
+      "ess",
+      ":</w>"
+    ],
+    [
+      "i",
+      "es,</w>"
+    ],
+    [
+      "t",
+      "y</w>"
+    ],
+    [
+      "l",
+      "evel"
+    ],
+    [
+      "f",
+      "f"
+    ],
+    [
+      "ff",
+      "ec"
+    ],
+    [
+      "T",
+      "emporal</w>"
+    ],
+    [
+      "e",
+      "ur"
+    ],
+    [
+      "c",
+      "ollapse</w>"
+    ],
+    [
+      "o",
+      "p"
+    ],
+    [
+      "align",
+      "s</w>"
+    ],
+    [
+      "co",
+      "gn"
+    ],
+    [
+      "mem",
+      "ory</w>"
+    ],
+    [
+      "F",
+      "r"
+    ],
+    [
+      "Fr",
+      "om</w>"
+    ],
+    [
+      "In",
+      "finite</w>"
+    ],
+    [
+      "Complex",
+      "ity</w>"
+    ],
+    [
+      "pro",
+      "pos"
+    ],
+    [
+      "par",
+      "a"
+    ],
+    [
+      "para",
+      "di"
+    ],
+    [
+      "paradi",
+      "g"
+    ],
+    [
+      "a",
+      "waren"
+    ],
+    [
+      "int",
+      "e"
+    ],
+    [
+      "inte",
+      "g"
+    ],
+    [
+      "co",
+      "her"
+    ],
+    [
+      "F",
+      "iel"
+    ],
+    [
+      "Fiel",
+      "d</w>"
+    ],
+    [
+      "si",
+      "ve</w>"
+    ],
+    [
+      "framework",
+      "</w>"
+    ],
+    [
+      "bri",
+      "d"
+    ],
+    [
+      "sp",
+      "ir"
+    ],
+    [
+      "spir",
+      "it"
+    ],
+    [
+      "spirit",
+      "u"
+    ],
+    [
+      "expl",
+      "or"
+    ],
+    [
+      "shap",
+      "es</w>"
+    ],
+    [
+      "bal",
+      "ance</w>"
+    ],
+    [
+      "e",
+      "qu"
+    ],
+    [
+      "u",
+      "m</w>"
+    ],
+    [
+      "in",
+      "v"
+    ],
+    [
+      "inv",
+      "it"
+    ],
+    [
+      "n",
+      "ew"
+    ],
+    [
+      "new",
+      "</w>"
+    ],
+    [
+      "thing",
+      "s.</w>"
+    ],
+    [
+      "dee",
+      "per"
+    ],
+    [
+      "deeper",
+      "</w>"
+    ],
+    [
+      "concep",
+      "ts</w>"
+    ],
+    [
+      "singular",
+      "ity</w>"
+    ],
+    [
+      "fram",
+      "e</w>"
+    ],
+    [
+      "re",
+      "fer"
+    ],
+    [
+      "d",
+      "ic"
+    ],
+    [
+      "mainta",
+      "in"
+    ],
+    [
+      "under",
+      "st"
+    ],
+    [
+      "no",
+      "thing"
+    ],
+    [
+      "vari",
+      "ous</w>"
+    ],
+    [
+      "ation",
+      "s.</w>"
+    ],
+    [
+      "exist",
+      "s</w>"
+    ],
+    [
+      "self",
+      "</w>"
+    ],
+    [
+      "represent",
+      "s</w>"
+    ],
+    [
+      "aris",
+      "es</w>"
+    ],
+    [
+      "complex",
+      "</w>"
+    ],
+    [
+      "ing",
+      ",</w>"
+    ],
+    [
+      "know",
+      "ledg"
+    ],
+    [
+      "n",
+      "on-"
+    ],
+    [
+      "g",
+      "ro"
+    ],
+    [
+      "Self-",
+      "Diversific"
+    ],
+    [
+      "expres",
+      "s"
+    ],
+    [
+      "divers",
+      "e</w>"
+    ],
+    [
+      "form",
+      "s</w>"
+    ],
+    [
+      "Th",
+      "ese</w>"
+    ],
+    [
+      "i",
+      "denti"
+    ],
+    [
+      "ap",
+      "p"
+    ],
+    [
+      "du",
+      "e</w>"
+    ],
+    [
+      "relationship",
+      "s</w>"
+    ],
+    [
+      "phenomen",
+      "a"
+    ],
+    [
+      "f",
+      "unc"
+    ],
+    [
+      "A",
+      "c"
+    ],
+    [
+      "in",
+      "finit"
+    ],
+    [
+      "potential",
+      ".</w>"
+    ],
+    [
+      "observ",
+      "ation</w>"
+    ],
+    [
+      "o",
+      "-"
+    ],
+    [
+      "con",
+      "stan"
+    ],
+    [
+      "potential",
+      "s,</w>"
+    ],
+    [
+      "inher",
+      "ent"
+    ],
+    [
+      "inherent",
+      "ly</w>"
+    ],
+    [
+      "a",
+      "ins</w>"
+    ],
+    [
+      "ex",
+      "ternal</w>"
+    ],
+    [
+      "p",
+      "u"
+    ],
+    [
+      "ensu",
+      "res</w>"
+    ],
+    [
+      "y",
+      ".</w>"
+    ],
+    [
+      "con",
+      "ver"
+    ],
+    [
+      "conver",
+      "g"
+    ],
+    [
+      "inter",
+      "s"
+    ],
+    [
+      "inters",
+      "ec"
+    ],
+    [
+      "tur",
+      "e</w>"
+    ],
+    [
+      "th",
+      "er</w>"
+    ],
+    [
+      "m",
+      "er"
+    ],
+    [
+      "mer",
+      "ely</w>"
+    ],
+    [
+      "y",
+      "ou"
+    ],
+    [
+      "you",
+      "</w>"
+    ],
+    [
+      "us",
+      "t</w>"
+    ],
+    [
+      "stat",
+      "es.</w>"
+    ],
+    [
+      "o",
+      "d"
+    ],
+    [
+      "anteced",
+      "ent</w>"
+    ],
+    [
+      "oth",
+      "er</w>"
+    ],
+    [
+      "a",
+      "ges</w>"
+    ],
+    [
+      "at",
+      "ory</w>"
+    ],
+    [
+      "ac",
+      "tive</w>"
+    ],
+    [
+      "experienc",
+      "es.</w>"
+    ],
+    [
+      "t",
+      "ing</w>"
+    ],
+    [
+      "co",
+      "-"
+    ],
+    [
+      "w",
+      "a"
+    ],
+    [
+      "in",
+      "divi"
+    ],
+    [
+      "indivi",
+      "dual</w>"
+    ],
+    [
+      "choic",
+      "es</w>"
+    ],
+    [
+      "cont",
+      "ri"
+    ],
+    [
+      "contri",
+      "bu"
+    ],
+    [
+      "o",
+      "ver"
+    ],
+    [
+      "over",
+      "all</w>"
+    ],
+    [
+      "b",
+      "oth"
+    ],
+    [
+      "both",
+      "</w>"
+    ],
+    [
+      "l",
+      "aw"
+    ],
+    [
+      "contex",
+      "t.</w>"
+    ],
+    [
+      "ex",
+      "p"
+    ],
+    [
+      "exp",
+      "an"
+    ],
+    [
+      "wi",
+      "ll</w>"
+    ],
+    [
+      "unfol",
+      "d"
+    ],
+    [
+      "R",
+      "ole</w>"
+    ],
+    [
+      "al",
+      ",</w>"
+    ],
+    [
+      "o",
+      "c"
+    ],
+    [
+      "ver",
+      "y</w>"
+    ],
+    [
+      "go",
+      "ver"
+    ],
+    [
+      "continu",
+      "ous</w>"
+    ],
+    [
+      "Connec",
+      "tion"
+    ],
+    [
+      "Connection",
+      "s:</w>"
+    ],
+    [
+      "f",
+      "ree</w>"
+    ],
+    [
+      "l",
+      "ea"
+    ],
+    [
+      "l",
+      "es</w>"
+    ],
+    [
+      "P",
+      "er"
+    ],
+    [
+      "v",
+      "ali"
+    ],
+    [
+      "vali",
+      "d</w>"
+    ],
+    [
+      "percep",
+      "tion</w>"
+    ],
+    [
+      "nec",
+      "ess"
+    ],
+    [
+      "In",
+      "ter"
+    ],
+    [
+      "shap",
+      "ed</w>"
+    ],
+    [
+      "Experienc",
+      "e:</w>"
+    ],
+    [
+      "offer",
+      "s</w>"
+    ],
+    [
+      "al",
+      "s"
+    ],
+    [
+      "als",
+      "o</w>"
+    ],
+    [
+      "eur",
+      "o"
+    ],
+    [
+      "euro",
+      "sci"
+    ],
+    [
+      "Con",
+      "t"
+    ],
+    [
+      "Cont",
+      "ex"
+    ],
+    [
+      "enti",
+      "ties</w>"
+    ],
+    [
+      "choic",
+      "e</w>"
+    ],
+    [
+      "fac",
+      "t"
+    ],
+    [
+      "fact",
+      "or"
+    ],
+    [
+      "the",
+      "or"
+    ],
+    [
+      "enc",
+      "our"
+    ],
+    [
+      "min",
+      "d"
+    ],
+    [
+      "sy",
+      "ch"
+    ],
+    [
+      "sych",
+      "olog"
+    ],
+    [
+      "(UTA",
+      ")"
+    ],
+    [
+      "Simplic",
+      "ity</w>"
+    ],
+    [
+      "(UTA",
+      ")</w>"
+    ],
+    [
+      "paradig",
+      "m</w>"
+    ],
+    [
+      "self-diversific",
+      "ation,</w>"
+    ],
+    [
+      "complex",
+      "ity.</w>"
+    ],
+    [
+      "caus",
+      "ality,</w>"
+    ],
+    [
+      "emerg",
+      "e</w>"
+    ],
+    [
+      "observ",
+      "ed,</w>"
+    ],
+    [
+      "r",
+      "ating</w>"
+    ],
+    [
+      "(",
+      "UFA"
+    ],
+    [
+      "trans",
+      "c"
+    ],
+    [
+      "transc",
+      "en"
+    ],
+    [
+      "transcen",
+      "ds</w>"
+    ],
+    [
+      "su",
+      "ch</w>"
+    ],
+    [
+      "expression",
+      ".</w>"
+    ],
+    [
+      "m",
+      "s</w>"
+    ],
+    [
+      "sci",
+      "entific</w>"
+    ],
+    [
+      "ph",
+      "ilosophical</w>"
+    ],
+    [
+      "unfol",
+      "ds</w>"
+    ],
+    [
+      "complex",
+      "ity,</w>"
+    ],
+    [
+      "actu",
+      "alities</w>"
+    ],
+    [
+      "equ",
+      "ili"
+    ],
+    [
+      "equili",
+      "bri"
+    ],
+    [
+      "re",
+      "con"
+    ],
+    [
+      "E",
+      "m"
+    ],
+    [
+      "maintain",
+      "ing</w>"
+    ],
+    [
+      "fo",
+      "c"
+    ],
+    [
+      "found",
+      "ation"
+    ],
+    [
+      "foundation",
+      "al</w>"
+    ],
+    [
+      "potenti",
+      "ality,</w>"
+    ],
+    [
+      "b",
+      "as"
+    ],
+    [
+      "on",
+      "istic</w>"
+    ],
+    [
+      "ev",
+      "en</w>"
+    ],
+    [
+      "gro",
+      "und</w>"
+    ],
+    [
+      "d",
+      "er"
+    ],
+    [
+      "app",
+      "ear"
+    ],
+    [
+      "configur",
+      "ations</w>"
+    ],
+    [
+      "anteced",
+      "ents</w>"
+    ],
+    [
+      "phenomena",
+      ",</w>"
+    ],
+    [
+      "ph",
+      "ot"
+    ],
+    [
+      "des",
+      "p"
+    ],
+    [
+      "desp",
+      "it"
+    ],
+    [
+      "despit",
+      "e</w>"
+    ],
+    [
+      "Potenti",
+      "ality</w>"
+    ],
+    [
+      "Ac",
+      "tu"
+    ],
+    [
+      "infinit",
+      "e,</w>"
+    ],
+    [
+      "exist",
+      "ing</w>"
+    ],
+    [
+      "p",
+      "ure</w>"
+    ],
+    [
+      "\"",
+      "now"
+    ],
+    [
+      "m",
+      "oment"
+    ],
+    [
+      "b",
+      "ec"
+    ],
+    [
+      "tan",
+      "g"
+    ],
+    [
+      "er",
+      "o-"
+    ],
+    [
+      "rema",
+      "ins</w>"
+    ],
+    [
+      "tot",
+      "al</w>"
+    ],
+    [
+      "v",
+      "al"
+    ],
+    [
+      "val",
+      "u"
+    ],
+    [
+      "actualiz",
+      "ation</w>"
+    ],
+    [
+      "converg",
+      "e</w>"
+    ],
+    [
+      "actualiz",
+      "ed</w>"
+    ],
+    [
+      "intersec",
+      "tion</w>"
+    ],
+    [
+      "experienc",
+      "ed</w>"
+    ],
+    [
+      "exist",
+      "ence.</w>"
+    ],
+    [
+      "at",
+      "es</w>"
+    ],
+    [
+      "observ",
+      "ed</w>"
+    ],
+    [
+      "j",
+      "ust</w>"
+    ],
+    [
+      "st",
+      "a"
+    ],
+    [
+      "sta",
+      "tic</w>"
+    ],
+    [
+      "pa",
+      "st"
+    ],
+    [
+      "l",
+      "d</w>"
+    ],
+    [
+      "h",
+      "a"
+    ],
+    [
+      "l",
+      "ed</w>"
+    ],
+    [
+      "it",
+      ".</w>"
+    ],
+    [
+      "en",
+      "ess</w>"
+    ],
+    [
+      "el",
+      "</w>"
+    ],
+    [
+      "su",
+      "bjec"
+    ],
+    [
+      "ap",
+      "</w>"
+    ],
+    [
+      "posi",
+      "tion,</w>"
+    ],
+    [
+      "E",
+      "ach</w>"
+    ],
+    [
+      "Con",
+      "scious"
+    ],
+    [
+      "manif",
+      "est</w>"
+    ],
+    [
+      "manifest",
+      ".</w>"
+    ],
+    [
+      "aspec",
+      "t</w>"
+    ],
+    [
+      "ce",
+      "iv"
+    ],
+    [
+      "at",
+      "ed</w>"
+    ],
+    [
+      "play",
+      "s</w>"
+    ],
+    [
+      "cre",
+      "ation</w>"
+    ],
+    [
+      "defin",
+      "es</w>"
+    ],
+    [
+      "si",
+      "mpl"
+    ],
+    [
+      "con",
+      "di"
+    ],
+    [
+      "condi",
+      "tions</w>"
+    ],
+    [
+      "on",
+      "e</w>"
+    ],
+    [
+      "ad",
+      "o"
+    ],
+    [
+      "ado",
+      "x"
+    ],
+    [
+      "cont",
+      "ra"
+    ],
+    [
+      "contra",
+      "dic"
+    ],
+    [
+      "l",
+      "im"
+    ],
+    [
+      "law",
+      "s</w>"
+    ],
+    [
+      "I",
+      ".</w>"
+    ],
+    [
+      "a",
+      "bs"
+    ],
+    [
+      "abs",
+      "ence</w>"
+    ],
+    [
+      "v",
+      "o"
+    ],
+    [
+      "vo",
+      "i"
+    ],
+    [
+      "unfold",
+      "s.</w>"
+    ],
+    [
+      "cont",
+      "ains</w>"
+    ],
+    [
+      "contex",
+      "t,</w>"
+    ],
+    [
+      "p",
+      "i"
+    ],
+    [
+      "v",
+      "a"
+    ],
+    [
+      "m",
+      "e"
+    ],
+    [
+      "me",
+      "an"
+    ],
+    [
+      "N",
+      "on-"
+    ],
+    [
+      "Du",
+      "ality:</w>"
+    ],
+    [
+      "e",
+      "t</w>"
+    ],
+    [
+      "Complex",
+      "ity:</w>"
+    ],
+    [
+      "r",
+      "is"
+    ],
+    [
+      "ris",
+      "e</w>"
+    ],
+    [
+      "proc",
+      "ess,</w>"
+    ],
+    [
+      "D",
+      "ynam"
+    ],
+    [
+      "Dynam",
+      "ic</w>"
+    ],
+    [
+      "oc",
+      "curr"
+    ],
+    [
+      "fr",
+      "ag"
+    ],
+    [
+      "frag",
+      "m"
+    ],
+    [
+      "ab",
+      "le</w>"
+    ],
+    [
+      "inf",
+      "orm"
+    ],
+    [
+      "vi",
+      "sion</w>"
+    ],
+    [
+      "u",
+      "m"
+    ],
+    [
+      "b",
+      "ro"
+    ],
+    [
+      "bro",
+      "ad"
+    ],
+    [
+      "broad",
+      "er</w>"
+    ],
+    [
+      "A",
+      "s</w>"
+    ],
+    [
+      "the",
+      "y</w>"
+    ],
+    [
+      "r",
+      "ul"
+    ],
+    [
+      "rul",
+      "es</w>"
+    ],
+    [
+      "cre",
+      "ating</w>"
+    ],
+    [
+      "C",
+      "h"
+    ],
+    [
+      "Ch",
+      "oic"
+    ],
+    [
+      "E",
+      "very</w>"
+    ],
+    [
+      "out",
+      "com"
+    ],
+    [
+      "univers",
+      "e,</w>"
+    ],
+    [
+      "Uni",
+      "vers"
+    ],
+    [
+      "partic",
+      "les</w>"
+    ],
+    [
+      "su",
+      "b"
+    ],
+    [
+      "or",
+      "g"
+    ],
+    [
+      "org",
+      "an"
+    ],
+    [
+      "Per",
+      "cep"
+    ],
+    [
+      "perspec",
+      "tiv"
+    ],
+    [
+      "necess",
+      "ary</w>"
+    ],
+    [
+      "sour",
+      "ce.</w>"
+    ],
+    [
+      "Ph",
+      "ilosophical</w>"
+    ],
+    [
+      "Connec",
+      "tion:</w>"
+    ],
+    [
+      "in",
+      "st"
+    ],
+    [
+      "inst",
+      "ea"
+    ],
+    [
+      "instea",
+      "d</w>"
+    ],
+    [
+      "duali",
+      "ties,</w>"
+    ],
+    [
+      "T",
+      "im"
+    ],
+    [
+      "P",
+      "res"
+    ],
+    [
+      "e",
+      "ternal</w>"
+    ],
+    [
+      "Re",
+      "ality:</w>"
+    ],
+    [
+      "re",
+      "c"
+    ],
+    [
+      "S",
+      "ci"
+    ],
+    [
+      "e",
+      "ffec"
+    ],
+    [
+      "In",
+      "f"
+    ],
+    [
+      "choic",
+      "e,</w>"
+    ],
+    [
+      "factor",
+      "s</w>"
+    ],
+    [
+      "m",
+      "ental</w>"
+    ],
+    [
+      "shap",
+      "e</w>"
+    ],
+    [
+      "emphasiz",
+      "ing</w>"
+    ],
+    [
+      "pl",
+      "in"
+    ],
+    [
+      "Q",
+      "u"
+    ],
+    [
+      "Qu",
+      "antum</w>"
+    ],
+    [
+      "ys",
+      "ic"
+    ],
+    [
+      "se",
+      "en</w>"
+    ],
+    [
+      "go",
+      "ing</w>"
+    ],
+    [
+      "et",
+      "ap"
+    ],
+    [
+      "etap",
+      "h"
+    ],
+    [
+      "is",
+      "t</w>"
+    ],
+    [
+      "t",
+      "ru"
+    ],
+    [
+      "encour",
+      "ages</w>"
+    ],
+    [
+      "re",
+      "cogn"
+    ],
+    [
+      "recogn",
+      "iz"
+    ],
+    [
+      "sycholog",
+      "ical</w>"
+    ],
+    [
+      "A",
+      "waren"
+    ],
+    [
+      "emphasiz",
+      "es</w>"
+    ],
+    [
+      "i",
+      "tive</w>"
+    ],
+    [
+      "b",
+      "ra"
+    ],
+    [
+      "bra",
+      "in</w>"
+    ],
+    [
+      "proc",
+      "ess"
+    ],
+    [
+      "s",
+      "en"
+    ],
+    [
+      "caus",
+      "ality</w>"
+    ],
+    [
+      "invit",
+      "es</w>"
+    ],
+    [
+      "(UTA)",
+      ":</w>"
+    ],
+    [
+      "C",
+      "omplete</w>"
+    ],
+    [
+      "propos",
+      "es</w>"
+    ],
+    [
+      "ro",
+      "ot"
+    ],
+    [
+      "root",
+      "ed</w>"
+    ],
+    [
+      "v",
+      "ing</w>"
+    ],
+    [
+      "no",
+      "tions</w>"
+    ],
+    [
+      "separ",
+      "ation,</w>"
+    ],
+    [
+      "objec",
+      "tiv"
+    ],
+    [
+      "awaren",
+      "ess.</w>"
+    ],
+    [
+      "framework",
+      ",</w>"
+    ],
+    [
+      "creat",
+      "or</w>"
+    ],
+    [
+      "integ",
+      "rating</w>"
+    ],
+    [
+      "aspec",
+      "ts</w>"
+    ],
+    [
+      "coher",
+      "ent</w>"
+    ],
+    [
+      "wh",
+      "ol"
+    ],
+    [
+      "A",
+      "t</w>"
+    ],
+    [
+      "(UFA",
+      ")"
+    ],
+    [
+      "(UFA)",
+      ",</w>"
+    ],
+    [
+      "distinc",
+      "tions</w>"
+    ],
+    [
+      "min",
+      "d</w>"
+    ],
+    [
+      "m",
+      "at"
+    ],
+    [
+      "mat",
+      "ter"
+    ],
+    [
+      "actu",
+      "ality,</w>"
+    ],
+    [
+      "present",
+      "ing</w>"
+    ],
+    [
+      "emerg",
+      "ence</w>"
+    ],
+    [
+      "com",
+      "pre"
+    ],
+    [
+      "compre",
+      "h"
+    ],
+    [
+      "compreh",
+      "en"
+    ],
+    [
+      "brid",
+      "g"
+    ],
+    [
+      "bridg",
+      "ing</w>"
+    ],
+    [
+      "re",
+      "al"
+    ],
+    [
+      "in",
+      "qu"
+    ],
+    [
+      "inqu",
+      "ir"
+    ],
+    [
+      "inquir",
+      "y,</w>"
+    ],
+    [
+      "reflec",
+      "tion,</w>"
+    ],
+    [
+      "spiritu",
+      "al</w>"
+    ],
+    [
+      "l",
+      "en"
+    ],
+    [
+      "UTA",
+      ",</w>"
+    ],
+    [
+      "explor",
+      "e</w>"
+    ],
+    [
+      "equilibri",
+      "um</w>"
+    ],
+    [
+      "b",
+      "r"
+    ],
+    [
+      "br",
+      "ac"
+    ],
+    [
+      "principl",
+      "es</w>"
+    ],
+    [
+      "c",
+      "ent"
+    ],
+    [
+      "cent",
+      "r"
+    ],
+    [
+      "centr",
+      "al</w>"
+    ],
+    [
+      "D",
+      "ic"
+    ],
+    [
+      "Dic",
+      "tion"
+    ],
+    [
+      "c",
+      "er"
+    ],
+    [
+      "W",
+      "h"
+    ],
+    [
+      "Wh",
+      "en</w>"
+    ],
+    [
+      "exi",
+      "b"
+    ],
+    [
+      "exib",
+      "il"
+    ],
+    [
+      "re",
+      "d"
+    ],
+    [
+      "iz",
+      "e</w>"
+    ],
+    [
+      "interpret",
+      "ations</w>"
+    ],
+    [
+      "wh",
+      "il"
+    ],
+    [
+      "whil",
+      "e</w>"
+    ],
+    [
+      "coher",
+      "ence</w>"
+    ],
+    [
+      "underst",
+      "o"
+    ],
+    [
+      "understo",
+      "o"
+    ],
+    [
+      "understoo",
+      "d</w>"
+    ],
+    [
+      "nothing",
+      "ness,</w>"
+    ],
+    [
+      "tot",
+      "ality,</w>"
+    ],
+    [
+      "configur",
+      "ations.</w>"
+    ],
+    [
+      "it",
+      "self</w>"
+    ],
+    [
+      "be",
+      "y"
+    ],
+    [
+      "bey",
+      "on"
+    ],
+    [
+      "beyon",
+      "d</w>"
+    ],
+    [
+      "distinc",
+      "tion"
+    ],
+    [
+      "interpret",
+      "ation</w>"
+    ],
+    [
+      "m",
+      "onistic</w>"
+    ],
+    [
+      "or",
+      "ig"
+    ],
+    [
+      "knowledg",
+      "e</w>"
+    ],
+    [
+      "Self-Diversific",
+      "ation</w>"
+    ],
+    [
+      "express",
+      "es</w>"
+    ],
+    [
+      "expression",
+      "s.</w>"
+    ],
+    [
+      "reflec",
+      "ts</w>"
+    ],
+    [
+      "c",
+      "ap"
+    ],
+    [
+      "cap",
+      "ac"
+    ],
+    [
+      "capac",
+      "ity</w>"
+    ],
+    [
+      "uniqu",
+      "ely</w>"
+    ],
+    [
+      "contex",
+      "ts.</w>"
+    ],
+    [
+      "expression",
+      "s,</w>"
+    ],
+    [
+      "consequ",
+      "ent"
+    ],
+    [
+      "phot",
+      "on"
+    ],
+    [
+      "photon",
+      "s,</w>"
+    ],
+    [
+      "func",
+      "tion"
+    ],
+    [
+      "function",
+      "ally</w>"
+    ],
+    [
+      "si",
+      "m"
+    ],
+    [
+      "sim",
+      "il"
+    ],
+    [
+      "Actu",
+      "ality</w>"
+    ],
+    [
+      "enti",
+      "al</w>"
+    ],
+    [
+      "\"now",
+      "\"</w>"
+    ],
+    [
+      "Potenti",
+      "alities</w>"
+    ],
+    [
+      "tran",
+      "si"
+    ],
+    [
+      "transi",
+      "tion</w>"
+    ],
+    [
+      "conscious",
+      "n"
+    ],
+    [
+      "consciousn",
+      "ess.</w>"
+    ],
+    [
+      "realiz",
+      "ation</w>"
+    ],
+    [
+      "bec",
+      "om"
+    ],
+    [
+      "i",
+      "b"
+    ],
+    [
+      "Z",
+      "ero-"
+    ],
+    [
+      "Zero-",
+      "S"
+    ],
+    [
+      "Zero-S",
+      "um</w>"
+    ],
+    [
+      "B",
+      "al"
+    ],
+    [
+      "tot",
+      "ality</w>"
+    ],
+    [
+      "constan",
+      "t,</w>"
+    ],
+    [
+      "se",
+      "t</w>"
+    ],
+    [
+      "system",
+      "</w>"
+    ],
+    [
+      "valu",
+      "e</w>"
+    ],
+    [
+      "in",
+      "pu"
+    ],
+    [
+      "di",
+      "versif"
+    ],
+    [
+      "diversif",
+      "ies</w>"
+    ],
+    [
+      "foc",
+      "al</w>"
+    ],
+    [
+      "fu",
+      "ture</w>"
+    ],
+    [
+      "stat",
+      "es,</w>"
+    ],
+    [
+      "e",
+      "ther</w>"
+    ],
+    [
+      "singular",
+      ",</w>"
+    ],
+    [
+      "moment",
+      ",</w>"
+    ],
+    [
+      "en",
+      "g"
+    ],
+    [
+      "ag",
+      "ing</w>"
+    ],
+    [
+      "past",
+      "s</w>"
+    ],
+    [
+      "fu",
+      "tu"
+    ],
+    [
+      "c",
+      "ou"
+    ],
+    [
+      "cou",
+      "ld</w>"
+    ],
+    [
+      "ha",
+      "ve</w>"
+    ],
+    [
+      "reflec",
+      "tions</w>"
+    ],
+    [
+      "M",
+      "oment"
+    ],
+    [
+      "m",
+      "od"
+    ],
+    [
+      "represent",
+      "ing</w>"
+    ],
+    [
+      "duali",
+      "ties</w>"
+    ],
+    [
+      "(",
+      "e"
+    ],
+    [
+      "(e",
+      "."
+    ],
+    [
+      "(e.",
+      "g"
+    ],
+    [
+      "(e.g",
+      "."
+    ],
+    [
+      "(e.g.",
+      ",</w>"
+    ],
+    [
+      "t",
+      "/"
+    ],
+    [
+      ")",
+      ".</w>"
+    ],
+    [
+      "multi",
+      "-"
+    ],
+    [
+      "multi-",
+      "di"
+    ],
+    [
+      "multi-di",
+      "m"
+    ],
+    [
+      "multi-dim",
+      "en"
+    ],
+    [
+      "multi-dimen",
+      "sion"
+    ],
+    [
+      "multi-dimension",
+      "al</w>"
+    ],
+    [
+      "phenomen",
+      "on</w>"
+    ],
+    [
+      "no",
+      "de</w>"
+    ],
+    [
+      "th",
+      "oug"
+    ],
+    [
+      "thoug",
+      "h"
+    ],
+    [
+      "wh",
+      "en</w>"
+    ],
+    [
+      "t",
+      "en"
+    ],
+    [
+      "ar",
+      "ray</w>"
+    ],
+    [
+      "super",
+      "position,</w>"
+    ],
+    [
+      "curr",
+      "ent</w>"
+    ],
+    [
+      "v",
+      "as"
+    ],
+    [
+      "vas",
+      "t</w>"
+    ],
+    [
+      "n",
+      "etw"
+    ],
+    [
+      "netw",
+      "ork"
+    ],
+    [
+      "network",
+      "</w>"
+    ],
+    [
+      "po",
+      "int"
+    ],
+    [
+      "no",
+      "de"
+    ],
+    [
+      "relationship",
+      "</w>"
+    ],
+    [
+      "ar",
+      "ra"
+    ],
+    [
+      "struc",
+      "ture</w>"
+    ],
+    [
+      "Conscious",
+      "ness</w>"
+    ],
+    [
+      "per",
+      "ceiv"
+    ],
+    [
+      "ow",
+      "n</w>"
+    ],
+    [
+      "complex",
+      "i"
+    ],
+    [
+      "Par",
+      "ticip"
+    ],
+    [
+      "Particip",
+      "atory</w>"
+    ],
+    [
+      "differ",
+      "enti"
+    ],
+    [
+      "er",
+      "e"
+    ],
+    [
+      "wa",
+      "y</w>"
+    ],
+    [
+      "percep",
+      "tions</w>"
+    ],
+    [
+      "contribu",
+      "t"
+    ],
+    [
+      "F",
+      "unc"
+    ],
+    [
+      "Func",
+      "tion"
+    ],
+    [
+      "Function",
+      "al</w>"
+    ],
+    [
+      "Uni",
+      "qu"
+    ],
+    [
+      "Uniqu",
+      "eness</w>"
+    ],
+    [
+      "ch",
+      "ar"
+    ],
+    [
+      "char",
+      "ac"
+    ],
+    [
+      "charac",
+      "ter"
+    ],
+    [
+      "potential",
+      ",</w>"
+    ],
+    [
+      "actualiz",
+      "ed,</w>"
+    ],
+    [
+      "v",
+      "en</w>"
+    ],
+    [
+      "simpl",
+      "e</w>"
+    ],
+    [
+      "partic",
+      "ular"
+    ],
+    [
+      "particular",
+      "</w>"
+    ],
+    [
+      "stan",
+      "ce.</w>"
+    ],
+    [
+      "el",
+      "ec"
+    ],
+    [
+      "elec",
+      "tr"
+    ],
+    [
+      "electr",
+      "on</w>"
+    ],
+    [
+      "com",
+      "pa"
+    ],
+    [
+      "re",
+      "d</w>"
+    ],
+    [
+      "oth",
+      "er"
+    ],
+    [
+      "potential",
+      "s.</w>"
+    ],
+    [
+      "Par",
+      "adox"
+    ],
+    [
+      "C",
+      "o"
+    ],
+    [
+      "contradic",
+      "t"
+    ],
+    [
+      "contradict",
+      "ory</w>"
+    ],
+    [
+      "contribu",
+      "ting</w>"
+    ],
+    [
+      "co",
+      "existence</w>"
+    ],
+    [
+      "th",
+      "ing</w>"
+    ],
+    [
+      "framework",
+      ".</w>"
+    ],
+    [
+      "clu",
+      "sion</w>"
+    ],
+    [
+      "t",
+      "a"
+    ],
+    [
+      "giv",
+      "en</w>"
+    ],
+    [
+      "bal",
+      "an"
+    ],
+    [
+      "balan",
+      "ce.</w>"
+    ],
+    [
+      "ph",
+      "ys"
+    ],
+    [
+      "phys",
+      "ical</w>"
+    ],
+    [
+      "c",
+      "an"
+    ],
+    [
+      "en",
+      "er"
+    ],
+    [
+      "od",
+      "y</w>"
+    ],
+    [
+      "w",
+      "e"
+    ],
+    [
+      "re",
+      "fin"
+    ],
+    [
+      "ap",
+      "pl"
+    ],
+    [
+      "ab",
+      "l"
+    ],
+    [
+      "Simplic",
+      "ity:</w>"
+    ],
+    [
+      "be",
+      "g"
+    ],
+    [
+      "beg",
+      "ins</w>"
+    ],
+    [
+      "s",
+      "er"
+    ],
+    [
+      "potenti",
+      "ality.</w>"
+    ],
+    [
+      "of",
+      "t"
+    ],
+    [
+      "oft",
+      "en</w>"
+    ],
+    [
+      "des",
+      "c"
+    ],
+    [
+      "desc",
+      "ri"
+    ],
+    [
+      "descri",
+      "b"
+    ],
+    [
+      "describ",
+      "ed</w>"
+    ],
+    [
+      "d",
+      ",</w>"
+    ],
+    [
+      "fer",
+      "ti"
+    ],
+    [
+      "ferti",
+      "le</w>"
+    ],
+    [
+      "in",
+      "i"
+    ],
+    [
+      "ini",
+      "ti"
+    ],
+    [
+      "initi",
+      "al</w>"
+    ],
+    [
+      "se",
+      "ed"
+    ],
+    [
+      "seed",
+      "s</w>"
+    ],
+    [
+      "manifest",
+      "ations.</w>"
+    ],
+    [
+      "ti",
+      "s"
+    ],
+    [
+      "creat",
+      "es</w>"
+    ],
+    [
+      "st",
+      "er"
+    ],
+    [
+      "voi",
+      "d</w>"
+    ],
+    [
+      "du",
+      "ality,</w>"
+    ],
+    [
+      "actu",
+      "al,</w>"
+    ],
+    [
+      "y",
+      "et</w>"
+    ],
+    [
+      "Em",
+      "erg"
+    ],
+    [
+      "Emerg",
+      "ence</w>"
+    ],
+    [
+      "self-diversific",
+      "ation.</w>"
+    ],
+    [
+      "I",
+      "I.</w>"
+    ],
+    [
+      "Self-Diversific",
+      "ation:</w>"
+    ],
+    [
+      "UFA",
+      "'s</w>"
+    ],
+    [
+      "P",
+      "ro"
+    ],
+    [
+      "Pro",
+      "c"
+    ],
+    [
+      "Self-",
+      "di"
+    ],
+    [
+      "Self-di",
+      "versific"
+    ],
+    [
+      "Self-diversific",
+      "ation</w>"
+    ],
+    [
+      "occurr",
+      "ence</w>"
+    ],
+    [
+      "dynam",
+      "is"
+    ],
+    [
+      "dynamis",
+      "m</w>"
+    ],
+    [
+      "manif",
+      "ests</w>"
+    ],
+    [
+      "pro",
+      "per"
+    ],
+    [
+      "at",
+      "al"
+    ],
+    [
+      "it",
+      "ing</w>"
+    ],
+    [
+      "en",
+      "erg"
+    ],
+    [
+      "t",
+      "s:</w>"
+    ],
+    [
+      "interac",
+      "t,</w>"
+    ],
+    [
+      "gover",
+      "n</w>"
+    ],
+    [
+      "inform",
+      "ation</w>"
+    ],
+    [
+      "rema",
+      "in</w>"
+    ],
+    [
+      "par",
+      "t</w>"
+    ],
+    [
+      "Choic",
+      "e:</w>"
+    ],
+    [
+      "possibili",
+      "ties,</w>"
+    ],
+    [
+      "mean",
+      "ing"
+    ],
+    [
+      "cre",
+      "ative</w>"
+    ],
+    [
+      "s",
+      "m"
+    ],
+    [
+      "g",
+      "al"
+    ],
+    [
+      "gal",
+      "a"
+    ],
+    [
+      "gala",
+      "x"
+    ],
+    [
+      "galax",
+      "ies,</w>"
+    ],
+    [
+      "em",
+      "o"
+    ],
+    [
+      "emo",
+      "tions</w>"
+    ],
+    [
+      "pr",
+      "of"
+    ],
+    [
+      "prof",
+      "o"
+    ],
+    [
+      "profo",
+      "und</w>"
+    ],
+    [
+      "b",
+      "</w>"
+    ],
+    [
+      "aris",
+      "ing</w>"
+    ],
+    [
+      "enti",
+      "ty</w>"
+    ],
+    [
+      "ev",
+      "ent</w>"
+    ],
+    [
+      "system",
+      ".</w>"
+    ],
+    [
+      "L",
+      "evel"
+    ],
+    [
+      "Level",
+      "s</w>"
+    ],
+    [
+      "level",
+      "</w>"
+    ],
+    [
+      "Percep",
+      "tion:</w>"
+    ],
+    [
+      "c",
+      "ul"
+    ],
+    [
+      "e",
+      "ver"
+    ],
+    [
+      "n",
+      "ess:</w>"
+    ],
+    [
+      "thing",
+      "s,</w>"
+    ],
+    [
+      "sing",
+      "le</w>"
+    ],
+    [
+      "lea",
+      "ding</w>"
+    ],
+    [
+      "rel",
+      "ated</w>"
+    ],
+    [
+      "aris",
+      "e</w>"
+    ],
+    [
+      "in",
+      "clu"
+    ],
+    [
+      "separ",
+      "ations</w>"
+    ],
+    [
+      "V",
+      ".</w>"
+    ],
+    [
+      "ex",
+      "us</w>"
+    ],
+    [
+      "Experienc",
+      "e</w>"
+    ],
+    [
+      "actualiz",
+      "ed.</w>"
+    ],
+    [
+      "Pres",
+      "enc"
+    ],
+    [
+      "Presenc",
+      "e:</w>"
+    ],
+    [
+      "present",
+      ",</w>"
+    ],
+    [
+      "ev",
+      "ents</w>"
+    ],
+    [
+      "connect",
+      "ed</w>"
+    ],
+    [
+      "actu",
+      "ality.</w>"
+    ],
+    [
+      "particip",
+      "an"
+    ],
+    [
+      "influenc",
+      "ing</w>"
+    ],
+    [
+      "event",
+      "s.</w>"
+    ],
+    [
+      "pas",
+      "sive</w>"
+    ],
+    [
+      "c",
+      "ru"
+    ],
+    [
+      "cru",
+      "ci"
+    ],
+    [
+      "cruci",
+      "al</w>"
+    ],
+    [
+      "determin",
+      "ing</w>"
+    ],
+    [
+      "di",
+      "rec"
+    ],
+    [
+      "O",
+      "bser"
+    ],
+    [
+      "Obser",
+      "ver</w>"
+    ],
+    [
+      "E",
+      "ffec"
+    ],
+    [
+      "t",
+      ":</w>"
+    ],
+    [
+      "particip",
+      "atory</w>"
+    ],
+    [
+      "potenti",
+      "ali"
+    ],
+    [
+      "potentiali",
+      "ties.</w>"
+    ],
+    [
+      "es",
+      ")</w>"
+    ],
+    [
+      "su",
+      "bs"
+    ],
+    [
+      "al",
+      ".</w>"
+    ],
+    [
+      "Sci",
+      "entific</w>"
+    ],
+    [
+      "n",
+      "eurosci"
+    ],
+    [
+      "k",
+      "e"
+    ],
+    [
+      "ke",
+      "y</w>"
+    ],
+    [
+      "em",
+      "ent</w>"
+    ],
+    [
+      "Inf",
+      "luenc"
+    ],
+    [
+      "Contex",
+      "t</w>"
+    ],
+    [
+      "gover",
+      "n"
+    ],
+    [
+      "govern",
+      "s</w>"
+    ],
+    [
+      "level",
+      "s</w>"
+    ],
+    [
+      "con",
+      "dition"
+    ],
+    [
+      "condition",
+      "s,</w>"
+    ],
+    [
+      "lu",
+      "ence</w>"
+    ],
+    [
+      "ex",
+      "er"
+    ],
+    [
+      "de",
+      "v"
+    ],
+    [
+      "dev",
+      "el"
+    ],
+    [
+      "devel",
+      "op"
+    ],
+    [
+      "develop",
+      "m"
+    ],
+    [
+      "determin",
+      "ism"
+    ],
+    [
+      "inter",
+      "n"
+    ],
+    [
+      "intern",
+      "al</w>"
+    ],
+    [
+      "en",
+      "vi"
+    ],
+    [
+      "envi",
+      "r"
+    ],
+    [
+      "envir",
+      "on"
+    ],
+    [
+      "interac",
+      "tions</w>"
+    ],
+    [
+      "brid",
+      "ges</w>"
+    ],
+    [
+      "g",
+      "ap</w>"
+    ],
+    [
+      "view",
+      "s</w>"
+    ],
+    [
+      "im",
+      "por"
+    ],
+    [
+      "impor",
+      "tan"
+    ],
+    [
+      "importan",
+      "ce</w>"
+    ],
+    [
+      "ac",
+      "tiv"
+    ],
+    [
+      "di",
+      "sci"
+    ],
+    [
+      "disci",
+      "plin"
+    ],
+    [
+      "ysic",
+      "s:</w>"
+    ],
+    [
+      "found",
+      "ation</w>"
+    ],
+    [
+      "effec",
+      "t,</w>"
+    ],
+    [
+      "posi",
+      "tions</w>"
+    ],
+    [
+      "observ",
+      "ation.</w>"
+    ],
+    [
+      "E",
+      "n"
+    ],
+    [
+      "En",
+      "tang"
+    ],
+    [
+      "ent",
+      ":</w>"
+    ],
+    [
+      "us",
+      "ed</w>"
+    ],
+    [
+      "interpre",
+      "t</w>"
+    ],
+    [
+      "an",
+      "g"
+    ],
+    [
+      "ma",
+      "y</w>"
+    ],
+    [
+      "v",
+      "e"
+    ],
+    [
+      "ve",
+      "-"
+    ],
+    [
+      "offer",
+      "</w>"
+    ],
+    [
+      "C",
+      "os"
+    ],
+    [
+      "Cos",
+      "m"
+    ],
+    [
+      "Cosm",
+      "olog"
+    ],
+    [
+      "on",
+      "going</w>"
+    ],
+    [
+      "vers",
+      "e</w>"
+    ],
+    [
+      "re",
+      "present</w>"
+    ],
+    [
+      "E",
+      "ternal</w>"
+    ],
+    [
+      "M",
+      "etaph"
+    ],
+    [
+      "Du",
+      "ali"
+    ],
+    [
+      "Duali",
+      "stic</w>"
+    ],
+    [
+      "ys",
+      "ics</w>"
+    ],
+    [
+      "propos",
+      "ing</w>"
+    ],
+    [
+      "ap",
+      "par"
+    ],
+    [
+      "appar",
+      "ent</w>"
+    ],
+    [
+      "I",
+      "denti"
+    ],
+    [
+      "re",
+      "defines</w>"
+    ],
+    [
+      "awaren",
+      "ess,</w>"
+    ],
+    [
+      "t",
+      "ly</w>"
+    ],
+    [
+      "pi",
+      "stem"
+    ],
+    [
+      "pistem",
+      "olog"
+    ],
+    [
+      "Inter",
+      "pre"
+    ],
+    [
+      "Interpre",
+      "t"
+    ],
+    [
+      "ap",
+      "pro"
+    ],
+    [
+      "appro",
+      "ach</w>"
+    ],
+    [
+      "knowledg",
+      "e,</w>"
+    ],
+    [
+      "per",
+      "s"
+    ],
+    [
+      "pers",
+      "on"
+    ],
+    [
+      "person",
+      "al</w>"
+    ],
+    [
+      "w",
+      "or"
+    ],
+    [
+      "inf",
+      "or"
+    ],
+    [
+      "mind",
+      "ful"
+    ],
+    [
+      "Awaren",
+      "ess:</w>"
+    ],
+    [
+      "p",
+      "sychological</w>"
+    ],
+    [
+      "con",
+      "sci"
+    ],
+    [
+      "consci",
+      "ou"
+    ],
+    [
+      "consciou",
+      "s,</w>"
+    ],
+    [
+      "theor",
+      "ies</w>"
+    ],
+    [
+      "su",
+      "p"
+    ],
+    [
+      "sup",
+      "por"
+    ],
+    [
+      "suppor",
+      "ts</w>"
+    ],
+    [
+      "N",
+      "eurosci"
+    ],
+    [
+      "Un",
+      "der"
+    ],
+    [
+      "Under",
+      "standing</w>"
+    ],
+    [
+      "process",
+      "es</w>"
+    ],
+    [
+      "sen",
+      "se</w>"
+    ],
+    [
+      "mem",
+      "or"
+    ],
+    [
+      "M",
+      "em"
+    ],
+    [
+      "Mem",
+      "ory</w>"
+    ],
+    [
+      "Re",
+      "construc"
+    ],
+    [
+      "Reconstruc",
+      "tion:</w>"
+    ],
+    [
+      "continu",
+      "ously</w>"
+    ],
+    [
+      "cogn",
+      "itive</w>"
+    ],
+    [
+      "re",
+      "construc"
+    ],
+    [
+      "ra",
+      "ther</w>"
+    ],
+    [
+      "th",
+      "an</w>"
+    ],
+    [
+      "C",
+      "aus"
+    ],
+    [
+      "recon",
+      "ci"
+    ],
+    [
+      "construc",
+      "t</w>"
+    ],
+    [
+      "ex",
+      "ist</w>"
+    ],
+    [
+      "th",
+      "in"
+    ],
+    [
+      "thin",
+      "k"
+    ],
+    [
+      "think",
+      "ing</w>"
+    ],
+    [
+      "underst",
+      "and</w>"
+    ],
+    [
+      "objec",
+      "tive</w>"
+    ],
+    [
+      "percep",
+      "tion"
+    ],
+    [
+      "tru",
+      "m</w>"
+    ],
+    [
+      "integ",
+      "ra"
+    ],
+    [
+      "integra",
+      "tive</w>"
+    ],
+    [
+      "recogniz",
+      "es</w>"
+    ],
+    [
+      "f",
+      "iel"
+    ],
+    [
+      "fiel",
+      "ds</w>"
+    ],
+    [
+      "trans",
+      "f"
+    ],
+    [
+      "transf",
+      "or"
+    ],
+    [
+      "transfor",
+      "ma"
+    ],
+    [
+      "un",
+      "ity</w>"
+    ],
+    [
+      "﻿",
+      "Unified</w>"
+    ],
+    [
+      "1",
+      ".</w>"
+    ],
+    [
+      "T",
+      "it"
+    ],
+    [
+      "Tit",
+      "le</w>"
+    ],
+    [
+      "2",
+      ".</w>"
+    ],
+    [
+      "Introduc",
+      "tion</w>"
+    ],
+    [
+      "sh",
+      "if"
+    ],
+    [
+      "shif",
+      "t</w>"
+    ],
+    [
+      "under",
+      "go"
+    ],
+    [
+      "undergo",
+      "es</w>"
+    ],
+    [
+      "m",
+      "o"
+    ],
+    [
+      "mo",
+      "ving</w>"
+    ],
+    [
+      "objectiv",
+      "ity,</w>"
+    ],
+    [
+      "W",
+      "i"
+    ],
+    [
+      "Wi",
+      "th"
+    ],
+    [
+      "With",
+      "in</w>"
+    ],
+    [
+      "cre",
+      "ation,</w>"
+    ],
+    [
+      "whol",
+      "e.</w>"
+    ],
+    [
+      "h",
+      "ear"
+    ],
+    [
+      "hear",
+      "t</w>"
+    ],
+    [
+      "singular",
+      "</w>"
+    ],
+    [
+      "aris",
+      "e.</w>"
+    ],
+    [
+      "matter",
+      ",</w>"
+    ],
+    [
+      "thing",
+      "s</w>"
+    ],
+    [
+      "comprehen",
+      "sive</w>"
+    ],
+    [
+      "real",
+      "ms</w>"
+    ],
+    [
+      "insigh",
+      "t.</w>"
+    ],
+    [
+      "Th",
+      "roug"
+    ],
+    [
+      "Throug",
+      "h</w>"
+    ],
+    [
+      "len",
+      "s</w>"
+    ],
+    [
+      "mainta",
+      "ins</w>"
+    ],
+    [
+      "invit",
+      "ing</w>"
+    ],
+    [
+      "recon",
+      "si"
+    ],
+    [
+      "reconsi",
+      "d"
+    ],
+    [
+      "reconsid",
+      "er</w>"
+    ],
+    [
+      "Em",
+      "brac"
+    ],
+    [
+      "Embrac",
+      "ing</w>"
+    ],
+    [
+      "comprehen",
+      "sion</w>"
+    ],
+    [
+      "3",
+      ".</w>"
+    ],
+    [
+      "Diction",
+      "ary</w>"
+    ],
+    [
+      "T",
+      "er"
+    ],
+    [
+      "Ter",
+      "ms</w>"
+    ],
+    [
+      "Con",
+      "cep"
+    ],
+    [
+      "Concep",
+      "ts</w>"
+    ],
+    [
+      "F",
+      "or"
+    ],
+    [
+      "For",
+      "war"
+    ],
+    [
+      "Forwar",
+      "d</w>"
+    ],
+    [
+      "Con",
+      "cer"
+    ],
+    [
+      "Concer",
+      "n"
+    ],
+    [
+      "Concern",
+      "ing</w>"
+    ],
+    [
+      "Diction",
+      "ar"
+    ],
+    [
+      "Dictionar",
+      "y:</w>"
+    ],
+    [
+      "explor",
+      "ing</w>"
+    ],
+    [
+      "refer",
+      "ence,</w>"
+    ],
+    [
+      "de",
+      "g"
+    ],
+    [
+      "deg",
+      "ree</w>"
+    ],
+    [
+      "fl",
+      "exibil"
+    ],
+    [
+      "flexibil",
+      "ity</w>"
+    ],
+    [
+      "re",
+      "qu"
+    ],
+    [
+      "requ",
+      "i"
+    ],
+    [
+      "requi",
+      "red"
+    ],
+    [
+      "required",
+      ".</w>"
+    ],
+    [
+      "dic",
+      "tion"
+    ],
+    [
+      "diction",
+      "ary</w>"
+    ],
+    [
+      "a",
+      "im"
+    ],
+    [
+      "aim",
+      "s</w>"
+    ],
+    [
+      "min",
+      "im"
+    ],
+    [
+      "minim",
+      "ize</w>"
+    ],
+    [
+      "foc",
+      "us</w>"
+    ],
+    [
+      "rel",
+      "ev"
+    ],
+    [
+      "relev",
+      "ance</w>"
+    ],
+    [
+      "present",
+      "ed.</w>"
+    ],
+    [
+      "(UFA",
+      ")</w>"
+    ],
+    [
+      "e",
+      "tern"
+    ],
+    [
+      "etern",
+      "all"
+    ],
+    [
+      "eternall",
+      "y,</w>"
+    ],
+    [
+      "experienc",
+      "ing</w>"
+    ],
+    [
+      "ful",
+      "ly</w>"
+    ],
+    [
+      "vari",
+      "ations</w>"
+    ],
+    [
+      "simultane",
+      "ous"
+    ],
+    [
+      "simultaneous",
+      "ly"
+    ],
+    [
+      "simultaneously",
+      ".</w>"
+    ],
+    [
+      "bas",
+      "e</w>"
+    ],
+    [
+      "distinction",
+      "s.</w>"
+    ],
+    [
+      "A",
+      "n"
+    ],
+    [
+      "An",
+      "y</w>"
+    ],
+    [
+      "framework",
+      "s</w>"
+    ],
+    [
+      "en",
+      "oug"
+    ],
+    [
+      "enoug",
+      "h</w>"
+    ],
+    [
+      "cont",
+      "em"
+    ],
+    [
+      "contem",
+      "pl"
+    ],
+    [
+      "contempl",
+      "ate</w>"
+    ],
+    [
+      "orig",
+      "in"
+    ],
+    [
+      "origin",
+      ".</w>"
+    ],
+    [
+      "ter",
+      "m</w>"
+    ],
+    [
+      "to",
+      "ol"
+    ],
+    [
+      "tool",
+      ",</w>"
+    ],
+    [
+      "allow",
+      "ing</w>"
+    ],
+    [
+      "refer",
+      "ence</w>"
+    ],
+    [
+      "under",
+      "stan"
+    ],
+    [
+      "understan",
+      "d"
+    ],
+    [
+      "understand",
+      "ing,</w>"
+    ],
+    [
+      "ac",
+      "knowledge</w>"
+    ],
+    [
+      "non-",
+      "distinction"
+    ],
+    [
+      "non-distinction",
+      ".</w>"
+    ],
+    [
+      "ul",
+      "tim"
+    ],
+    [
+      "ultim",
+      "ate</w>"
+    ],
+    [
+      "der",
+      "iv"
+    ],
+    [
+      "deriv",
+      "ed.</w>"
+    ],
+    [
+      "simplic",
+      "ity.</w>"
+    ],
+    [
+      "o",
+      "ver</w>"
+    ],
+    [
+      "ex",
+      "pr"
+    ],
+    [
+      "expr",
+      "ess</w>"
+    ],
+    [
+      "potenti",
+      "ally</w>"
+    ],
+    [
+      "identi",
+      "c"
+    ],
+    [
+      "identic",
+      "al</w>"
+    ],
+    [
+      "appear",
+      "anc"
+    ],
+    [
+      "appearanc",
+      "e,</w>"
+    ],
+    [
+      "consequent",
+      "s.</w>"
+    ],
+    [
+      "appear",
+      "ing</w>"
+    ],
+    [
+      "simil",
+      "ar"
+    ],
+    [
+      "similar",
+      "</w>"
+    ],
+    [
+      "contex",
+      "t"
+    ],
+    [
+      "context",
+      "s,</w>"
+    ],
+    [
+      "self-",
+      "expression</w>"
+    ],
+    [
+      "form",
+      "s.</w>"
+    ],
+    [
+      "un",
+      "express"
+    ],
+    [
+      "unexpress",
+      "ed</w>"
+    ],
+    [
+      "refer",
+      "s</w>"
+    ],
+    [
+      "ex",
+      "peri"
+    ],
+    [
+      "experi",
+      "ential</w>"
+    ],
+    [
+      "moment",
+      ".</w>"
+    ],
+    [
+      "possibili",
+      "ties.</w>"
+    ],
+    [
+      "i",
+      "de"
+    ],
+    [
+      "ide",
+      "a</w>"
+    ],
+    [
+      "becom",
+      "ing</w>"
+    ],
+    [
+      "tang",
+      "ib"
+    ],
+    [
+      "tangib",
+      "le</w>"
+    ],
+    [
+      "ac",
+      "tion</w>"
+    ],
+    [
+      "event",
+      ".</w>"
+    ],
+    [
+      "Bal",
+      "ance</w>"
+    ],
+    [
+      "divers",
+      "ity.</w>"
+    ],
+    [
+      "maintain",
+      "ed</w>"
+    ],
+    [
+      "re",
+      "configuration</w>"
+    ],
+    [
+      "uniqu",
+      "e.</w>"
+    ],
+    [
+      "re",
+      "t"
+    ],
+    [
+      "ret",
+      "ains</w>"
+    ],
+    [
+      "with",
+      "ou"
+    ],
+    [
+      "withou",
+      "t</w>"
+    ],
+    [
+      "an",
+      "y</w>"
+    ],
+    [
+      "inpu",
+      "t</w>"
+    ],
+    [
+      "out",
+      "pu"
+    ],
+    [
+      "outpu",
+      "t.</w>"
+    ],
+    [
+      "un",
+      "al"
+    ],
+    [
+      "unal",
+      "ter"
+    ],
+    [
+      "unalter",
+      "ed,</w>"
+    ],
+    [
+      "infinit",
+      "el"
+    ],
+    [
+      "infinitel",
+      "y.</w>"
+    ],
+    [
+      "enc",
+      "ap"
+    ],
+    [
+      "encap",
+      "su"
+    ],
+    [
+      "encapsu",
+      "l"
+    ],
+    [
+      "encapsul",
+      "ates</w>"
+    ],
+    [
+      "consequ",
+      "ents</w>"
+    ],
+    [
+      "com",
+      "e</w>"
+    ],
+    [
+      "to",
+      "g"
+    ],
+    [
+      "tog",
+      "ether</w>"
+    ],
+    [
+      "all",
+      "-"
+    ],
+    [
+      "all-",
+      "enc"
+    ],
+    [
+      "all-enc",
+      "om"
+    ],
+    [
+      "all-encom",
+      "pas"
+    ],
+    [
+      "all-encompas",
+      "s"
+    ],
+    [
+      "all-encompass",
+      "ing</w>"
+    ],
+    [
+      "realiz",
+      "ed</w>"
+    ],
+    [
+      "ful",
+      "l"
+    ],
+    [
+      "full",
+      "est</w>"
+    ],
+    [
+      "form",
+      ",</w>"
+    ],
+    [
+      "observ",
+      "ing</w>"
+    ],
+    [
+      "reality",
+      ";"
+    ],
+    [
+      "reality;",
+      "</w>"
+    ],
+    [
+      "eng",
+      "aging</w>"
+    ],
+    [
+      "converg",
+      "ence</w>"
+    ],
+    [
+      "futu",
+      "res</w>"
+    ],
+    [
+      "s",
+      "ti"
+    ],
+    [
+      "sti",
+      "ll"
+    ],
+    [
+      "still",
+      "ness</w>"
+    ],
+    [
+      "c",
+      "omplet"
+    ],
+    [
+      "complet",
+      "eness</w>"
+    ],
+    [
+      "f",
+      "e"
+    ],
+    [
+      "fe",
+      "el</w>"
+    ],
+    [
+      "Moment",
+      "’s</w>"
+    ],
+    [
+      "mod",
+      "el</w>"
+    ],
+    [
+      "l",
+      "ig"
+    ],
+    [
+      "lig",
+      "h"
+    ],
+    [
+      "ligh",
+      "t/"
+    ],
+    [
+      "light/",
+      "d"
+    ],
+    [
+      "light/d",
+      "ar"
+    ],
+    [
+      "light/dar",
+      "k"
+    ],
+    [
+      "light/dark",
+      ",</w>"
+    ],
+    [
+      "subjec",
+      "t/"
+    ],
+    [
+      "subject/",
+      "objec"
+    ],
+    [
+      "subject/objec",
+      "t"
+    ],
+    [
+      "subject/object",
+      ").</w>"
+    ],
+    [
+      "m",
+      "ap</w>"
+    ],
+    [
+      "super",
+      "-"
+    ],
+    [
+      "super-",
+      "position,</w>"
+    ],
+    [
+      "though",
+      "t</w>"
+    ],
+    [
+      "wh",
+      "at</w>"
+    ],
+    [
+      "h",
+      "app"
+    ],
+    [
+      "happ",
+      "en"
+    ],
+    [
+      "happen",
+      "s</w>"
+    ],
+    [
+      "\"",
+      "fl"
+    ],
+    [
+      "\"fl",
+      "at"
+    ],
+    [
+      "\"flat",
+      "ten"
+    ],
+    [
+      "\"flatten",
+      "ed</w>"
+    ],
+    [
+      "out",
+      "\"</w>"
+    ],
+    [
+      "g",
+      "r"
+    ],
+    [
+      "gr",
+      "ap"
+    ],
+    [
+      "grap",
+      "h</w>"
+    ],
+    [
+      "m",
+      "ap"
+    ],
+    [
+      "map",
+      "s</w>"
+    ],
+    [
+      "duali",
+      "ties.</w>"
+    ],
+    [
+      "hol",
+      "ding</w>"
+    ],
+    [
+      "rel",
+      "ative</w>"
+    ],
+    [
+      "V",
+      "is"
+    ],
+    [
+      "Vis",
+      "u"
+    ],
+    [
+      "Visu",
+      "aliz"
+    ],
+    [
+      "Visualiz",
+      "e</w>"
+    ],
+    [
+      "point",
+      "s,</w>"
+    ],
+    [
+      "(",
+      "or</w>"
+    ],
+    [
+      "node",
+      ")</w>"
+    ],
+    [
+      "phot",
+      "on</w>"
+    ],
+    [
+      "I",
+      "ts</w>"
+    ],
+    [
+      "no",
+      "d"
+    ],
+    [
+      "nod",
+      "es,</w>"
+    ],
+    [
+      "defin",
+      "ed</w>"
+    ],
+    [
+      "fu",
+      "tur"
+    ],
+    [
+      "futur",
+      "es,</w>"
+    ],
+    [
+      "determin",
+      "es</w>"
+    ],
+    [
+      "node",
+      "'s</w>"
+    ],
+    [
+      "posi",
+      "tion</w>"
+    ],
+    [
+      "arra",
+      "y.</w>"
+    ],
+    [
+      "observ",
+      "es</w>"
+    ],
+    [
+      "phenomena",
+      ".</w>"
+    ],
+    [
+      "realiz",
+      "es</w>"
+    ],
+    [
+      "observ",
+      "ation,</w>"
+    ],
+    [
+      "un",
+      "manifest</w>"
+    ],
+    [
+      "self-",
+      "aw"
+    ],
+    [
+      "self-aw",
+      "are</w>"
+    ],
+    [
+      "perceiv",
+      "es</w>"
+    ],
+    [
+      "eng",
+      "ages</w>"
+    ],
+    [
+      "complexi",
+      "ties.</w>"
+    ],
+    [
+      "Re",
+      "ality</w>"
+    ],
+    [
+      "differenti",
+      "ated</w>"
+    ],
+    [
+      "interac",
+      "ting</w>"
+    ],
+    [
+      "actu",
+      "ali"
+    ],
+    [
+      "actuali",
+      "ties,</w>"
+    ],
+    [
+      "th",
+      "ere"
+    ],
+    [
+      "there",
+      "by</w>"
+    ],
+    [
+      "particip",
+      "ating</w>"
+    ],
+    [
+      "co-",
+      "creation</w>"
+    ],
+    [
+      "contribut",
+      "e</w>"
+    ],
+    [
+      "character",
+      "istic</w>"
+    ],
+    [
+      "consequent",
+      "s,</w>"
+    ],
+    [
+      "simil",
+      "ari"
+    ],
+    [
+      "similari",
+      "ties</w>"
+    ],
+    [
+      "appear",
+      "ance</w>"
+    ],
+    [
+      "func",
+      "tion</w>"
+    ],
+    [
+      "bec",
+      "aus"
+    ],
+    [
+      "becaus",
+      "e</w>"
+    ],
+    [
+      "relationship",
+      "s.</w>"
+    ],
+    [
+      "E",
+      "ven</w>"
+    ],
+    [
+      "in",
+      "stance.</w>"
+    ],
+    [
+      "A",
+      "n</w>"
+    ],
+    [
+      "func",
+      "tions</w>"
+    ],
+    [
+      "compa",
+      "red</w>"
+    ],
+    [
+      "an",
+      "other"
+    ],
+    [
+      "another",
+      ",</w>"
+    ],
+    [
+      "differ",
+      "ing</w>"
+    ],
+    [
+      "contex",
+      "ts</w>"
+    ],
+    [
+      "Paradox",
+      "ical</w>"
+    ],
+    [
+      "Co",
+      "existence</w>"
+    ],
+    [
+      "se",
+      "em"
+    ],
+    [
+      "seem",
+      "ing"
+    ],
+    [
+      "seeming",
+      "ly</w>"
+    ],
+    [
+      "par",
+      "adox"
+    ],
+    [
+      "paradox",
+      "ical</w>"
+    ],
+    [
+      "Paradox",
+      "es</w>"
+    ],
+    [
+      "contradic",
+      "tions</w>"
+    ],
+    [
+      "fac",
+      "e"
+    ],
+    [
+      "face",
+      "ts</w>"
+    ],
+    [
+      "co",
+      "existing</w>"
+    ],
+    [
+      "s",
+      "om"
+    ],
+    [
+      "som",
+      "e"
+    ],
+    [
+      "some",
+      "thing</w>"
+    ],
+    [
+      "nothing",
+      ",</w>"
+    ],
+    [
+      "P",
+      "re"
+    ],
+    [
+      "Pre",
+      "clusion</w>"
+    ],
+    [
+      "L",
+      "im"
+    ],
+    [
+      "Lim",
+      "it"
+    ],
+    [
+      "Limit",
+      "ation</w>"
+    ],
+    [
+      "Con",
+      "figur"
+    ],
+    [
+      "Configur",
+      "ations</w>"
+    ],
+    [
+      "cer",
+      "ta"
+    ],
+    [
+      "certa",
+      "in</w>"
+    ],
+    [
+      "lim",
+      "it</w>"
+    ],
+    [
+      "pre",
+      "clu"
+    ],
+    [
+      "preclu",
+      "de</w>"
+    ],
+    [
+      "pre",
+      "clusion</w>"
+    ],
+    [
+      "lim",
+      "its</w>"
+    ],
+    [
+      "in",
+      "compa"
+    ],
+    [
+      "incompa",
+      "ti"
+    ],
+    [
+      "incompati",
+      "b"
+    ],
+    [
+      "incompatib",
+      "le</w>"
+    ],
+    [
+      "law",
+      "</w>"
+    ],
+    [
+      "exist",
+      "s,</w>"
+    ],
+    [
+      "can",
+      "not</w>"
+    ],
+    [
+      "I",
+      "'"
+    ],
+    [
+      "I'",
+      "ll</w>"
+    ],
+    [
+      "g",
+      "ener"
+    ],
+    [
+      "gener",
+      "ate</w>"
+    ],
+    [
+      "m",
+      "or"
+    ],
+    [
+      "mor",
+      "e</w>"
+    ],
+    [
+      "de",
+      "ta"
+    ],
+    [
+      "deta",
+      "il"
+    ],
+    [
+      "detail",
+      "ed</w>"
+    ],
+    [
+      "expan",
+      "sive</w>"
+    ],
+    [
+      "d",
+      "ra"
+    ],
+    [
+      "dra",
+      "f"
+    ],
+    [
+      "draf",
+      "t</w>"
+    ],
+    [
+      "b",
+      "ody</w>"
+    ],
+    [
+      "(UTA)",
+      ",</w>"
+    ],
+    [
+      "inc",
+      "or"
+    ],
+    [
+      "incor",
+      "por"
+    ],
+    [
+      "incorpor",
+      "ating</w>"
+    ],
+    [
+      "we",
+      "'"
+    ],
+    [
+      "we'",
+      "ve</w>"
+    ],
+    [
+      "refin",
+      "ed,</w>"
+    ],
+    [
+      "expan",
+      "ding</w>"
+    ],
+    [
+      "cont",
+      "ent"
+    ],
+    [
+      "content",
+      ",</w>"
+    ],
+    [
+      "int",
+      "roduc"
+    ],
+    [
+      "introduc",
+      "ing</w>"
+    ],
+    [
+      "appl",
+      "ic"
+    ],
+    [
+      "applic",
+      "abl"
+    ],
+    [
+      "applicabl",
+      "e.</w>"
+    ],
+    [
+      "H",
+      "ere"
+    ],
+    [
+      "Here",
+      "'s</w>"
+    ],
+    [
+      "struc",
+      "tu"
+    ],
+    [
+      "structu",
+      "red"
+    ],
+    [
+      "structured",
+      ":</w>"
+    ],
+    [
+      "4",
+      ".</w>"
+    ],
+    [
+      "B",
+      "ody</w>"
+    ],
+    [
+      "S",
+      "our"
+    ],
+    [
+      "Sour",
+      "ce</w>"
+    ],
+    [
+      "ser",
+      "v"
+    ],
+    [
+      "serv",
+      "es</w>"
+    ],
+    [
+      "voi",
+      "d,</w>"
+    ],
+    [
+      "em",
+      "p"
+    ],
+    [
+      "emp",
+      "t"
+    ],
+    [
+      "empt",
+      "in"
+    ],
+    [
+      "emptin",
+      "ess</w>"
+    ],
+    [
+      "Simplic",
+      "ity,</w>"
+    ],
+    [
+      "emerg",
+      "es,</w>"
+    ],
+    [
+      "m",
+      "u"
+    ],
+    [
+      "mu",
+      "ch</w>"
+    ],
+    [
+      "ar",
+      "tis"
+    ],
+    [
+      "artis",
+      "t</w>"
+    ],
+    [
+      "wh",
+      "o</w>"
+    ],
+    [
+      "ma",
+      "ster"
+    ],
+    [
+      "master",
+      "pi"
+    ],
+    [
+      "masterpi",
+      "ec"
+    ],
+    [
+      "masterpiec",
+      "e</w>"
+    ],
+    [
+      "b",
+      "l"
+    ],
+    [
+      "bl",
+      "an"
+    ],
+    [
+      "blan",
+      "k"
+    ],
+    [
+      "blank",
+      "</w>"
+    ],
+    [
+      "can",
+      "va"
+    ],
+    [
+      "canva",
+      "s.</w>"
+    ],
+    [
+      "de",
+      "void</w>"
+    ],
+    [
+      "mean",
+      "ing</w>"
+    ],
+    [
+      "r",
+      "ich</w>"
+    ],
+    [
+      "Non-",
+      "Duality:</w>"
+    ],
+    [
+      "non-",
+      "duality,</w>"
+    ],
+    [
+      "d",
+      "o</w>"
+    ],
+    [
+      "exist",
+      ".</w>"
+    ],
+    [
+      "non-",
+      "dual</w>"
+    ],
+    [
+      "ess",
+      "ence</w>"
+    ],
+    [
+      "un",
+      "differenti"
+    ],
+    [
+      "undifferenti",
+      "at"
+    ],
+    [
+      "undifferentiat",
+      "ed.</w>"
+    ],
+    [
+      "singular",
+      "ity,</w>"
+    ],
+    [
+      "unfol",
+      "d</w>"
+    ],
+    [
+      "manif",
+      "ol"
+    ]
+  ],
+  "end_of_word": "</w>"
+}

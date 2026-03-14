@@ -1,0 +1,45 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Local databases and artifacts
+*.db
+*.sqlite
+*.faiss
+*.id_map.json
+
+# Temp artifacts
+*.tmp
+*.bak
+*.log
+
+# Claude Code
+.claude/
+
+# OS junk
+.DS_Store
+Thumbs.db
+desktop.ini

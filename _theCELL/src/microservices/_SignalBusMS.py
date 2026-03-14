@@ -36,6 +36,7 @@ class SignalBusMS(BaseService):
     SIGNAL_PUSH_DATA = "push_to_nexus"          # Data transfer between cells
     SIGNAL_REGISTER_CELL = "register_cell"      # Notify Shell of new cell presence
     SIGNAL_UPDATE_REGISTRY = "update_registry"  # Sync dropdowns with active cells
+    SIGNAL_SCRATCHPAD_UPDATED = "scratchpad_updated"  # Scratchpad content changed
 
     def __init__(self, config: Optional[Dict[str, Any]] = None):
         super().__init__('SignalBus')

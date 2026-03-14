@@ -1,0 +1,19 @@
+{
+  "files": [
+    {
+      "path": "_dev_tools/analyze_timeline_schema.py",
+      "hunks": [
+        {
+          "description": "Update metadata and import sys",
+          "search_block": "TOOL_METADATA = {\n    \"name\": \"Timeline Schema Analyzer\",\n    \"description\": \"Maps the nested skeleton of a massive JSON file without loading all the data.\",\n    \"usage\": \"Run without arguments. Adjust the target_file path in the script if needed.\"\n}\n\nimport json\nfrom pathlib import Path\n",
+          "replace_block": "TOOL_METADATA = {\n    \"name\": \"Timeline Schema Analyzer\",\n    \"description\": \"Maps the nested skeleton of a massive JSON file without loading all the data.\",\n    \"usage\": \"Pass the path to the JSON file in the Args box (e.g., ../_samples/Timeline.json).\"\n}\n\nimport sys\nimport json\nfrom pathlib import Path\n"
+        },
+        {
+          "description": "Swap hardcoded path for sys.argv argument",
+          "search_block": "if __name__ == \"__main__\":\n    # Point this to the specific workspace file you just created\n    # Update \"2025_Jacob\" if you named your workspace something else!\n    target_file = Path(\"../workspaces/2025_Jacob/Timeline.json\")\n    \n    if not target_file.exists():\n",
+          "replace_block": "if __name__ == \"__main__\":\n    if len(sys.argv) < 2:\n        print(\"Error: Please provide the path to Timeline.json as an argument.\")\n        print(\"Example: ../_samples/Timeline.json\")\n        sys.exit(1)\n        \n    target_file = Path(sys.argv[1])\n    \n    if not target_file.exists():\n"
+        }
+      ]
+    }
+  ]
+}

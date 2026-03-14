@@ -1,0 +1,20 @@
+{
+  "folder_states": {
+    ".": "checked",
+    "src": "checked",
+    "src\\bpe_svd": "checked",
+    "src\\bpe_svd\\inference": "checked",
+    "src\\bpe_svd\\inference\\__init__.py": "checked",
+    "src\\bpe_svd\\inference\\provider.py": "checked",
+    "src\\bpe_svd\\training": "checked",
+    "src\\bpe_svd\\training\\__init__.py": "checked",
+    "src\\bpe_svd\\training\\bpe_trainer.py": "checked",
+    "src\\bpe_svd\\training\\cooccurrence.py": "checked",
+    "src\\bpe_svd\\training\\npmi_matrix.py": "checked",
+    "src\\bpe_svd\\training\\spectral.py": "checked",
+    "src\\bpe_svd\\__init__.py": "checked",
+    "pyproject.toml": "checked",
+    "README.md": "checked"
+  },
+  "dynamic_exclusions": []
+}

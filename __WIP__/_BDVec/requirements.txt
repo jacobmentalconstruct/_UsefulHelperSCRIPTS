@@ -1,0 +1,11 @@
+# BDVE Embedder Demo — Dependencies
+# Installed into _showcase/.venv (isolated from parent project)
+
+numpy>=1.24.0
+scipy>=1.11.0
+
+# The bpe-svd package is vendored from the local packages/ directory.
+# It is installed with the [training] extra so that both inference and
+# training (BPE tokenizer, co-occurrence, NPMI, SVD) are available.
+# -e ../packages/bpe_svd[training] is added by install.bat/install.sh
+# directly so pip can resolve it as a local editable install.

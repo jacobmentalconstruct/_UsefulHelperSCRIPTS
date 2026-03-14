@@ -1,0 +1,29 @@
+{
+  "files": [
+    {
+      "path": "src/ingestion.py",
+      "hunks": [
+        {
+          "description": "Fix parse_point to strip URI parameters like ;u=accuracy",
+          "search_block": "def parse_point(pt_str):\n    \"\"\"Extracts lat/lng from formats like 'geo:44.9,-93.2'\"\"\"\n    pt_str = pt_str.replace(\"geo:\", \"\").strip()\n    parts = pt_str.split(\",\")\n    if len(parts) >= 2:\n        try:\n            return float(parts[0]), float(parts[1])\n        except ValueError:\n            pass\n    return 0.0, 0.0\n",
+          "replace_block": "def parse_point(pt_str):\n    \"\"\"Extracts lat/lng from formats like 'geo:44.9,-93.2;u=35'\"\"\"\n    pt_str = pt_str.replace(\"geo:\", \"\").strip()\n    pt_str = pt_str.split(\";\")[0]  # Strip out Google's hidden accuracy metadata\n    parts = pt_str.split(\",\")\n    if len(parts) >= 2:\n        try:\n            return float(parts[0]), float(parts[1])\n        except ValueError:\n            pass\n    return 0.0, 0.0\n"
+        }
+      ]
+    },
+    {
+      "path": "src/templates/index.html",
+      "hunks": [
+        {
+          "description": "Trigger loadTrips after successful upload",
+          "search_block": "                if (response.ok) {\n                    alert('Success! ' + result.message);\n                    // Next step: Load the actual days into the sidebar\n                } else {\n",
+          "replace_block": "                if (response.ok) {\n                    alert('Success! ' + result.message);\n                    loadTrips(projectName);\n                } else {\n"
+        },
+        {
+          "description": "Add the Javascript to fetch trips, render the sidebar, and draw the map pins",
+          "search_block": "            } catch (err) {\n                alert('Upload failed: ' + err);\n            }\n        }\n    </script>\n",
+          "replace_block": "            } catch (err) {\n                alert('Upload failed: ' + err);\n            }\n        }\n\n        let currentLayer = null;\n\n        async function loadTrips(projectName) {\n            document.getElementById('trip-list').innerHTML = '<p style=\"text-align: center; color: var(--text-muted); margin-top: 40px;\">Fetching your mapped trips...</p>';\n            try {\n                const response = await fetch(`/api/trips/${projectName}`);\n                const trips = await response.json();\n                \n                if (trips.length === 0) {\n                    document.getElementById('trip-list').innerHTML = '<p style=\"text-align: center; color: var(--text-muted); margin-top: 40px;\">No valid driving trips found in this file.</p>';\n                    return;\n                }\n\n                renderSidebar(trips);\n                drawMap(trips);\n            } catch (err) {\n                document.getElementById('trip-list').innerHTML = `<p style=\"color: red;\">Error loading trips: ${err}</p>`;\n            }\n        }\n\n        function renderSidebar(trips) {\n            const container = document.getElementById('trip-list');\n            container.innerHTML = ''; // Clear the loading text\n            \n            let totalMiles = 0;\n            \n            trips.forEach(trip => {\n                totalMiles += trip.distance_miles;\n                const card = document.createElement('div');\n                card.className = 'trip-card';\n                \n                const startTime = new Date(trip.start_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});\n                const endTime = new Date(trip.end_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});\n                \n                card.innerHTML = `\n                    <div class=\"trip-header\">\n                        <span>${trip.date} | ${startTime} - ${endTime}</span>\n                    </div>\n                    <div class=\"trip-distance\">${trip.distance_miles.toFixed(1)} mi</div>\n                    <div class=\"btn-group\">\n                        <button class=\"btn-commute\" onclick=\"alert('Database tagging coming soon!')\">🚗 Commute</button>\n                        <button class=\"btn-work\" onclick=\"alert('Database tagging coming soon!')\">💼 Work</button>\n                        <button class=\"btn-personal\" onclick=\"alert('Database tagging coming soon!')\">🏠 Personal</button>\n                    </div>\n                `;\n                container.appendChild(card);\n            });\n            \n            document.getElementById('stat-total').innerText = totalMiles.toFixed(1);\n        }\n\n        function drawMap(trips) {\n            if (currentLayer) map.removeLayer(currentLayer);\n            const markers = [];\n            const polylinePoints = [];\n\n            trips.forEach(trip => {\n                polylinePoints.push([trip.start_lat, trip.start_lng]);\n                polylinePoints.push([trip.end_lat, trip.end_lng]);\n                \n                // Add a yellow marker for every stop\n                const marker = L.circleMarker([trip.start_lat, trip.start_lng], {\n                    radius: 5, fillColor: \"#f59e0b\", color: \"#000\", weight: 1, opacity: 1, fillOpacity: 1\n                }).bindPopup(`<b>${trip.date}</b><br>Distance: ${trip.distance_miles.toFixed(1)} mi`);\n                markers.push(marker);\n            });\n\n            // Draw the connecting route line in blue\n            const line = L.polyline(polylinePoints, {color: '#3b82f6', weight: 2, opacity: 0.5});\n            currentLayer = L.layerGroup([...markers, line]).addTo(map);\n            \n            // Auto-zoom the map to fit all your driving routes\n            if (polylinePoints.length > 0) {\n                map.fitBounds(line.getBounds());\n            }\n        }\n    </script>\n"
+        }
+      ]
+    }
+  ]
+}

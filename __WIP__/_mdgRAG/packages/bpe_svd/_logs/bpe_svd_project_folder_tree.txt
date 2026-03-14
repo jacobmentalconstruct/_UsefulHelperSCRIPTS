@@ -1,0 +1,17 @@
+Project Tree: C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_mdgRAG\packages\bpe_svd
+Generated: 2026-03-11 10:39:06.498677
+
+├── 📁 src/
+│   └── 📁 bpe_svd/
+│       ├── 📁 inference/
+│       │   ├── 📄 __init__.py
+│       │   └── 📄 provider.py
+│       ├── 📁 training/
+│       │   ├── 📄 __init__.py
+│       │   ├── 📄 bpe_trainer.py
+│       │   ├── 📄 cooccurrence.py
+│       │   ├── 📄 npmi_matrix.py
+│       │   └── 📄 spectral.py
+│       └── 📄 __init__.py
+├── 📄 pyproject.toml
+└── 📄 README.md

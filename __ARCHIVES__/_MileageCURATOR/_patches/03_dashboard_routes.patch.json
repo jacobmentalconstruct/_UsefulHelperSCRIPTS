@@ -1,0 +1,19 @@
+{
+  "files": [
+    {
+      "path": "src/app.py",
+      "hunks": [
+        {
+          "description": "Add render_template to Flask imports",
+          "search_block": "from flask import Flask, jsonify, request\n\napp = Flask(__name__)\n",
+          "replace_block": "from flask import Flask, jsonify, request, render_template\nfrom pathlib import Path\nfrom database import get_db_connection\n\napp = Flask(__name__)\n"
+        },
+        {
+          "description": "Add routes for the dashboard and fetching trips",
+          "search_block": "if __name__ == '__main__':\n    print('Starting MileageCURATOR Backend on http://localhost:5000')\n",
+          "replace_block": "@app.route('/')\ndef index():\n    \"\"\"Serves the main dashboard UI.\"\"\"\n    return render_template('index.html')\n\n@app.route('/api/trips/<project_name>')\ndef get_trips(project_name):\n    \"\"\"Fetches trips for a specific workspace.\"\"\"\n    project_dir = Path('workspaces') / project_name\n    if not (project_dir / 'mileage.db').exists():\n        return jsonify({\"error\": \"Project database not found\"}), 404\n        \n    conn = get_db_connection(project_dir)\n    cursor = conn.cursor()\n    cursor.execute('SELECT * FROM trips ORDER BY date ASC, start_time ASC')\n    trips = [dict(row) for row in cursor.fetchall()]\n    conn.close()\n    return jsonify(trips)\n\nif __name__ == '__main__':\n    print('Starting MileageCURATOR Backend on http://localhost:5000')\n"
+        }
+      ]
+    }
+  ]
+}

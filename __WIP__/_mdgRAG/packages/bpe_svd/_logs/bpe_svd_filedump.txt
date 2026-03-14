@@ -1,0 +1,926 @@
+Dump: C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_mdgRAG\packages\bpe_svd
+
+
+--------------------------------------------------------------------------------
+FILE: pyproject.toml
+--------------------------------------------------------------------------------
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.backends.legacy:build"
+
+[project]
+name = "bpe-svd"
+version = "0.1.0"
+description = "Deterministic BPE-SVD text embeddings — no GPU, no API, fully reproducible."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+keywords = ["nlp", "embeddings", "bpe", "svd", "deterministic", "offline"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Text Processing :: Linguistic",
+]
+
+dependencies = [
+    "numpy>=1.24.0",
+]
+
+[project.optional-dependencies]
+training = [
+    "scipy>=1.11.0",
+]
+all = [
+    "scipy>=1.11.0",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-dir]
+"" = "src"
+
+--------------------------------------------------------------------------------
+FILE: README.md
+--------------------------------------------------------------------------------
+# bpe-svd
+
+**Deterministic text embeddings using BPE tokenization and SVD spectral compression.**
+
+No GPU. No API. No model server. Same input always produces identical output.
+
+```python
+from bpe_svd import DeterministicEmbedProvider
+
+provider = DeterministicEmbedProvider(
+    tokenizer_path="tokenizer.json",
+    embeddings_path="embeddings.npy",
+)
+
+result = provider.embed_texts(["hello world", "graph manifold"])
+print(result.vectors[0][:5])   # [0.12, -0.34, 0.56, ...]
+
+# Reverse: what tokens are closest to this vector?
+nearest = provider.nearest_tokens(result.vectors[0], k=5)
+for symbol, sim, _ in nearest:
+    print(f"  {symbol:12s}  cos={sim:+.4f}")
+```
+
+## Install
+
+```bash
+# Inference only (numpy)
+pip install bpe-svd
+
+# Training pipeline (numpy + scipy)
+pip install bpe-svd[training]
+```
+
+## Training Your Own Embeddings
+
+```python
+from bpe_svd.training import (
+    BPETrainer,
+    compute_counts,
+    build_npmi_matrix,
+    compute_embeddings,
+)
+import numpy as np
+
+# Stage 1: Train BPE tokenizer
+trainer = BPETrainer(vocab_size=5000)
+trainer.train("path/to/corpus/")
+trainer.save("tokenizer.json")
+
+# Stage 2: Encode corpus and count co-occurrences
+#   (encode your corpus into token streams using the trained tokenizer,
+#    then pass the streams here)
+pair_counts, token_counts = compute_counts(token_streams, window_size=5)
+
+# Stage 3: Build NPMI friction matrix
+friction = build_npmi_matrix(pair_counts, token_counts, vocab_size=5000)
+
+# Stage 4: Compress to dense embeddings via SVD
+embeddings = compute_embeddings(friction, k=300)
+np.save("embeddings.npy", embeddings)
+```
+
+## How It Works
+
+| Stage | Operation | Output |
+|-------|-----------|--------|
+| 1 | BPE tokenizer training | `tokenizer.json` |
+| 2 | Sliding-window co-occurrence counting | `pair_counts`, `token_counts` |
+| 3 | NPMI normalization → friction matrix | sparse (V × V) matrix |
+| 4 | Truncated SVD | `embeddings.npy` (V × k) |
+| Query | BPE encode → vector lookup → mean pool | k-dimensional vector |
+
+For the full mathematical derivation see the
+[BPE-SVD Whitepaper](../../docs/BPE_SVD_WHITEPAPER.md).
+
+## Part of Graph Manifold
+
+This package is extracted from the
+[Graph Manifold](../../README.md) project — a deterministic,
+graph-native knowledge retrieval system.
+
+--------------------------------------------------------------------------------
+FILE: src\bpe_svd\__init__.py
+--------------------------------------------------------------------------------
+"""
+bpe_svd — Deterministic BPE-SVD text embedding library.
+
+Inference (numpy only):
+    from bpe_svd import DeterministicEmbedProvider
+
+Training (requires scipy extra):
+    from bpe_svd.training import BPETrainer, compute_counts
+    from bpe_svd.training import build_npmi_matrix, compute_embeddings
+
+Part of the Graph Manifold project.
+See https://github.com/... for the full documentation and whitepaper.
+"""
+
+from bpe_svd.inference.provider import DeterministicEmbedProvider, EmbedResult
+
+__all__ = [
+    "DeterministicEmbedProvider",
+    "EmbedResult",
+]
+
+__version__ = "0.1.0"
+
+--------------------------------------------------------------------------------
+FILE: src\bpe_svd\inference\provider.py
+--------------------------------------------------------------------------------
+"""
+bpe_svd.inference.provider — standalone BPE-SVD embedding provider.
+
+This is the distributable inference engine.  It is intentionally
+self-contained: no imports from the parent Graph Manifold project.
+
+Loads two artifact files produced by the training pipeline:
+    tokenizer.json  — BPE vocabulary + merge rules
+    embeddings.npy  — dense (vocab_size × k) embedding matrix
+
+At query time: tokenises text via BPE, looks up token vectors, and
+mean-pools them into a single k-dimensional embedding per input string.
+
+Reverse lookup: given a vector, find the nearest tokens in the embedding
+space via cosine similarity.
+
+Dependencies: stdlib + numpy only (no scipy, no torch, no network).
+"""
+
+from __future__ import annotations
+
+import json
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Dict, List, Optional, Tuple
+
+
+# ── Result type ──────────────────────────────────────────────────────
+
+@dataclass
+class EmbedResult:
+    """Structured result from a call to DeterministicEmbedProvider."""
+
+    vectors: List[List[float]]
+    """One pooled embedding vector per input text."""
+
+    dimensions: int
+    """Dimensionality of each vector (k)."""
+
+    token_counts: List[int]
+    """Number of BPE tokens produced for each input text."""
+
+    token_ids: List[List[int]]
+    """Raw BPE token ID sequences, one per input text."""
+
+
+# ── Provider ─────────────────────────────────────────────────────────
+
+class DeterministicEmbedProvider:
+    """BPE-SVD deterministic embedding provider.
+
+    Load once, embed many times.  Fully deterministic: identical input
+    always produces identical output on any machine.
+
+    Parameters
+    ----------
+    tokenizer_path : str | Path
+        Path to tokenizer.json produced by BPETrainer.save().
+    embeddings_path : str | Path
+        Path to embeddings.npy produced by compute_embeddings() + np.save().
+    """
+
+    def __init__(
+        self,
+        tokenizer_path: str | Path,
+        embeddings_path: str | Path,
+    ) -> None:
+        self._vocab: Dict[str, int]
+        self._merges: List[Tuple[str, str]]
+        self._end_of_word: str
+        self._inverse_vocab_cache: Optional[Dict[int, str]] = None
+        self._load_tokenizer(Path(tokenizer_path))
+        self._embeddings = self._load_embeddings(Path(embeddings_path))
+
+    # ── Artifact loading ─────────────────────────────────────────────
+
+    def _load_tokenizer(self, path: Path) -> None:
+        if not path.is_file():
+            raise FileNotFoundError(f"Tokenizer not found: {path}")
+        with open(path, "r", encoding="utf-8") as f:
+            spec = json.load(f)
+        self._vocab = {str(k): int(v) for k, v in spec["vocab"].items()}
+        raw = spec.get("merges", [])
+        self._merges = [
+            (m[0], m[1]) if isinstance(m, (list, tuple)) else (m[: len(m) // 2], m[len(m) // 2 :])
+            for m in raw
+        ]
+        self._end_of_word = spec.get("end_of_word", "</w>")
+
+    def _load_embeddings(self, path: Path):  # noqa: ANN201
+        try:
+            import numpy as np  # lazy import
+        except ImportError as exc:
+            raise ImportError("numpy is required: pip install numpy") from exc
+        if not path.is_file():
+            raise FileNotFoundError(f"Embeddings not found: {path}")
+        arr = np.load(str(path))
+        if arr.ndim != 2:
+            raise ValueError(f"embeddings.npy must be 2-D, got shape {arr.shape}")
+        return arr
+
+    # ── BPE encoding ─────────────────────────────────────────────────
+
+    def _encode_word(self, word: str) -> List[str]:
+        symbols: List[str] = list(word) + [self._end_of_word]
+        for a, b in self._merges:
+            merged = a + b
+            i = 0
+            new: List[str] = []
+            while i < len(symbols):
+                if i < len(symbols) - 1 and symbols[i] == a and symbols[i + 1] == b:
+                    new.append(merged)
+                    i += 2
+                else:
+                    new.append(symbols[i])
+                    i += 1
+            symbols = new
+        return symbols
+
+    def _encode(self, text: str) -> List[int]:
+        ids: List[int] = []
+        for word in text.strip().split():
+            for sym in self._encode_word(word):
+                ids.append(self._vocab.get(sym, -1))
+        return ids
+
+    # ── Embedding ────────────────────────────────────────────────────
+
+    def _embed_single(self, text: str):  # noqa: ANN201
+        import numpy as np
+
+        token_ids = self._encode(text)
+        k = self._embeddings.shape[1]
+        if not token_ids:
+            return np.zeros(k, dtype=float), token_ids
+
+        rows = []
+        for tid in token_ids:
+            if 0 <= tid < len(self._embeddings):
+                rows.append(self._embeddings[tid])
+            else:
+                rows.append(np.zeros(k, dtype=float))
+
+        return np.mean(rows, axis=0), token_ids
+
+    def embed_texts(self, texts: List[str]) -> EmbedResult:
+        """Embed a list of texts, returning one pooled vector per text.
+
+        Parameters
+        ----------
+        texts : List[str]
+            Input strings to embed.
+
+        Returns
+        -------
+        EmbedResult
+            Pooled vectors, dimensions, token counts, and token ID sequences.
+        """
+        if not texts:
+            return EmbedResult(vectors=[], dimensions=0, token_counts=[], token_ids=[])
+
+        vectors: List[List[float]] = []
+        token_counts: List[int] = []
+        all_token_ids: List[List[int]] = []
+
+        for text in texts:
+            vec, ids = self._embed_single(text)
+            vectors.append(vec.tolist())
+            token_counts.append(len(ids))
+            all_token_ids.append(ids)
+
+        dims = self._embeddings.shape[1]
+        return EmbedResult(
+            vectors=vectors,
+            dimensions=dims,
+            token_counts=token_counts,
+            token_ids=all_token_ids,
+        )
+
+    # ── Reverse lookup ────────────────────────────────────────────────
+
+    @property
+    def vocab(self) -> Dict[str, int]:
+        """Read-only copy of token vocabulary (symbol → ID)."""
+        return dict(self._vocab)
+
+    @property
+    def inverse_vocab(self) -> Dict[int, str]:
+        """Lazily-built ID → symbol mapping."""
+        if self._inverse_vocab_cache is None:
+            self._inverse_vocab_cache = {v: k for k, v in self._vocab.items()}
+        return dict(self._inverse_vocab_cache)
+
+    def decode_token_ids(self, token_ids: List[int]) -> List[str]:
+        """Map integer token IDs back to their symbol strings.
+
+        Unknown IDs are represented as ``<unk:{id}>``.
+        """
+        inv = self.inverse_vocab
+        return [inv.get(tid, f"<unk:{tid}>") for tid in token_ids]
+
+    def nearest_tokens(
+        self,
+        vector: List[float],
+        k: int = 10,
+    ) -> List[Tuple[str, float, List[float]]]:
+        """Find the k tokens whose embeddings are nearest to vector.
+
+        Returns a list of (symbol, cosine_similarity, token_vector)
+        sorted by descending similarity.  All values are plain Python types.
+        """
+        import numpy as np
+
+        q = np.array(vector, dtype=float)
+        q_norm = np.linalg.norm(q)
+        if q_norm == 0.0:
+            return []
+
+        q_unit = q / q_norm
+        norms = np.linalg.norm(self._embeddings, axis=1, keepdims=True)
+        norms = np.where(norms == 0, 1.0, norms)
+        unit_emb = self._embeddings / norms
+        sims = unit_emb @ q_unit
+
+        effective_k = min(k, len(sims))
+        top_idx = np.argpartition(sims, -effective_k)[-effective_k:]
+        top_idx = top_idx[np.argsort(sims[top_idx])[::-1]]
+
+        inv = self.inverse_vocab
+        return [
+            (
+                inv.get(int(i), f"<unk:{i}>"),
+                float(sims[i]),
+                self._embeddings[i].tolist(),
+            )
+            for i in top_idx
+        ]
+
+--------------------------------------------------------------------------------
+FILE: src\bpe_svd\inference\__init__.py
+--------------------------------------------------------------------------------
+"""bpe_svd.inference — BPE-SVD embedding provider (numpy only)."""
+
+from bpe_svd.inference.provider import DeterministicEmbedProvider, EmbedResult
+
+__all__ = ["DeterministicEmbedProvider", "EmbedResult"]
+
+--------------------------------------------------------------------------------
+FILE: src\bpe_svd\training\bpe_trainer.py
+--------------------------------------------------------------------------------
+"""
+BPE Tokenizer Trainer — deterministic subword vocabulary builder.
+
+Ownership: bpe_svd/training/bpe_trainer.py
+    Owns BPE merge training, corpus ingestion, and tokenizer.json
+    serialisation. This is training-time only — produces the vocab and
+    merge list consumed by the inference provider at query time.
+
+Responsibilities:
+    - Read plain-text corpus files
+    - Build initial character-level vocabulary (with end-of-word marker)
+    - Iteratively merge the most frequent adjacent symbol pair
+    - Write tokenizer.json (vocab + merges + end_of_word)
+    - Load an existing tokenizer.json back into memory
+
+Design constraints:
+    - No side effects at import time
+    - Stdlib only (no numpy, no scipy)
+    - Deterministic: same corpus always produces the same vocabulary
+    - Single ownership: does not own co-occurrence counting or SVD
+
+# Extracted from: _STUFF-TO-INTEGRATE/deterministic_embedder/tokenizer_trainer.py :: BPETokenizerTrainer
+# Scope: training loop, corpus ingestion, JSON serialisation
+# Rewritten per EXTRACTION_RULES.md — not verbatim copy
+# API change: train() and save() are separated; load() added
+"""
+
+from __future__ import annotations
+
+import json
+import os
+from collections import defaultdict
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Dict, List, Tuple
+
+
+@dataclass
+class BPETrainer:
+    """Deterministic Byte-Pair Encoding vocabulary trainer.
+
+    Trains on a directory of .txt files and produces a tokenizer.json
+    artifact that the inference provider uses to encode text at query time.
+
+    Parameters
+    ----------
+    vocab_size : int
+        Target maximum vocabulary size (characters + merged tokens).
+    end_of_word : str
+        Marker appended to every word before BPE encoding.  Must be a
+        string that does not appear as a natural character in the corpus.
+    """
+
+    vocab_size: int = 5000
+    end_of_word: str = "</w>"
+
+    _vocab: Dict[str, int] = field(init=False, default_factory=dict)
+    _merges: List[Tuple[str, str]] = field(init=False, default_factory=list)
+
+    # ── Corpus ingestion ─────────────────────────────────────────────
+
+    def _read_corpus(self, corpus_dir: str | Path) -> List[Tuple[str, ...]]:
+        """Read all .txt files in corpus_dir into a list of symbol tuples."""
+        words: List[Tuple[str, ...]] = []
+        for root, _, files in os.walk(str(corpus_dir)):
+            for fname in sorted(files):  # sorted for determinism
+                if not fname.lower().endswith(".txt"):
+                    continue
+                fpath = os.path.join(root, fname)
+                try:
+                    with open(fpath, "r", encoding="utf-8", errors="ignore") as f:
+                        for line in f:
+                            for word in line.strip().split():
+                                words.append(tuple(list(word) + [self.end_of_word]))
+                except OSError:
+                    continue
+        return words
+
+    def _init_vocab(self, words: List[Tuple[str, ...]]) -> None:
+        """Build initial vocabulary from all unique symbols in the corpus."""
+        vocab: Dict[str, int] = {}
+        next_id = 0
+        for word in words:
+            for symbol in word:
+                if symbol not in vocab:
+                    vocab[symbol] = next_id
+                    next_id += 1
+        self._vocab = vocab
+
+    # ── BPE merge loop ───────────────────────────────────────────────
+
+    @staticmethod
+    def _pair_frequencies(words: List[Tuple[str, ...]]) -> Dict[Tuple[str, str], int]:
+        """Count frequency of every adjacent symbol pair across the corpus."""
+        pairs: Dict[Tuple[str, str], int] = defaultdict(int)
+        for word in words:
+            for i in range(len(word) - 1):
+                pairs[(word[i], word[i + 1])] += 1
+        return pairs
+
+    @staticmethod
+    def _merge(pair: Tuple[str, str], words: List[Tuple[str, ...]]) -> List[Tuple[str, ...]]:
+        """Replace every occurrence of pair (a, b) with the merged token 'ab'."""
+        a, b = pair
+        merged = a + b
+        result: List[Tuple[str, ...]] = []
+        for word in words:
+            i = 0
+            new_word: List[str] = []
+            while i < len(word):
+                if i < len(word) - 1 and word[i] == a and word[i + 1] == b:
+                    new_word.append(merged)
+                    i += 2
+                else:
+                    new_word.append(word[i])
+                    i += 1
+            result.append(tuple(new_word))
+        return result
+
+    # ── Public API ───────────────────────────────────────────────────
+
+    def train(self, corpus_dir: str | Path) -> None:
+        """Train BPE on all .txt files under corpus_dir.
+
+        Builds the vocabulary and merge list in memory.  Call save() to
+        write the result to disk.
+
+        Parameters
+        ----------
+        corpus_dir : str | Path
+            Directory containing training .txt files (scanned recursively).
+        """
+        self._vocab = {}
+        self._merges = []
+        words = self._read_corpus(corpus_dir)
+        self._init_vocab(words)
+        while len(self._vocab) < self.vocab_size:
+            pair_freq = self._pair_frequencies(words)
+            if not pair_freq:
+                break
+            best = max(pair_freq, key=pair_freq.get)  # type: ignore[arg-type]
+            words = self._merge(best, words)
+            self._merges.append(best)
+            merged_token = best[0] + best[1]
+            if merged_token not in self._vocab:
+                self._vocab[merged_token] = len(self._vocab)
+
+    def save(self, path: str | Path) -> None:
+        """Write vocab + merges to a tokenizer.json file.
+
+        Parameters
+        ----------
+        path : str | Path
+            Destination file path.  Parent directories are created if needed.
+        """
+        if not self._vocab:
+            raise RuntimeError("Nothing to save — call train() first.")
+        dest = Path(path)
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        spec = {
+            "vocab": self._vocab,
+            "merges": list(self._merges),
+            "end_of_word": self.end_of_word,
+        }
+        with open(dest, "w", encoding="utf-8") as f:
+            json.dump(spec, f, ensure_ascii=False, indent=2)
+
+    def load(self, path: str | Path) -> None:
+        """Load a previously saved tokenizer.json into this trainer instance.
+
+        Parameters
+        ----------
+        path : str | Path
+            Path to a tokenizer.json produced by save().
+        """
+        with open(str(path), "r", encoding="utf-8") as f:
+            spec = json.load(f)
+        self._vocab = {str(k): int(v) for k, v in spec["vocab"].items()}
+        raw_merges = spec.get("merges", [])
+        self._merges = [
+            (m[0], m[1]) if isinstance(m, (list, tuple)) else (m[: len(m) // 2], m[len(m) // 2 :])
+            for m in raw_merges
+        ]
+        self.end_of_word = spec.get("end_of_word", "</w>")
+
+    @property
+    def vocab(self) -> Dict[str, int]:
+        """Learned vocabulary mapping (symbol → ID)."""
+        return dict(self._vocab)
+
+    @property
+    def merges(self) -> List[Tuple[str, str]]:
+        """Ordered merge list (applied sequentially during encoding)."""
+        return list(self._merges)
+
+--------------------------------------------------------------------------------
+FILE: src\bpe_svd\training\cooccurrence.py
+--------------------------------------------------------------------------------
+"""
+Co-occurrence Counter — sliding-window token pair statistics.
+
+Ownership: bpe_svd/training/cooccurrence.py
+    Owns sliding-window co-occurrence counting over token ID streams.
+    Pure statistics: receives pre-tokenised streams, returns counts.
+    Does NOT own tokenisation logic — callers encode text before passing
+    streams here.
+
+Responsibilities:
+    - Slide a fixed-width window over a token ID stream
+    - Count unordered (min, max) token pairs within each window
+    - Count individual token frequencies
+    - Aggregate counts across multiple streams
+
+Design constraints:
+    - No side effects at import time
+    - Stdlib only (no numpy, no scipy)
+    - Single ownership: does not own BPE encoding or NPMI calculation
+    - Pairs are canonicalised as (min_id, max_id) for symmetry
+
+# Extracted from: _STUFF-TO-INTEGRATE/deterministic_embedder/cooccurrence_graph.py :: sliding_window_cooccurrence, compute_counts
+# Scope: sliding window statistics only
+# Rewritten per EXTRACTION_RULES.md — not verbatim copy
+# Architecture change: BPETokenizer class dropped (violated single-ownership);
+#   compute_counts() now accepts pre-tokenised streams instead of tokenizer path + corpus dir
+"""
+
+from __future__ import annotations
+
+from collections import defaultdict, deque
+from typing import Dict, Iterable, List, Tuple
+
+
+# ── Core counting functions ──────────────────────────────────────────
+
+def sliding_window_cooccurrence(
+    token_stream: Iterable[int],
+    window_size: int = 5,
+) -> Tuple[Dict[Tuple[int, int], int], Dict[int, int]]:
+    """Compute pair co-occurrence counts from a single token ID stream.
+
+    Slides a window of `window_size` over the stream.  For every new
+    token, each token already in the window is paired with it.  Pairs
+    are stored canonically as (min_id, max_id) for symmetry.
+
+    Parameters
+    ----------
+    token_stream : Iterable[int]
+        Sequence of integer token IDs for one text unit (e.g. one line).
+    window_size : int
+        Number of tokens to keep in the sliding window (default 5).
+
+    Returns
+    -------
+    pair_counts : Dict[Tuple[int, int], int]
+        Unordered token pair → co-occurrence count within this stream.
+    token_counts : Dict[int, int]
+        Token ID → frequency within this stream.
+    """
+    window: deque[int] = deque(maxlen=window_size)
+    pair_counts: Dict[Tuple[int, int], int] = defaultdict(int)
+    token_counts: Dict[int, int] = defaultdict(int)
+
+    for token in token_stream:
+        token_counts[token] += 1
+        for seen in window:
+            if seen == token:
+                continue
+            pair = (min(seen, token), max(seen, token))
+            pair_counts[pair] += 1
+        window.append(token)
+
+    return dict(pair_counts), dict(token_counts)
+
+
+def compute_counts(
+    token_streams: Iterable[List[int]],
+    window_size: int = 5,
+) -> Tuple[Dict[Tuple[int, int], int], Dict[int, int]]:
+    """Aggregate co-occurrence counts over many pre-tokenised streams.
+
+    Calls sliding_window_cooccurrence on each stream and accumulates the
+    results into a single global pair_counts and token_counts mapping.
+
+    Parameters
+    ----------
+    token_streams : Iterable[List[int]]
+        One list of token IDs per text unit (sentence, line, document).
+        Callers are responsible for encoding text into token IDs before
+        passing streams to this function.
+    window_size : int
+        Sliding window size forwarded to sliding_window_cooccurrence.
+
+    Returns
+    -------
+    pair_counts : Dict[Tuple[int, int], int]
+        Global unordered pair co-occurrence counts.
+    token_counts : Dict[int, int]
+        Global individual token frequency counts.
+    """
+    total_pairs: Dict[Tuple[int, int], int] = defaultdict(int)
+    total_tokens: Dict[int, int] = defaultdict(int)
+
+    for stream in token_streams:
+        line_pairs, line_tokens = sliding_window_cooccurrence(stream, window_size)
+        for pair, cnt in line_pairs.items():
+            total_pairs[pair] += cnt
+        for tok, cnt in line_tokens.items():
+            total_tokens[tok] += cnt
+
+    return dict(total_pairs), dict(total_tokens)
+
+--------------------------------------------------------------------------------
+FILE: src\bpe_svd\training\npmi_matrix.py
+--------------------------------------------------------------------------------
+"""
+NPMI Friction Matrix Builder — co-occurrence counts → sparse distance matrix.
+
+Ownership: bpe_svd/training/npmi_matrix.py
+    Owns NPMI normalisation and the friction transformation.  Converts
+    raw pair/token counts (from cooccurrence.py) into a symmetric sparse
+    CSR matrix of friction values suitable for truncated SVD.
+
+Responsibilities:
+    - Compute marginal and joint co-occurrence probabilities
+    - Compute NPMI (Normalised Pointwise Mutual Information)
+    - Apply friction transform: friction = 1 - NPMI  (range ~[0, 2])
+    - Return a symmetric scipy.sparse.csr_matrix (V × V)
+
+Design constraints:
+    - scipy.sparse imported at module level (training-only dependency)
+    - numpy NOT imported at module level (math.log used for scalar ops)
+    - No side effects at import time
+    - Single ownership: does not tokenise text or perform SVD
+
+# Extracted from: _STUFF-TO-INTEGRATE/deterministic_embedder/pmi_matrix.py :: build_npmi_matrix
+# Scope: NPMI calculation + friction transformation + sparse matrix construction
+# Rewritten per EXTRACTION_RULES.md — not verbatim copy
+"""
+
+from __future__ import annotations
+
+import math
+from typing import Dict, Tuple
+
+from scipy.sparse import csr_matrix, dok_matrix  # type: ignore[import-untyped]
+
+
+def build_npmi_matrix(
+    pair_counts: Dict[Tuple[int, int], int],
+    token_counts: Dict[int, int],
+    vocab_size: int,
+) -> csr_matrix:
+    """Build a symmetric sparse friction matrix from co-occurrence counts.
+
+    For each observed token pair (a, b) the friction value is computed as:
+
+        P(a,b) = count(a,b) / total_pair_observations
+        P(a)   = count(a)   / total_token_occurrences
+        P(b)   = count(b)   / total_token_occurrences
+
+        PMI(a,b)  = log( P(a,b) / (P(a) * P(b)) )
+        NPMI(a,b) = PMI(a,b) / ( -log( P(a,b) ) )   ∈ [-1, +1]
+
+        friction(a,b) = 1 - NPMI(a,b)                ∈ [~0, ~2]
+
+    Low friction (≈ 0) means strong association.  High friction (> 1)
+    means anti-association.  Independence gives friction ≈ 1.
+
+    Parameters
+    ----------
+    pair_counts : Dict[Tuple[int, int], int]
+        Unordered token pair co-occurrence counts (from cooccurrence.py).
+    token_counts : Dict[int, int]
+        Per-token frequency counts (from cooccurrence.py).
+    vocab_size : int
+        Total vocabulary size — defines the matrix dimensions (V × V).
+
+    Returns
+    -------
+    scipy.sparse.csr_matrix
+        Symmetric friction matrix of shape (vocab_size, vocab_size).
+        Unobserved pairs have a stored value of 0.
+    """
+    total_tokens = sum(token_counts.values())
+    total_pairs = sum(pair_counts.values())
+
+    if total_tokens == 0 or total_pairs == 0:
+        return csr_matrix((vocab_size, vocab_size), dtype=float)
+
+    matrix = dok_matrix((vocab_size, vocab_size), dtype=float)
+
+    for (a, b), count_ab in pair_counts.items():
+        if a < 0 or b < 0 or a >= vocab_size or b >= vocab_size:
+            continue
+        if count_ab == 0:
+            continue
+
+        p_ab = count_ab / total_pairs
+        p_a = token_counts.get(a, 0) / total_tokens
+        p_b = token_counts.get(b, 0) / total_tokens
+
+        if p_a == 0.0 or p_b == 0.0 or p_ab == 0.0:
+            continue
+
+        pmi = math.log(p_ab / (p_a * p_b))
+        npmi = pmi / (-math.log(p_ab))
+        friction = 1.0 - npmi
+
+        matrix[a, b] = friction
+        matrix[b, a] = friction
+
+    return matrix.tocsr()
+
+--------------------------------------------------------------------------------
+FILE: src\bpe_svd\training\spectral.py
+--------------------------------------------------------------------------------
+"""
+Spectral Compression — truncated SVD on the NPMI friction matrix.
+
+Ownership: bpe_svd/training/spectral.py
+    Owns the SVD step that compresses the (V × V) sparse friction matrix
+    into a dense (V × k) token embedding matrix.  This is the ONLY module
+    in src/ that is permitted to import scipy.
+
+Responsibilities:
+    - Accept a scipy sparse matrix from npmi_matrix.py
+    - Run truncated SVD (scipy.sparse.linalg.svds)
+    - Return the top-k left singular vectors (U_k), shape (V, k)
+    - Ensure singular values are ordered descending (most significant first)
+
+Design constraints:
+    - scipy and numpy imported at module level (training-only dep)
+    - Explicit guard for trivial/empty matrices
+    - Returns raw U_k (singular values NOT applied as scaling)
+    - Single ownership: does not own NPMI calculation or inference pooling
+
+# Extracted from: _STUFF-TO-INTEGRATE/deterministic_embedder/spectral_compression.py :: compute_embeddings
+# Scope: truncated SVD + descending sort
+# Rewritten per EXTRACTION_RULES.md — not verbatim copy
+"""
+
+from __future__ import annotations
+
+import numpy as np  # type: ignore[import-untyped]
+from scipy.sparse import spmatrix  # type: ignore[import-untyped]
+from scipy.sparse.linalg import svds  # type: ignore[import-untyped]
+
+
+def compute_embeddings(
+    friction_matrix: spmatrix,
+    k: int = 300,
+) -> np.ndarray:
+    """Compute token embeddings via truncated SVD of the friction matrix.
+
+    Decomposes `friction_matrix` ≈ U_k · diag(s_k) · V_k^T and returns
+    U_k — the left singular vectors corresponding to the k largest singular
+    values.  Each row of U_k is the k-dimensional embedding for one token.
+
+    Parameters
+    ----------
+    friction_matrix : scipy.sparse.spmatrix
+        The symmetric (V × V) friction matrix from build_npmi_matrix().
+        Row/column index corresponds to token vocabulary ID.
+    k : int
+        Number of dimensions to retain (default 300).  Must be less than
+        both dimensions of the matrix.
+
+    Returns
+    -------
+    np.ndarray
+        Dense array of shape (V, k).  Row i is the embedding for token i.
+        Singular values are NOT applied; vectors are the raw left singular
+        vectors from scipy.sparse.linalg.svds.
+    """
+    v = friction_matrix.shape[0]
+    if v == 0 or friction_matrix.shape[1] == 0:
+        return np.empty((0, k), dtype=float)
+
+    # Clamp k so it never exceeds what svds supports
+    effective_k = min(k, v - 1)
+    if effective_k <= 0:
+        return np.zeros((v, k), dtype=float)
+
+    # svds returns singular values in ascending order → reverse to descending
+    U, _s, _Vt = svds(friction_matrix, k=effective_k)
+    U = U[:, ::-1]  # most significant dimension first
+
+    # Pad with zeros if effective_k < k (tiny matrices in tests)
+    if effective_k < k:
+        padding = np.zeros((v, k - effective_k), dtype=float)
+        U = np.hstack([U, padding])
+
+    return U
+
+--------------------------------------------------------------------------------
+FILE: src\bpe_svd\training\__init__.py
+--------------------------------------------------------------------------------
+"""bpe_svd.training — offline training pipeline (requires scipy extra).
+
+Install with:  pip install bpe-svd[training]
+"""
+
+from bpe_svd.training.bpe_trainer import BPETrainer
+from bpe_svd.training.cooccurrence import compute_counts, sliding_window_cooccurrence
+from bpe_svd.training.npmi_matrix import build_npmi_matrix
+from bpe_svd.training.spectral import compute_embeddings
+
+__all__ = [
+    "BPETrainer",
+    "compute_counts",
+    "sliding_window_cooccurrence",
+    "build_npmi_matrix",
+    "compute_embeddings",
+]

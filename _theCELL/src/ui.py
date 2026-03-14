@@ -138,8 +138,6 @@ class CELL_UI:
         self.panel_prompt = None
         self.panel_inference = None
         self.panel_result = None
-        self.panel_export = None
-
         # Two-column layout containers (Step 1 layout)
         self.main_row = None
         self.left_col = None
@@ -161,7 +159,11 @@ class CELL_UI:
         self.sendto_btn = None
         self._nexus_id_map = {}
         self._response_ready = False
-        
+
+        # Scratchpad window reference (singleton, passed from app.py)
+        self.scratchpad_window = None
+        self._scratchpad_visible = False
+
         # Restore window state from DB
         saved_geo = self.backend.get_setting('window_geometry')
         if saved_geo: self.shell.root.geometry(saved_geo)
@@ -190,14 +192,18 @@ class CELL_UI:
             # Cell identity signals
             self.backend.bus.subscribe("cell_renamed", self._on_cell_renamed)
             self.backend.bus.subscribe("update_window_title", self._update_window_title)
+            self.backend.bus.subscribe("scratchpad_visibility_changed", self._on_scratchpad_visibility_changed)
 
     def _update_nexus_list(self, cell_data):
-        """Updates the Send To dropdown with currently active cells."""
+        """Updates the Send To dropdown with currently active cells (downstream only)."""
         # cell_data is: {cell_id: {"id": ..., "name": ...}}
+        # Filter out ancestor cells — content flows downstream only
+        lineage = self.backend.registry.get_lineage(self.session_id)
+        ancestors = set(lineage[:-1]) if lineage else set()  # all except self
         targets = [
             f"{data['name']} ({cid})"
             for cid, data in cell_data.items()
-            if cid != self.session_id
+            if cid != self.session_id and cid not in ancestors
         ]
 
         if self.sendto_cb:
@@ -698,7 +704,17 @@ class CELL_UI:
             font=("Segoe UI", 9),
             command=lambda: self._open_viewer('personas', None)
         )
-        self.btn_load_template.pack(side='left', fill='x', expand=True, padx=(2, 5))
+        self.btn_load_template.pack(side='left', fill='x', expand=True, padx=(2, 2))
+
+        self.btn_scratchpad = tk.Button(
+            self.action_frame,
+            text="SCRATCHPAD",
+            bg=self.colors.get('panel_bg'),
+            fg=self.colors.get('button_fg', self.colors.get('foreground', 'white')),
+            font=("Segoe UI", 9),
+            command=self._toggle_scratchpad
+        )
+        self.btn_scratchpad.pack(side='left', fill='x', expand=True, padx=(2, 5))
 
         self.btn_submit = tk.Button(
             self.action_frame,
@@ -862,6 +878,40 @@ class CELL_UI:
         )
         self.sendto_btn.pack(fill='x')
 
+
+    def _toggle_scratchpad(self):
+        """Toggles the scratchpad window visibility."""
+        if not self.scratchpad_window:
+            return
+        if self._scratchpad_visible:
+            self.scratchpad_window.hide()
+            self._scratchpad_visible = False
+            self.btn_scratchpad.configure(
+                bg=self.colors.get('panel_bg'),
+                fg=self.colors.get('button_fg', self.colors.get('foreground'))
+            )
+        else:
+            self.scratchpad_window.show()
+            self._scratchpad_visible = True
+            self.btn_scratchpad.configure(
+                bg=self.colors.get('accent'),
+                fg=self.colors.get('button_fg', 'white')
+            )
+
+    def _on_scratchpad_visibility_changed(self, visible):
+        """Handles external scratchpad visibility changes (e.g. window X button)."""
+        self._scratchpad_visible = visible
+        if hasattr(self, 'btn_scratchpad') and self.btn_scratchpad:
+            if visible:
+                self.btn_scratchpad.configure(
+                    bg=self.colors.get('accent'),
+                    fg=self.colors.get('button_fg', 'white')
+                )
+            else:
+                self.btn_scratchpad.configure(
+                    bg=self.colors.get('panel_bg'),
+                    fg=self.colors.get('button_fg', self.colors.get('foreground'))
+                )
 
     def _get_current_artifact(self):
         """Helper to package UI state into a standard artifact."""
@@ -1402,17 +1452,14 @@ class CELL_UI:
 
         if self.action_frame is not None:
             self.action_frame.configure(bg=self.colors.get('background'))
-        self.toolbar.configure(bg=self.colors.get('panel_bg'))
+        self.toolbar_frame.configure(bg=self.colors.get('panel_bg'))
         self.config_frame.configure(fg=self.colors.get('foreground'), bg=self.colors.get('background'))
         self.role_inner.configure(bg=self.colors.get('background'))
         self.prompt_inner.configure(bg=self.colors.get('background'))
         self.prompt_btns_frame.configure(bg=self.colors.get('background'))
 
-        if self.action_frame is not None:
-            self.action_frame.configure(bg=self.colors.get('background'))
-
         # Right-column panels
-        panel_list = [self.panel_inference, self.panel_result, self.panel_export]
+        panel_list = [self.panel_inference, self.panel_result, self.panel_sendto]
         for panel in panel_list:
             if panel is not None:
                 try:
@@ -1422,28 +1469,12 @@ class CELL_UI:
                         highlightbackground=self.colors.get('border')
                     )
                 except Exception:
-                    # Some Tk/ttk widgets may not accept fg/highlightbackground
                     try:
                         panel.configure(bg=self.colors.get('background'))
                     except Exception:
                         pass
 
-        if self.export_router_frame is not None:
-            self.export_router_frame.configure(bg=self.colors.get('background'))
-            for child in self.export_router_frame.winfo_children():
-                try:
-                    child.configure(bg=self.colors.get('background'), fg=self.colors.get('foreground'))
-                except Exception:
-                    try:
-                        child.configure(bg=self.colors.get('background'))
-                    except Exception:
-                        pass
-
-        if self.export_options_frame is not None:
-            self.export_options_frame.configure(bg=self.colors.get('background'))
-
         # Update Labels
-        self.top_label.configure(fg=self.colors.get('foreground'), bg=self.colors.get('background'))
         if self.model_lbl is not None:
             self.model_lbl.configure(bg=self.colors.get('background'), fg=self.colors.get('foreground'))
         self.role_lbl.configure(bg=self.colors.get('background'), fg=self.colors.get('foreground'))
@@ -1480,9 +1511,16 @@ class CELL_UI:
             self.result_text.configure(bg=self.colors.get('entry_bg'), fg=self.colors.get('entry_fg'), insertbackground=self.colors.get('entry_fg'), selectbackground=self.colors.get('select_bg'))
 
         # Update Buttons (toolbar + small repo buttons)
-        btn_list = [self.btn_bold, self.btn_italic, self.btn_list, self.btn_settings, self.btn_role_save, self.btn_role_open, self.btn_prompt_save, self.btn_prompt_open]
+        btn_list = [self.btn_settings, self.btn_role_save, self.btn_role_open, self.btn_prompt_save, self.btn_prompt_open]
         for btn in btn_list:
-            btn.configure(bg=self.colors.get('panel_bg'), fg=self.colors.get('foreground'))
+            if btn is not None:
+                btn.configure(bg=self.colors.get('panel_bg'), fg=self.colors.get('foreground'))
+        # Scratchpad toggle button
+        if hasattr(self, 'btn_scratchpad') and self.btn_scratchpad is not None:
+            if self._scratchpad_visible:
+                self.btn_scratchpad.configure(bg=self.colors.get('accent'), fg=self.colors.get('button_fg', 'white'))
+            else:
+                self.btn_scratchpad.configure(bg=self.colors.get('panel_bg'), fg=self.colors.get('button_fg', self.colors.get('foreground')))
 
         # Update Action Bar buttons
         if self.btn_save_template is not None:

@@ -1,0 +1,48 @@
+Project Tree: C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_BDVec
+Generated: 2026-03-11 12:26:41.662197
+
+├── 📁 _dev_tools/
+│   ├── 📄 cleanup_root_microservices_contract.py
+│   ├── 📄 organize_library_layers.py
+│   ├── 📄 tokenizing-patcher-readme.md
+│   └── 📄 tokenizing_patcher_with_cli.py
+├── 📁 artifacts/
+│   ├── 📄 embeddings.npy
+│   └── 📄 tokenizer.json
+├── 📁 assets/
+│   └── 📄 logo.svg
+├── 📁 bpe_svd/
+│   ├── 📁 src/
+│   │   ├── 📁 bpe_svd/
+│   │   │   ├── 📁 inference/
+│   │   │   │   ├── 📄 __init__.py
+│   │   │   │   └── 📄 provider.py
+│   │   │   ├── 📁 training/
+│   │   │   │   ├── 📄 __init__.py
+│   │   │   │   ├── 📄 bpe_trainer.py
+│   │   │   │   ├── 📄 cooccurrence.py
+│   │   │   │   ├── 📄 npmi_matrix.py
+│   │   │   │   └── 📄 spectral.py
+│   │   │   └── 📄 __init__.py
+│   │   └── 📁 bpe_svd.egg-info/
+│   │       ├── 📄 dependency_links.txt
+│   │       ├── 📄 PKG-INFO
+│   │       ├── 📄 requires.txt
+│   │       ├── 📄 SOURCES.txt
+│   │       └── 📄 top_level.txt
+│   ├── 📄 pyproject.toml
+│   └── 📄 README.md
+├── 📁 embedder_demo/
+│   ├── 📄 __init__.py
+│   ├── 📄 __main__.py
+│   ├── 📄 cli.py
+│   ├── 📄 core.py
+│   └── 📄 ui.py
+├── 📄 install.bat
+├── 📄 install.sh
+├── 📄 README.md
+├── 📄 requirements.txt
+├── 📄 run_cli.bat
+├── 📄 run_cli.sh
+├── 📄 run_ui.bat
+└── 📄 run_ui.sh

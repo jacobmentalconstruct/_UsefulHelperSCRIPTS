@@ -2,6 +2,7 @@ import uuid
 from datetime import datetime
 from .backend import Backend
 from .ui import CELL_UI
+from .scratchpad_window import ScratchpadWindow
 from src.microservices._TkinterAppShellMS import TkinterAppShellMS
 from src.cell_identity import CellRegistry
 
@@ -24,6 +25,15 @@ def main():
         "theme": theme
     })
     
+    # --- Singleton Scratchpad Window (shared across all cells) ---
+    scratchpad_win = ScratchpadWindow(
+        root=shell.root,
+        colors=shell.colors,
+        scratchpad_ms=backend.scratchpad,
+        engine=backend.engine,
+        bus=backend.bus
+    )
+
     # --- Global Orchestration State ---
     cell_registry = {}  # { session_id: backend_instance }
 
@@ -78,6 +88,7 @@ def main():
             register_cell_orchestration(child_backend)
             
             child_ui = CELL_UI(child_proxy, child_backend)
+            child_ui.scratchpad_window = scratchpad_win
 
             # Wire close event to unregister cell and update all dropdowns
             def on_child_close(cid=child_backend.cell_id):
@@ -114,10 +125,19 @@ def main():
 
         # 3. Handle Nexus/Data Pushing (The Router)
         # Guard: only route if this backend is NOT the target (prevents infinite re-emit)
+        # Guard: DOWNSTREAM ONLY — reject pushes to ancestor cells
         def on_push_request(payload):
             target_id = payload.get('target_id')
+            source_id = payload.get('source_id')
             if target_id in cell_registry and target_id != target_backend.cell_id:
-                print(f"[Nexus] Routing data from {payload.get('source_id')} to {target_id}")
+                # Block upstream pushes: check if target is an ancestor of source
+                if source_id:
+                    source_lineage = global_registry.get_lineage(source_id)
+                    ancestors = set(source_lineage[:-1]) if source_lineage else set()
+                    if target_id in ancestors:
+                        print(f"[Nexus] BLOCKED upstream push from {source_id} to {target_id}")
+                        return
+                print(f"[Nexus] Routing data from {source_id} to {target_id}")
                 cell_registry[target_id].bus.emit("push_to_nexus", payload)
 
         target_backend.bus.subscribe("push_to_nexus", on_push_request)
@@ -127,7 +147,8 @@ def main():
 
     # Dock the UI into the shell
     app_ui = CELL_UI(shell, backend)
-    
+    app_ui.scratchpad_window = scratchpad_win
+
     # Ignition
     shell.launch()
 

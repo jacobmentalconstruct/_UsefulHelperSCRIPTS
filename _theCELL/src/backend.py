@@ -15,6 +15,7 @@ from src.microservices._ConfigStoreMS import ConfigStoreMS
 from src.microservices._CodeFormatterMS import CodeFormatterMS
 from src.microservices._TreeMapperMS import TreeMapperMS
 from src.microservices._VectorFactoryMS import VectorFactoryMS
+from src.microservices._ScratchpadMS import ScratchpadMS
 from src.microservices.microservice_std_lib import service_metadata
 from src.cell_identity import CellIdentity, CellRegistry
 
@@ -81,7 +82,11 @@ class Backend:
             'long_term_ingest_func': self._flush_to_vector_db
         }
         self.memory = CognitiveMemoryMS(config=mem_config)
-        
+
+        # Scratchpad: Persistent collaborative notepad for user + AI
+        scratchpad_db = os.path.join(db_dir, "scratchpad.db")
+        self.scratchpad = ScratchpadMS(db_path=scratchpad_db, engine=self.engine)
+
         # Initialize state from persistent storage
         self.system_role: str = self.get_setting('last_system_role') or "You are a helpful AI assistant."
 

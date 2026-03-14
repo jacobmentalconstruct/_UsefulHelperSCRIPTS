@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mileage CURATOR</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        :root {
+            --bg-dark: #121212;
+            --bg-card: #1e1e1e;
+            --text-main: #e0e0e0;
+            --text-muted: #9e9e9e;
+            --accent-work: #3b82f6; /* Blue */
+            --accent-commute: #10b981; /* Green */
+            --accent-personal: #f59e0b; /* Yellow */
+            --border-color: #333;
+        }
+        body { 
+            margin: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background-color: var(--bg-dark); color: var(--text-main); 
+            display: flex; flex-direction: column; height: 100vh; 
+        }
+        header { 
+            padding: 15px 20px; background-color: var(--bg-card); 
+            border-bottom: 1px solid var(--border-color); display: flex; 
+            justify-content: space-between; align-items: center; 
+        }
+        h2 { margin: 0; font-size: 1.5rem; letter-spacing: 1px; }
+        .stats { display: flex; gap: 20px; font-weight: bold; font-size: 1.1rem; }
+        .stat-work { color: var(--accent-work); }
+        .stat-commute { color: var(--accent-commute); }
+        .stat-personal { color: var(--accent-personal); }
+        
+        .main-container { display: flex; flex: 1; overflow: hidden; }
+        .sidebar { 
+            width: 420px; overflow-y: auto; padding: 15px; 
+            border-right: 1px solid var(--border-color); background-color: var(--bg-dark); 
+        }
+        
+        /* Map Area */
+        .map-container { flex: 1; background-color: #000; }
+        #map { width: 100%; height: 100%; }
+        
+        /* Trip Cards */
+        .trip-card { 
+            background-color: var(--bg-card); padding: 15px; margin-bottom: 15px; 
+            border-radius: 8px; border: 1px solid var(--border-color); 
+            transition: border-color 0.2s, transform 0.1s; 
+        }
+        .trip-card:hover { border-color: #666; transform: translateY(-2px); }
+        .trip-header { 
+            display: flex; justify-content: space-between; 
+            margin-bottom: 10px; font-size: 0.85em; color: var(--text-muted); 
+        }
+        .trip-distance { font-size: 1.4em; font-weight: bold; margin-bottom: 15px; color: #fff; }
+        
+        /* Buttons */
+        .btn-group { display: flex; gap: 8px; }
+        button { 
+            flex: 1; padding: 8px; border: none; border-radius: 4px; 
+            cursor: pointer; font-weight: bold; color: #fff; 
+            transition: opacity 0.2s; 
+        }
+        button:hover { opacity: 0.8; }
+        .btn-work { background-color: var(--accent-work); color: #121212;}
+        .btn-commute { background-color: var(--accent-commute); color: #121212;}
+        .btn-personal { background-color: var(--accent-personal); color: #121212;}
+        .header-actions { display: flex; gap: 10px; align-items: center; }
+        .btn-load { background-color: var(--accent-work); padding: 8px 16px; font-size: 0.9rem; }
+        .btn-export { background-color: var(--accent-commute); padding: 8px 16px; font-size: 0.9rem; }
+    </style>
+</head>
+<body>
+    <header>
+        <h2>Mileage CURATOR</h2>
+        <div class="stats">
+            <span>Total: <span id="stat-total">0.0</span> mi</span>
+            <span class="stat-work">Work: <span id="stat-work">0.0</span> mi</span>
+            <span class="stat-commute">Commute: <span id="stat-commute">0.0</span> mi</span>
+            <span class="stat-personal">Personal: <span id="stat-personal">0.0</span> mi</span>
+        </div>
+        <div class="header-actions">
+            <input type="file" id="file-upload" accept=".json" style="display: none;" onchange="uploadFile(event)">
+            <button class="btn-load" onclick="document.getElementById('file-upload').click()">Load Timeline.json</button>
+            <button class="btn-export" onclick="exportCSV()">Export CSV</button>
+        </div>
+    </header>
+    <div class="main-container">
+        <div class="sidebar" id="trip-list">
+            <p style="text-align: center; color: var(--text-muted); margin-top: 40px;">Select a project workspace to load trips...</p>
+        </div>
+        <div class="map-container">
+            <div id="map"></div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        // Initialize Map - Centered on Minneapolis to start
+        const map = L.map('map').setView([44.9778, -93.2650], 11);
+        
+        // CartoDB Dark Matter tile layer for a sleek dark theme
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
+            subdomains: 'abcd',
+            maxZoom: 20
+        }).addTo(map);
+
+        let currentLayer = null;
+
+        // Upload File Logic
+        async function uploadFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            let projectName = prompt("Enter a name for this Tax Year/Workspace (e.g., 2025_Jacob):");
+            if (!projectName) return;
+
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('project_name', projectName);
+
+            document.getElementById('trip-list').innerHTML = '<p style="text-align: center; color: var(--text-muted); margin-top: 40px;">Uploading and crunching data... this may take a minute.</p>';
+
+            try {
+                const response = await fetch('/api/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                const result = await response.json();
+                if (response.ok) {
+                    alert('Success! ' + result.message);
+                    loadTrips(projectName);
+                } else {
+                    alert('Error: ' + result.error);
+                }
+            } catch (err) {
+                alert('Upload failed: ' + err);
+            }
+        }
+
+        async function loadTrips(projectName) {
+            document.getElementById('trip-list').innerHTML = '<p style="text-align: center; color: var(--text-muted); margin-top: 40px;">Fetching your mapped trips...</p>';
+            try {
+                const response = await fetch(`/api/trips/${projectName}`);
+                const trips = await response.json();
+                
+                if (trips.length === 0) {
+                    document.getElementById('trip-list').innerHTML = '<p style="text-align: center; color: var(--text-muted); margin-top: 40px;">No valid driving trips found in this file.</p>';
+                    return;
+                }
+
+                renderSidebar(trips);
+                drawMap(trips);
+            } catch (err) {
+                document.getElementById('trip-list').innerHTML = `<p style="color: red;">Error loading trips: ${err}</p>`;
+            }
+        }
+
+        function renderSidebar(trips) {
+            const container = document.getElementById('trip-list');
+            container.innerHTML = ''; // Clear the loading text
+            
+            let totalMiles = 0;
+            
+            trips.forEach(trip => {
+                totalMiles += trip.distance_miles;
+                const card = document.createElement('div');
+                card.className = 'trip-card';
+                
+                // Simple formatting for the UI
+                const startTime = new Date(trip.start_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                const endTime = new Date(trip.end_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                
+                card.innerHTML = `
+                    <div class="trip-header">
+                        <span>${trip.date} | ${startTime} - ${endTime}</span>
+                    </div>
+                    <div class="trip-distance">${trip.distance_miles.toFixed(1)} mi</div>
+                    <div class="btn-group">
+                        <button class="btn-commute" onclick="alert('Database tagging coming soon!')">🚗 Commute</button>
+                        <button class="btn-work" onclick="alert('Database tagging coming soon!')">💼 Work</button>
+                        <button class="btn-personal" onclick="alert('Database tagging coming soon!')">🏠 Personal</button>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+            
+            document.getElementById('stat-total').innerText = totalMiles.toFixed(1);
+        }
+
+        function drawMap(trips) {
+            if (currentLayer) map.removeLayer(currentLayer);
+            const markers = [];
+            const polylinePoints = [];
+
+            trips.forEach(trip => {
+                polylinePoints.push([trip.start_lat, trip.start_lng]);
+                polylinePoints.push([trip.end_lat, trip.end_lng]);
+                
+                // Add a yellow marker for every stop
+                const marker = L.circleMarker([trip.start_lat, trip.start_lng], {
+                    radius: 5, fillColor: "#f59e0b", color: "#000", weight: 1, opacity: 1, fillOpacity: 1
+                }).bindPopup(`<b>${trip.date}</b><br>Distance: ${trip.distance_miles.toFixed(1)} mi`);
+                markers.push(marker);
+            });
+
+            // Draw the connecting route line in blue
+            const line = L.polyline(polylinePoints, {color: '#3b82f6', weight: 2, opacity: 0.5});
+            currentLayer = L.layerGroup([...markers, line]).addTo(map);
+            
+            // Auto-zoom the map to fit all your driving routes
+            if (polylinePoints.length > 0) {
+                map.fitBounds(line.getBounds());
+            }
+        }
+    </script>
+</body>
+</html>

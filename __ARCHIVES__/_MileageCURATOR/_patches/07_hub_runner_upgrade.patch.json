@@ -1,0 +1,49 @@
+{
+  "files": [
+    {
+      "path": "_dev_tools/analyze_timeline_schema.py",
+      "hunks": [
+        {
+          "description": "Inject metadata into the schema analyzer",
+          "search_block": "import json\nfrom pathlib import Path\n",
+          "replace_block": "TOOL_METADATA = {\n    \"name\": \"Timeline Schema Analyzer\",\n    \"description\": \"Maps the nested skeleton of a massive JSON file without loading all the data.\",\n    \"usage\": \"Run without arguments. Adjust the target_file path in the script if needed.\"\n}\n\nimport json\nfrom pathlib import Path\n"
+        }
+      ]
+    },
+    {
+      "path": "_dev_tools/sql_schema_mapper.py",
+      "hunks": [
+        {
+          "description": "Inject metadata into the SQL mapper",
+          "search_block": "import json\nimport sqlite3\n",
+          "replace_block": "TOOL_METADATA = {\n    \"name\": \"SQL Schema Mapper\",\n    \"description\": \"Flattens JSON paths into a queryable SQLite database.\",\n    \"usage\": \"Run without arguments. Creates a schema_map.db in the workspace.\"\n}\n\nimport json\nimport sqlite3\n"
+        }
+      ]
+    },
+    {
+      "path": "_dev_tools/dev_tools_hub.py",
+      "hunks": [
+        {
+          "description": "Import threading, subprocess, and sys for the runner",
+          "search_block": "import os\nimport ast\nimport tkinter as tk\n",
+          "replace_block": "import os\nimport ast\nimport sys\nimport subprocess\nimport threading\nimport tkinter as tk\n"
+        },
+        {
+          "description": "Add Runner UI and Console below the Copy button",
+          "search_block": "        self.btn_copy.pack(anchor=\"e\")\n\n    def populate_list(self):\n",
+          "replace_block": "        self.btn_copy.pack(side=\"right\")\n\n        # --- RUNNER UI ---\n        run_frame = tk.Frame(details_frame, bg=BG_CARD)\n        run_frame.pack(fill=\"x\", pady=(15, 5))\n        tk.Label(run_frame, text=\"Args:\", bg=BG_CARD, fg=TEXT_MAIN).pack(side=\"left\")\n        self.entry_args = tk.Entry(run_frame, bg=BG_DARK, fg=TEXT_MAIN, insertbackground=TEXT_MAIN, borderwidth=1, relief=\"solid\")\n        self.entry_args.pack(side=\"left\", fill=\"x\", expand=True, padx=10)\n        self.btn_run = tk.Button(run_frame, text=\"▶ Run Tool\", bg=\"#10b981\", fg=\"#121212\", font=(\"Segoe UI\", 10, \"bold\"), borderwidth=0, padx=15, pady=5, command=self.run_tool, state=\"disabled\", cursor=\"hand2\")\n        self.btn_run.pack(side=\"right\")\n\n        # --- CONSOLE OUTPUT ---\n        tk.Label(details_frame, text=\"Terminal Output:\", bg=BG_CARD, fg=TEXT_MUTED).pack(anchor=\"w\", pady=(10, 0))\n        self.txt_console = tk.Text(details_frame, bg=\"#000000\", fg=\"#00ff00\", font=(\"Consolas\", 10), height=10, borderwidth=1, relief=\"solid\")\n        self.txt_console.pack(fill=\"both\", expand=True, pady=(5, 0))\n        self.txt_console.insert(tk.END, \"Ready...\\n\")\n        self.txt_console.config(state=\"disabled\")\n\n    def populate_list(self):\n"
+        },
+        {
+          "description": "Enable Run button on select",
+          "search_block": "        self.btn_copy.config(state=\"normal\", text=\"Copy Instructions for Agent\", bg=ACCENT)\n        self.selected_tool_text = f\"I want to use the local tool '{tool.get('name')}'.\\nFilename: {tool.get('filename')}\\nDescription: {tool.get('description')}\\nUsage context: {tool.get('usage')}\\n\\nPlease provide the exact terminal command or JSON patch I need to run this tool to achieve my next goal.\"\n\n    def copy_to_clipboard(self):\n",
+          "replace_block": "        self.btn_copy.config(state=\"normal\", text=\"Copy Instructions for Agent\", bg=ACCENT)\n        self.btn_run.config(state=\"normal\")\n        self.selected_tool_text = f\"I want to use the local tool '{tool.get('name')}'.\\nFilename: {tool.get('filename')}\\nDescription: {tool.get('description')}\\nUsage context: {tool.get('usage')}\\n\\nPlease provide the exact terminal command or JSON patch I need to run this tool to achieve my next goal.\"\n\n    def copy_to_clipboard(self):\n"
+        },
+        {
+          "description": "Add the execution and threading logic",
+          "search_block": "        self.clipboard_clear()\n        self.clipboard_append(self.selected_tool_text)\n        self.btn_copy.config(text=\"Copied!\", bg=\"#10b981\") # Turn green temporarily\n\nif __name__ == \"__main__\":\n",
+          "replace_block": "        self.clipboard_clear()\n        self.clipboard_append(self.selected_tool_text)\n        self.btn_copy.config(text=\"Copied!\", bg=\"#10b981\")\n\n    def run_tool(self):\n        selection = self.tool_listbox.curselection()\n        if not selection: return\n        tool = self.tools_data[selection[0]]\n        script_path = Path(__file__).parent / tool['filename']\n        args = self.entry_args.get().strip().split()\n        \n        self.txt_console.config(state=\"normal\")\n        self.txt_console.delete(\"1.0\", tk.END)\n        self.txt_console.insert(tk.END, f\"> Running: {tool['filename']} {' '.join(args)}\\n\\n\")\n        self.txt_console.config(state=\"disabled\")\n        self.btn_run.config(state=\"disabled\", text=\"Running...\")\n\n        def thread_target():\n            cmd = [sys.executable, str(script_path)] + args\n            process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1)\n            for line in iter(process.stdout.readline, ''):\n                self.after(0, self._append_console, line)\n            process.stdout.close()\n            process.wait()\n            self.after(0, self._run_finished, process.returncode)\n\n        threading.Thread(target=thread_target, daemon=True).start()\n\n    def _append_console(self, text):\n        self.txt_console.config(state=\"normal\")\n        self.txt_console.insert(tk.END, text)\n        self.txt_console.see(tk.END)\n        self.txt_console.config(state=\"disabled\")\n\n    def _run_finished(self, returncode):\n        self._append_console(f\"\\n[Process exited with code {returncode}]\\n\")\n        self.btn_run.config(state=\"normal\", text=\"▶ Run Tool\")\n\nif __name__ == \"__main__\":\n"
+        }
+      ]
+    }
+  ]
+}
