@@ -1,5 +1,0 @@
-fastapi
-gensim
-pydantic
-scikit-learn
-uvicorn

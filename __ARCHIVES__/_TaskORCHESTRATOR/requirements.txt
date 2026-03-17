@@ -1,5 +1,0 @@
-tk
-ollama
-requests
-# Recommended additions for the new architecture:
-typing-extensions  # Supports advanced type hinting used in MS files [cite: 70, 77]
