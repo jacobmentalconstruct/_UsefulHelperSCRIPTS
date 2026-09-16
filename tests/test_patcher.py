@@ -124,6 +124,7 @@ class SessionTests(unittest.TestCase):
         self.assertFalse((exported / ".parts").exists())
         self.assertTrue((exported / "src" / "patcher.py").is_file())
         self.assertTrue((exported / "src" / "patcher_ui.py").is_file())
+        self.assertTrue((exported / "src" / "text_toucher.py").is_file())
         check = subprocess.run([
             sys.executable, "-B", "-c",
             "import runpy, sys; runpy.run_module('src.app', run_name='smoke'); "
@@ -248,7 +249,7 @@ class PatcherUITests(unittest.TestCase):
         before = dict(self.app.folder_item_states)
         with patch("src.app.tk.Menu") as menu:
             self.app.on_file_context_menu(SimpleNamespace(keysym="F10"))
-            menu.return_value.add_command.assert_called_once()
+            self.assertEqual(menu.return_value.add_command.call_count, 2)
         self.assertEqual(self.app.folder_item_states, before)
 
     def test_save_waits_for_capture(self):

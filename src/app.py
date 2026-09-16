@@ -28,9 +28,11 @@ import tkinter.font as tkFont
 if __package__:
     from .patcher import PatchError, validate_target
     from .patcher_ui import PatcherWindow
+    from .text_toucher import TextToucherWindow
 else:
     from patcher import PatchError, validate_target
     from patcher_ui import PatcherWindow
+    from text_toucher import TextToucherWindow
 # === [SECTION: IMPORTS] END ===
 
 
@@ -1869,6 +1871,14 @@ class ProjectMapperApp:
             allowed = False
         menu.add_command(label=label, command=lambda: self.open_tokenizing_patcher(path),
                          state="normal" if allowed else "disabled")
+        folder = path if path.is_dir() else path.parent
+        can_create = folder.is_dir()
+        try:
+            validate_target(folder)
+        except PatchError:
+            can_create = False
+        menu.add_command(label="New Text File…", command=lambda: self.open_text_toucher(folder),
+                         state="normal" if can_create else "disabled")
         try:
             menu.tk_popup(tree.winfo_rootx() + 40 if keyboard else event.x_root,
                           tree.winfo_rooty() + 40 if keyboard else event.y_root)
@@ -1883,10 +1893,17 @@ class ProjectMapperApp:
             messagebox.showerror("Cannot open patcher", str(exc), parent=self.root)
             return None
 
+    def open_text_toucher(self, folder):
+        try:
+            return TextToucherWindow(self, folder)
+        except (OSError, PatchError) as exc:
+            messagebox.showerror("Cannot create file", str(exc), parent=self.root)
+            return None
+
     def file_transformed(self, path):
         self.transformed_paths.add(Path(path).resolve())
         self.latest_snapshot_path = None
-        self.log_message(f"Saved transformed file: {path}. Compile a new snapshot before exporting.")
+        self.log_message(f"Saved file: {path}. Compile a new snapshot before exporting.")
         self.request_rescan_tree_silent()
 
     def request_rescan_tree(self):

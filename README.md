@@ -110,6 +110,27 @@ is not included in vendor exports, and is protected from patcher writes. It can
 be removed without affecting the application. Whole-project transformations are
 not implemented yet.
 
+## Creating New Text Files
+
+Right-click a folder or file and choose **New Text File…** to open TextTOUCHER.
+The destination starts at the selected folder, or beside the selected file.
+**Choose Folder…** changes the destination.
+
+Enter a name, choose an extension, and optionally paste or type content. An
+extension typed in the name takes precedence over the preset. Choose **(None)**
+for an extensionless file; dotfiles such as `.gitignore` keep their exact names.
+**Append date/time to filename** adds a timestamp before the extension.
+
+**Create File** writes UTF-8 text exactly as entered (including empty content),
+refreshes the project tree, and requires a fresh snapshot before exporting in the
+current session. Files matching exclusion rules remain hidden until allowed.
+The form clears after success so another file can be created in the same folder.
+Existing files are never overwritten, and failed creation keeps the form content.
+The `.parts/` reference folder is protected from creation as well as patching.
+
+The implementation is in `src/text_toucher.py`; it has no dependency on the
+reference script or `.parts/` folder.
+
 ## Blank-Slate Vendor Export
 
 ProjectMapper can export a clean, vendible copy of itself for external testing.
