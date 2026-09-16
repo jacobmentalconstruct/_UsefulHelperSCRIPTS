@@ -1,0 +1,3 @@
+# Training data files are excluded from version control.
+# Run prepare_dataset.py to regenerate train.jsonl from your logs.
+*.jsonl

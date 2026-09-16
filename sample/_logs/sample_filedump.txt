@@ -1,0 +1,178 @@
+Dump: C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\sample
+
+
+--------------------------------------------------------------------------------
+FILE: .gitignore
+--------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# Python Caches & Bytecode
+# -----------------------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# -----------------------------------------------------------------------------
+# Virtual Environments
+# -----------------------------------------------------------------------------
+venv/
+env/
+.venv/
+ENV/
+env.bak/
+
+# -----------------------------------------------------------------------------
+# Build / Distribution Artifacts
+# -----------------------------------------------------------------------------
+build/
+dist/
+*.egg-info/
+*.egg
+.eggs/
+pip-wheel-metadata/
+
+# -----------------------------------------------------------------------------
+# IDE / Editor Files
+# -----------------------------------------------------------------------------
+.vscode/
+.vscode-test/
+.idea/
+*.code-workspace
+
+# -----------------------------------------------------------------------------
+# OS-Level Junk
+# -----------------------------------------------------------------------------
+Thumbs.db
+Desktop.ini
+.DS_Store
+*.swp
+*.tmp
+*.bak
+
+# -----------------------------------------------------------------------------
+# Logs / Runtime Output
+# -----------------------------------------------------------------------------
+*.log
+logs/
+*.out
+
+# -----------------------------------------------------------------------------
+# Tkinter & App Temp Files
+# -----------------------------------------------------------------------------
+__appcache__/
+*.db-journal
+
+# -----------------------------------------------------------------------------
+# Python-specific Dev Tools
+# -----------------------------------------------------------------------------
+pytest_cache/
+.coverage
+.tox/
+.mypy_cache/
+.pytest_cache/
+.cache/
+
+# -----------------------------------------------------------------------------
+# Project-Specific Exclusions
+# -----------------------------------------------------------------------------
+# Prevent accidental inclusion of personal configurations or secrets.
+local_settings.json
+config.local.json
+secrets.json
+
+# -----------------------------------------------------------------------------
+# Ignore the user’s entire Windows PATH junk accidentally copied in
+# -----------------------------------------------------------------------------
+$RECYCLE.BIN/
+
+# -----------------------------------------------------------------------------
+# If this helper script sits inside UsefulHelperScripts,
+# ensure nothing outside this subfolder accidentally gets tracked.
+# (Comment out i
+
+--------------------------------------------------------------------------------
+FILE: LICENSE.md
+--------------------------------------------------------------------------------
+MIT License
+
+Copyright (c) 2025 Jacob Lambert
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+--------------------------------------------------------------------------------
+FILE: README.md
+--------------------------------------------------------------------------------
+# REPLACE WITH README
+
+
+--------------------------------------------------------------------------------
+FILE: requirements.txt
+--------------------------------------------------------------------------------
+# UiMAPPER requirements
+# This project is intentionally stdlib-only for runtime.
+# (Tkinter ships with the standard Python installer on Windows/macOS and many Linux distros.)
+# If you're on Linux and Tkinter is missing, install your distro package (e.g. python3-tk).
+
+# No pip dependencies required.
+
+--------------------------------------------------------------------------------
+FILE: setup_env.bat
+--------------------------------------------------------------------------------
+@echo off
+echo [SYSTEM] Initializing new project environment...
+
+:: 1. Create the venv if it doesn't exist
+if not exist .venv (
+    echo [SYSTEM] Creating .venv...
+    py -m venv .venv
+)
+
+:: 2. Upgrade pip and install requirements
+echo [SYSTEM] Installing dependencies...
+.venv\Scripts\python.exe -m pip install --upgrade pip
+if exist requirements.txt (
+    .venv\Scripts\pip install -r requirements.txt
+)
+
+echo.
+echo [SUCCESS] Environment ready!
+echo You can now open this folder in VS Code or launch via scripts_menu.py
+pause
+--------------------------------------------------------------------------------
+FILE: src\app.py
+--------------------------------------------------------------------------------
+"""
+app.py is the dumb entry oint that fires up and monitors the app state and the ui.py & backend.py which are he orchestraion layer. 
+------
+
+
+
+--------------------------------------------------------------------------------
+FILE: src\orchestrators\backend.py
+--------------------------------------------------------------------------------
+"""
+backend.py orchestrates managers and/or microservices
+----------
+
+--------------------------------------------------------------------------------
+FILE: src\orchestrators\ui.py
+--------------------------------------------------------------------------------
+"""
+ui.py orchestrates managers and/or microservices
+-----

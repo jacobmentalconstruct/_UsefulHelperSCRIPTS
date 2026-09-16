@@ -1,0 +1,621 @@
+{
+  "source": "_samples\\client_map.kmz::doc.kml",
+  "root_tag": "kml",
+  "tag_counts": {
+    "styleUrl": 228,
+    "name": 185,
+    "Placemark": 174,
+    "coordinates": 174,
+    "Point": 171,
+    "scale": 104,
+    "Style": 54,
+    "Pair": 54,
+    "key": 54,
+    "IconStyle": 52,
+    "Icon": 52,
+    "href": 52,
+    "LabelStyle": 52,
+    "color": 40,
+    "description": 36,
+    "BalloonStyle": 36,
+    "text": 36,
+    "StyleMap": 27,
+    "ExtendedData": 18,
+    "Data": 18,
+    "value": 18,
+    "Folder": 10,
+    "hotSpot": 4,
+    "LineString": 3,
+    "tessellate": 3,
+    "LineStyle": 2,
+    "width": 2,
+    "kml": 1,
+    "Document": 1
+  },
+  "path_counts": {
+    "/kml/Document/Folder/Placemark": 174,
+    "/kml/Document/Folder/Placemark/name": 174,
+    "/kml/Document/Folder/Placemark/styleUrl": 174,
+    "/kml/Document/Folder/Placemark/Point": 171,
+    "/kml/Document/Folder/Placemark/Point/coordinates": 171,
+    "/kml/Document/Style": 54,
+    "/kml/Document/StyleMap/Pair": 54,
+    "/kml/Document/StyleMap/Pair/key": 54,
+    "/kml/Document/StyleMap/Pair/styleUrl": 54,
+    "/kml/Document/Style/IconStyle": 52,
+    "/kml/Document/Style/IconStyle/scale": 52,
+    "/kml/Document/Style/IconStyle/Icon": 52,
+    "/kml/Document/Style/IconStyle/Icon/href": 52,
+    "/kml/Document/Style/LabelStyle": 52,
+    "/kml/Document/Style/LabelStyle/scale": 52,
+    "/kml/Document/Style/IconStyle/color": 38,
+    "/kml/Document/Style/BalloonStyle": 36,
+    "/kml/Document/Style/BalloonStyle/text": 36,
+    "/kml/Document/Folder/Placemark/description": 35,
+    "/kml/Document/StyleMap": 27,
+    "/kml/Document/Folder/Placemark/ExtendedData": 18,
+    "/kml/Document/Folder/Placemark/ExtendedData/Data": 18,
+    "/kml/Document/Folder/Placemark/ExtendedData/Data/value": 18,
+    "/kml/Document/Folder": 10,
+    "/kml/Document/Folder/name": 10,
+    "/kml/Document/Style/IconStyle/hotSpot": 4,
+    "/kml/Document/Folder/Placemark/LineString": 3,
+    "/kml/Document/Folder/Placemark/LineString/tessellate": 3,
+    "/kml/Document/Folder/Placemark/LineString/coordinates": 3,
+    "/kml/Document/Style/LineStyle": 2,
+    "/kml/Document/Style/LineStyle/color": 2,
+    "/kml/Document/Style/LineStyle/width": 2,
+    "/kml": 1,
+    "/kml/Document": 1,
+    "/kml/Document/name": 1,
+    "/kml/Document/description": 1
+  },
+  "schema_by_path": {
+    "/kml": {
+      "tag": "kml",
+      "attributes": [],
+      "has_text": false,
+      "child_tags": [
+        "Document"
+      ]
+    },
+    "/kml/Document": {
+      "tag": "Document",
+      "attributes": [],
+      "has_text": false,
+      "child_tags": [
+        "Folder",
+        "Style",
+        "StyleMap",
+        "description",
+        "name"
+      ]
+    },
+    "/kml/Document/name": {
+      "tag": "name",
+      "attributes": [],
+      "has_text": true,
+      "child_tags": []
+    },
+    "/kml/Document/description": {
+      "tag": "description",
+      "attributes": [],
+      "has_text": false,
+      "child_tags": []
+    },
+    "/kml/Document/Style": {
+      "tag": "Style",
+      "attributes": [
+        "id"
+      ],
+      "has_text": false,
+      "child_tags": [
+        "BalloonStyle",
+        "IconStyle",
+        "LabelStyle",
+        "LineStyle"
+      ]
+    },
+    "/kml/Document/Style/IconStyle": {
+      "tag": "IconStyle",
+      "attributes": [],
+      "has_text": false,
+      "child_tags": [
+        "Icon",
+        "color",
+        "hotSpot",
+        "scale"
+      ]
+    },
+    "/kml/Document/Style/IconStyle/scale": {
+      "tag": "scale",
+      "attributes": [],
+      "has_text": true,
+      "child_tags": []
+    },
+    "/kml/Document/Style/IconStyle/Icon": {
+      "tag": "Icon",
+      "attributes": [],
+      "has_text": false,
+      "child_tags": [
+        "href"
+      ]
+    },
+    "/kml/Document/Style/IconStyle/Icon/href": {
+      "tag": "href",
+      "attributes": [],
+      "has_text": true,
+      "child_tags": []
+    },
+    "/kml/Document/Style/LabelStyle": {
+      "tag": "LabelStyle",
+      "attributes": [],
+      "has_text": false,
+      "child_tags": [
+        "scale"
+      ]
+    },
+    "/kml/Document/Style/LabelStyle/scale": {
+      "tag": "scale",
+      "attributes": [],
+      "has_text": true,
+      "child_tags": []
+    },
+    "/kml/Document/Style/BalloonStyle": {
+      "tag": "BalloonStyle",
+      "attributes": [],
+      "has_text": false,
+      "child_tags": [
+        "text"
+      ]
+    },
+    "/kml/Document/Style/BalloonStyle/text": {
+      "tag": "text",
+      "attributes": [],
+      "has_text": true,
+      "child_tags": []
+    },
+    "/kml/Document/StyleMap": {
+      "tag": "StyleMap",
+      "attributes": [
+        "id"
+      ],
+      "has_text": false,
+      "child_tags": [
+        "Pair"
+      ]
+    },
+    "/kml/Document/StyleMap/Pair": {
+      "tag": "Pair",
+      "attributes": [],
+      "has_text": false,
+      "child_tags": [
+        "key",
+        "styleUrl"
+      ]
+    },
+    "/kml/Document/StyleMap/Pair/key": {
+      "tag": "key",
+      "attributes": [],
+      "has_text": true,
+      "child_tags": []
+    },
+    "/kml/Document/StyleMap/Pair/styleUrl": {
+      "tag": "styleUrl",
+      "attributes": [],
+      "has_text": true,
+      "child_tags": []
+    },
+    "/kml/Document/Style/IconStyle/hotSpot": {
+      "tag": "hotSpot",
+      "attributes": [
+        "x",
+        "xunits",
+        "y",
+        "yunits"
+      ],
+      "has_text": false,
+      "child_tags": []
+    },
+    "/kml/Document/Style/IconStyle/color": {
+      "tag": "color",
+      "attributes": [],
+      "has_text": true,
+      "child_tags": []
+    },
+    "/kml/Document/Style/LineStyle": {
+      "tag": "LineStyle",
+      "attributes": [],
+      "has_text": false,
+      "child_tags": [
+        "color",
+        "width"
+      ]
+    },
+    "/kml/Document/Style/LineStyle/color": {
+      "tag": "color",
+      "attributes": [],
+      "has_text": true,
+      "child_tags": []
+    },
+    "/kml/Document/Style/LineStyle/width": {
+      "tag": "width",
+      "attributes": [],
+      "has_text": true,
+      "child_tags": []
+    },
+    "/kml/Document/Folder": {
+      "tag": "Folder",
+      "attributes": [],
+      "has_text": false,
+      "child_tags": [
+        "Placemark",
+        "name"
+      ]
+    },
+    "/kml/Document/Folder/name": {
+      "tag": "name",
+      "attributes": [],
+      "has_text": true,
+      "child_tags": []
+    },
+    "/kml/Document/Folder/Placemark": {
+      "tag": "Placemark",
+      "attributes": [],
+      "has_text": false,
+      "child_tags": [
+        "ExtendedData",
+        "LineString",
+        "Point",
+        "description",
+        "name",
+        "styleUrl"
+      ]
+    },
+    "/kml/Document/Folder/Placemark/name": {
+      "tag": "name",
+      "attributes": [],
+      "has_text": true,
+      "child_tags": []
+    },
+    "/kml/Document/Folder/Placemark/styleUrl": {
+      "tag": "styleUrl",
+      "attributes": [],
+      "has_text": true,
+      "child_tags": []
+    },
+    "/kml/Document/Folder/Placemark/Point": {
+      "tag": "Point",
+      "attributes": [],
+      "has_text": false,
+      "child_tags": [
+        "coordinates"
+      ]
+    },
+    "/kml/Document/Folder/Placemark/Point/coordinates": {
+      "tag": "coordinates",
+      "attributes": [],
+      "has_text": true,
+      "child_tags": []
+    },
+    "/kml/Document/Folder/Placemark/description": {
+      "tag": "description",
+      "attributes": [],
+      "has_text": true,
+      "child_tags": []
+    },
+    "/kml/Document/Folder/Placemark/ExtendedData": {
+      "tag": "ExtendedData",
+      "attributes": [],
+      "has_text": false,
+      "child_tags": [
+        "Data"
+      ]
+    },
+    "/kml/Document/Folder/Placemark/ExtendedData/Data": {
+      "tag": "Data",
+      "attributes": [
+        "name"
+      ],
+      "has_text": false,
+      "child_tags": [
+        "value"
+      ]
+    },
+    "/kml/Document/Folder/Placemark/ExtendedData/Data/value": {
+      "tag": "value",
+      "attributes": [],
+      "has_text": true,
+      "child_tags": []
+    },
+    "/kml/Document/Folder/Placemark/LineString": {
+      "tag": "LineString",
+      "attributes": [],
+      "has_text": false,
+      "child_tags": [
+        "coordinates",
+        "tessellate"
+      ]
+    },
+    "/kml/Document/Folder/Placemark/LineString/tessellate": {
+      "tag": "tessellate",
+      "attributes": [],
+      "has_text": true,
+      "child_tags": []
+    },
+    "/kml/Document/Folder/Placemark/LineString/coordinates": {
+      "tag": "coordinates",
+      "attributes": [],
+      "has_text": true,
+      "child_tags": []
+    }
+  },
+  "tree_skeleton": {
+    "tag": "kml",
+    "attributes": [],
+    "children": {
+      "Document": {
+        "tag": "Document",
+        "attributes": [],
+        "children": {
+          "name": {
+            "tag": "name",
+            "type": "text"
+          },
+          "description": {
+            "tag": "description",
+            "type": "empty"
+          },
+          "Style": [
+            {
+              "tag": "Style",
+              "attributes": [
+                "id"
+              ],
+              "children": {
+                "IconStyle": {
+                  "tag": "IconStyle",
+                  "attributes": [],
+                  "children": {
+                    "scale": {
+                      "tag": "scale",
+                      "type": "text"
+                    },
+                    "Icon": {
+                      "tag": "Icon",
+                      "attributes": [],
+                      "children": {
+                        "href": {
+                          "tag": "href",
+                          "type": "text"
+                        }
+                      }
+                    }
+                  }
+                },
+                "LabelStyle": {
+                  "tag": "LabelStyle",
+                  "attributes": [],
+                  "children": {
+                    "scale": {
+                      "tag": "scale",
+                      "type": "text"
+                    }
+                  }
+                },
+                "BalloonStyle": {
+                  "tag": "BalloonStyle",
+                  "attributes": [],
+                  "children": {
+                    "text": {
+                      "tag": "text",
+                      "type": "text"
+                    }
+                  }
+                }
+              }
+            }
+          ],
+          "StyleMap": [
+            {
+              "tag": "StyleMap",
+              "attributes": [
+                "id"
+              ],
+              "children": {
+                "Pair": [
+                  {
+                    "tag": "Pair",
+                    "attributes": [],
+                    "children": {
+                      "key": {
+                        "tag": "key",
+                        "type": "text"
+                      },
+                      "styleUrl": {
+                        "tag": "styleUrl",
+                        "type": "text"
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          ],
+          "Folder": [
+            {
+              "tag": "Folder",
+              "attributes": [],
+              "children": {
+                "name": {
+                  "tag": "name",
+                  "type": "text"
+                },
+                "Placemark": [
+                  {
+                    "tag": "Placemark",
+                    "attributes": [],
+                    "children": {
+                      "name": {
+                        "tag": "name",
+                        "type": "text"
+                      },
+                      "styleUrl": {
+                        "tag": "styleUrl",
+                        "type": "text"
+                      },
+                      "Point": {
+                        "tag": "Point",
+                        "attributes": [],
+                        "children": {
+                          "coordinates": {
+                            "tag": "coordinates",
+                            "type": "text"
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      }
+    }
+  },
+  "placemark_summary": {
+    "count": 174,
+    "geometry_counts": {
+      "Point": 171,
+      "LineString": 3
+    },
+    "sample_placemarks": [
+      {
+        "name": "Aberdeen apt. T2",
+        "geometry_type": "Point",
+        "has_coordinates": true
+      },
+      {
+        "name": "Anderson, J Th2",
+        "geometry_type": "Point",
+        "has_coordinates": true
+      },
+      {
+        "name": "Anderson, R T5",
+        "geometry_type": "Point",
+        "has_coordinates": true
+      },
+      {
+        "name": "Anderson Residence M2 & W2",
+        "geometry_type": "Point",
+        "has_coordinates": true
+      },
+      {
+        "name": "Apungu T2",
+        "geometry_type": "Point",
+        "has_coordinates": true
+      },
+      {
+        "name": "Badzin TH1",
+        "geometry_type": "Point",
+        "has_coordinates": true
+      },
+      {
+        "name": "Barry, E F2",
+        "geometry_type": "Point",
+        "has_coordinates": true
+      },
+      {
+        "name": "Battle Creek Regional Park W3",
+        "geometry_type": "Point",
+        "has_coordinates": true
+      },
+      {
+        "name": "Berquist F2",
+        "geometry_type": "Point",
+        "has_coordinates": true
+      },
+      {
+        "name": "Blackwood Th2",
+        "geometry_type": "Point",
+        "has_coordinates": true
+      },
+      {
+        "name": "Boreen, J W5 EOW",
+        "geometry_type": "Point",
+        "has_coordinates": true
+      },
+      {
+        "name": "Browne T5",
+        "geometry_type": "Point",
+        "has_coordinates": true
+      },
+      {
+        "name": "Bustillos T2",
+        "geometry_type": "Point",
+        "has_coordinates": true
+      },
+      {
+        "name": "Caissie M5",
+        "geometry_type": "Point",
+        "has_coordinates": true
+      },
+      {
+        "name": "Campisi Th2",
+        "geometry_type": "Point",
+        "has_coordinates": true
+      },
+      {
+        "name": "Carroll T5",
+        "geometry_type": "Point",
+        "has_coordinates": true
+      },
+      {
+        "name": "Cepek M2",
+        "geometry_type": "Point",
+        "has_coordinates": true
+      },
+      {
+        "name": "Chaffee W2",
+        "geometry_type": "Point",
+        "has_coordinates": true
+      },
+      {
+        "name": "Chapman W2",
+        "geometry_type": "Point",
+        "has_coordinates": true
+      },
+      {
+        "name": "Chapoton M2",
+        "geometry_type": "Point",
+        "has_coordinates": true
+      },
+      {
+        "name": "Charpentier Th2",
+        "geometry_type": "Point",
+        "has_coordinates": true
+      },
+      {
+        "name": "Chundoff Th2",
+        "geometry_type": "Point",
+        "has_coordinates": true
+      },
+      {
+        "name": "Clark TH2",
+        "geometry_type": "Point",
+        "has_coordinates": true
+      },
+      {
+        "name": "Conboy W2",
+        "geometry_type": "Point",
+        "has_coordinates": true
+      },
+      {
+        "name": "Cone Th2",
+        "geometry_type": "Point",
+        "has_coordinates": true
+      }
+    ]
+  }
+}

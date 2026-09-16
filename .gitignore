@@ -1,0 +1,118 @@
+# ===========================
+# 🐍 Python Essentials
+# ===========================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# ===========================
+#  virtualenv (Local Environments)
+# ===========================
+# Typical names for virtual environments
+venv/
+.venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+.claude/
+claude/
+.mindshard/
+mindshard/
+
+# ===========================
+# 🛡️ Secrets & Security (NEVER COMMIT THESE)
+# ===========================
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+secrets.json
+api_keys.txt
+token.json
+
+# ===========================
+# 💾 Databases & Local Data
+# ===========================
+# You usually don't want to commit your actual RAG databases
+*.sqlite
+*.sqlite3
+*.db
+# Unless strictly necessary for the app structure
+!distributable_data.db
+
+# ===========================
+# 🤖 AI / ML Artifacts
+# ===========================
+# Large model weights (too big for standard Git)
+*.ckpt
+*.safetensors
+*.pt
+*.pth
+*.gguf
+*.bin
+*.h5
+*.zip
+*.7z
+
+# Local model folders (if you download Ollama models locally)
+models/
+model_cache/
+
+.claude/
+.claude
+
+# ===========================
+# 🖼️ Generated Media
+# ===========================
+# Don't commit thousands of test images from _FirstHOME
+generated_images/
+output_images/
+temp_generations/
+
+# ===========================
+# 🔧 IDE & OS Settings
+# ===========================
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Mac
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# VS Code
+.vscode/
+*.code-workspace
+
+# ===========================
+# 🚧 WIP / GHOST APPS
+# ===========================
+# Add the folder names of apps you are working on but 
+# aren't ready to push to the suite yet.
+
+____mini-scripts-collection-bin____
+____toy-chest-of-experiments____
+____WIP____
+__dev-scripts__

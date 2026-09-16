@@ -1,0 +1,45 @@
+Project Tree: C:\Users\petya\Documents\Jacob's BIN\_NoStringsPDF
+Generated: 2026-01-13 10:01:04.819220
+
+├── 📁 _utilities-used-for-installation/
+│   ├── 📄 generate_button_icons.py
+│   ├── 📄 generate_icon.py
+│   ├── 📄 NoStringsPDF_Release.zip
+│   ├── 📄 package-the-app.bat
+│   └── 📄 setup_env.bat
+├── 📁 assets/
+│   ├── 📄 extract.png
+│   ├── 📄 insert.png
+│   ├── 📄 interleave.png
+│   ├── 📄 next.png
+│   ├── 📄 open.png
+│   ├── 📄 prev.png
+│   ├── 📄 rot_l.png
+│   ├── 📄 rot_r.png
+│   ├── 📄 save.png
+│   ├── 📄 split.png
+│   ├── 📄 zoom_in.png
+│   └── 📄 zoom_out.png
+├── 📁 src/
+│   ├── 📁 microservices/
+│   │   ├── 📄 _ContextAggregatorMS.py
+│   │   ├── 📄 _PdfEngineMS.py
+│   │   ├── 📄 _SpinnerThingyMaBobberMS.py
+│   │   ├── 📄 _TkinterAppShellMS.py
+│   │   ├── 📄 _TkinterButtonMS.py
+│   │   ├── 📄 _TkinterThemeManagerMS.py
+│   │   ├── 📄 _TkinterUniButtonMS.py
+│   │   ├── 📄 _TreeMapperMS.py
+│   │   ├── 📄 base_service.py
+│   │   ├── 📄 document_utils.py
+│   │   └── 📄 microservice_std_lib.py
+│   ├── 📁 orchestrators/
+│   │   └── 📄 ui_orchestrator.py
+│   ├── 📄 __init__.py
+│   └── 📄 app.py
+├── 📄 app.ico
+├── 📄 LICENSE.md
+├── 📄 NoStringsPDF.spec
+├── 📄 README.md
+├── 📄 requirements.txt
+└── 📄 window_layout.json

@@ -1,0 +1,29 @@
+Project Tree: C:\Users\jacob\Documents\_UsefulHelperSCRIPTS\_UsefulHelperScriptsMENU
+Generated: 2026-01-28 10:05:53.534414
+
+├── 📁 _BoilerPlatePythonTEMPLATE/
+│   ├── 📁 src/
+│   │   ├── 📄 __init__.py
+│   │   └── 📄 app.py
+│   ├── 📄 LICENSE.md
+│   ├── 📄 README.md
+│   ├── 📄 requirements.txt
+│   └── 📄 setup_env.bat
+├── 📁 assets/
+│   └── 📁 icons/
+│       └── 📄 _UsefulHelperSCRIPTS.ico
+├── 📁 src/
+│   ├── 📁 microservices/
+│   │   ├── 📄 _ContextAggregatorMS.py
+│   │   └── 📄 _TreeMapperMS.py
+│   ├── 📄 __init__.py
+│   ├── 📄 app.pyw
+│   ├── 📄 app_workingBACKUP_v1.pyw
+│   ├── 📄 app_workingBACKUP_v2.pyw
+│   ├── 📄 app_workingBackup_v3.pyw
+│   ├── 📄 app_workingBACKUP_v4.pyw
+│   └── 📄 app_workingBACKUP_v5.pyw
+├── 📄 _UsefulHelperScriptsMENU.spec
+├── 📄 Iterative App Refactor Tasklist.md
+├── 📄 requirements.txt
+└── 📄 setup_env.bat
