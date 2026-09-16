@@ -5,7 +5,11 @@ from pathlib import Path
 import os
 import re
 import stat
-import tempfile
+
+try:
+    from ..core.writes import create_backup, stage_bytes
+except ImportError:
+    from core.writes import create_backup, stage_bytes
 
 
 class PatchError(ValueError):
@@ -111,7 +115,7 @@ class PatchSession:
         if "\x00" in self.source:
             raise PatchError("Binary files cannot be patched as text.")
 
-    def save(self, result, suffix=None):
+    def save(self, result, suffix=None, backup=False):
         validate_target(self.path)
         if self.path.read_bytes() != self.original_bytes:
             raise PatchError("The target changed on disk. Reload it and validate the patch again.")
@@ -127,15 +131,14 @@ class PatchSession:
         data = (b"\xef\xbb\xbf" if self.bom else b"") + result.encode("utf-8")
         scratch = None
         try:
-            with tempfile.NamedTemporaryFile(dir=destination.parent, prefix=".patch-", delete=False) as stream:
-                scratch = Path(stream.name)
-                stream.write(data)
-                stream.flush()
-                os.fsync(stream.fileno())
-            os.chmod(scratch, stat.S_IMODE(self.path.stat().st_mode))
+            scratch = stage_bytes(destination, data, mode=stat.S_IMODE(self.path.stat().st_mode), prefix=".patch-")
             if self.path.read_bytes() != self.original_bytes:
                 raise PatchError("The target changed during save. Reload before trying again.")
             if suffix is None:
+                if backup:
+                    create_backup(destination, self.original_bytes)
+                if validate_target(self.path).read_bytes() != self.original_bytes:
+                    raise PatchError("The target changed during save. Reload before trying again.")
                 os.replace(scratch, destination)
             else:
                 # Exclusive creation avoids overwriting an existing version.

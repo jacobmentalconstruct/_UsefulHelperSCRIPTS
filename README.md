@@ -4,6 +4,8 @@ ProjectMapper Snapshot Compiler is a small desktop utility for translating a pro
 
 The app scans a selected root folder, displays the project tree, allows files and folders to be included or excluded, and compiles the selected project state into a SQLite database.
 
+Development plans and architecture notes are indexed in [docs/README.md](docs/README.md).
+
 ![ProjectMapper screenshot](assets/Screenshots/Screenshot_ex01.PNG)
 
 ## Core Purpose
@@ -101,15 +103,16 @@ and preserves line endings outside replaced blocks. Patch edits invalidate the
 preview. Saving refuses to overwrite externally changed source files or existing
 version files. Source, diff, and result are separate views; the diff is never saved
 as source. A successful save refreshes the tree and requires a new snapshot before
-exporting in the current app session. There is no automatic backup when overwriting;
-use **Save as version** to retain the original.
+exporting in the current app session. **Keep .bak backup** is opt-in and writes an
+atomic sibling backup immediately before an in-place save.
+Generated `.bak` files follow the built-in exclusion rule so they do not silently
+become part of a later snapshot; the rule can be allowed through the exclusions UI.
 
 The patcher implementation lives in `src/tools/patcher.py` and
 `src/tools/patcher_ui.py`.
 The disposable `.parts/` folder is reference material only: it is never imported,
 is not included in vendor exports, and is protected from patcher writes. It can
-be removed without affecting the application. Whole-project transformations are
-not implemented yet.
+be removed without affecting the application.
 
 ## Creating New Text Files
 
@@ -157,6 +160,58 @@ file or closing the window.
 The editor is implemented in `src/tools/text_editor.py`. The integration keeps the
 reference editor's useful workflow while avoiding its external Qt/pywebview and
 HTML asset dependencies.
+
+## Project Patches
+
+Right-click a folder or empty tree space and choose **Project Patcher…**. A project
+patch uses the same hunk schema as the single-file patcher, grouped by safe relative
+paths:
+
+```json
+{
+  "version": 1,
+  "files": [
+    {
+      "path": "src/app.py",
+      "sha256": "optional-original-file-hash",
+      "hunks": [
+        {"search_block": "old", "replace_block": "new"}
+      ]
+    }
+  ]
+}
+```
+
+Every file is validated against its original content first. The complete multi-file
+diff is shown before a blocking approval dialog. Missing, ambiguous, overlapping,
+duplicate, outside-root, `.parts/`, changed-hash, non-UTF-8, and binary targets stop
+the operation before any file is written. All validated files are rechecked before
+apply; a write failure triggers rollback of files already replaced. Project patches
+currently transform existing text files only. New files, deletions, renames, and
+binary operations remain separate tools.
+
+The project patcher uses the same linked **&** action group as the single-file
+patcher. Unlinked, **Validate / Preview** and **Apply Project Patch** are separate
+steps. Linked, either button validates the complete manifest, displays the current
+diff, and proceeds to the approval dialog; a failed validation stops the chain.
+**Add File…** inserts a safe relative file entry into the manifest so larger patches
+can be authored incrementally without hand-writing every path.
+Enable **Keep .bak backups** when applying to retain the original bytes beside each
+changed file. Backups are created only after validation and before replacement.
+
+## State, diagnostics, and maintenance
+
+Freshness is tracked in one project-state record shared by scans, exclusions,
+file transformations, and snapshot compilation. Any transformation or exclusion
+change invalidates exports until a new snapshot is accepted. The **Diagnostics**
+button performs health checks for imports, the selected root, output write access,
+SQLite availability, and optional `.parts/` isolation, then records the result in the
+log and a small report dialog.
+
+Shared atomic writes, diff accounting, and tool-window styling live under
+`src/core/` and `src/tools/ui_base.py`; the disposable `.parts/` folder is never a
+runtime dependency. Directory sizes are accumulated during the tree walk so nested
+folders are not scanned repeatedly.
 
 ## Blank-Slate Vendor Export
 

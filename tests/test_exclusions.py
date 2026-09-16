@@ -1,3 +1,4 @@
+from tests.support import temporary_directory, tk_root
 import copy
 import contextlib
 import sqlite3
@@ -14,8 +15,7 @@ from src.app import ExclusionPolicy, ProjectMapperApp, S_CHECKED, S_UNCHECKED, c
 
 class PolicyTests(unittest.TestCase):
     def setUp(self):
-        self.temp = tempfile.TemporaryDirectory(dir=Path(__file__).resolve().parent)
-        self.addCleanup(self.temp.cleanup)
+        self.temp = temporary_directory(self)
         self.root = Path(self.temp.name).resolve()
         (self.root / ".gitignore").write_text("cache/\n*.tmp\nsecret/data.txt\n")
         for directory in ("cache", "node_modules", "secret"):
@@ -99,14 +99,12 @@ class PolicyTests(unittest.TestCase):
 
 class ManagerTests(unittest.TestCase):
     def setUp(self):
-        self.temp = tempfile.TemporaryDirectory(dir=Path(__file__).resolve().parent)
-        self.addCleanup(self.temp.cleanup)
+        self.temp = temporary_directory(self)
         self.project = Path(self.temp.name).resolve()
         (self.project / "keep.txt").write_text("keep")
         (self.project / "test.tmp").write_text("temporary")
-        self.root = tk.Tk()
+        self.root = tk_root(self)
         self.root.withdraw()
-        self.addCleanup(self.close_root)
         self.app = ProjectMapperApp(self.root)
         # Keep tests deterministic: run requested workers and queued UI callbacks
         # explicitly, without launching the app's startup scan.
@@ -117,11 +115,6 @@ class ManagerTests(unittest.TestCase):
         self.app.manage_exclusions_popup()
         self.popup = self.app.exclusions_popup
         self.root.update_idletasks()
-
-    def close_root(self):
-        for timer in self.root.tk.call("after", "info"):
-            self.root.after_cancel(timer)
-        self.root.destroy()
 
     def run_scan(self):
         if self.app.scan_after_id is not None:

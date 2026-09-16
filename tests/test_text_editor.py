@@ -1,3 +1,4 @@
+from tests.support import temporary_directory, tk_root
 import gc
 from pathlib import Path
 import tempfile
@@ -11,11 +12,11 @@ from src.app import ProjectMapperApp, scan_project_tree
 class EditorTests(unittest.TestCase):
     def setUp(self):
         gc.collect()
-        self.temp = tempfile.TemporaryDirectory(dir=Path(__file__).parent)
+        self.temp = temporary_directory(self)
         self.folder = Path(self.temp.name).resolve()
         self.path = self.folder / "sample.py"
         self.path.write_bytes(b"print('hello')\r\n")
-        self.root = tk.Tk()
+        self.root = tk_root(self)
         self.root.withdraw()
         self.app = ProjectMapperApp(self.root)
         for timer in self.root.tk.call("after", "info"):
@@ -23,14 +24,6 @@ class EditorTests(unittest.TestCase):
         self.app.selected_root = self.folder
         self.window = self.app.open_text_editor(self.path)
         self.root.update_idletasks()
-
-    def tearDown(self):
-        for timer in self.root.tk.call("after", "info"):
-            self.root.after_cancel(timer)
-        self.root.destroy()
-        self.window = self.app = self.root = None
-        gc.collect()
-        self.temp.cleanup()
 
     def set_content(self, text):
         self.window.editor.delete("1.0", "end")

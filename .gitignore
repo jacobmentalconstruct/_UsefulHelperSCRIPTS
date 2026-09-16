@@ -32,6 +32,9 @@ yarn-error.log*
 logs/
 _logs/
 
+# Local development journal (not an application dependency)
+.dev-log/
+
 # ProjectMapper generated state
 _projectmapper/
 *.sqlite

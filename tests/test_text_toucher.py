@@ -1,3 +1,4 @@
+from tests.support import temporary_directory, tk_root
 import gc
 from datetime import datetime
 from pathlib import Path
@@ -14,8 +15,7 @@ from src.tools.text_toucher import create_text_file, file_name
 
 class FileCreationTests(unittest.TestCase):
     def setUp(self):
-        self.temp = tempfile.TemporaryDirectory(dir=Path(__file__).parent)
-        self.addCleanup(self.temp.cleanup)
+        self.temp = temporary_directory(self)
         self.folder = Path(self.temp.name).resolve()
 
     def test_extensions_and_timestamps(self):
@@ -57,9 +57,9 @@ class FileCreationTests(unittest.TestCase):
 class CreatorUITests(unittest.TestCase):
     def setUp(self):
         gc.collect()
-        self.temp = tempfile.TemporaryDirectory(dir=Path(__file__).parent)
+        self.temp = temporary_directory(self)
         self.folder = Path(self.temp.name).resolve()
-        self.root = tk.Tk()
+        self.root = tk_root(self)
         self.root.withdraw()
         self.app = ProjectMapperApp(self.root)
         for timer in self.root.tk.call("after", "info"):
@@ -68,14 +68,6 @@ class CreatorUITests(unittest.TestCase):
         self.window = self.app.open_text_toucher(self.folder)
         self.assertIsNotNone(self.window)
         self.root.update_idletasks()
-
-    def tearDown(self):
-        for timer in self.root.tk.call("after", "info"):
-            self.root.after_cancel(timer)
-        self.root.destroy()
-        self.window = self.app = self.root = None
-        gc.collect()
-        self.temp.cleanup()
 
     def test_creation_resets_form_refreshes_tree_and_invalidates_snapshot(self):
         self.window.name.set("hello")

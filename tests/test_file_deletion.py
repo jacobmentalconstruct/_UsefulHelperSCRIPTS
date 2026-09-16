@@ -1,21 +1,23 @@
+from tests.support import temporary_directory, tk_root
 from pathlib import Path
 import tempfile
 import unittest
 from unittest.mock import Mock, patch
 
 from src.app import ProjectMapperApp
+from src.core.state import ProjectState
 
 
 class FileDeletionTests(unittest.TestCase):
     def setUp(self):
-        self.temp = tempfile.TemporaryDirectory(dir=Path(__file__).parent)
-        self.addCleanup(self.temp.cleanup)
+        self.temp = temporary_directory(self)
         self.folder = Path(self.temp.name).resolve()
         self.target = self.folder / "delete_me.txt"
         self.target.write_text("original")
         self.app = ProjectMapperApp.__new__(ProjectMapperApp)
         self.app.root = None
         self.app.selected_root = self.folder
+        self.app.project_state = ProjectState(self.folder)
         self.app.running_tasks = set()
         self.app.scan_pending = False
         self.app.transformed_paths = set()

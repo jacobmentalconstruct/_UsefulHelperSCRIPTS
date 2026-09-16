@@ -1,15 +1,17 @@
 """Native ProjectMapper text editor, based on the MonacoVIEWER workflow."""
 
 import re
+import hashlib
 import tkinter as tk
 from tkinter import filedialog, messagebox
 from pathlib import Path
 
 from .patcher import PatchError, PatchSession, validate_target
 from .text_toucher import create_text_file
+from .ui_base import ToolWindowMixin
 
 
-class TextEditorWindow:
+class TextEditorWindow(ToolWindowMixin):
     def __init__(self, app, path, read_only=False):
         self.app = app
         self.colors = app.theme
@@ -17,32 +19,17 @@ class TextEditorWindow:
         self.read_only = read_only
         self.dirty = False
         self.top = tk.Toplevel(app.root)
-        self.top.configure(bg=self.colors["app_bg"])
-        self.top.title(self.title_text())
-        self.top.geometry("1100x760")
-        self.top.minsize(700, 500)
+        self.configure_tool_window(self.title_text(), "1100x760", (700, 500))
         self.top.protocol("WM_DELETE_WINDOW", self.close)
-        self.setup_styles()
         self.build_ui()
         self.editor.insert("1.0", self.session.source)
         self.editor.edit_modified(False)
         self.editor.bind("<<Modified>>", self.changed)
         self.editor.focus_set()
 
-    def setup_styles(self):
-        self.frame_bg = self.colors["panel_bg"]
-
     def title_text(self):
         marker = " •" if self.dirty else ""
         return f"{self.session.path.name}{marker} — Text Editor"
-
-    def frame(self, parent):
-        return tk.Frame(parent, bg=self.frame_bg)
-
-    def button(self, parent, text, command, color=None, **kwargs):
-        color = color or "panel_alt_bg"
-        return self.app._make_button(parent, text, command, self.colors[color],
-                                     self.colors.get(color + "_hover", self.colors["field_bg_alt"]), **kwargs)
 
     def build_ui(self):
         toolbar = self.frame(self.top)
@@ -53,10 +40,8 @@ class TextEditorWindow:
         self.button(toolbar, "Find / Replace", self.show_find_replace).pack(side="left", padx=5)
         self.button(toolbar, "Tokenizing Patcher…", self.open_patcher, "accent").pack(side="left")
         self.read_only_var = tk.BooleanVar(self.top, self.read_only)
-        tk.Checkbutton(toolbar, text="Read-only", variable=self.read_only_var, command=self.toggle_read_only,
-                       bg=self.frame_bg, fg=self.colors["text"], selectcolor=self.colors["tree_bg"],
-                       activebackground=self.frame_bg, activeforeground=self.colors["text"],
-                       font=("Arial", 10)).pack(side="right")
+        self.checkbutton(toolbar, "Read-only", self.read_only_var,
+                         self.toggle_read_only).pack(side="right")
         body = self.frame(self.top)
         body.pack(fill="both", expand=True, padx=12, pady=(0, 8))
         body.rowconfigure(0, weight=1)
@@ -125,7 +110,11 @@ class TextEditorWindow:
             self.status.set("Read-only mode is enabled. Disable it before saving.")
             return
         try:
-            path = self.session.save(self.content())
+            text = self.content()
+            result = self.app.action("text.save", {"path": str(self.session.path), "text": text,
+                "sha256": hashlib.sha256(self.session.original_bytes).hexdigest()})
+            path = Path(result["path"])
+            self.session = PatchSession(path)
         except (OSError, PatchError) as exc:
             self.status.set(f"Save failed: {exc}")
             return
@@ -150,9 +139,14 @@ class TextEditorWindow:
                                             parent=self.top, default="no"):
                     return
                 destination_session = PatchSession(destination)
-                path = destination_session.save(self.content())
+                text = self.content()
+                result = self.app.action("text.save", {"path": str(destination), "text": text,
+                    "sha256": hashlib.sha256(destination_session.original_bytes).hexdigest()})
+                path = Path(result["path"])
             else:
-                path = create_text_file(destination.parent, destination.name, self.content(), "(None)")
+                result = self.app.action("file.create", {"folder": str(destination.parent),
+                    "name": destination.name, "content": self.content(), "extension": "(None)"})
+                path = Path(result["path"])
         except (OSError, PatchError) as exc:
             self.status.set(f"Save As failed: {exc}")
             return

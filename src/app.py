@@ -1,6 +1,6 @@
 # ==============================================================================
 # ProjectMapper Snapshot Compiler
-# Single-file tagged monolith scaffold
+# Tk application shell; shared state, scanning, writes, and tools live in packages.
 # ==============================================================================
 
 # === [SECTION: IMPORTS] BEGIN ===
@@ -26,93 +26,23 @@ import tkinter as tk
 from tkinter import filedialog, scrolledtext, ttk, messagebox
 import tkinter.font as tkFont
 if __package__:
-    from .tools import PatchError, validate_target, PatcherWindow, TextEditorWindow, TextToucherWindow
+    from .tools import (PatchError, validate_target, PatcherWindow, TextEditorWindow,
+                        TextToucherWindow, ProjectPatcherWindow)
+    from .core import ProjectState, collect_diagnostics, format_diagnostics, scan_project_tree
 else:
-    from tools import PatchError, validate_target, PatcherWindow, TextEditorWindow, TextToucherWindow
+    from tools import (PatchError, validate_target, PatcherWindow, TextEditorWindow,
+                       TextToucherWindow, ProjectPatcherWindow)
+    from core import ProjectState, collect_diagnostics, format_diagnostics, scan_project_tree
 # === [SECTION: IMPORTS] END ===
 
 
-# === [SECTION: APP_METADATA] BEGIN ===
-APP_NAME = "ProjectMapper Snapshot Compiler"
-APP_VERSION = "0.3.0-snapshot-compiler"
-SNAPSHOT_SCHEMA_VERSION = "0.1"
-SNAPSHOT_COMPILER_ID = "projectmapper.snapshot_compiler"
-# === [SECTION: APP_METADATA] END ===
+if __package__:
+    from .core.config import *
+else:
+    from core.config import *
 
 
-# === [SECTION: CONSTANTS] BEGIN ===
-APP_DIR = Path(__file__).resolve().parent
-SOURCE_ROOT = APP_DIR.parent
-DEFAULT_ROOT_DIR = APP_DIR
-OUTPUT_ROOT_NAME = "_projectmapper"
-VENDOR_EXPORT_ROOT_NAME = "vendor_exports"
-MAX_TEXT_FILE_SIZE_BYTES = 1_000_000
-TEXT_ENCODING = "utf-8"
 
-S_CHECKED = "checked"
-S_UNCHECKED = "unchecked"
-
-SNAPSHOT_DB_SUFFIX = "snapshot.sqlite3"
-TREE_MD_SUFFIX = "project_tree.md"
-FILEDUMP_MD_SUFFIX = "project_filedump.md"
-MANIFEST_MD_SUFFIX = "snapshot_manifest.md"
-COMBINED_MD_SUFFIX = "project_tree_and_filedump.md"
-
-EXCLUDED_FOLDERS = {
-    "node_modules", ".git", "__pycache__", ".venv", ".mypy_cache",
-    "_logs", "_projectmapper", "dist", "build", ".vscode", ".idea",
-    "target", "out", "bin", "obj", "Debug", "Release", "logs", "venv"
-}
-
-PREDEFINED_EXCLUDED_FILENAMES = {
-    "package-lock.json", "yarn.lock", ".DS_Store", "Thumbs.db",
-    "*.pyc", "*.pyo", "*.swp", "*.swo"
-}
-
-FORCE_BINARY_EXTENSIONS_FOR_DUMP = {
-    ".tar.gz", ".gz", ".zip", ".rar", ".7z", ".bz2", ".xz", ".tgz",
-    ".png", ".jpg", ".jpeg", ".gif", ".bmp", ".ico", ".webp", ".tif", ".tiff",
-    ".mp3", ".wav", ".ogg", ".flac", ".aac", ".m4a",
-    ".mp4", ".mkv", ".avi", ".mov", ".webm", ".flv", ".wmv",
-    ".pdf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx", ".odt", ".ods",
-    ".exe", ".dll", ".so", ".o", ".a", ".lib", ".app", ".dmg", ".deb", ".rpm",
-    ".db", ".sqlite", ".sqlite3", ".db3", ".mdb", ".accdb", ".dat", ".idx", ".pickle", ".joblib",
-    ".pyc", ".pyo", ".class", ".jar", ".wasm",
-    ".ttf", ".otf", ".woff", ".woff2",
-    ".iso", ".img", ".bin", ".bak", ".data", ".asset", ".pak"
-}
-
-VENDOR_EXPORT_INCLUDE_FILES = (
-    ".gitignore",
-    "LICENSE.md",
-    "README.md",
-    "requirements.txt",
-    "run.bat",
-    "setup_env.bat",
-)
-
-VENDOR_EXPORT_INCLUDE_DIRS = (
-    "assets",
-    "src",
-    "tools",
-)
-
-VENDOR_EXPORT_EXCLUDED_NAMES = {
-    ".git", ".hg", ".svn", ".venv", "venv", "env", "__pycache__",
-    ".pytest_cache", ".mypy_cache", ".ruff_cache", ".tox", ".nox",
-    ".idea", ".vscode", "node_modules", "coverage", "build", "dist",
-    OUTPUT_ROOT_NAME, VENDOR_EXPORT_ROOT_NAME, "_logs", "logs",
-}
-
-VENDOR_EXPORT_EXCLUDED_PREFIXES = (
-    ".env",
-)
-
-VENDOR_EXPORT_EXCLUDED_SUFFIXES = (
-    ".pyc", ".pyo", ".pyd", ".log", ".tmp", ".sqlite", ".sqlite3",
-    ".db", ".db3", ".bak",
-)
-# === [SECTION: CONSTANTS] END ===
 
 
 # === [SECTION: THEME] BEGIN ===
@@ -158,1216 +88,43 @@ if sys.stderr is None:
 # === [SECTION: PYTHONW_SAFETY] END ===
 
 
-# === [SECTION: PURE_HELPERS] BEGIN ===
-def now_stamp() -> str:
-    return datetime.now().strftime("%Y%m%d_%H%M%S")
+if __package__:
+    from .core.helpers import *
+else:
+    from core.helpers import *
 
 
-def now_iso() -> str:
-    return datetime.now().isoformat(timespec="seconds")
+if __package__:
+    from .core.exports import *
+else:
+    from core.exports import *
 
 
-def format_display_size(size_bytes: int) -> str:
-    if size_bytes < 1024:
-        return f"{size_bytes} B"
-    size_kb = size_bytes / 1024
-    if size_kb < 1024:
-        return f"{size_kb:.1f} KB"
-    size_mb = size_kb / 1024
-    if size_mb < 1024:
-        return f"{size_mb:.1f} MB"
-    size_gb = size_mb / 1024
-    return f"{size_gb:.2f} GB"
+if __package__:
+    from .core.snapshots import *
+else:
+    from core.snapshots import *
 
 
-def ensure_dir(path: Path) -> Path:
-    path.mkdir(parents=True, exist_ok=True)
-    return path
+if __package__:
+    from .core.exclusions import *
+else:
+    from core.exclusions import *
 
 
-def rel_posix(path: Path, root: Path) -> str:
-    try:
-        return path.relative_to(root).as_posix()
-    except Exception:
-        return path.name
 
 
-def is_path_inside(path: Path, root: Path) -> bool:
-    try:
-        path.resolve().relative_to(root.resolve())
-        return True
-    except Exception:
-        return False
 
 
-def is_binary(file_path: Path) -> bool:
-    try:
-        with open(file_path, "rb") as handle:
-            return b"\0" in handle.read(1024)
-    except Exception:
-        return True
 
 
-def safe_stat_size(path: Path) -> int | None:
-    try:
-        return path.stat().st_size
-    except OSError:
-        return None
 
 
-def safe_stat_mtime(path: Path) -> float | None:
-    try:
-        return path.stat().st_mtime
-    except OSError:
-        return None
 
 
-def max_tree_mtime(rows: list[dict]) -> float:
-    values = [row.get("mtime") for row in rows if row.get("mtime") is not None]
-    return max(values) if values else 0.0
 
 
-def remove_file_with_retry(path: Path, attempts: int = 6, delay: float = 0.25) -> None:
-    """Delete a file, tolerating Windows locks from handles awaiting garbage collection."""
-    last_error = None
-    for _ in range(attempts):
-        try:
-            path.unlink()
-            return
-        except FileNotFoundError:
-            return
-        except PermissionError as exc:
-            last_error = exc
-            gc.collect()
-            time.sleep(delay)
-    raise RuntimeError(
-        f"Could not delete locked file '{path}'. Close any SQLite browser or other "
-        f"program holding it open and try again. Last error: {last_error}"
-    )
 
-
-def get_folder_size_bytes(folder_path: Path, stop_event=None) -> int:
-    total_size = 0
-    try:
-        for entry in os.scandir(folder_path):
-            if stop_event is not None and stop_event.is_set():
-                break
-            try:
-                if entry.is_file(follow_symlinks=False):
-                    total_size += entry.stat(follow_symlinks=False).st_size
-                elif entry.is_dir(follow_symlinks=False):
-                    total_size += get_folder_size_bytes(Path(entry.path), stop_event=stop_event)
-            except OSError:
-                continue
-    except OSError:
-        pass
-    return total_size
-
-
-def safe_read_text(path: Path, max_bytes: int = MAX_TEXT_FILE_SIZE_BYTES) -> tuple[str | None, str | None]:
-    size = safe_stat_size(path)
-    if size is None:
-        return None, "stat_failed"
-    if size > max_bytes:
-        return None, "over_size_limit"
-    if "".join(path.suffixes).lower() in FORCE_BINARY_EXTENSIONS_FOR_DUMP:
-        return None, "forced_binary_extension"
-    if is_binary(path):
-        return None, "binary_detected"
-    try:
-        return path.read_text(encoding=TEXT_ENCODING, errors="ignore"), None
-    except PermissionError:
-        return None, "permission_denied"
-    except Exception as exc:
-        return None, f"read_failed: {exc}"
-
-
-def safe_read_blob(path: Path) -> tuple[bytes | None, str | None]:
-    try:
-        return path.read_bytes(), None
-    except PermissionError:
-        return None, "permission_denied"
-    except Exception as exc:
-        return None, f"blob_read_failed: {exc}"
-
-
-def sha256_bytes(data: bytes) -> str:
-    return hashlib.sha256(data).hexdigest()
-# === [SECTION: PURE_HELPERS] END ===
-
-
-# === [SECTION: VENDOR_EXPORT] BEGIN ===
-def safe_export_name(value: str) -> str:
-    allowed = []
-    for char in value:
-        if char.isalnum() or char in ("-", "_", "."):
-            allowed.append(char)
-        else:
-            allowed.append("-")
-    return "".join(allowed).strip("-") or "export"
-
-
-def is_vendor_export_excluded(path: Path) -> tuple[bool, str | None]:
-    name = path.name
-    if name in VENDOR_EXPORT_EXCLUDED_NAMES:
-        return True, f"excluded_name:{name}"
-    if any(name.startswith(prefix) for prefix in VENDOR_EXPORT_EXCLUDED_PREFIXES):
-        return True, f"excluded_prefix:{name}"
-    if any(name.endswith(suffix) for suffix in VENDOR_EXPORT_EXCLUDED_SUFFIXES):
-        return True, f"excluded_suffix:{name}"
-    return False, None
-
-
-def copy_vendor_tree(source: Path, destination: Path, included: list[str], skipped: list[dict], stop_event=None):
-    excluded, reason = is_vendor_export_excluded(source)
-    if excluded:
-        skipped.append({"path": source.name, "reason": reason})
-        return
-
-    if source.is_dir():
-        ensure_dir(destination)
-        for child in sorted(source.iterdir(), key=lambda p: (not p.is_dir(), p.name.lower())):
-            if stop_event is not None and stop_event.is_set():
-                return
-            copy_vendor_tree(child, destination / child.name, included, skipped, stop_event=stop_event)
-        return
-
-    ensure_dir(destination.parent)
-    shutil.copy2(source, destination)
-    included.append(destination.as_posix())
-
-
-def build_fresh_start_install_markdown(export_name: str) -> str:
-    return "\n".join([
-        "# ProjectMapper Blank-Slate Vendor Export",
-        "",
-        f"Package: `{export_name}`",
-        f"Created: `{now_iso()}`",
-        "",
-        "This export is intended for clean external testing. It contains the installable ProjectMapper app files only.",
-        "",
-        "## What Is Included",
-        "",
-        "- App source under `src/`",
-        "- Runtime scripts: `setup_env.bat` and `run.bat`",
-        "- README, license, requirements, and app assets",
-        "- A vendor export manifest",
-        "",
-        "## What Is Not Included",
-        "",
-        "- Git history or repository metadata",
-        "- Local virtual environments",
-        "- Python caches",
-        "- Previous `_projectmapper` snapshot outputs",
-        "- Prior SQLite databases, logs, or generated vendor exports",
-        "- Local `.env*` files",
-        "",
-        "## Fresh Install Test",
-        "",
-        "1. Copy this folder into a blank test project or any external project folder.",
-        "2. Run `setup_env.bat` from this folder.",
-        "3. Run `run.bat`.",
-        "4. In the app, choose the project root you want to test.",
-        "5. Compile a snapshot. New records will be created only under the selected project's `_projectmapper` output folder.",
-        "",
-        "The app does not need prior ProjectMapper records to start.",
-        "",
-    ])
-
-
-def create_vendor_export(source_root: Path | None = None, export_root: Path | None = None, make_zip: bool = True, stop_event=None, log_callback=None) -> dict:
-    source_root = (source_root or SOURCE_ROOT).resolve()
-    export_root = ensure_dir((export_root or source_root / VENDOR_EXPORT_ROOT_NAME).resolve())
-    export_name = safe_export_name(f"ProjectMapper-v{APP_VERSION}-blank-slate-{now_stamp()}")
-    export_dir = export_root / export_name
-    ensure_dir(export_dir)
-
-    def log(message: str):
-        if log_callback:
-            log_callback(message)
-
-    included: list[str] = []
-    skipped: list[dict] = []
-
-    log(f"Creating blank-slate vendor export: {export_dir}")
-
-    for file_name in VENDOR_EXPORT_INCLUDE_FILES:
-        if stop_event is not None and stop_event.is_set():
-            break
-        source = source_root / file_name
-        if not source.exists():
-            skipped.append({"path": file_name, "reason": "missing_include_file"})
-            continue
-        copy_vendor_tree(source, export_dir / file_name, included, skipped, stop_event=stop_event)
-
-    for dir_name in VENDOR_EXPORT_INCLUDE_DIRS:
-        if stop_event is not None and stop_event.is_set():
-            break
-        source = source_root / dir_name
-        if not source.exists():
-            skipped.append({"path": dir_name, "reason": "missing_include_dir"})
-            continue
-        copy_vendor_tree(source, export_dir / dir_name, included, skipped, stop_event=stop_event)
-
-    install_path = export_dir / "INSTALL_FRESH_START.md"
-    write_text_file(install_path, build_fresh_start_install_markdown(export_name))
-    included.append(install_path.as_posix())
-
-    manifest_path = export_dir / "VENDOR_EXPORT_MANIFEST.json"
-    relative_included = sorted(
-        [rel_posix(Path(path), export_dir) for path in included]
-        + [rel_posix(manifest_path, export_dir)]
-    )
-    manifest = {
-        "app_name": APP_NAME,
-        "app_version": APP_VERSION,
-        "export_kind": "blank_slate_vendor_app",
-        "export_name": export_name,
-        "exported_at": now_iso(),
-        "included_paths": relative_included,
-        "skipped": skipped,
-        "blank_slate_guarantees": [
-            "No git history or repository metadata is copied.",
-            "No virtual environment is copied.",
-            "No Python cache files are copied.",
-            "No prior _projectmapper snapshot outputs are copied.",
-            "No SQLite snapshot/history databases are copied.",
-            "No local .env files are copied.",
-        ],
-    }
-    write_text_file(manifest_path, json.dumps(manifest, indent=2))
-
-    zip_path = None
-    if make_zip and (stop_event is None or not stop_event.is_set()):
-        zip_base = export_root / export_name
-        zip_path = Path(shutil.make_archive(str(zip_base), "zip", root_dir=export_root, base_dir=export_name))
-        log(f"Created vendor zip: {zip_path}")
-
-    return {
-        "export_dir": export_dir,
-        "zip_path": zip_path,
-        "included_count": len(relative_included),
-        "skipped_count": len(skipped),
-    }
-# === [SECTION: VENDOR_EXPORT] END ===
-
-
-# === [SECTION: SNAPSHOT_DATA_HELPERS] BEGIN ===
-def snapshot_output_filename(root: Path, suffix: str) -> str:
-    return f"{root.name}_{suffix}"
-
-
-def load_snapshot_output(snapshot_path: Path, output_name: str) -> str:
-    if not snapshot_path or not snapshot_path.exists():
-        raise FileNotFoundError(f"Snapshot DB not found: {snapshot_path}")
-    with contextlib.closing(sqlite3.connect(snapshot_path)) as conn:
-        row = conn.execute(
-            "SELECT content FROM snapshot_outputs WHERE name = ?",
-            (output_name,),
-        ).fetchone()
-    if row is None:
-        raise KeyError(f"Snapshot output not found: {output_name}")
-    return row[0]
-
-
-def load_snapshot_metadata(snapshot_path: Path) -> dict:
-    if not snapshot_path or not Path(snapshot_path).exists():
-        return {}
-    try:
-        with contextlib.closing(sqlite3.connect(snapshot_path)) as conn:
-            rows = conn.execute("SELECT key, value FROM snapshot_metadata").fetchall()
-    except sqlite3.Error:
-        return {}
-    return {key: value for key, value in rows}
-
-
-def write_text_file(path: Path, content: str) -> Path:
-    ensure_dir(path.parent)
-    path.write_text(content, encoding=TEXT_ENCODING, errors="ignore")
-    return path
-
-
-def combine_tree_and_filedump_markdown(tree_markdown: str, filedump_markdown: str) -> str:
-    return "\n".join([
-        "# Project Tree + Filedump",
-        "",
-        "This combined export includes the project tree first, followed by the captured file dump.",
-        "",
-        "---",
-        "",
-        tree_markdown.rstrip(),
-        "",
-        "---",
-        "",
-        filedump_markdown.rstrip(),
-        "",
-    ])
-# === [SECTION: SNAPSHOT_DATA_HELPERS] END ===
-
-
-# === [SECTION: EXCLUSION_POLICY] BEGIN ===
-class ExclusionPolicy:
-    def __init__(self):
-        self.respect_exclusions = True
-        self.dynamic_patterns = set()
-        self.gitignore_dirnames = set()
-        self.gitignore_file_patterns = set()
-        self.gitignore_path_patterns = set()
-        self.disabled_rules = set()
-        self.deleted_rules = set()
-        self.gitignore_root = None
-
-    def rule_key(self, source, pattern):
-        # Imported rules belong to their project; built-ins and custom rules
-        # retain the existing app-wide, session-only scope.
-        scope = self.gitignore_root if source.startswith("gitignore_") else None
-        return (scope, source, pattern)
-
-    def rule_enabled(self, source, pattern):
-        key = self.rule_key(source, pattern)
-        return key not in self.disabled_rules and key not in self.deleted_rules
-
-    def set_rule_enabled(self, source, pattern, enabled):
-        key = self.rule_key(source, pattern)
-        if enabled:
-            self.disabled_rules.discard(key)
-        else:
-            self.disabled_rules.add(key)
-
-    def delete_rule(self, source, pattern):
-        key = self.rule_key(source, pattern)
-        self.disabled_rules.discard(key)
-        if source == "dynamic_user_pattern":
-            self.dynamic_patterns.discard(pattern)
-        else:
-            self.deleted_rules.add(key)
-
-    def add_pattern(self, pattern):
-        self.dynamic_patterns.add(pattern)
-        self.set_rule_enabled("dynamic_user_pattern", pattern, True)
-
-    def load_gitignore(self, root: Path):
-        self.gitignore_root = str(root.resolve())
-        self.gitignore_dirnames.clear()
-        self.gitignore_file_patterns.clear()
-        self.gitignore_path_patterns.clear()
-
-        gi = root / ".gitignore"
-        if not gi.exists():
-            return
-
-        try:
-            lines = gi.read_text(encoding=TEXT_ENCODING, errors="ignore").splitlines()
-        except Exception:
-            return
-
-        for raw in lines:
-            pattern = raw.strip()
-            if not pattern or pattern.startswith("#") or pattern.startswith("!"):
-                continue
-            pattern = pattern.replace("\\", "/")
-            if pattern.endswith("/"):
-                value = pattern[:-1].strip("/")
-                if value:
-                    self.gitignore_dirnames.add(value)
-            elif "/" in pattern:
-                self.gitignore_path_patterns.add(pattern.strip("/"))
-            else:
-                self.gitignore_file_patterns.add(pattern)
-
-    def collect_rules(self) -> list[dict]:
-        rules = []
-        rules.append({"rule_type": "toggle", "pattern": "respect_exclusions", "source": "ui", "active": int(self.respect_exclusions)})
-        for pattern in sorted(EXCLUDED_FOLDERS):
-            rules.append({"rule_type": "directory", "pattern": pattern, "source": "hardcoded_folder", "active": 1})
-        for pattern in sorted(PREDEFINED_EXCLUDED_FILENAMES):
-            rules.append({"rule_type": "filename", "pattern": pattern, "source": "predefined_filename", "active": 1})
-        for pattern in sorted(self.dynamic_patterns):
-            rules.append({"rule_type": "filename", "pattern": pattern, "source": "dynamic_user_pattern", "active": 1})
-        for pattern in sorted(self.gitignore_dirnames):
-            rules.append({"rule_type": "directory", "pattern": pattern, "source": "gitignore_dirname", "active": 1})
-        for pattern in sorted(self.gitignore_file_patterns):
-            rules.append({"rule_type": "filename", "pattern": pattern, "source": "gitignore_file_pattern", "active": 1})
-        for pattern in sorted(self.gitignore_path_patterns):
-            rules.append({"rule_type": "path", "pattern": pattern, "source": "gitignore_path_pattern", "active": 1})
-        return [
-            dict(rule, active=int(self.rule_enabled(rule["source"], rule["pattern"])))
-            if rule["rule_type"] != "toggle" else rule
-            for rule in rules
-            if self.rule_key(rule["source"], rule["pattern"]) not in self.deleted_rules
-        ]
-
-    def should_exclude_path(self, path: Path, root: Path) -> tuple[bool, str | None]:
-        if not self.respect_exclusions:
-            return False, None
-
-        try:
-            p = path.resolve()
-            r = root.resolve()
-        except Exception:
-            return False, None
-
-        if p != r and not is_path_inside(p, r):
-            return False, None
-
-        name = p.name
-        rel = rel_posix(p, r)
-
-        if p.is_dir():
-            if name in EXCLUDED_FOLDERS and self.rule_enabled("hardcoded_folder", name):
-                return True, "hardcoded_folder"
-            if name in self.gitignore_dirnames and self.rule_enabled("gitignore_dirname", name):
-                return True, "gitignore_dirname"
-            for pattern in self.gitignore_path_patterns:
-                if not self.rule_enabled("gitignore_path_pattern", pattern):
-                    continue
-                if fnmatch.fnmatch(rel, pattern) or fnmatch.fnmatch(rel + "/", pattern) or fnmatch.fnmatch(rel + "/", pattern + "/"):
-                    return True, "gitignore_path_pattern"
-            return False, None
-
-        for source, patterns in (("predefined_filename", PREDEFINED_EXCLUDED_FILENAMES),
-                                 ("dynamic_user_pattern", self.dynamic_patterns)):
-            for pattern in patterns:
-                if self.rule_enabled(source, pattern) and fnmatch.fnmatch(name, pattern):
-                    return True, "filename_pattern"
-        for pattern in self.gitignore_file_patterns:
-            if self.rule_enabled("gitignore_file_pattern", pattern) and fnmatch.fnmatch(name, pattern):
-                return True, "gitignore_file_pattern"
-        for pattern in self.gitignore_path_patterns:
-            if self.rule_enabled("gitignore_path_pattern", pattern) and fnmatch.fnmatch(rel, pattern):
-                return True, "gitignore_path_pattern"
-        return False, None
-# === [SECTION: EXCLUSION_POLICY] END ===
-
-
-# === [SECTION: FILESYSTEM_SCANNER] BEGIN ===
-def scan_project_tree(root: Path, policy: ExclusionPolicy, stop_event=None) -> tuple[list[dict], list[dict]]:
-    root = root.resolve()
-    rows = []
-    skipped = []
-
-    def add_row(path: Path, parent: Path | None, depth: int):
-        size_bytes = get_folder_size_bytes(path, stop_event=stop_event) if path.is_dir() else safe_stat_size(path)
-        rows.append({
-            "path": path.resolve(),
-            "parent": parent.resolve() if parent else None,
-            "relative_path": "." if path == root else rel_posix(path, root),
-            "parent_relative_path": None if parent is None else ("." if parent == root else rel_posix(parent, root)),
-            "name": path.name,
-            "entry_type": "dir" if path.is_dir() else "file",
-            "depth": depth,
-            "size_bytes": size_bytes,
-            "mtime": safe_stat_mtime(path),
-        })
-
-    def recurse(current: Path, depth: int):
-        if stop_event is not None and stop_event.is_set():
-            return
-        try:
-            items = sorted(list(current.iterdir()), key=lambda p: (not p.is_dir(), p.name.lower()))
-        except PermissionError:
-            skipped.append({"relative_path": rel_posix(current, root), "skip_reason": "permission_denied", "detail": "Cannot list directory"})
-            return
-        except Exception as exc:
-            skipped.append({"relative_path": rel_posix(current, root), "skip_reason": "list_failed", "detail": str(exc)})
-            return
-
-        for item in items:
-            if stop_event is not None and stop_event.is_set():
-                return
-            excluded, reason = policy.should_exclude_path(item, root)
-            if excluded:
-                skipped.append({"relative_path": rel_posix(item, root), "skip_reason": "excluded_by_rule", "detail": reason or "excluded"})
-                continue
-            add_row(item, current, depth + 1)
-            if item.is_dir():
-                recurse(item, depth + 1)
-
-    add_row(root, None, 0)
-    recurse(root, 0)
-    return rows, skipped
-# === [SECTION: FILESYSTEM_SCANNER] END ===
-
-
-# === [SECTION: SNAPSHOT_SCHEMA] BEGIN ===
-def create_snapshot_schema(conn: sqlite3.Connection):
-    conn.execute(
-        """
-        CREATE TABLE IF NOT EXISTS snapshot_metadata (
-            key TEXT PRIMARY KEY,
-            value TEXT NOT NULL
-        )
-        """
-    )
-    conn.execute(
-        """
-        CREATE TABLE IF NOT EXISTS snapshot_manifest (
-            id INTEGER PRIMARY KEY CHECK (id = 1),
-            manifest_version TEXT NOT NULL,
-            title TEXT NOT NULL,
-            summary TEXT NOT NULL,
-            contents_markdown TEXT NOT NULL,
-            created_at TEXT NOT NULL
-        )
-        """
-    )
-    conn.execute(
-        """
-        CREATE TABLE IF NOT EXISTS project_tree (
-            tree_order INTEGER NOT NULL,
-            relative_path TEXT PRIMARY KEY,
-            parent_relative_path TEXT,
-            name TEXT NOT NULL,
-            entry_type TEXT NOT NULL,
-            depth INTEGER NOT NULL,
-            size_bytes INTEGER,
-            is_selected INTEGER NOT NULL
-        )
-        """
-    )
-    conn.execute(
-        """
-        CREATE TABLE IF NOT EXISTS project_files (
-            dump_order INTEGER NOT NULL,
-            relative_path TEXT PRIMARY KEY,
-            parent_relative_path TEXT,
-            size_bytes INTEGER NOT NULL,
-            content TEXT NOT NULL,
-            captured_at TEXT NOT NULL
-        )
-        """
-    )
-    conn.execute(
-        """
-        CREATE TABLE IF NOT EXISTS project_blobs (
-            blob_order INTEGER NOT NULL,
-            relative_path TEXT PRIMARY KEY,
-            parent_relative_path TEXT,
-            size_bytes INTEGER NOT NULL,
-            sha256 TEXT NOT NULL,
-            blob_content BLOB NOT NULL,
-            captured_at TEXT NOT NULL
-        )
-        """
-    )
-    conn.execute(
-        """
-        CREATE TABLE IF NOT EXISTS snapshot_exclusion_rules (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            rule_type TEXT NOT NULL,
-            pattern TEXT NOT NULL,
-            source TEXT NOT NULL,
-            active INTEGER NOT NULL
-        )
-        """
-    )
-    conn.execute(
-        """
-        CREATE TABLE IF NOT EXISTS snapshot_skipped_paths (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            relative_path TEXT NOT NULL,
-            skip_reason TEXT NOT NULL,
-            detail TEXT,
-            size_bytes INTEGER,
-            entry_type TEXT,
-            source TEXT NOT NULL
-        )
-        """
-    )
-    conn.execute(
-        """
-        CREATE TABLE IF NOT EXISTS snapshot_mapper_state (
-            relative_path TEXT PRIMARY KEY,
-            state TEXT NOT NULL,
-            entry_type TEXT,
-            is_visible INTEGER NOT NULL,
-            source TEXT NOT NULL
-        )
-        """
-    )
-    conn.execute(
-        """
-        CREATE TABLE IF NOT EXISTS snapshot_environment (
-            key TEXT PRIMARY KEY,
-            value TEXT NOT NULL
-        )
-        """
-    )
-    conn.execute(
-        """
-        CREATE TABLE IF NOT EXISTS snapshot_outputs (
-            name TEXT PRIMARY KEY,
-            output_type TEXT NOT NULL,
-            content TEXT NOT NULL,
-            created_at TEXT NOT NULL,
-            external_path TEXT
-        )
-        """
-    )
-    conn.execute(
-        """
-        CREATE TABLE IF NOT EXISTS snapshot_errors (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            relative_path TEXT,
-            error TEXT NOT NULL,
-            context TEXT,
-            created_at TEXT NOT NULL
-        )
-        """
-    )
-    conn.execute("CREATE INDEX IF NOT EXISTS idx_project_tree_order ON project_tree(tree_order)")
-    conn.execute("CREATE INDEX IF NOT EXISTS idx_project_tree_parent ON project_tree(parent_relative_path)")
-    conn.execute("CREATE INDEX IF NOT EXISTS idx_project_files_order ON project_files(dump_order)")
-    conn.execute("CREATE INDEX IF NOT EXISTS idx_project_blobs_order ON project_blobs(blob_order)")
-    conn.execute("CREATE INDEX IF NOT EXISTS idx_skipped_reason ON snapshot_skipped_paths(skip_reason)")
-# === [SECTION: SNAPSHOT_SCHEMA] END ===
-
-
-# === [SECTION: SNAPSHOT_WRITERS] BEGIN ===
-def upsert_snapshot_metadata(conn: sqlite3.Connection, key: str, value):
-    conn.execute(
-        "INSERT OR REPLACE INTO snapshot_metadata (key, value) VALUES (?, ?)",
-        (key, "" if value is None else str(value)),
-    )
-
-
-def insert_project_tree_row(conn: sqlite3.Connection, tree_order: int, row: dict, is_selected: bool):
-    conn.execute(
-        """
-        INSERT OR REPLACE INTO project_tree (
-            tree_order, relative_path, parent_relative_path, name,
-            entry_type, depth, size_bytes, is_selected
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        """,
-        (
-            tree_order,
-            row["relative_path"],
-            row.get("parent_relative_path"),
-            row["name"],
-            row["entry_type"],
-            row["depth"],
-            row.get("size_bytes"),
-            int(is_selected),
-        ),
-    )
-
-
-def insert_project_file(conn: sqlite3.Connection, dump_order: int, relative_path: str, parent_relative_path: str | None, size_bytes: int, content: str):
-    conn.execute(
-        """
-        INSERT OR REPLACE INTO project_files (
-            dump_order, relative_path, parent_relative_path, size_bytes, content, captured_at
-        ) VALUES (?, ?, ?, ?, ?, ?)
-        """,
-        (dump_order, relative_path, parent_relative_path, size_bytes, content, now_iso()),
-    )
-
-
-def insert_project_blob(conn: sqlite3.Connection, blob_order: int, relative_path: str, parent_relative_path: str | None, size_bytes: int, sha256: str, blob_content: bytes):
-    conn.execute(
-        """
-        INSERT OR REPLACE INTO project_blobs (
-            blob_order, relative_path, parent_relative_path, size_bytes, sha256, blob_content, captured_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?)
-        """,
-        (blob_order, relative_path, parent_relative_path, size_bytes, sha256, sqlite3.Binary(blob_content), now_iso()),
-    )
-
-
-def insert_exclusion_rules(conn: sqlite3.Connection, rules: list[dict]):
-    conn.executemany(
-        """
-        INSERT INTO snapshot_exclusion_rules (rule_type, pattern, source, active)
-        VALUES (?, ?, ?, ?)
-        """,
-        [
-            (
-                rule.get("rule_type", "unknown"),
-                rule.get("pattern", ""),
-                rule.get("source", "unknown"),
-                int(rule.get("active", 1)),
-            )
-            for rule in rules
-        ],
-    )
-
-
-def insert_skipped_path(conn: sqlite3.Connection, relative_path: str, skip_reason: str, detail: str | None = None, size_bytes: int | None = None, entry_type: str | None = None, source: str = "snapshot_compiler"):
-    conn.execute(
-        """
-        INSERT INTO snapshot_skipped_paths (
-            relative_path, skip_reason, detail, size_bytes, entry_type, source
-        ) VALUES (?, ?, ?, ?, ?, ?)
-        """,
-        (relative_path, skip_reason, detail, size_bytes, entry_type, source),
-    )
-
-
-def insert_mapper_state(conn: sqlite3.Connection, relative_path: str, state: str, entry_type: str | None, is_visible: bool, source: str = "tree_checkbox"):
-    conn.execute(
-        """
-        INSERT OR REPLACE INTO snapshot_mapper_state (
-            relative_path, state, entry_type, is_visible, source
-        ) VALUES (?, ?, ?, ?, ?)
-        """,
-        (relative_path, state, entry_type, int(is_visible), source),
-    )
-
-
-def insert_environment_hints(conn: sqlite3.Connection, hints: dict):
-    conn.executemany(
-        "INSERT OR REPLACE INTO snapshot_environment (key, value) VALUES (?, ?)",
-        [(key, "" if value is None else str(value)) for key, value in sorted(hints.items())],
-    )
-
-
-def insert_snapshot_output(conn: sqlite3.Connection, name: str, output_type: str, content: str, external_path: str | None = None):
-    conn.execute(
-        """
-        INSERT OR REPLACE INTO snapshot_outputs (
-            name, output_type, content, created_at, external_path
-        ) VALUES (?, ?, ?, ?, ?)
-        """,
-        (name, output_type, content, now_iso(), external_path),
-    )
-
-
-def insert_snapshot_error(conn: sqlite3.Connection, error: str, relative_path: str | None = None, context: str | None = None):
-    conn.execute(
-        """
-        INSERT INTO snapshot_errors (relative_path, error, context, created_at)
-        VALUES (?, ?, ?, ?)
-        """,
-        (relative_path, error, context, now_iso()),
-    )
-# === [SECTION: SNAPSHOT_WRITERS] END ===
-
-
-# === [SECTION: ENVIRONMENT_HINTS] BEGIN ===
-def detect_environment_hints(root: Path) -> dict:
-    root = root.resolve()
-    hints = {
-        "platform": platform.platform(),
-        "python_version": sys.version.replace("\n", " "),
-        "snapshot_compiler_id": SNAPSHOT_COMPILER_ID,
-        "app_version": APP_VERSION,
-        "snapshot_schema_version": SNAPSHOT_SCHEMA_VERSION,
-        "source_root_name": root.name,
-        "source_root_absolute_path": str(root),
-        "has_requirements_txt": int((root / "requirements.txt").exists()),
-        "has_pyproject_toml": int((root / "pyproject.toml").exists()),
-        "has_package_json": int((root / "package.json").exists()),
-        "has_environment_yml": int((root / "environment.yml").exists()),
-        "has_poetry_lock": int((root / "poetry.lock").exists()),
-        "has_uv_lock": int((root / "uv.lock").exists()),
-        "has_pipfile": int((root / "Pipfile").exists()),
-        "has_dot_venv": int((root / ".venv").is_dir()),
-        "has_venv": int((root / "venv").is_dir()),
-    }
-
-    pyvenv_cfg = root / ".venv" / "pyvenv.cfg"
-    if pyvenv_cfg.exists() and pyvenv_cfg.is_file():
-        content, error = safe_read_text(pyvenv_cfg, max_bytes=20_000)
-        if content is not None:
-            for line in content.splitlines():
-                if "=" not in line:
-                    continue
-                key, value = line.split("=", 1)
-                key = key.strip().lower().replace(" ", "_")
-                value = value.strip()
-                if key in {"home", "implementation", "version", "include-system-site-packages"}:
-                    hints[f"dot_venv_{key}"] = value
-        elif error:
-            hints["dot_venv_pyvenv_cfg_error"] = error
-
-    return hints
-# === [SECTION: ENVIRONMENT_HINTS] END ===
-
-
-# === [SECTION: MARKDOWN_PROJECTIONS] BEGIN ===
-def markdown_language_for_path(path_text: str) -> str:
-    suffix = Path(path_text).suffix.lower()
-    return {
-        ".py": "python",
-        ".js": "javascript",
-        ".jsx": "jsx",
-        ".ts": "typescript",
-        ".tsx": "tsx",
-        ".json": "json",
-        ".md": "markdown",
-        ".txt": "text",
-        ".html": "html",
-        ".css": "css",
-        ".scss": "scss",
-        ".xml": "xml",
-        ".yml": "yaml",
-        ".yaml": "yaml",
-        ".toml": "toml",
-        ".ini": "ini",
-        ".bat": "bat",
-        ".ps1": "powershell",
-        ".sh": "bash",
-        ".sql": "sql",
-        ".c": "c",
-        ".cpp": "cpp",
-        ".h": "c",
-        ".hpp": "cpp",
-        ".java": "java",
-        ".rs": "rust",
-        ".go": "go",
-        ".rb": "ruby",
-        ".php": "php",
-    }.get(suffix, "text")
-
-
-def build_project_tree_markdown(root: Path, snapshot_name: str, created_at: str, tree_rows: list[dict], folder_item_states: dict) -> str:
-    lines = [
-        "# Project Tree",
-        "",
-        "This standalone tree is intended as a lightweight project surface map. It can be shared without the full filedump so an agent can see the project shape, identify missing/unincluded files, and request specific follow-up uploads when needed.",
-        "",
-        "The SQLite snapshot remains the authoritative truth source for the manifest, selected file contents, skipped paths, exclusion rules, mapper state, and environment hints.",
-        "",
-        f"- Source root: `{root}`",
-        f"- Snapshot: `{snapshot_name}`",
-        f"- Generated: `{created_at}`",
-        "",
-        "```text",
-    ]
-
-    for row in tree_rows:
-        depth = int(row.get("depth", 0))
-        indent = "    " * depth
-        icon = "📁" if row.get("entry_type") == "dir" else "📄"
-        state = folder_item_states.get(str(row.get("path")), S_UNCHECKED)
-        checkbox = "[x]" if state == S_CHECKED else "[ ]"
-        suffix = "/" if row.get("entry_type") == "dir" else ""
-        name = row.get("name", "")
-        if row.get("relative_path") == ".":
-            name = f"{name}/"
-            suffix = ""
-        lines.append(f"{indent}{checkbox} {icon} {name}{suffix}")
-
-    lines.extend(["```", ""])
-    return "\n".join(lines)
-
-
-def build_filedump_markdown(root: Path, snapshot_name: str, created_at: str, captured_files: list[dict]) -> str:
-    lines = [
-        "# Project Filedump",
-        "",
-        f"- Source root: `{root}`",
-        f"- Snapshot: `{snapshot_name}`",
-        f"- Generated: `{created_at}`",
-        f"- Captured files: `{len(captured_files)}`",
-        "",
-    ]
-
-    for item in captured_files:
-        rel = item.get("relative_path", "")
-        content = item.get("content", "")
-        language = markdown_language_for_path(rel)
-        lines.extend([
-            "---",
-            "",
-            f"## FILE: `{rel}`",
-            "",
-            f"```{language}",
-            content.rstrip(),
-            "```",
-            "",
-        ])
-
-    return "\n".join(lines)
-# === [SECTION: MARKDOWN_PROJECTIONS] END ===
-
-
-# === [SECTION: SNAPSHOT_COMPILER] BEGIN ===
-def compile_snapshot(
-    root: Path,
-    output_dir: Path,
-    tree_rows: list[dict],
-    folder_item_states: dict,
-    policy: ExclusionPolicy,
-    scan_skipped_paths: list[dict],
-    include_binary_blobs: bool = False,
-    stop_event=None,
-    log_callback=None,
-) -> Path:
-    root = root.resolve()
-    output_dir = ensure_dir(output_dir)
-    snapshot_path = output_dir / f"{root.name}_{SNAPSHOT_DB_SUFFIX}"
-    build_path = output_dir / f"{root.name}_{SNAPSHOT_DB_SUFFIX}.building"
-
-    # Build into a scratch DB first, then swap it over the live one, so a locked
-    # or half-written snapshot can never be mistaken for a fresh one.
-    gc.collect()
-    for leftover in (build_path, Path(str(build_path) + "-journal")):
-        if leftover.exists():
-            remove_file_with_retry(leftover)
-
-    created_at = now_iso()
-    visible_rows = list(tree_rows)
-    skipped_paths = list(scan_skipped_paths)
-
-    if not visible_rows:
-        if log_callback:
-            log_callback("No cached tree rows found; scanning before snapshot compile.")
-        policy.load_gitignore(root)
-        visible_rows, skipped_paths = scan_project_tree(root, policy, stop_event=stop_event)
-
-    tree_entry_count = 0
-    mapper_state_count = 0
-    captured_file_count = 0
-    captured_blob_count = 0
-    skipped_path_count = 0
-    error_count = 0
-    cancelled = False
-    captured_files_for_projection = []
-
-    def emit(message: str, level: str = "INFO"):
-        if log_callback:
-            log_callback(message, level)
-
-    with contextlib.closing(sqlite3.connect(build_path)) as conn:
-        create_snapshot_schema(conn)
-
-        base_metadata = {
-            "snapshot_schema_version": SNAPSHOT_SCHEMA_VERSION,
-            "snapshot_compiler_id": SNAPSHOT_COMPILER_ID,
-            "app_name": APP_NAME,
-            "app_version": APP_VERSION,
-            "source_root_name": root.name,
-            "source_root_absolute_path": str(root),
-            "compiled_at": created_at,
-            "respect_exclusions": int(policy.respect_exclusions),
-            "include_binary_blobs": int(include_binary_blobs),
-            "max_text_file_size_bytes": MAX_TEXT_FILE_SIZE_BYTES,
-            "text_encoding": TEXT_ENCODING,
-            "snapshot_filename": snapshot_path.name,
-            "source_max_mtime": max_tree_mtime(visible_rows),
-        }
-        for key, value in base_metadata.items():
-            upsert_snapshot_metadata(conn, key, value)
-
-        insert_environment_hints(conn, detect_environment_hints(root))
-        insert_exclusion_rules(conn, policy.collect_rules())
-
-        for tree_order, row in enumerate(visible_rows):
-            if stop_event is not None and stop_event.is_set():
-                cancelled = True
-                break
-            abs_key = str(row["path"])
-            state = folder_item_states.get(abs_key, S_UNCHECKED)
-            is_selected = state == S_CHECKED
-            insert_project_tree_row(conn, tree_order, row, is_selected)
-            insert_mapper_state(conn, row["relative_path"], state, row["entry_type"], True)
-            tree_entry_count += 1
-            mapper_state_count += 1
-
-        for skipped in skipped_paths:
-            insert_skipped_path(
-                conn,
-                skipped.get("relative_path", ""),
-                skipped.get("skip_reason", "unknown"),
-                skipped.get("detail"),
-                skipped.get("size_bytes"),
-                skipped.get("entry_type"),
-                source="scanner",
-            )
-            skipped_path_count += 1
-
-        for row in visible_rows:
-            if stop_event is not None and stop_event.is_set():
-                cancelled = True
-                break
-
-            if row["entry_type"] != "file":
-                continue
-
-            abs_key = str(row["path"])
-            state = folder_item_states.get(abs_key, S_UNCHECKED)
-            if state != S_CHECKED:
-                insert_skipped_path(
-                    conn,
-                    row["relative_path"],
-                    "unchecked_by_user",
-                    "Visible file was not selected in mapper tree.",
-                    row.get("size_bytes"),
-                    row.get("entry_type"),
-                    source="mapper_state",
-                )
-                skipped_path_count += 1
-                continue
-
-            content, read_error = safe_read_text(row["path"], max_bytes=MAX_TEXT_FILE_SIZE_BYTES)
-            if read_error:
-                skip_reason = read_error.split(":", 1)[0]
-                blob_preserved = False
-                if include_binary_blobs and skip_reason in {"forced_binary_extension", "binary_detected"}:
-                    blob_content, blob_error = safe_read_blob(row["path"])
-                    if blob_content is not None:
-                        insert_project_blob(
-                            conn,
-                            captured_blob_count,
-                            row["relative_path"],
-                            row.get("parent_relative_path"),
-                            int(row.get("size_bytes") or len(blob_content)),
-                            sha256_bytes(blob_content),
-                            blob_content,
-                        )
-                        captured_blob_count += 1
-                        blob_preserved = True
-                    elif blob_error:
-                        insert_snapshot_error(conn, blob_error, row["relative_path"], "insert_project_blob")
-                        error_count += 1
-
-                detail = read_error
-                if blob_preserved:
-                    detail = f"{read_error}; binary bytes preserved in project_blobs"
-
-                insert_skipped_path(
-                    conn,
-                    row["relative_path"],
-                    skip_reason,
-                    detail,
-                    row.get("size_bytes"),
-                    row.get("entry_type"),
-                    source="file_capture",
-                )
-                skipped_path_count += 1
-                continue
-
-            try:
-                insert_project_file(
-                    conn,
-                    captured_file_count,
-                    row["relative_path"],
-                    row.get("parent_relative_path"),
-                    int(row.get("size_bytes") or 0),
-                    content or "",
-                )
-                captured_files_for_projection.append({
-                    "relative_path": row["relative_path"],
-                    "content": content or "",
-                    "size_bytes": int(row.get("size_bytes") or 0),
-                })
-                captured_file_count += 1
-                if captured_file_count % 10 == 0:
-                    emit(f"Captured {captured_file_count} text files...")
-            except Exception as exc:
-                insert_snapshot_error(conn, str(exc), row["relative_path"], "insert_project_file")
-                error_count += 1
-
-        upsert_snapshot_metadata(conn, "tree_entry_count", tree_entry_count)
-        upsert_snapshot_metadata(conn, "mapper_state_count", mapper_state_count)
-        upsert_snapshot_metadata(conn, "captured_file_count", captured_file_count)
-        upsert_snapshot_metadata(conn, "captured_blob_count", captured_blob_count)
-        upsert_snapshot_metadata(conn, "skipped_path_count", skipped_path_count)
-        upsert_snapshot_metadata(conn, "error_count", error_count)
-        upsert_snapshot_metadata(conn, "was_cancelled", int(cancelled))
-        upsert_snapshot_metadata(conn, "snapshot_completion_state", "partial" if cancelled else "complete")
-
-        project_tree_markdown = build_project_tree_markdown(
-            root=root,
-            snapshot_name=snapshot_path.name,
-            created_at=created_at,
-            tree_rows=visible_rows,
-            folder_item_states=folder_item_states,
-        )
-        project_filedump_markdown = build_filedump_markdown(
-            root=root,
-            snapshot_name=snapshot_path.name,
-            created_at=created_at,
-            captured_files=captured_files_for_projection,
-        )
-        insert_snapshot_output(conn, "project_tree_markdown", "markdown", project_tree_markdown)
-        insert_snapshot_output(conn, "project_filedump_markdown", "markdown", project_filedump_markdown)
-        upsert_snapshot_metadata(conn, "project_tree_markdown_generated", 1)
-        upsert_snapshot_metadata(conn, "project_filedump_markdown_generated", 1)
-
-        manifest_summary = (
-            "ProjectMapper SQLite snapshot containing project structure, selected text file contents, "
-            "mapper state, exclusion rules, skipped paths, environment hints, and snapshot metadata."
-        )
-        manifest_body = "\n".join([
-            "# ProjectMapper Snapshot Manifest",
-            "",
-            "## Purpose",
-            manifest_summary,
-            "",
-            "## Snapshot",
-            f"- Source root: `{root}`",
-            f"- Snapshot file: `{snapshot_path.name}`",
-            f"- Compiled at: `{created_at}`",
-            f"- Tree entries: `{tree_entry_count}`",
-            f"- Captured text files: `{captured_file_count}`",
-            f"- Captured binary blobs: `{captured_blob_count}`",
-            f"- Skipped paths: `{skipped_path_count}`",
-            f"- Errors: `{error_count}`",
-            f"- Cancelled: `{int(cancelled)}`",
-            f"- Completion state: `{'partial' if cancelled else 'complete'}`",
-            "",
-            "## Core Tables",
-            "- `snapshot_metadata`: key/value facts about this snapshot.",
-            "- `snapshot_manifest`: this onboarding manifest.",
-            "- `project_tree`: visible project structure captured in traversal order.",
-            "- `project_files`: selected text-readable file contents.",
-            "- `project_blobs`: optional selected binary file bytes for backup/rehydration mode.",
-            "- `snapshot_exclusion_rules`: active exclusion policy at compile time.",
-            "- `snapshot_skipped_paths`: files or folders omitted and why.",
-            "- `snapshot_mapper_state`: checkbox state from the mapper tree.",
-            "- `snapshot_environment`: local project environment hints.",
-            "- `snapshot_outputs`: generated projection artifacts, including tree and filedump markdown.",
-            "- `snapshot_errors`: non-fatal errors encountered during compilation.",
-            "",
-            "## Generated Outputs",
-            "- `snapshot_manifest_markdown`: this manifest as DB-embedded markdown, not a required standalone export.",
-            "- `project_tree_markdown`: lightweight project surface map export.",
-            "- `project_filedump_markdown`: captured text files as markdown.",
-            "- Combined tree + filedump markdown can be exported on demand from the UI.",
-            "",
-            "## Quick Start Queries",
-            "```sql",
-            "SELECT * FROM snapshot_manifest;",
-            "SELECT key, value FROM snapshot_metadata ORDER BY key;",
-            "SELECT relative_path, entry_type, is_selected FROM project_tree ORDER BY tree_order;",
-            "SELECT relative_path, substr(content, 1, 400) AS preview FROM project_files ORDER BY dump_order LIMIT 20;",
-            "SELECT relative_path, size_bytes, sha256 FROM project_blobs ORDER BY blob_order;",
-            "SELECT * FROM snapshot_exclusion_rules ORDER BY source, pattern;",
-            "SELECT * FROM snapshot_skipped_paths ORDER BY skip_reason, relative_path;",
-            "SELECT * FROM snapshot_environment ORDER BY key;",
-            "SELECT name, output_type, length(content) AS chars FROM snapshot_outputs ORDER BY name;",
-            "SELECT content FROM snapshot_outputs WHERE name = 'project_tree_markdown';",
-            "```",
-        ])
-        conn.execute(
-            """
-            INSERT OR REPLACE INTO snapshot_manifest (
-                id, manifest_version, title, summary, contents_markdown, created_at
-            ) VALUES (?, ?, ?, ?, ?, ?)
-            """,
-            (
-                1,
-                SNAPSHOT_SCHEMA_VERSION,
-                "ProjectMapper Snapshot Manifest",
-                manifest_summary,
-                manifest_body,
-                created_at,
-            ),
-        )
-        insert_snapshot_output(conn, "snapshot_manifest_markdown", "markdown", manifest_body)
-        conn.commit()
-
-    gc.collect()
-    remove_file_with_retry(snapshot_path)
-    os.replace(build_path, snapshot_path)
-
-    emit(
-        f"Snapshot compiled: {snapshot_path.name} ({tree_entry_count} tree entries, {captured_file_count} text files, {captured_blob_count} blobs, {skipped_path_count} skipped)"
-    )
-    return snapshot_path
-# === [SECTION: SNAPSHOT_COMPILER] END ===
 
 
 # === [SECTION: PROGRESS_POPUP] BEGIN ===
@@ -1582,7 +339,7 @@ class ExclusionsPopup:
         self.update_status()
 
     def toggle_rule(self, rule, enabled):
-        self.app.exclusion_policy.set_rule_enabled(rule["source"], rule["pattern"], enabled)
+        self.app.action("exclusions.update", {"operation": "enable", "source": rule["source"], "pattern": rule["pattern"], "enabled": enabled})
         self.app.exclusions_changed()
 
     def set_selected_enabled(self, enabled):
@@ -1606,23 +363,72 @@ class ExclusionsPopup:
         self.app.add_exclusion_from_entry(self.entry)
 
 
+if __package__:
+    from .application.controller import create_application
+    from .application.desktop import perform, Session
+else:
+    from application.controller import create_application
+    from application.desktop import perform, Session
+
+
 class ProjectMapperApp:
+    @property
+    def selected_root(self):
+        return self.project_state.root if hasattr(self, "project_state") else getattr(self, "_selected_root", None)
+    @selected_root.setter
+    def selected_root(self, value):
+        if hasattr(self, "project_state"):
+            self.project_state.root = Path(value) if value else None
+        else:
+            self._selected_root = Path(value) if value else None
+    def _state_property(name):
+        def get(self):
+            state = getattr(self, "project_state", None)
+            return getattr(state, name) if state is not None else getattr(self, "_" + name, None)
+        def set_(self, value):
+            state = getattr(self, "project_state", None)
+            if state is not None: setattr(state, name, value)
+            else: setattr(self, "_" + name, value)
+        return property(get, set_)
+    scan_revision = _state_property("scan_revision")
+    applied_scan_revision = _state_property("applied_scan_revision")
+    latest_source_mtime = _state_property("latest_source_mtime")
+    latest_snapshot_path = _state_property("snapshot_path")
+    transformed_paths = _state_property("transformed_paths")
+    running_tasks = _state_property("active_operations")
+    def _model_property(name, owner="controller"):
+        def get(self):
+            model = getattr(self, owner, None)
+            return getattr(model, name) if model is not None else getattr(self, "_" + name, {})
+        def set_(self, value):
+            model = getattr(self, owner, None)
+            if model is not None: setattr(model, name, value)
+            else: setattr(self, "_" + name, value)
+        return property(get, set_)
+    folder_item_states = _model_property("selection")
+    tree_rows = _model_property("rows")
+    scan_skipped_paths = _model_property("skipped")
+
     def __init__(self, root: tk.Tk):
         self.root = root
         self.theme = THEME
         self.gui_queue = queue.Queue()
-        self.running_tasks = set()
         self.stop_event = threading.Event()
         self.widgets = {}
         self.current_progress_popup = None
-        self.selected_root = DEFAULT_ROOT_DIR
+        self.controller, self.approve_action = create_application(DEFAULT_ROOT_DIR)
+        self.controller.scan_fn = lambda root, policy, stop: scan_project_tree(root, policy, stop)
+        self.project_state = self.controller.state
+        self.action_operations = set()
+        self.controller.dispatcher.subscribe(lambda event: self.gui_queue.put(lambda: self.on_action_event(event)))
+        self.root.bind("<Destroy>", self._destroy_actions, add="+")
         self.latest_snapshot_path = None
         self.latest_source_mtime = 0.0
-        self.state_lock = threading.RLock()
+        self.state_lock = self.controller.lock
         self.folder_item_states = {}
         self.tree_rows = []
         self.scan_skipped_paths = []
-        self.exclusion_policy = ExclusionPolicy()
+        self.exclusion_policy = self.controller.policy
         self.exclusions_popup = None
         self.scan_revision = 0
         self.applied_scan_revision = -1
@@ -1630,7 +436,7 @@ class ProjectMapperApp:
         self.scan_after_id = None
         self.scan_use_popup = False
         self.exclusions_dirty = False
-        self.transformed_paths = set()
+        self.transformed_paths = self.project_state.transformed_paths
         self.icon_imgs = {}
         self._create_tree_icons()
 
@@ -1641,15 +447,46 @@ class ProjectMapperApp:
         self.log_message("Snapshot Compiler loaded. Choose a project root, curate the tree, then compile a SQLite snapshot.")
         self.root.after(250, self.request_rescan_tree_silent)
 
+    def action(self, name, payload=None, **options):
+        return perform(self, name, payload, **options)
+
+    def _destroy_actions(self, event):
+        if event.widget is self.root:
+            self.controller.close()
+
+    def on_action_event(self, event):
+        if event.type == "progress":
+            self.log_message(event.payload.get("message", "Working"))
+        if event.type == "succeeded" and event.payload.get("paths"):
+            self.request_rescan_tree_silent()
+        if event.type in ("failed", "recovery_required"):
+            self.log_message(event.payload.get("error", {}).get("message", event.type), "ERROR")
+
+    def run_diagnostics(self):
+        report = self.action("application.diagnostics")
+        text = format_diagnostics(report)
+        self.log_message(text, "INFO" if report["ok"] else "ERROR")
+        messagebox.showinfo("Diagnostics", text, parent=self.root) if report["ok"] else messagebox.showwarning("Diagnostics", text, parent=self.root)
+        return report
+
+    def mark_project_dirty(self, reason, paths=()):
+        self.action("project.dirty", {"reason": reason, "paths": [str(p) for p in paths]})
+        self.transformed_paths = self.project_state.transformed_paths
+        self.latest_snapshot_path = None
+
+    def report_error(self, title, exc):
+        self.log_message(f"{title}: {exc}", "ERROR")
+        messagebox.showerror(title, str(exc), parent=self.root)
+
     def _create_tree_icons(self):
-        img_unchecked = tk.PhotoImage(width=14, height=14)
+        img_unchecked = tk.PhotoImage(master=self.root, width=14, height=14)
         img_unchecked.put((THEME["checkbox_border"],), to=(0, 0, 14, 1))
         img_unchecked.put((THEME["checkbox_border"],), to=(0, 13, 14, 14))
         img_unchecked.put((THEME["checkbox_border"],), to=(0, 0, 1, 14))
         img_unchecked.put((THEME["checkbox_border"],), to=(13, 0, 14, 14))
         self.icon_imgs[S_UNCHECKED] = img_unchecked
 
-        img_checked = tk.PhotoImage(width=14, height=14)
+        img_checked = tk.PhotoImage(master=self.root, width=14, height=14)
         img_checked.put((THEME["checkbox_checked"],), to=(0, 0, 14, 14))
         img_checked.put(("#FFFFFF",), to=(3, 7, 6, 10))
         img_checked.put(("#FFFFFF",), to=(6, 5, 11, 8))
@@ -1751,6 +588,7 @@ class ProjectMapperApp:
         self._make_button(btn_row, "Export Filedump MD", self.export_filedump_markdown, THEME["panel_alt_bg"], THEME["field_bg_alt"]).pack(side=tk.LEFT, padx=4)
         self._make_button(btn_row, "Export Tree+Dump MD", self.export_combined_markdown, THEME["panel_alt_bg"], THEME["field_bg_alt"]).pack(side=tk.LEFT, padx=4)
         self._make_button(btn_row, "Export Vendor App", self.export_vendor_app, THEME["secondary"], THEME["secondary_hover"]).pack(side=tk.LEFT, padx=4)
+        self._make_button(btn_row, "Diagnostics", self.run_diagnostics, THEME["panel_alt_bg"], THEME["field_bg_alt"]).pack(side=tk.RIGHT, padx=4)
         self._make_button(btn_row, "Open Output Folder", self.open_output_folder, THEME["success"], THEME["success_hover"]).pack(side=tk.RIGHT, padx=4)
 
         control_row = tk.Frame(action_frame, bg=THEME["panel_bg"])
@@ -1779,6 +617,7 @@ class ProjectMapperApp:
             activeforeground=THEME["text"],
         ).pack(side=tk.LEFT, padx=6)
         self.widgets["include_binary_blobs"] = tk.BooleanVar(value=False)
+        self.widgets["include_binary_blobs"].trace_add("write", lambda *_: self.action("capture.configure", {"include_binary": bool(self.widgets["include_binary_blobs"].get())}))
         tk.Checkbutton(
             control_row,
             text="Preserve binary blobs in DB",
@@ -1883,6 +722,14 @@ class ProjectMapperApp:
         menu.add_separator()
         menu.add_command(label="Delete File…", command=lambda: self.delete_file(path),
                          state="normal" if allowed else "disabled")
+        menu.add_separator()
+        can_project_patch = folder.is_dir()
+        try:
+            validate_target(folder)
+        except PatchError:
+            can_project_patch = False
+        menu.add_command(label="Project Patcher…", command=lambda: self.open_project_patcher(folder),
+                         state="normal" if can_project_patch else "disabled")
         try:
             menu.tk_popup(tree.winfo_rootx() + 40 if keyboard else event.x_root,
                           tree.winfo_rooty() + 40 if keyboard else event.y_root)
@@ -1894,56 +741,65 @@ class ProjectMapperApp:
         try:
             return PatcherWindow(self, path)
         except (OSError, PatchError) as exc:
-            messagebox.showerror("Cannot open patcher", str(exc), parent=self.root)
+            self.report_error("Cannot open patcher", exc)
             return None
 
     def open_text_toucher(self, folder):
         try:
             return TextToucherWindow(self, folder)
         except (OSError, PatchError) as exc:
-            messagebox.showerror("Cannot create file", str(exc), parent=self.root)
+            self.report_error("Cannot create file", exc)
             return None
 
     def open_text_editor(self, path):
         try:
             return TextEditorWindow(self, path)
         except (OSError, PatchError) as exc:
-            messagebox.showerror("Cannot open text editor", str(exc), parent=self.root)
+            self.report_error("Cannot open text editor", exc)
+            return None
+
+    def open_project_patcher(self, folder):
+        try:
+            return ProjectPatcherWindow(self, folder)
+        except (OSError, PatchError) as exc:
+            self.report_error("Cannot open project patcher", exc)
             return None
 
     def delete_file(self, path):
         if self.running_tasks or self.scan_pending:
             self.log_message("Wait for the current scan or compile to finish before deleting a file.", "WARNING")
             return
-        try:
-            path = validate_target(path)
-            if not is_path_inside(path, self.selected_root) or not path.is_file():
-                raise PatchError("Choose an existing file inside the current project.")
-            before = path.stat()
-            identity = lambda value: (value.st_dev, value.st_ino, value.st_size, value.st_mtime_ns, value.st_ctime_ns)
-            approved = messagebox.askyesno(
-                "Delete file?",
-                f"Permanently delete this file?\n\n{path}\n\n"
-                "This does not move the file to the Recycle Bin and cannot be undone in ProjectMapper.",
-                parent=self.root, icon="warning", default="no")
-            if approved is not True:
+        # Legacy test harnesses construct this class without the composition root;
+        # retain the same guarded behavior for that compatibility shape.
+        if not hasattr(self, "controller"):
+            try:
+                path = validate_target(path)
+                if not is_path_inside(path, self.selected_root) or not path.is_file():
+                    raise PatchError("Choose an existing file inside the current project.")
+                before = path.stat()
+                if messagebox.askyesno("Delete file?", f"Permanently delete this file?\n\n{path}",
+                                       parent=self.root, icon="warning", default="no") is not True:
+                    return
+                if self.running_tasks or self.scan_pending:
+                    raise PatchError("A scan or compile started. Wait for it to finish, then try again.")
+                if (not path.is_file() or path.stat().st_mtime_ns != before.st_mtime_ns
+                        or path.stat().st_size != before.st_size):
+                    raise PatchError("The target changed while awaiting approval. Review it and try again.")
+                path.unlink()
+            except (OSError, PatchError) as exc:
+                self.report_error("Could not delete file", exc)
                 return
-            # The modal dialog runs an event loop; recheck state after approval.
-            if self.running_tasks or self.scan_pending:
-                raise PatchError("A scan or compile started. Wait for it to finish, then try again.")
-            validate_target(path)
-            if (not is_path_inside(path, self.selected_root) or not path.is_file()
-                    or identity(path.stat()) != identity(before)):
-                raise PatchError("The target changed while awaiting approval. Review it and try again.")
-            path.unlink()
+            self.file_transformed(path, action="Deleted")
+            return
+        try:
+            self.action("file.delete", {"path": str(path)}, approval_guard=lambda: not self.running_tasks and not self.scan_pending)
         except (OSError, PatchError) as exc:
-            messagebox.showerror("Could not delete file", str(exc), parent=self.root)
+            self.report_error("Could not delete file", exc)
             return
         self.file_transformed(path, action="Deleted")
 
     def file_transformed(self, path, action="Saved"):
-        self.transformed_paths.add(Path(path).resolve())
-        self.latest_snapshot_path = None
+        action_reason = {"Saved": "file_transformed", "Deleted": "file_deleted", "Created": "file_created"}.get(action, "file_transformed")
         self.log_message(f"{action} file: {path}. Compile a new snapshot before exporting.")
         self.request_rescan_tree_silent()
 
@@ -1954,7 +810,7 @@ class ProjectMapperApp:
         self._queue_tree_scan(use_popup=False)
 
     def _queue_tree_scan(self, use_popup=False):
-        self.scan_revision += 1
+        self.scan_revision = self.project_state.mark_scan_requested()
         self.scan_pending = True
         self.scan_use_popup = self.scan_use_popup or use_popup
         self.exclusion_policy.load_gitignore(self.selected_root)
@@ -1983,7 +839,9 @@ class ProjectMapperApp:
             return
         self.schedule_log_message(f"Scanning project tree: {root}")
         try:
-            rows, skipped = scan_project_tree(root, policy, stop_event=self.stop_event)
+            result = self.action("project.scan", {"revision": revision})
+            rows = [dict(r, path=Path(r["path"]), parent=Path(r["parent"]) if r["parent"] else None) for r in result["rows"]]
+            skipped = result["skipped"]
         except Exception:
             self.gui_queue.put(lambda: self._finish_tree_scan(revision))
             raise
@@ -2015,6 +873,7 @@ class ProjectMapperApp:
                     self.folder_item_states[key] = parent_state
         self.populate_tree(rows)
         self.applied_scan_revision = revision
+        self.project_state.mark_scan_applied(revision, self.latest_source_mtime)
         self.scan_pending = False
         self.log_message(f"Scan complete: {len(rows)} visible entries, {len(skipped)} skipped entries.")
 
@@ -2085,26 +944,22 @@ class ProjectMapperApp:
             self.toggle_tree_item(iid)
 
     def toggle_tree_item(self, iid: str):
-        with self.state_lock:
-            current = self.folder_item_states.get(iid, S_UNCHECKED)
-            new_state = S_CHECKED if current != S_CHECKED else S_UNCHECKED
-            self._set_tree_state_recursive(iid, new_state)
+        current = self.folder_item_states.get(iid, S_UNCHECKED)
+        new_state = S_CHECKED if current != S_CHECKED else S_UNCHECKED
+        self._set_tree_state_recursive(iid, new_state)
         self.refresh_tree_visuals(iid)
+        self.mark_project_dirty("selection_changed")
 
     def _set_tree_state_recursive(self, iid: str, state: str):
-        tree = self.widgets["folder_tree"]
-        self.folder_item_states[iid] = state
-        for child in tree.get_children(iid):
-            self._set_tree_state_recursive(child, state)
+        self.action("selection.set", {"path": iid, "state": state})
 
     def set_global_selection(self, state: str):
         tree = self.widgets.get("folder_tree")
         if tree is None:
             return
-        with self.state_lock:
-            for child in tree.get_children(""):
-                self._set_tree_state_recursive(child, state)
+        self.action("selection.set", {"state": state})
         self.refresh_tree_visuals()
+        self.mark_project_dirty("selection_changed")
         self.log_message(f"Set visible tree selection to: {state}")
 
     def is_selected(self, path: Path) -> bool:
@@ -2120,7 +975,7 @@ class ProjectMapperApp:
 # === [SECTION: TK_EXCLUSION_UI] BEGIN ===
     def apply_exclusion_settings(self):
         var = self.widgets.get("respect_exclusions")
-        self.exclusion_policy.respect_exclusions = bool(var.get()) if var else True
+        self.action("exclusions.update", {"operation": "respect", "respect": bool(var.get()) if var else True})
         self.log_message(f"Respect exclusions: {self.exclusion_policy.respect_exclusions}")
         self.exclusions_changed()
 
@@ -2132,14 +987,14 @@ class ProjectMapperApp:
         value = entry.get().strip()
         if not value:
             return
-        self.exclusion_policy.add_pattern(value)
+        self.action("exclusions.update", {"operation": "add", "pattern": value})
         entry.delete(0, tk.END)
         self.log_message(f"Added exclusion pattern: {value}")
         self.exclusions_changed()
 
     def exclusions_changed(self):
         self.exclusions_dirty = True
-        self.latest_snapshot_path = None
+        self.mark_project_dirty("exclusions_changed")
         self.request_rescan_tree_silent()
 
     def refresh_exclusions_popup(self):
@@ -2166,7 +1021,10 @@ class ProjectMapperApp:
         if not target.is_dir():
             return
         self.widgets["selected_root_var"].set(str(target))
-        self.selected_root = target
+        self.action("project.set_root", {"path": str(target)})
+        self.exclusions_dirty = False
+        self.latest_source_mtime = 0.0
+        self.transformed_paths = self.project_state.transformed_paths
         self.latest_snapshot_path = None
         self.log_message(f"Project root set: {self.selected_root}")
         self.request_rescan_tree()
@@ -2188,9 +1046,12 @@ class ProjectMapperApp:
     def choose_root_from_entry(self):
         candidate = Path(self.widgets["selected_root_var"].get()).expanduser()
         if not candidate.is_dir():
-            messagebox.showerror("Invalid Project Root", f"Not a directory:\n{candidate}")
+            self.report_error("Invalid Project Root", f"Not a directory:\n{candidate}")
             return
-        self.selected_root = candidate.resolve()
+        self.action("project.set_root", {"path": str(candidate.resolve())})
+        self.exclusions_dirty = False
+        self.latest_source_mtime = 0.0
+        self.transformed_paths = self.project_state.transformed_paths
         self.latest_snapshot_path = None
         self.log_message(f"Project root set: {self.selected_root}")
         self.request_rescan_tree()
@@ -2207,94 +1068,32 @@ class ProjectMapperApp:
         root = self.selected_root
         revision = self.scan_revision
         include_binary_blobs = bool(self.widgets["include_binary_blobs"].get())
+        self.mark_project_dirty("compile_required")
+        capture_revision = self.project_state.capture_revision
         self.run_threaded_action(
-            lambda: self._compile_snapshot_impl(policy, root, revision, include_binary_blobs),
+            lambda: self._compile_snapshot_impl(policy, root, revision, include_binary_blobs, capture_revision),
             "compile_snapshot", use_popup=True)
 
-    def _compile_snapshot_impl(self, policy, root, revision, include_binary_blobs):
-        root = root if root and root.is_dir() else None
-        if root is None:
-            self.schedule_log_message("Cannot compile snapshot: no valid project root.", "ERROR")
-            return
+    def _compile_snapshot_impl(self, policy, root, revision, include_binary_blobs, capture_revision=None):
+        result = self.action("snapshot.compile")
+        self.schedule_log_message(f"Snapshot compiled: {result['path']}")
+        self.gui_queue.put(lambda: setattr(self, "exclusions_dirty", False))
 
-        with self.state_lock:
-            tree_rows = list(self.tree_rows)
-            folder_item_states = dict(self.folder_item_states)
-            scan_skipped_paths = list(self.scan_skipped_paths)
-
-        # Drop the previous snapshot up front: if this compile fails, exports must
-        # refuse rather than quietly re-emitting the last (stale) snapshot.
-        self.latest_snapshot_path = None
-
-        try:
-            snapshot_path = compile_snapshot(
-                root=root,
-                output_dir=ensure_dir(root / OUTPUT_ROOT_NAME),
-                tree_rows=tree_rows,
-                folder_item_states=folder_item_states,
-                policy=policy,
-                scan_skipped_paths=scan_skipped_paths,
-                include_binary_blobs=include_binary_blobs,
-                stop_event=self.stop_event,
-                log_callback=self.schedule_log_message,
-            )
-        except Exception as exc:
-            self.schedule_log_message(f"Snapshot compile FAILED: {exc}", "ERROR")
-            self.schedule_log_message(
-                "No snapshot DB was written - exports stay disabled until a compile succeeds.",
-                "ERROR",
-            )
-            return
-
-        self.gui_queue.put(lambda: self._accept_compiled_snapshot(snapshot_path, root, revision))
-        self.schedule_log_message("Markdown projections are stored in the DB. Export Tree, Filedump, or Combined MD when ready. Manifest remains embedded in the SQLite snapshot.")
-        self.schedule_log_message(f"Output folder: {root / OUTPUT_ROOT_NAME}")
-
-    def _accept_compiled_snapshot(self, snapshot_path, root, revision):
+    def _accept_compiled_snapshot(self, snapshot_path, root, revision, capture_revision=None):
         if root == self.selected_root and revision == self.scan_revision:
+            if not self.project_state.mark_snapshot(snapshot_path, revision, capture_revision):
+                return
             self.latest_snapshot_path = snapshot_path
             self.exclusions_dirty = False
-            self.transformed_paths = {path for path in self.transformed_paths if not is_path_inside(path, root)}
+            self.transformed_paths = self.project_state.transformed_paths
             self.log_message(f"Latest snapshot set: {snapshot_path}")
 
-    def _require_latest_snapshot(self) -> Path | None:
-        if any(is_path_inside(path, self.selected_root) for path in self.transformed_paths):
-            self.log_message("Files have been transformed. Compile a new snapshot before exporting.", "WARNING")
+    def _require_latest_snapshot(self):
+        try:
+            return Path(self.action("snapshot.require")["path"])
+        except (OSError, PatchError) as exc:
+            self.log_message(str(exc), "WARNING")
             return None
-        if self.exclusions_dirty:
-            self.log_message("Exclusions have changed. Compile a new snapshot before exporting.", "WARNING")
-            return None
-        root = self.selected_root if self.selected_root and self.selected_root.is_dir() else None
-
-        candidates = []
-        if self.latest_snapshot_path:
-            candidates.append(Path(self.latest_snapshot_path))
-        if root is not None:
-            candidates.append(self.get_output_dir() / f"{root.name}_{SNAPSHOT_DB_SUFFIX}")
-
-        for candidate in candidates:
-            if not candidate.exists():
-                continue
-            metadata = load_snapshot_metadata(candidate)
-            snapshot_root = metadata.get("source_root_absolute_path")
-            if root is not None and snapshot_root and Path(str(snapshot_root)) != root:
-                self.log_message(
-                    f"Ignoring snapshot built from a different project root: {snapshot_root}",
-                    "WARNING",
-                )
-                continue
-            if self._snapshot_is_stale(metadata):
-                self.log_message(
-                    "Snapshot DB is older than the files currently on disk. "
-                    "Compile Snapshot DB again before exporting.",
-                    "ERROR",
-                )
-                return None
-            self.latest_snapshot_path = candidate
-            return candidate
-
-        self.log_message("No snapshot DB found yet. Compile Snapshot DB first.", "WARNING")
-        return None
 
     def _snapshot_is_stale(self, metadata: dict) -> bool:
         if not self.latest_source_mtime:
@@ -2307,47 +1106,21 @@ class ProjectMapperApp:
             return True
         return self.latest_source_mtime > snapshot_mtime + 1.0
 
-    def export_snapshot_output(self, output_name: str, suffix: str, content_override: str | None = None):
-        snapshot_path = self._require_latest_snapshot()
-        if snapshot_path is None:
-            return
-        root = self.selected_root if self.selected_root and self.selected_root.is_dir() else DEFAULT_ROOT_DIR
-        out_path = self.get_output_dir() / snapshot_output_filename(root, suffix)
-        try:
-            content = content_override if content_override is not None else load_snapshot_output(snapshot_path, output_name)
-            write_text_file(out_path, content)
-            self.log_message(f"Exported {output_name}: {out_path}")
-        except Exception as exc:
-            self.log_message(f"Failed to export {output_name}: {exc}", "ERROR")
+    def export_snapshot_output(self, output_name, suffix, content_override=None):
+        include_tree = output_name == "project_filedump_markdown" and bool(self.widgets["include_tree_in_filedump"].get())
+        def export():
+            result = self.action("snapshot.export", {"output": output_name, "suffix": suffix, "include_tree": include_tree})
+            self.schedule_log_message(f"Exported: {result['path']}")
+        self.run_threaded_action(export, "export_snapshot", use_popup=True)
 
     def export_tree_markdown(self):
         self.export_snapshot_output("project_tree_markdown", TREE_MD_SUFFIX)
 
     def export_filedump_markdown(self):
-        snapshot_path = self._require_latest_snapshot()
-        if snapshot_path is None:
-            return
-        try:
-            filedump_markdown = load_snapshot_output(snapshot_path, "project_filedump_markdown")
-            include_tree = bool(self.widgets.get("include_tree_in_filedump").get()) if self.widgets.get("include_tree_in_filedump") else False
-            if include_tree:
-                tree_markdown = load_snapshot_output(snapshot_path, "project_tree_markdown")
-                filedump_markdown = combine_tree_and_filedump_markdown(tree_markdown, filedump_markdown)
-            self.export_snapshot_output("project_filedump_markdown", FILEDUMP_MD_SUFFIX, content_override=filedump_markdown)
-        except Exception as exc:
-            self.log_message(f"Failed to export filedump markdown: {exc}", "ERROR")
+        self.export_snapshot_output("project_filedump_markdown", FILEDUMP_MD_SUFFIX)
 
     def export_combined_markdown(self):
-        snapshot_path = self._require_latest_snapshot()
-        if snapshot_path is None:
-            return
-        try:
-            tree_markdown = load_snapshot_output(snapshot_path, "project_tree_markdown")
-            filedump_markdown = load_snapshot_output(snapshot_path, "project_filedump_markdown")
-            combined = combine_tree_and_filedump_markdown(tree_markdown, filedump_markdown)
-            self.export_snapshot_output("project_tree_and_filedump_markdown", COMBINED_MD_SUFFIX, content_override=combined)
-        except Exception as exc:
-            self.log_message(f"Failed to export combined markdown: {exc}", "ERROR")
+        self.export_snapshot_output("project_tree_and_filedump_markdown", COMBINED_MD_SUFFIX)
 
     def export_manifest_markdown(self):
         self.export_snapshot_output("snapshot_manifest_markdown", MANIFEST_MD_SUFFIX)
@@ -2356,13 +1129,7 @@ class ProjectMapperApp:
         self.run_threaded_action(self._export_vendor_app_impl, "vendor_export", use_popup=True)
 
     def _export_vendor_app_impl(self):
-        result = create_vendor_export(
-            source_root=SOURCE_ROOT,
-            export_root=SOURCE_ROOT / VENDOR_EXPORT_ROOT_NAME,
-            make_zip=True,
-            stop_event=self.stop_event,
-            log_callback=self.schedule_log_message,
-        )
+        result = self.action("vendor.export")
         self.schedule_log_message(
             f"Vendor export ready: {result['export_dir']} ({result['included_count']} files, {result['skipped_count']} skipped)"
         )
@@ -2373,7 +1140,8 @@ class ProjectMapperApp:
         self.log_message("Projection export is available after compiling a snapshot DB.", "WARNING")
 
     def open_output_folder(self):
-        out_dir = self.get_output_dir()
+        out_dir = Path(self.action("output.location")["path"])
+        out_dir.mkdir(parents=True, exist_ok=True)
         try:
             if platform.system() == "Windows":
                 os.startfile(out_dir)
@@ -2401,6 +1169,8 @@ class ProjectMapperApp:
 
     def cancel_current_operations(self):
         self.stop_event.set()
+        for operation in tuple(self.action_operations):
+            self.controller.dispatcher.cancel(operation)
         self.log_message("Stop signal sent to active task.", "WARNING")
 
     def run_threaded_action(self, target_function, task_id: str, use_popup=False):
@@ -2412,6 +1182,7 @@ class ProjectMapperApp:
             self.current_progress_popup = ProgressPopup(self.root, title=f"Working: {task_id}", on_cancel=self.cancel_current_operations)
 
         self.running_tasks.add(task_id)
+        self.project_state.operation_started(task_id)
         self.stop_event.clear()
 
         def runner():
@@ -2421,6 +1192,7 @@ class ProjectMapperApp:
                 self.schedule_log_message(f"CRASH in {task_id}: {exc}\n{traceback.format_exc()}", "CRITICAL")
             finally:
                 self.running_tasks.discard(task_id)
+                self.project_state.operation_finished(task_id)
                 if use_popup and self.current_progress_popup:
                     popup = self.current_progress_popup
                     self.current_progress_popup = None
@@ -2455,8 +1227,8 @@ class ProjectMapperApp:
                 break
             try:
                 callback()
-            except Exception:
-                pass
+            except Exception as exc:
+                self.log_message(f"UI callback failed: {exc}", "ERROR")
         self.root.after(100, self.process_gui_queue)
 # === [SECTION: THREADING_AND_LOGGING] END ===
 

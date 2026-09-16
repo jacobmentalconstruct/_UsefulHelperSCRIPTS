@@ -8,44 +8,19 @@ from tkinter import filedialog, messagebox, ttk
 
 if __package__:
     from .patcher import PatchError, validate_target
+    from .ui_base import ToolWindowMixin
 else:
     from patcher import PatchError, validate_target
+    from ui_base import ToolWindowMixin
 
 
-EXTENSIONS = (".txt", ".py", ".md", ".json", ".csv", ".log", ".bat", ".sh", ".yaml", "(None)")
+try:
+    from ..core.files import EXTENSIONS, file_name, create_text_file
+except ImportError:
+    from core.files import EXTENSIONS, file_name, create_text_file
 
 
-def file_name(raw_name, extension=".txt", timestamp=False, now=None):
-    name = raw_name.strip()
-    if not name or name in (".", ".."):
-        raise PatchError("Enter a file name.")
-    if re.search(r'[<>:"/\\|?*\x00-\x1f]', name) or name.endswith((".", " ")):
-        raise PatchError("Use a file name without path separators or invalid filename characters.")
-    if re.fullmatch(r"(?i)(CON|PRN|AUX|NUL|COM[1-9¹²³]|LPT[1-9¹²³])", name.split(".")[0]):
-        raise PatchError("That name is reserved by Windows. Choose another name.")
-    if extension not in EXTENSIONS:
-        raise PatchError("Choose an extension preset, or (None) and enter your own extension in the name.")
-    suffix = Path(name).suffix
-    base = name[:-len(suffix)] if suffix else name
-    # Explicit extensions and dotfiles take precedence over the preset.
-    suffix = suffix or ("" if extension == "(None)" or name.startswith(".") else extension)
-    stamp = "_" + (now or datetime.now()).strftime("%Y-%m-%d_%H-%M-%S") if timestamp else ""
-    return base + stamp + suffix
-
-
-def create_text_file(folder, name, content, extension=".txt", timestamp=False):
-    folder = validate_target(folder)
-    if not folder.is_dir():
-        raise PatchError("The destination folder no longer exists. Choose another folder.")
-    path = validate_target(folder / file_name(name, extension, timestamp))
-    data = content.encode("utf-8")
-    # Exclusive creation protects existing files even if one appears after validation.
-    with path.open("xb") as stream:
-        stream.write(data)
-    return path
-
-
-class TextToucherWindow:
+class TextToucherWindow(ToolWindowMixin):
     def __init__(self, app, folder):
         self.app = app
         self.colors = app.theme
@@ -53,10 +28,7 @@ class TextToucherWindow:
         if not self.folder.is_dir():
             raise PatchError("Choose an existing destination folder.")
         self.top = tk.Toplevel(app.root)
-        self.top.title("New Text File — TextTOUCHER")
-        self.top.configure(bg=self.colors["app_bg"])
-        self.top.geometry("800x650")
-        self.top.minsize(650, 480)
+        self.configure_tool_window("New Text File — TextTOUCHER", "800x650", (650, 480))
         self.top.protocol("WM_DELETE_WINDOW", self.close)
         self.top.columnconfigure(0, weight=1)
         self.top.rowconfigure(3, weight=1)
@@ -70,13 +42,13 @@ class TextToucherWindow:
         path_row = self.frame(self.top)
         path_row.grid(row=0, column=0, sticky="ew", padx=12, pady=(12, 6))
         path_row.columnconfigure(0, weight=1)
-        self.path_label = self.label(path_row, text=str(self.folder), wraplength=520)
+        self.path_label = self.label(path_row, text=str(self.folder), wraplength=520, panel=True)
         self.path_label.grid(row=0, column=0, sticky="w", padx=8, pady=8)
         self.button(path_row, "Choose Folder…", self.choose_folder, "secondary").grid(row=0, column=1, padx=8)
         inputs = self.frame(self.top)
         inputs.grid(row=1, column=0, sticky="ew", padx=12, pady=6)
         inputs.columnconfigure(1, weight=1)
-        self.label(inputs, text="Name:").grid(row=0, column=0, padx=(8, 6), pady=8)
+        self.label(inputs, text="Name:", panel=True).grid(row=0, column=0, padx=(8, 6), pady=8)
         self.name_entry = tk.Entry(inputs, textvariable=self.name, font=("Arial", 10), relief="flat",
                                    bg=self.colors["field_bg"], fg=self.colors["field_text"],
                                    insertbackground=self.colors["text"], selectbackground=self.colors["selection"])
@@ -109,10 +81,7 @@ class TextToucherWindow:
         footer = self.frame(self.top)
         footer.grid(row=4, column=0, sticky="ew", padx=12, pady=8)
         footer.columnconfigure(0, weight=1)
-        tk.Checkbutton(footer, text="Append date/time to filename", variable=self.timestamp,
-                       bg=self.colors["panel_bg"], fg=self.colors["text"], selectcolor=self.colors["tree_bg"],
-                       activebackground=self.colors["panel_bg"], activeforeground=self.colors["text"],
-                       font=("Arial", 10)).grid(row=0, column=0, sticky="w")
+        self.checkbutton(footer, "Append date/time to filename", self.timestamp).grid(row=0, column=0, sticky="w")
         self.create_button = self.button(footer, "Create File", self.create, "success")
         self.create_button.grid(row=0, column=1, padx=6, pady=6)
         self.preview_label = self.label(self.top, textvariable=self.destination, bg=self.colors["app_bg"], wraplength=620)
@@ -124,18 +93,6 @@ class TextToucherWindow:
             variable.trace_add("write", self.update_preview)
         self.update_preview()
         self.name_entry.focus_set()
-
-    def frame(self, parent):
-        return tk.Frame(parent, bg=self.colors["panel_bg"])
-
-    def label(self, parent, **kwargs):
-        defaults = dict(bg=self.colors["panel_bg"], fg=self.colors["muted_text"],
-                        font=("Arial", 10), anchor="w", justify="left")
-        defaults.update(kwargs)
-        return tk.Label(parent, **defaults)
-
-    def button(self, parent, text, command, color):
-        return self.app._make_button(parent, text, command, self.colors[color], self.colors[color + "_hover"], bold=True)
 
     def setup_styles(self):
         style = ttk.Style(self.top)
@@ -187,7 +144,7 @@ class TextToucherWindow:
         except (OSError, ValueError) as exc:
             self.status.set(f"Could not create file: {exc}")
             return
-        self.app.file_transformed(path)
+        self.app.file_transformed(path, action="Created")
         self.name.set("")
         self.content.delete("1.0", "end")
         self.content.edit_reset()

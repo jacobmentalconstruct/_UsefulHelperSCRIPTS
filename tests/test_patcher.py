@@ -1,3 +1,4 @@
+from tests.support import temporary_directory, tk_root
 import gc
 import json
 from pathlib import Path
@@ -68,8 +69,7 @@ class EngineTests(unittest.TestCase):
 
 class SessionTests(unittest.TestCase):
     def setUp(self):
-        self.temp = tempfile.TemporaryDirectory(dir=Path(__file__).parent)
-        self.addCleanup(self.temp.cleanup)
+        self.temp = temporary_directory(self)
         self.path = Path(self.temp.name).resolve() / "target.py"
         self.path.write_bytes(b"\xef\xbb\xbfa\r\n")
 
@@ -137,11 +137,11 @@ class SessionTests(unittest.TestCase):
 class PatcherUITests(unittest.TestCase):
     def setUp(self):
         gc.collect()  # Collect Tk objects on the UI thread before starting workers.
-        self.temp = tempfile.TemporaryDirectory(dir=Path(__file__).parent)
+        self.temp = temporary_directory(self)
         self.project = Path(self.temp.name).resolve()
         self.path = self.project / "target.py"
         self.path.write_bytes(b"a\r\n")
-        self.root = tk.Tk()
+        self.root = tk_root(self)
         self.root.withdraw()
         self.app = ProjectMapperApp(self.root)
         for timer in self.root.tk.call("after", "info"):
@@ -149,14 +149,6 @@ class PatcherUITests(unittest.TestCase):
         self.app.selected_root = self.project
         self.window = self.app.open_tokenizing_patcher(self.path)
         self.root.update_idletasks()
-
-    def tearDown(self):
-        for timer in self.root.tk.call("after", "info"):
-            self.root.after_cancel(timer)
-        self.root.destroy()
-        self.window = self.app = self.root = None
-        gc.collect()
-        self.temp.cleanup()
 
     def set_patch(self, replacement):
         self.window.patch_box.delete("1.0", "end")
@@ -250,7 +242,7 @@ class PatcherUITests(unittest.TestCase):
         before = dict(self.app.folder_item_states)
         with patch("src.app.tk.Menu") as menu:
             self.app.on_file_context_menu(SimpleNamespace(keysym="F10"))
-            self.assertEqual(menu.return_value.add_command.call_count, 4)
+            self.assertEqual(menu.return_value.add_command.call_count, 5)
         self.assertEqual(self.app.folder_item_states, before)
 
     def test_save_waits_for_capture(self):

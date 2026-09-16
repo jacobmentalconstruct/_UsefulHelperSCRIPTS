@@ -1,9 +1,16 @@
 """Tokenizing patcher window, owned by the ProjectMapper Tk application."""
 
 import difflib
+import hashlib
 import json
+from pathlib import Path
 import tkinter as tk
-from tkinter import filedialog, messagebox, scrolledtext, ttk
+from tkinter import filedialog, messagebox, ttk
+from .ui_base import ToolWindowMixin
+try:
+    from ..core.diff import DiffFile, diff_summary
+except ImportError:
+    from core.diff import DiffFile, diff_summary
 
 if __package__:
     from .patcher import PatchError, PatchSession, apply_patch_text
@@ -19,7 +26,7 @@ SCHEMA = json.dumps({"hunks": [{
 }]}, indent=2)
 
 
-class PatcherWindow:
+class PatcherWindow(ToolWindowMixin):
     def __init__(self, app, path):
         self.session = PatchSession(path)
         self.app = app
@@ -29,11 +36,8 @@ class PatcherWindow:
         self.validated_inputs = None
         self.actions_linked = False
         self.top = tk.Toplevel(app.root)
-        self.top.configure(bg=self.colors["app_bg"])
+        self.configure_tool_window(f"Tokenizing Patcher — {self.session.path.name}", "1100x780", (760, 550))
         self.setup_styles()
-        self.top.title(f"Tokenizing Patcher — {self.session.path.name}")
-        self.top.geometry("1100x780")
-        self.top.minsize(760, 550)
         self.top.protocol("WM_DELETE_WINDOW", self.close)
         self.path_label = self.label(self.top, text=str(self.session.path), wraplength=1000)
         self.path_label.pack(fill="x", padx=12, pady=8)
@@ -78,9 +82,11 @@ class PatcherWindow:
         self.save_button = self.button(footer, "Save Result", self.save, "accent", state="disabled")
         self.save_button.pack(side="right")
         self.version = tk.BooleanVar(self.top, False)
+        self.backup = tk.BooleanVar(self.top, False)
         options = self.frame(self.top)
         options.pack(side="bottom", fill="x", padx=12, pady=(0, 5), before=panes)
         self.checkbutton(options, "Save as version", self.version).pack(side="left", padx=(0, 4))
+        self.checkbutton(options, "Keep .bak backup", self.backup).pack(side="left", padx=(10, 4))
         self.suffix = tk.StringVar(self.top, "_v1.0")
         tk.Entry(options, textvariable=self.suffix, width=14,
                  bg=self.colors["field_bg"], fg=self.colors["field_text"],
@@ -116,43 +122,6 @@ class PatcherWindow:
                         bordercolor=colors["panel_bg"], lightcolor=colors["panel_alt_bg"],
                         darkcolor=colors["panel_alt_bg"])
         style.map("Patcher.Vertical.TScrollbar", background=[("active", colors["secondary"])])
-
-    def frame(self, parent):
-        return tk.Frame(parent, bg=self.colors["panel_bg"])
-
-    def label(self, parent, panel=False, **kwargs):
-        return tk.Label(parent, bg=self.colors["panel_bg" if panel else "app_bg"],
-                        fg=self.colors["muted_text"], font=("Arial", 10), anchor="w", **kwargs)
-
-    def button(self, parent, text, command, color=None, state="normal"):
-        bg = self.colors[color] if color else self.colors["panel_alt_bg"]
-        hover = self.colors[color + "_hover"] if color else self.colors["field_bg_alt"]
-        button = self.app._make_button(parent, text, command, bg, hover, bold=bool(color))
-        button.configure(state=state, disabledforeground=self.colors["muted_text"])
-        return button
-
-    def checkbutton(self, parent, text, variable, command=None):
-        return tk.Checkbutton(parent, text=text, variable=variable, command=command,
-                              bg=self.colors["panel_bg"], fg=self.colors["text"],
-                              selectcolor=self.colors["tree_bg"], activebackground=self.colors["panel_bg"],
-                              activeforeground=self.colors["text"], font=("Arial", 10))
-
-    def editor(self, parent, editable=False):
-        box = scrolledtext.ScrolledText(
-            parent, wrap="none", undo=editable, font=("Consolas", 10),
-            bg=self.colors["log_bg" if editable else "tree_bg"], fg=self.colors["text"],
-            insertbackground=self.colors["text"], selectbackground=self.colors["selection"],
-            selectforeground=self.colors["text"], relief="flat", borderwidth=0,
-            highlightthickness=1, highlightbackground=self.colors["panel_alt_bg"],
-            highlightcolor=self.colors["secondary"], padx=10, pady=8,
-            state="normal" if editable else "disabled")
-        box.frame.configure(bg=self.colors["panel_bg"])
-        box.vbar.pack_forget()
-        scrollbar = ttk.Scrollbar(box.frame, orient="vertical", command=box.yview,
-                                  style="Patcher.Vertical.TScrollbar")
-        scrollbar.pack(side="right", fill="y", before=box._w)
-        box.configure(yscrollcommand=scrollbar.set)
-        return box
 
     @staticmethod
     def show_text(box, text):
@@ -218,7 +187,8 @@ class PatcherWindow:
             self.show_text(self.diff_box, diff or "(No differences)")
             self.views.select(1)
             self.refresh_action_group()
-            self.status.set("Validated. Review the diff, then Apply to Result. The file has not been changed.")
+            summary = diff_summary((DiffFile(str(self.session.path), self.session.source, self.preview),))
+            self.status.set(f"Validated: +{summary['additions']} / -{summary['deletions']}. Review the diff, then Apply to Result. The file has not been changed.")
             return True
         except (ValueError, PatchError) as exc:
             self.status.set(f"Validation failed: {exc}")
@@ -243,7 +213,13 @@ class PatcherWindow:
             self.status.set("Wait for the current scan or compile to finish before saving.")
             return
         try:
-            path = self.session.save(self.result, self.suffix.get() if self.version.get() else None)
+            data = {"path": str(self.session.path), "text": self.result,
+                    "sha256": hashlib.sha256(self.session.original_bytes).hexdigest(),
+                    "suffix": self.suffix.get() if self.version.get() else None,
+                    "backup": self.backup.get()}
+            saved = self.app.action("text.save", data)
+            path = Path(saved["path"])
+            self.session = PatchSession(path)
         except (OSError, PatchError) as exc:
             self.status.set(f"Save failed: {exc}")
             return
