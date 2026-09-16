@@ -145,6 +145,19 @@ deleted through this operation. If the file changes while approval is pending,
 the deletion is refused so it can be reviewed again. Successful deletion refreshes
 the tree and requires recompilation before snapshot exports in the current session.
 
+## Text Editor
+
+Right-click a file and choose **Open Text Editor…** for a native dark-theme editor.
+It supports guarded open/save/save-as, undo/redo, read-only mode, find-next,
+confirmed replace-all, dirty-state tracking, and a direct **Tokenizing Patcher…**
+button. Saves preserve the existing UTF-8/BOM and newline protections and refresh
+the mapper snapshot state. Unsaved changes are confirmed before opening another
+file or closing the window.
+
+The editor is implemented in `src/tools/text_editor.py`. The integration keeps the
+reference editor's useful workflow while avoiding its external Qt/pywebview and
+HTML asset dependencies.
+
 ## Blank-Slate Vendor Export
 
 ProjectMapper can export a clean, vendible copy of itself for external testing.

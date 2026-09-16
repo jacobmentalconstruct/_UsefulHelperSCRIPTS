@@ -118,10 +118,12 @@ class CreatorUITests(unittest.TestCase):
                 self.assertEqual(self.app.file_context_menu.entrycget(0, "state"),
                                  "normal" if path == target else "disabled")
                 self.assertEqual(self.app.file_context_menu.entrycget(1, "state"),
-                                 "disabled" if path == target else "normal")
-                self.assertEqual(self.app.file_context_menu.entrycget(3, "state"),
                                  "normal" if path == target else "disabled")
-                self.app.file_context_menu.invoke(1)
+                self.assertEqual(self.app.file_context_menu.entrycget(2, "state"),
+                                 "disabled" if path == target else "normal")
+                self.assertEqual(self.app.file_context_menu.entrycget(4, "state"),
+                                 "normal" if path == target else "disabled")
+                self.app.file_context_menu.invoke(2)
                 if path == child:
                     open_creator.assert_called_once_with(child)
                 else:
@@ -144,12 +146,13 @@ class CreatorUITests(unittest.TestCase):
             tree.event_generate("<ButtonRelease-3>", x=40, y=y)
             popup.assert_called_once()
         self.assertEqual(self.app.file_context_menu.entrycget(0, "state"), "disabled")
-        self.assertEqual(self.app.file_context_menu.entrycget(1, "state"), "normal")
-        self.assertEqual(self.app.file_context_menu.entrycget(3, "state"), "disabled")
+        self.assertEqual(self.app.file_context_menu.entrycget(1, "state"), "disabled")
+        self.assertEqual(self.app.file_context_menu.entrycget(2, "state"), "normal")
+        self.assertEqual(self.app.file_context_menu.entrycget(4, "state"), "disabled")
         self.assertEqual(tree.selection(), ())
         self.assertEqual(self.app.folder_item_states, before)
         with patch.object(self.app, "open_text_toucher") as open_creator:
-            self.app.file_context_menu.invoke(1)
+            self.app.file_context_menu.invoke(2)
             open_creator.assert_called_once_with(self.folder)
 
     def test_keyboard_without_focused_row_uses_root(self):
@@ -158,7 +161,7 @@ class CreatorUITests(unittest.TestCase):
             self.app.on_file_context_menu(SimpleNamespace(keysym="F10"))
             popup.assert_called_once()
         with patch.object(self.app, "open_text_toucher") as open_creator:
-            self.app.file_context_menu.invoke(1)
+            self.app.file_context_menu.invoke(2)
             open_creator.assert_called_once_with(self.folder)
 
     def test_choose_parts_is_refused(self):

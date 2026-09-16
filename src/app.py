@@ -26,9 +26,9 @@ import tkinter as tk
 from tkinter import filedialog, scrolledtext, ttk, messagebox
 import tkinter.font as tkFont
 if __package__:
-    from .tools import PatchError, validate_target, PatcherWindow, TextToucherWindow
+    from .tools import PatchError, validate_target, PatcherWindow, TextEditorWindow, TextToucherWindow
 else:
-    from tools import PatchError, validate_target, PatcherWindow, TextToucherWindow
+    from tools import PatchError, validate_target, PatcherWindow, TextEditorWindow, TextToucherWindow
 # === [SECTION: IMPORTS] END ===
 
 
@@ -1870,6 +1870,8 @@ class ProjectMapperApp:
             allowed = False
         menu.add_command(label=label, command=lambda: self.open_tokenizing_patcher(path),
                          state="normal" if allowed else "disabled")
+        menu.add_command(label="Open Text Editor…", command=lambda: self.open_text_editor(path),
+                         state="normal" if allowed else "disabled")
         folder = path
         can_create = folder.is_dir()
         try:
@@ -1900,6 +1902,13 @@ class ProjectMapperApp:
             return TextToucherWindow(self, folder)
         except (OSError, PatchError) as exc:
             messagebox.showerror("Cannot create file", str(exc), parent=self.root)
+            return None
+
+    def open_text_editor(self, path):
+        try:
+            return TextEditorWindow(self, path)
+        except (OSError, PatchError) as exc:
+            messagebox.showerror("Cannot open text editor", str(exc), parent=self.root)
             return None
 
     def delete_file(self, path):
