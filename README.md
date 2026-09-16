@@ -104,7 +104,8 @@ as source. A successful save refreshes the tree and requires a new snapshot befo
 exporting in the current app session. There is no automatic backup when overwriting;
 use **Save as version** to retain the original.
 
-The patcher implementation lives in `src/patcher.py` and `src/patcher_ui.py`.
+The patcher implementation lives in `src/tools/patcher.py` and
+`src/tools/patcher_ui.py`.
 The disposable `.parts/` folder is reference material only: it is never imported,
 is not included in vendor exports, and is protected from patcher writes. It can
 be removed without affecting the application. Whole-project transformations are
@@ -112,8 +113,11 @@ not implemented yet.
 
 ## Creating New Text Files
 
-Right-click a folder or file and choose **New Text File…** to open TextTOUCHER.
-The destination starts at the selected folder, or beside the selected file.
+Right-click a folder or empty space within the tree and choose **New Text File…**
+to open TextTOUCHER. The destination starts at the clicked folder, or at the
+current project root when clicking empty space. The context menu is available
+on files, folders, and empty space: **New Text File…** is disabled on files, and
+**Tokenizing Patcher…** is disabled on folders and empty space.
 **Choose Folder…** changes the destination.
 
 Enter a name, choose an extension, and optionally paste or type content. An
@@ -128,8 +132,18 @@ The form clears after success so another file can be created in the same folder.
 Existing files are never overwritten, and failed creation keeps the form content.
 The `.parts/` reference folder is protected from creation as well as patching.
 
-The implementation is in `src/text_toucher.py`; it has no dependency on the
+The implementation is in `src/tools/text_toucher.py`; it has no dependency on the
 reference script or `.parts/` folder.
+
+## Deleting Files
+
+Right-click a file and choose **Delete File…**. A blocking confirmation shows the
+full target path and defaults to **No**. Only an explicit **Yes** deletes the file;
+closing or declining the dialog leaves it untouched. Deletion is permanent (not
+the Recycle Bin). Folders, empty tree space, and `.parts/` references cannot be
+deleted through this operation. If the file changes while approval is pending,
+the deletion is refused so it can be reviewed again. Successful deletion refreshes
+the tree and requires recompilation before snapshot exports in the current session.
 
 ## Blank-Slate Vendor Export
 

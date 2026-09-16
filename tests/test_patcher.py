@@ -9,7 +9,7 @@ import unittest
 from unittest.mock import patch
 
 from src.app import ProjectMapperApp
-from src.patcher import PatchError, PatchSession, apply_patch_text
+from src.tools.patcher import PatchError, PatchSession, apply_patch_text
 
 
 def hunk(search, replacement, **extra):
@@ -100,7 +100,7 @@ class SessionTests(unittest.TestCase):
 
     def test_failed_replace_preserves_target_and_cleans_scratch(self):
         original = self.path.read_bytes()
-        with patch("src.patcher.os.replace", side_effect=PermissionError("locked")):
+        with patch("src.tools.patcher.os.replace", side_effect=PermissionError("locked")):
             with self.assertRaises(PermissionError):
                 PatchSession(self.path).save("b")
         self.assertEqual(self.path.read_bytes(), original)
@@ -122,9 +122,9 @@ class SessionTests(unittest.TestCase):
         result = create_vendor_export(export_root=self.path.parent / "exports", make_zip=False)
         exported = Path(result["export_dir"])
         self.assertFalse((exported / ".parts").exists())
-        self.assertTrue((exported / "src" / "patcher.py").is_file())
-        self.assertTrue((exported / "src" / "patcher_ui.py").is_file())
-        self.assertTrue((exported / "src" / "text_toucher.py").is_file())
+        self.assertTrue((exported / "src" / "tools" / "patcher.py").is_file())
+        self.assertTrue((exported / "src" / "tools" / "patcher_ui.py").is_file())
+        self.assertTrue((exported / "src" / "tools" / "text_toucher.py").is_file())
         check = subprocess.run([
             sys.executable, "-B", "-c",
             "import runpy, sys; runpy.run_module('src.app', run_name='smoke'); "
@@ -249,7 +249,7 @@ class PatcherUITests(unittest.TestCase):
         before = dict(self.app.folder_item_states)
         with patch("src.app.tk.Menu") as menu:
             self.app.on_file_context_menu(SimpleNamespace(keysym="F10"))
-            self.assertEqual(menu.return_value.add_command.call_count, 2)
+            self.assertEqual(menu.return_value.add_command.call_count, 3)
         self.assertEqual(self.app.folder_item_states, before)
 
     def test_save_waits_for_capture(self):

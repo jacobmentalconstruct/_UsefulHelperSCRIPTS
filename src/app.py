@@ -26,13 +26,9 @@ import tkinter as tk
 from tkinter import filedialog, scrolledtext, ttk, messagebox
 import tkinter.font as tkFont
 if __package__:
-    from .patcher import PatchError, validate_target
-    from .patcher_ui import PatcherWindow
-    from .text_toucher import TextToucherWindow
+    from .tools import PatchError, validate_target, PatcherWindow, TextToucherWindow
 else:
-    from patcher import PatchError, validate_target
-    from patcher_ui import PatcherWindow
-    from text_toucher import TextToucherWindow
+    from tools import PatchError, validate_target, PatcherWindow, TextToucherWindow
 # === [SECTION: IMPORTS] END ===
 
 
@@ -1853,17 +1849,20 @@ class ProjectMapperApp:
         tree = self.widgets["folder_tree"]
         keyboard = getattr(event, "keysym", "") == "F10"
         iid = tree.focus() if keyboard else tree.identify_row(event.y)
-        if not iid:
-            return "break"
         # Context selection must not toggle capture checkboxes.
-        tree.selection_set(iid)
-        tree.focus(iid)
-        path = Path(iid)
+        if iid:
+            tree.selection_set(iid)
+            tree.focus(iid)
+        else:
+            tree.selection_remove(*tree.selection())
+            tree.focus("")
+        # Empty space targets the current project root, never a previously selected row.
+        path = Path(iid) if iid else self.selected_root
         previous_menu = getattr(self, "file_context_menu", None)
         if previous_menu is not None:
             previous_menu.destroy()
         menu = self.file_context_menu = tk.Menu(tree, tearoff=False)
-        allowed = path.is_file()
+        allowed = bool(iid) and path.is_file()
         label = "Tokenizing Patcher…" if allowed else "Tokenizing Patcher… (select a file)"
         try:
             validate_target(path)
@@ -1871,7 +1870,7 @@ class ProjectMapperApp:
             allowed = False
         menu.add_command(label=label, command=lambda: self.open_tokenizing_patcher(path),
                          state="normal" if allowed else "disabled")
-        folder = path if path.is_dir() else path.parent
+        folder = path
         can_create = folder.is_dir()
         try:
             validate_target(folder)
@@ -1879,6 +1878,9 @@ class ProjectMapperApp:
             can_create = False
         menu.add_command(label="New Text File…", command=lambda: self.open_text_toucher(folder),
                          state="normal" if can_create else "disabled")
+        menu.add_separator()
+        menu.add_command(label="Delete File…", command=lambda: self.delete_file(path),
+                         state="normal" if allowed else "disabled")
         try:
             menu.tk_popup(tree.winfo_rootx() + 40 if keyboard else event.x_root,
                           tree.winfo_rooty() + 40 if keyboard else event.y_root)
@@ -1900,10 +1902,40 @@ class ProjectMapperApp:
             messagebox.showerror("Cannot create file", str(exc), parent=self.root)
             return None
 
-    def file_transformed(self, path):
+    def delete_file(self, path):
+        if self.running_tasks or self.scan_pending:
+            self.log_message("Wait for the current scan or compile to finish before deleting a file.", "WARNING")
+            return
+        try:
+            path = validate_target(path)
+            if not is_path_inside(path, self.selected_root) or not path.is_file():
+                raise PatchError("Choose an existing file inside the current project.")
+            before = path.stat()
+            identity = lambda value: (value.st_dev, value.st_ino, value.st_size, value.st_mtime_ns, value.st_ctime_ns)
+            approved = messagebox.askyesno(
+                "Delete file?",
+                f"Permanently delete this file?\n\n{path}\n\n"
+                "This does not move the file to the Recycle Bin and cannot be undone in ProjectMapper.",
+                parent=self.root, icon="warning", default="no")
+            if approved is not True:
+                return
+            # The modal dialog runs an event loop; recheck state after approval.
+            if self.running_tasks or self.scan_pending:
+                raise PatchError("A scan or compile started. Wait for it to finish, then try again.")
+            validate_target(path)
+            if (not is_path_inside(path, self.selected_root) or not path.is_file()
+                    or identity(path.stat()) != identity(before)):
+                raise PatchError("The target changed while awaiting approval. Review it and try again.")
+            path.unlink()
+        except (OSError, PatchError) as exc:
+            messagebox.showerror("Could not delete file", str(exc), parent=self.root)
+            return
+        self.file_transformed(path, action="Deleted")
+
+    def file_transformed(self, path, action="Saved"):
         self.transformed_paths.add(Path(path).resolve())
         self.latest_snapshot_path = None
-        self.log_message(f"Saved file: {path}. Compile a new snapshot before exporting.")
+        self.log_message(f"{action} file: {path}. Compile a new snapshot before exporting.")
         self.request_rescan_tree_silent()
 
     def request_rescan_tree(self):

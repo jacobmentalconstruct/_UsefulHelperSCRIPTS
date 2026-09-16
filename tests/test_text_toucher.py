@@ -8,8 +8,8 @@ import unittest
 from unittest.mock import patch
 
 from src.app import ProjectMapperApp, scan_project_tree
-from src.patcher import PatchError
-from src.text_toucher import create_text_file, file_name
+from src.tools.patcher import PatchError
+from src.tools.text_toucher import create_text_file, file_name
 
 
 class FileCreationTests(unittest.TestCase):
@@ -103,7 +103,7 @@ class CreatorUITests(unittest.TestCase):
         self.assertFalse((self.folder / "new.txt").exists())
         self.app.running_tasks.clear()
 
-    def test_context_menu_uses_directory_or_file_parent(self):
+    def test_context_menu_actions_depend_on_target(self):
         child = self.folder / "child"
         child.mkdir()
         target = child / "existing.txt"
@@ -115,11 +115,54 @@ class CreatorUITests(unittest.TestCase):
             with patch.object(tk.Menu, "tk_popup"):
                 self.app.on_file_context_menu(SimpleNamespace(keysym="F10"))
             with patch.object(self.app, "open_text_toucher") as open_creator:
+                self.assertEqual(self.app.file_context_menu.entrycget(0, "state"),
+                                 "normal" if path == target else "disabled")
+                self.assertEqual(self.app.file_context_menu.entrycget(1, "state"),
+                                 "disabled" if path == target else "normal")
+                self.assertEqual(self.app.file_context_menu.entrycget(3, "state"),
+                                 "normal" if path == target else "disabled")
                 self.app.file_context_menu.invoke(1)
-                open_creator.assert_called_once_with(child)
+                if path == child:
+                    open_creator.assert_called_once_with(child)
+                else:
+                    open_creator.assert_not_called()
+
+    def test_mouse_empty_space_uses_root_instead_of_previous_selection(self):
+        child = self.folder / "child"
+        child.mkdir()
+        rows, _ = scan_project_tree(self.folder, self.app.exclusion_policy)
+        self.app.populate_tree(rows)
+        tree = self.app.widgets["folder_tree"]
+        tree.focus(str(child))
+        tree.selection_set(str(child))
+        self.root.deiconify()
+        self.root.update()
+        y = tree.winfo_height() - 5
+        self.assertEqual(tree.identify_row(y), "")
+        before = dict(self.app.folder_item_states)
+        with patch.object(tk.Menu, "tk_popup") as popup:
+            tree.event_generate("<ButtonRelease-3>", x=40, y=y)
+            popup.assert_called_once()
+        self.assertEqual(self.app.file_context_menu.entrycget(0, "state"), "disabled")
+        self.assertEqual(self.app.file_context_menu.entrycget(1, "state"), "normal")
+        self.assertEqual(self.app.file_context_menu.entrycget(3, "state"), "disabled")
+        self.assertEqual(tree.selection(), ())
+        self.assertEqual(self.app.folder_item_states, before)
+        with patch.object(self.app, "open_text_toucher") as open_creator:
+            self.app.file_context_menu.invoke(1)
+            open_creator.assert_called_once_with(self.folder)
+
+    def test_keyboard_without_focused_row_uses_root(self):
+        self.app.widgets["folder_tree"].focus("")
+        with patch.object(tk.Menu, "tk_popup") as popup:
+            self.app.on_file_context_menu(SimpleNamespace(keysym="F10"))
+            popup.assert_called_once()
+        with patch.object(self.app, "open_text_toucher") as open_creator:
+            self.app.file_context_menu.invoke(1)
+            open_creator.assert_called_once_with(self.folder)
 
     def test_choose_parts_is_refused(self):
-        with patch("src.text_toucher.filedialog.askdirectory", return_value=str(self.folder / ".parts")):
+        with patch("src.tools.text_toucher.filedialog.askdirectory", return_value=str(self.folder / ".parts")):
             self.window.choose_folder()
         self.assertEqual(self.window.folder, self.folder)
         self.assertIn("read-only", self.window.status.get())
