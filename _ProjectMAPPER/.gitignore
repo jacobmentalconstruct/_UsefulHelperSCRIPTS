@@ -9,10 +9,14 @@ env/
 # Testing
 coverage
 .pytest_cache/
+.test-temp/
+manual-fixture/
+tests/tmp*/
 
 # Production
 build
 dist
+*.egg-info/
 vendor_exports/*
 !vendor_exports/README.md
 
@@ -31,6 +35,9 @@ yarn-error.log*
 *.log
 logs/
 _logs/
+
+# Local development journal (not an application dependency)
+.dev-log/
 
 # ProjectMapper generated state
 _projectmapper/

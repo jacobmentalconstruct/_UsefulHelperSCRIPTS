@@ -1,0 +1,20 @@
+# Mindshard corpus exclusions for _ProjectMAPPER
+# Syntax: one pattern per line, # = comment, matched against each path component
+# and the full relative path (fnmatch glob rules).
+
+# Archive and generated file dumps — these dominate BM25 scores
+.dev-log
+archive
+*.filedump.md
+*_filedump.md
+*_project_tree*
+
+# Build and dependency noise
+node_modules
+__pycache__
+.pytest_cache
+*.pyc
+.venv
+venv
+dist
+build
